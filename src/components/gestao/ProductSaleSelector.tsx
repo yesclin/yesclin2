@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Package, Minus, Plus, AlertTriangle } from "lucide-react";
+import { Package, Minus, Plus, AlertTriangle, XCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,37 +11,79 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useProducts } from "@/hooks/useProducts";
 import type { Product } from "@/types/inventory";
 
 export interface SelectedProduct {
   product: Product;
   quantity: number;
+  stockError?: string; // Validation error for this item
+}
+
+export interface StockValidationError {
+  productId: string;
+  productName: string;
+  requested: number;
+  available: number;
+  message: string;
 }
 
 interface ProductSaleSelectorProps {
   selectedProducts: SelectedProduct[];
   onProductsChange: (products: SelectedProduct[]) => void;
   onTotalChange: (total: number) => void;
+  allowNegativeStock?: boolean;
+  onValidationChange?: (errors: StockValidationError[]) => void;
 }
 
 export function ProductSaleSelector({
   selectedProducts,
   onProductsChange,
   onTotalChange,
+  allowNegativeStock = false,
+  onValidationChange,
 }: ProductSaleSelectorProps) {
   const { data: products = [], isLoading } = useProducts(false); // Only active products
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
 
-  // Calculate total whenever selected products change
+  // Validate stock and calculate total whenever selected products change
   useEffect(() => {
     const total = selectedProducts.reduce(
       (sum, item) => sum + item.product.sale_price * item.quantity,
       0
     );
     onTotalChange(total);
-  }, [selectedProducts, onTotalChange]);
+
+    // Validate stock for all selected products
+    const errors: StockValidationError[] = [];
+    const updatedProducts = selectedProducts.map(item => {
+      const available = item.product.stock_quantity;
+      if (item.quantity > available && !allowNegativeStock) {
+        const error: StockValidationError = {
+          productId: item.product.id,
+          productName: item.product.name,
+          requested: item.quantity,
+          available,
+          message: `Quantidade solicitada (${item.quantity}) excede o estoque disponível (${available})`,
+        };
+        errors.push(error);
+        return { ...item, stockError: error.message };
+      }
+      return { ...item, stockError: undefined };
+    });
+
+    // Only update if there are changes to stockError
+    const hasErrorChanges = updatedProducts.some(
+      (updated, idx) => updated.stockError !== selectedProducts[idx].stockError
+    );
+    if (hasErrorChanges) {
+      onProductsChange(updatedProducts);
+    }
+
+    onValidationChange?.(errors);
+  }, [selectedProducts, onTotalChange, allowNegativeStock, onValidationChange]);
 
   const handleAddProduct = () => {
     if (!selectedProductId) return;
@@ -77,11 +119,18 @@ export function ProductSaleSelector({
     if (newQuantity < 1) return;
     
     const product = selectedProducts.find((sp) => sp.product.id === productId);
-    if (product && newQuantity > product.product.stock_quantity) return;
+    if (!product) return;
+
+    // If negative stock is not allowed, cap at available stock
+    const maxAllowed = allowNegativeStock 
+      ? Infinity 
+      : product.product.stock_quantity;
+    
+    const finalQuantity = Math.min(newQuantity, maxAllowed);
 
     onProductsChange(
       selectedProducts.map((sp) =>
-        sp.product.id === productId ? { ...sp, quantity: newQuantity } : sp
+        sp.product.id === productId ? { ...sp, quantity: finalQuantity } : sp
       )
     );
   };
@@ -226,55 +275,63 @@ export function ProductSaleSelector({
             {selectedProducts.map((item) => (
               <div
                 key={item.product.id}
-                className="flex items-center justify-between p-3"
+                className={`flex flex-col p-3 ${item.stockError ? 'bg-destructive/5' : ''}`}
               >
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{item.product.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(item.product.sale_price)} × {item.quantity}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{item.product.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(item.product.sale_price)} × {item.quantity}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() =>
+                          handleQuantityChange(item.product.id, item.quantity - 1)
+                        }
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-8 text-center text-sm">{item.quantity}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() =>
+                          handleQuantityChange(item.product.id, item.quantity + 1)
+                        }
+                        disabled={!allowNegativeStock && item.quantity >= item.product.stock_quantity}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <span className="font-medium text-sm w-24 text-right">
+                      {formatCurrency(item.product.sale_price * item.quantity)}
+                    </span>
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() =>
-                        handleQuantityChange(item.product.id, item.quantity - 1)
-                      }
-                      disabled={item.quantity <= 1}
+                      size="sm"
+                      className="text-destructive hover:text-destructive h-7 px-2"
+                      onClick={() => handleRemoveProduct(item.product.id)}
                     >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="w-8 text-center text-sm">{item.quantity}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() =>
-                        handleQuantityChange(item.product.id, item.quantity + 1)
-                      }
-                      disabled={item.quantity >= item.product.stock_quantity}
-                    >
-                      <Plus className="h-3 w-3" />
+                      Remover
                     </Button>
                   </div>
-                  <span className="font-medium text-sm w-24 text-right">
-                    {formatCurrency(item.product.sale_price * item.quantity)}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive h-7 px-2"
-                    onClick={() => handleRemoveProduct(item.product.id)}
-                  >
-                    Remover
-                  </Button>
                 </div>
+                {item.stockError && (
+                  <div className="flex items-center gap-2 mt-2 text-destructive text-xs">
+                    <XCircle className="h-3 w-3" />
+                    <span>{item.stockError}</span>
+                  </div>
+                )}
               </div>
             ))}
             <div className="flex items-center justify-between p-3 bg-muted/50">

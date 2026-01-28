@@ -85,14 +85,65 @@ export function useSale(id: string | undefined) {
   });
 }
 
+// Stock validation error type
+export interface SaleStockValidationError {
+  productId: string;
+  productName: string;
+  requestedQuantity: number;
+  availableStock: number;
+}
+
 // Create sale with items and update stock
 export function useCreateSale() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: SaleFormData) => {
+    mutationFn: async (data: SaleFormData & { allowNegativeStock?: boolean }) => {
       const clinicId = await getClinicId();
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get clinic settings to check if negative stock is allowed
+      const { data: clinic } = await supabase
+        .from("clinics")
+        .select("allow_negative_stock")
+        .eq("id", clinicId)
+        .single();
+      
+      const allowNegative = data.allowNegativeStock ?? clinic?.allow_negative_stock ?? false;
+      
+      // Validate stock for all items BEFORE creating the sale
+      const stockValidationErrors: SaleStockValidationError[] = [];
+      
+      for (const item of data.items) {
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("id, name, stock_quantity")
+          .eq("id", item.product_id)
+          .single();
+        
+        if (productError) {
+          throw new Error(`Produto não encontrado: ${item.product_name}`);
+        }
+        
+        const currentStock = Number(product.stock_quantity) || 0;
+        
+        if (item.quantity > currentStock && !allowNegative) {
+          stockValidationErrors.push({
+            productId: product.id,
+            productName: product.name,
+            requestedQuantity: item.quantity,
+            availableStock: currentStock,
+          });
+        }
+      }
+      
+      // If there are stock validation errors, throw them all
+      if (stockValidationErrors.length > 0) {
+        const errorMessages = stockValidationErrors.map(
+          e => `${e.productName}: solicitado ${e.requestedQuantity}, disponível ${e.availableStock}`
+        ).join('; ');
+        throw new Error(`Estoque insuficiente: ${errorMessages}`);
+      }
       
       // Calculate totals
       const subtotal = data.items.reduce((sum, item) => {
@@ -151,44 +202,55 @@ export function useCreateSale() {
       
       // Create stock movements for each item (reduce stock)
       for (const item of data.items) {
-        // Get current stock
-        const { data: product } = await supabase
+        // Get current stock (fresh read to handle race conditions)
+        const { data: product, error: stockReadError } = await supabase
           .from("products")
-          .select("stock_quantity, cost_price")
+          .select("stock_quantity, cost_price, name")
           .eq("id", item.product_id)
           .single();
         
-        if (product) {
-          const previousQty = Number(product.stock_quantity) || 0;
-          const newQty = previousQty - item.quantity;
-          
-          // Create movement
-          await supabase
-            .from("stock_movements")
-            .insert({
-              clinic_id: clinicId,
-              product_id: item.product_id,
-              movement_type: 'venda',
-              quantity: item.quantity,
-              previous_quantity: previousQty,
-              new_quantity: newQty,
-              unit_cost: product.cost_price || 0,
-              total_cost: (product.cost_price || 0) * item.quantity,
-              reason: 'Venda para cliente',
-              reference_type: 'sale',
-              reference_id: sale.id,
-              created_by: user?.id || null,
-            });
-          
-          // Update product stock
-          await supabase
-            .from("products")
-            .update({ 
-              stock_quantity: newQty,
-              updated_at: new Date().toISOString() 
-            })
-            .eq("id", item.product_id);
+        if (stockReadError || !product) {
+          throw new Error(`Erro ao verificar estoque de ${item.product_name}`);
         }
+        
+        const previousQty = Number(product.stock_quantity) || 0;
+        const newQty = previousQty - item.quantity;
+        
+        // Final validation before update (race condition protection)
+        if (newQty < 0 && !allowNegative) {
+          throw new Error(
+            `Estoque insuficiente para "${product.name}": ` +
+            `solicitado ${item.quantity}, disponível ${previousQty}. ` +
+            `A venda não pode ser concluída.`
+          );
+        }
+        
+        // Create movement
+        await supabase
+          .from("stock_movements")
+          .insert({
+            clinic_id: clinicId,
+            product_id: item.product_id,
+            movement_type: 'venda',
+            quantity: item.quantity,
+            previous_quantity: previousQty,
+            new_quantity: newQty,
+            unit_cost: product.cost_price || 0,
+            total_cost: (product.cost_price || 0) * item.quantity,
+            reason: 'Venda para cliente',
+            reference_type: 'sale',
+            reference_id: sale.id,
+            created_by: user?.id || null,
+          });
+        
+        // Update product stock
+        await supabase
+          .from("products")
+          .update({ 
+            stock_quantity: newQty,
+            updated_at: new Date().toISOString() 
+          })
+          .eq("id", item.product_id);
       }
       
       // Create finance transaction if payment is made

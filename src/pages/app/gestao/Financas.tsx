@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { DollarSign, Plus, Search, TrendingUp, TrendingDown, Wallet, Package, ArrowUpCircle, ArrowDownCircle, Edit, Calendar, CreditCard, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,12 +43,15 @@ import { transactionTypeLabels, paymentMethods, transactionOrigins, packageStatu
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MarginAlertSettings } from "@/components/config/MarginAlertSettings";
+import { ProductSaleSelector, type SelectedProduct } from "@/components/gestao/ProductSaleSelector";
+import { useCreateSale } from "@/hooks/useSales";
 
 export default function Financas() {
   const { data: transactions = [], isLoading } = useTodayTransactions();
   const { data: categories = [] } = useFinanceCategories();
   const { data: stats = { todayRevenue: 0, todayExpenses: 0, todayBalance: 0, transactionCount: 0 } } = useFinanceStats();
   const createTransaction = useCreateTransaction();
+  const createSale = useCreateSale();
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -67,6 +70,15 @@ export default function Financas() {
     notes: "",
   });
 
+  // Product sale state
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [productSaleTotal, setProductSaleTotal] = useState(0);
+
+  const handleProductTotalChange = useCallback((total: number) => {
+    setProductSaleTotal(total);
+    setFormData(prev => ({ ...prev, amount: total.toString() }));
+  }, []);
+
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === "all" || transaction.type === typeFilter;
@@ -74,22 +86,47 @@ export default function Financas() {
   });
 
   const handleSubmitTransaction = async () => {
-    if (!formData.description || !formData.amount) {
-      return;
+    const isProductSale = transactionType === 'entrada' && formData.origin === 'produto';
+    
+    // For product sales, require selected products
+    if (isProductSale) {
+      if (selectedProducts.length === 0) return;
+      
+      // Create sale with products (this handles stock updates and transaction creation)
+      await createSale.mutateAsync({
+        sale_date: formData.date,
+        payment_method: formData.payment_method || undefined,
+        payment_status: 'pago',
+        notes: formData.notes || undefined,
+        items: selectedProducts.map(sp => ({
+          product_id: sp.product.id,
+          product_name: sp.product.name,
+          quantity: sp.quantity,
+          unit_price: sp.product.sale_price,
+        })),
+      });
+    } else {
+      // Regular transaction
+      if (!formData.description || !formData.amount) return;
+      
+      await createTransaction.mutateAsync({
+        type: transactionType,
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        transaction_date: formData.date,
+        category_id: formData.category_id || undefined,
+        payment_method: formData.payment_method || undefined,
+        origin: formData.origin || undefined,
+        notes: formData.notes || undefined,
+      });
     }
 
-    await createTransaction.mutateAsync({
-      type: transactionType,
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      transaction_date: formData.date,
-      category_id: formData.category_id || undefined,
-      payment_method: formData.payment_method || undefined,
-      origin: formData.origin || undefined,
-      notes: formData.notes || undefined,
-    });
-
     // Reset form
+    resetTransactionForm();
+    setIsTransactionDialogOpen(false);
+  };
+
+  const resetTransactionForm = () => {
     setFormData({
       description: "",
       amount: "",
@@ -99,7 +136,8 @@ export default function Financas() {
       origin: "",
       notes: "",
     });
-    setIsTransactionDialogOpen(false);
+    setSelectedProducts([]);
+    setProductSaleTotal(0);
   };
 
   const formatCurrency = (value: number) => {
@@ -246,27 +284,45 @@ export default function Financas() {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Descrição *</Label>
-                    <Input 
-                      id="description" 
-                      placeholder="Ex: Consulta - Maria Silva"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="amount">Valor (R$) *</Label>
-                      <Input 
-                        id="amount" 
-                        type="number" 
-                        min="0" 
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                      />
-                    </div>
+                  {/* Hide description/amount for product sales - they're auto-generated */}
+                  {!(transactionType === 'entrada' && formData.origin === 'produto') && (
+                    <>
+                      <div className="grid gap-2">
+                        <Label htmlFor="description">Descrição *</Label>
+                        <Input 
+                          id="description" 
+                          placeholder="Ex: Consulta - Maria Silva"
+                          value={formData.description}
+                          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="amount">Valor (R$) *</Label>
+                          <Input 
+                            id="amount" 
+                            type="number" 
+                            min="0" 
+                            step="0.01"
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="date">Data *</Label>
+                          <Input 
+                            id="date" 
+                            type="date" 
+                            value={formData.date}
+                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Date field for product sales */}
+                  {transactionType === 'entrada' && formData.origin === 'produto' && (
                     <div className="grid gap-2">
                       <Label htmlFor="date">Data *</Label>
                       <Input 
@@ -276,7 +332,8 @@ export default function Financas() {
                         onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                       />
                     </div>
-                  </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="category">Categoria</Label>
@@ -316,7 +373,14 @@ export default function Financas() {
                       <Label htmlFor="origin">Origem</Label>
                       <Select
                         value={formData.origin}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, origin: value }))}
+                        onValueChange={(value) => {
+                          setFormData(prev => ({ ...prev, origin: value }));
+                          // Reset product selection when origin changes
+                          if (value !== 'produto') {
+                            setSelectedProducts([]);
+                            setProductSaleTotal(0);
+                          }
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
@@ -328,6 +392,15 @@ export default function Financas() {
                         </SelectContent>
                       </Select>
                     </div>
+                  )}
+                  
+                  {/* Product Sale Selector */}
+                  {transactionType === 'entrada' && formData.origin === 'produto' && (
+                    <ProductSaleSelector
+                      selectedProducts={selectedProducts}
+                      onProductsChange={setSelectedProducts}
+                      onTotalChange={handleProductTotalChange}
+                    />
                   )}
                   <div className="grid gap-2">
                     <Label htmlFor="notes">Observações</Label>
@@ -345,9 +418,14 @@ export default function Financas() {
                   </Button>
                   <Button 
                     onClick={handleSubmitTransaction}
-                    disabled={createTransaction.isPending || !formData.description || !formData.amount}
+                    disabled={
+                      (createTransaction.isPending || createSale.isPending) || 
+                      (transactionType === 'entrada' && formData.origin === 'produto' 
+                        ? selectedProducts.length === 0 
+                        : (!formData.description || !formData.amount))
+                    }
                   >
-                    {createTransaction.isPending ? (
+                    {(createTransaction.isPending || createSale.isPending) ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : null}
                     Salvar

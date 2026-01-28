@@ -435,6 +435,7 @@ export default function Financas() {
                       selectedProducts={selectedProducts}
                       onProductsChange={setSelectedProducts}
                       onTotalChange={handleProductTotalChange}
+                      disabled={createSale.isPending}
                     />
                   )}
                   <div className="grid gap-2">

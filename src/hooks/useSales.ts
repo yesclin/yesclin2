@@ -91,6 +91,56 @@ export function useSale(id: string | undefined) {
   });
 }
 
+// Fetch sale by linked transaction_id
+export function useSaleByTransactionId(transactionId: string | undefined) {
+  return useQuery({
+    queryKey: ["sales", "by-transaction", transactionId],
+    queryFn: async () => {
+      if (!transactionId) return null;
+      
+      const { data, error } = await supabase
+        .from("sales")
+        .select(`
+          *,
+          patients(id, full_name),
+          professionals(id, full_name),
+          sale_items(*)
+        `)
+        .eq("transaction_id", transactionId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as Sale | null;
+    },
+    enabled: !!transactionId,
+  });
+}
+
+// Fetch sale by stock movement reference
+export function useSaleByReferenceId(referenceId: string | undefined, referenceType: string | undefined) {
+  return useQuery({
+    queryKey: ["sales", "by-reference", referenceId],
+    queryFn: async () => {
+      if (!referenceId || referenceType !== 'sale') return null;
+      
+      const { data, error } = await supabase
+        .from("sales")
+        .select(`
+          *,
+          patients(id, full_name),
+          professionals(id, full_name),
+          sale_items(*)
+        `)
+        .eq("id", referenceId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as Sale | null;
+    },
+    enabled: !!referenceId && referenceType === 'sale',
+  });
+}
+
 export function useSalesStats(startDate?: string, endDate?: string) {
   const today = format(new Date(), "yyyy-MM-dd");
   const start = startDate || today;
@@ -225,6 +275,16 @@ export function useUpdateSaleStatus() {
         .eq("id", id);
       
       if (error) throw error;
+      
+      // Log audit entry
+      await supabase.functions.invoke('log-access', {
+        body: {
+          action: 'SALE_STATUS_UPDATED',
+          resource: `sales/${id}?status=${paymentStatus}`,
+          user_agent: navigator.userAgent,
+        },
+      });
+      
       return { id };
     },
     onSuccess: () => {
@@ -306,6 +366,15 @@ export function useCancelSale() {
         .eq("id", id);
       
       if (updateError) throw updateError;
+      
+      // Log audit entry for sale cancellation
+      await supabase.functions.invoke('log-access', {
+        body: {
+          action: 'SALE_CANCELLED',
+          resource: `sales/${id}`,
+          user_agent: navigator.userAgent,
+        },
+      });
       
       return { id };
     },

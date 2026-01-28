@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { DollarSign, Plus, Search, TrendingUp, TrendingDown, Wallet, Package, ArrowUpCircle, ArrowDownCircle, Edit, Calendar, CreditCard, Users, Loader2 } from "lucide-react";
+import { DollarSign, Plus, Search, TrendingUp, TrendingDown, Wallet, Package, ArrowUpCircle, ArrowDownCircle, Edit, Calendar, CreditCard, Users, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +45,9 @@ import { ptBR } from "date-fns/locale";
 import { MarginAlertSettings } from "@/components/config/MarginAlertSettings";
 import { ProductSaleSelector, type SelectedProduct } from "@/components/gestao/ProductSaleSelector";
 import { useCreateSale } from "@/hooks/useSales";
+import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Financas() {
   const { data: transactions = [], isLoading } = useTodayTransactions();
@@ -58,6 +61,10 @@ export default function Financas() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<TransactionType>("entrada");
+  
+  // Sale details dialog state
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [isSaleDialogOpen, setIsSaleDialogOpen] = useState(false);
   
   // Form state for new transaction
   const [formData, setFormData] = useState({
@@ -73,6 +80,34 @@ export default function Financas() {
   // Product sale state
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [productSaleTotal, setProductSaleTotal] = useState(0);
+  
+  // Fetch sales linked to current transactions
+  const transactionIds = transactions.map(t => t.id);
+  const { data: linkedSales = [] } = useQuery({
+    queryKey: ["linked-sales", transactionIds],
+    queryFn: async () => {
+      if (transactionIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from("sales")
+        .select("id, transaction_id, sale_number")
+        .in("transaction_id", transactionIds);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: transactionIds.length > 0,
+  });
+  
+  // Create a map of transaction_id -> sale for quick lookup
+  const saleByTransactionId = new Map(
+    linkedSales.map((s) => [s.transaction_id, s])
+  );
+  
+  const handleViewSale = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    setIsSaleDialogOpen(true);
+  };
 
   const handleProductTotalChange = useCallback((total: number) => {
     setProductSaleTotal(total);
@@ -456,38 +491,54 @@ export default function Financas() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>
-                          {format(new Date(transaction.transaction_date), "dd/MM/yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="font-medium">{transaction.description}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={transaction.type === 'entrada' ? 'default' : 'destructive'}
-                          >
-                            {transaction.type === 'entrada' && <ArrowDownCircle className="h-3 w-3 mr-1" />}
-                            {transaction.type === 'saida' && <ArrowUpCircle className="h-3 w-3 mr-1" />}
-                            {transactionTypeLabels[transaction.type]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <CreditCard className="h-3 w-3 text-muted-foreground" />
-                            {getPaymentMethodLabel(transaction.payment_method)}
-                          </div>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.type === 'saida' ? '- ' : '+ '}
-                          {formatCurrency(transaction.amount)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredTransactions.map((transaction) => {
+                      const linkedSale = saleByTransactionId.get(transaction.id);
+                      return (
+                        <TableRow key={transaction.id}>
+                          <TableCell>
+                            {format(new Date(transaction.transaction_date), "dd/MM/yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col">
+                              <span>{transaction.description}</span>
+                              {linkedSale && (
+                                <button
+                                  onClick={() => handleViewSale(linkedSale.id)}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Ver venda {linkedSale.sale_number}
+                                </button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={transaction.type === 'entrada' ? 'default' : 'destructive'}
+                            >
+                              {transaction.type === 'entrada' && <ArrowDownCircle className="h-3 w-3 mr-1" />}
+                              {transaction.type === 'saida' && <ArrowUpCircle className="h-3 w-3 mr-1" />}
+                              {transactionTypeLabels[transaction.type]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <CreditCard className="h-3 w-3 text-muted-foreground" />
+                              {getPaymentMethodLabel(transaction.payment_method)}
+                            </div>
+                          </TableCell>
+                          <TableCell className={`text-right font-medium ${transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
+                            {transaction.type === 'saida' ? '- ' : '+ '}
+                            {formatCurrency(transaction.amount)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -677,6 +728,13 @@ export default function Financas() {
           <MarginAlertSettings />
         </TabsContent>
       </Tabs>
+      
+      {/* Sale Details Dialog */}
+      <SaleDetailsDialog
+        saleId={selectedSaleId}
+        open={isSaleDialogOpen}
+        onOpenChange={setIsSaleDialogOpen}
+      />
     </div>
   );
 }

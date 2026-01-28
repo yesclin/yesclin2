@@ -33,6 +33,10 @@ const ACTION_LABELS: Record<string, { label: string; color: 'default' | 'seconda
   CREATE: { label: 'Criação', color: 'default' },
   UPDATE: { label: 'Atualização', color: 'default' },
   DELETE: { label: 'Exclusão', color: 'destructive' },
+  // Sales actions
+  SALE_CREATED: { label: 'Venda Realizada', color: 'default' },
+  SALE_STATUS_UPDATED: { label: 'Status de Venda Atualizado', color: 'secondary' },
+  SALE_CANCELLED: { label: 'Venda Cancelada', color: 'destructive' },
 };
 
 export function useAccessLogs() {

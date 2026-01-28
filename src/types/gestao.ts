@@ -154,7 +154,7 @@ export const transactionOrigins = [
   { value: 'consulta', label: 'Consulta' },
   { value: 'procedimento', label: 'Procedimento' },
   { value: 'pacote', label: 'Pacote' },
-  { value: 'produto', label: 'Venda de Produto' },
+  { value: 'produto', label: 'Venda de Produtos' },
   { value: 'outros', label: 'Outros' },
 ];
 

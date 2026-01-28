@@ -119,15 +119,15 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // Check if user can perform action on module
   const can = useCallback((module: AppModule, action: AppAction = "view"): boolean => {
-    // If still loading, allow access (will re-check after load)
-    if (state.isLoading) return true;
+    // If still loading, deny access (avoid optimistic UI that could reveal privileged UI)
+    if (state.isLoading) return false;
     
     // Admin has full access
     if (state.isAdmin) return true;
     
-    // If no permissions loaded (no user or no role), allow access by default
-    // This prevents locking users out before permissions are set up
-    if (state.permissions.length === 0) return true;
+    // If no permissions loaded (no user or no role), deny by default
+    // Access control must be enforced server-side, and UI should not assume access.
+    if (state.permissions.length === 0) return false;
     
     const perm = state.permissions.find(p => p.module === module);
     if (!perm) return false;

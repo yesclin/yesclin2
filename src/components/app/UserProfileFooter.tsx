@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useClinicUsers";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type UserRole = "admin" | "owner" | "profissional" | "recepcionista";
 
@@ -44,10 +45,12 @@ const roleColors: Record<UserRole, string> = {
 export function UserProfileFooter() {
   const navigate = useNavigate();
   const { user, isLoading } = useCurrentUser();
+  const { isAdmin } = usePermissions();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   
-  const canImpersonate = user?.role === "admin" || user?.role === "owner";
+  // UI-only gating; server-side access control must still be enforced.
+  const canImpersonate = !!user && isAdmin;
   
   const getInitials = (name: string) => {
     return name
@@ -96,7 +99,7 @@ export function UserProfileFooter() {
     return null;
   }
 
-  const isAdminRole = user.role === "admin" || user.role === "owner";
+  const isAdminRole = isAdmin;
 
   return (
     <>

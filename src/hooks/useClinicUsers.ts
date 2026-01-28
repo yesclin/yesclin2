@@ -24,6 +24,13 @@ export interface CreateUserData {
 
 const MAX_USERS_PER_CLINIC = 3;
 
+const ROLE_PRIORITY: Record<ClinicUser["role"], number> = {
+  owner: 3,
+  admin: 2,
+  profissional: 1,
+  recepcionista: 1,
+};
+
 export function useClinicUsers() {
   const [users, setUsers] = useState<ClinicUser[]>([]);
   const [currentUser, setCurrentUser] = useState<ClinicUser | null>(null);
@@ -104,8 +111,10 @@ export function useClinicUsers() {
         const role = (userRole?.role || "profissional") as ClinicUser["role"];
         
         // The first owner/admin created with the clinic is the primary admin
-        const isPrimaryAdmin = role === "owner" || 
-          (role === "admin" && p.created_at === clinic?.created_at);
+        const isElevated = ROLE_PRIORITY[role] >= ROLE_PRIORITY.admin;
+        const isPrimaryAdmin = isElevated && (
+          ROLE_PRIORITY[role] === ROLE_PRIORITY.owner || p.created_at === clinic?.created_at
+        );
 
         return {
           id: p.id,
@@ -125,10 +134,8 @@ export function useClinicUsers() {
       userList.sort((a, b) => {
         if (a.is_primary_admin && !b.is_primary_admin) return -1;
         if (!a.is_primary_admin && b.is_primary_admin) return 1;
-        if (a.role === "owner" && b.role !== "owner") return -1;
-        if (a.role !== "owner" && b.role === "owner") return 1;
-        if (a.role === "admin" && b.role !== "admin") return -1;
-        if (a.role !== "admin" && b.role === "admin") return 1;
+        const prioDiff = (ROLE_PRIORITY[b.role] ?? 0) - (ROLE_PRIORITY[a.role] ?? 0);
+        if (prioDiff !== 0) return prioDiff;
         return a.full_name.localeCompare(b.full_name);
       });
 
@@ -158,7 +165,7 @@ export function useClinicUsers() {
 
   const activeUsersCount = users.filter(u => u.is_active).length;
   const canCreateUser = activeUsersCount < MAX_USERS_PER_CLINIC;
-  const isAdmin = currentUser?.role === "owner" || currentUser?.role === "admin";
+  const isAdmin = !!currentUser?.role && (ROLE_PRIORITY[currentUser.role] >= ROLE_PRIORITY.admin);
 
   const logAuditAction = useCallback(async (
     action: string,

@@ -109,8 +109,8 @@ export function AppointmentDialog({
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
   
   // RBAC
-  const { role } = usePermissions();
-  const isAdmin = role === 'admin' || role === 'owner';
+  // NOTE: UI-only gating. All data operations must still be protected server-side.
+  const { isAdmin } = usePermissions();
   
   // Fetch procedures from database
   const { data: procedures = [], isLoading: proceduresLoading } = useProceduresList(false);

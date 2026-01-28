@@ -4342,6 +4342,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          appointment_id: string | null
           clinic_id: string
           created_at: string
           created_by: string | null
@@ -4361,6 +4362,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_id?: string | null
           clinic_id: string
           created_at?: string
           created_by?: string | null
@@ -4380,6 +4382,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_id?: string | null
           clinic_id?: string
           created_at?: string
           created_by?: string | null
@@ -4404,6 +4407,13 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "finance_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
           {

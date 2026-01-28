@@ -644,6 +644,7 @@ export type Database = {
           address_state: string | null
           address_street: string | null
           address_zip: string | null
+          allow_negative_stock: boolean
           auto_material_consumption: boolean | null
           cnpj: string | null
           cpf: string | null
@@ -673,6 +674,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          allow_negative_stock?: boolean
           auto_material_consumption?: boolean | null
           cnpj?: string | null
           cpf?: string | null
@@ -702,6 +704,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          allow_negative_stock?: boolean
           auto_material_consumption?: boolean | null
           cnpj?: string | null
           cpf?: string | null

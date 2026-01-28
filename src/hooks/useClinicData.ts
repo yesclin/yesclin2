@@ -63,7 +63,22 @@ export function useClinicData() {
           .maybeSingle();
 
         if (clinicData) {
-          setClinic(clinicData);
+          // Generate signed URL for logo if exists (bucket is now private)
+          let signedLogoUrl = clinicData.logo_url;
+          if (clinicData.logo_url) {
+            // Extract path from URL (format: .../clinic-logos/clinicId/logo-xxx.ext)
+            const match = clinicData.logo_url.match(/clinic-logos\/(.+)$/);
+            if (match) {
+              const path = match[1];
+              const { data: signedData } = await supabase.storage
+                .from('clinic-logos')
+                .createSignedUrl(path, 3600); // 1 hour expiration
+              if (signedData?.signedUrl) {
+                signedLogoUrl = signedData.signedUrl;
+              }
+            }
+          }
+          setClinic({ ...clinicData, logo_url: signedLogoUrl });
         }
       } catch (error) {
         console.error("Error fetching clinic data:", error);

@@ -159,7 +159,7 @@ export const stockMovementReasons: Record<StockMovementType, string[]> = {
   entrada: ['Compra', 'Doação', 'Transferência', 'Ajuste de inventário', 'Devolução de cliente'],
   saida: ['Uso interno', 'Perda', 'Vencimento', 'Transferência', 'Ajuste de inventário'],
   ajuste: ['Correção de inventário', 'Contagem física', 'Erro de sistema'],
-  venda: ['Venda para cliente', 'Venda para paciente'],
+  venda: ['Venda'],
   devolucao: ['Devolução de fornecedor', 'Produto com defeito'],
 };
 

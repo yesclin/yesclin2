@@ -233,21 +233,22 @@ serve(async (req) => {
         const previousQty = productData.stock_quantity;
         const newQty = previousQty - item.quantity;
 
-        // Create stock movement (type = saida/OUT)
+        // Create stock movement (type = venda/OUT)
         const { data: movement, error: movementError } = await serviceClient
           .from("stock_movements")
           .insert({
             clinic_id: clinicId,
             product_id: item.product_id,
-            movement_type: "venda", // OUT for sale
+            movement_type: "venda",
             quantity: item.quantity,
             previous_quantity: previousQty,
             new_quantity: newQty,
             unit_cost: productData.cost_price,
             total_cost: productData.cost_price * item.quantity,
-            reason: "Venda para cliente", // SALE reason
+            reason: "Venda",
             reference_type: "sale",
             reference_id: saleId,
+            notes: `Venda ${saleNumber}`,
             created_by: user.id,
           })
           .select("id")

@@ -511,12 +511,13 @@ export default function Estoque() {
                 <TableBody>
                   {movements.map((movement) => {
                     const product = products.find(p => p.id === movement.product_id);
+                    const isSale = movement.reference_type === 'sale';
                     return (
                       <TableRow key={movement.id}>
                         <TableCell>
                           {format(new Date(movement.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                         </TableCell>
-                        <TableCell className="font-medium">{product?.name || "-"}</TableCell>
+                        <TableCell className="font-medium">{product?.name || (movement as any).products?.name || "-"}</TableCell>
                         <TableCell>
                           <Badge 
                             variant={
@@ -533,11 +534,18 @@ export default function Estoque() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {(movement.movement_type === 'saida' || movement.movement_type === 'venda') ? '-' : ''}{movement.quantity} {product?.unit}
+                          {(movement.movement_type === 'saida' || movement.movement_type === 'venda') ? '-' : ''}{movement.quantity} {product?.unit || (movement as any).products?.unit}
                         </TableCell>
-                        <TableCell>{movement.reason}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span>{movement.reason}</span>
+                            {isSale && movement.notes && (
+                              <span className="text-xs text-muted-foreground">{movement.notes}</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
-                          {movement.unit_cost ? `R$ ${movement.unit_cost.toFixed(2)}` : "-"}
+                          {movement.unit_cost ? `R$ ${Number(movement.unit_cost).toFixed(2)}` : "-"}
                         </TableCell>
                       </TableRow>
                     );

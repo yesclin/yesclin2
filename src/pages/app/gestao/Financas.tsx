@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { DollarSign, Plus, Search, TrendingUp, TrendingDown, Wallet, Package, ArrowUpCircle, ArrowDownCircle, Edit, Calendar, CreditCard, Users, Loader2, ExternalLink } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { DollarSign, Plus, Search, TrendingUp, TrendingDown, Wallet, Package, ArrowUpCircle, ArrowDownCircle, Edit, Calendar, CreditCard, Users, Loader2, ExternalLink, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,19 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { 
   useTodayTransactions, 
   useFinanceCategories, 
@@ -48,6 +61,8 @@ import { useCreateSale } from "@/hooks/useSales";
 import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { usePatients } from "@/hooks/usePatients";
+import { cn } from "@/lib/utils";
 
 export default function Financas() {
   const { data: transactions = [], isLoading } = useTodayTransactions();
@@ -80,6 +95,27 @@ export default function Financas() {
   // Product sale state
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [productSaleTotal, setProductSaleTotal] = useState(0);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  
+  // Fetch patients for selector
+  const { data: patients = [] } = usePatients();
+  
+  // Filter patients by search query
+  const filteredPatients = useMemo(() => {
+    if (!patientSearchQuery) return patients.slice(0, 50);
+    const query = patientSearchQuery.toLowerCase();
+    return patients.filter(p => 
+      p.full_name.toLowerCase().includes(query)
+    ).slice(0, 50);
+  }, [patients, patientSearchQuery]);
+  
+  // Get selected patient name
+  const selectedPatient = useMemo(() => 
+    patients.find(p => p.id === selectedPatientId),
+    [patients, selectedPatientId]
+  );
   
   // Fetch sales linked to current transactions
   const transactionIds = transactions.map(t => t.id);
@@ -128,8 +164,10 @@ export default function Financas() {
       if (selectedProducts.length === 0) return;
       
       // Create sale with products (this handles stock updates and transaction creation)
+      // Patient is optional for manual sales
       await createSale.mutateAsync({
         sale_date: formData.date,
+        patient_id: selectedPatientId || undefined,
         payment_method: formData.payment_method || undefined,
         payment_status: 'pago',
         notes: formData.notes || undefined,
@@ -173,6 +211,8 @@ export default function Financas() {
     });
     setSelectedProducts([]);
     setProductSaleTotal(0);
+    setSelectedPatientId(null);
+    setPatientSearchQuery("");
   };
 
   const formatCurrency = (value: number) => {
@@ -410,10 +450,12 @@ export default function Financas() {
                         value={formData.origin}
                         onValueChange={(value) => {
                           setFormData(prev => ({ ...prev, origin: value }));
-                          // Reset product selection when origin changes
+                          // Reset product and patient selection when origin changes
                           if (value !== 'produto') {
                             setSelectedProducts([]);
                             setProductSaleTotal(0);
+                            setSelectedPatientId(null);
+                            setPatientSearchQuery("");
                           }
                         }}
                       >
@@ -426,6 +468,87 @@ export default function Financas() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+                  
+                  {/* Patient Selector for Product Sales */}
+                  {transactionType === 'entrada' && formData.origin === 'produto' && (
+                    <div className="grid gap-2">
+                      <Label>Paciente (opcional)</Label>
+                      <Popover open={patientSearchOpen} onOpenChange={setPatientSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={patientSearchOpen}
+                            className="w-full justify-between font-normal"
+                          >
+                            {selectedPatient ? (
+                              <span className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                {selectedPatient.full_name}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">Selecionar paciente...</span>
+                            )}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                              placeholder="Buscar paciente por nome..."
+                              value={patientSearchQuery}
+                              onValueChange={setPatientSearchQuery}
+                            />
+                            <CommandList>
+                              <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {selectedPatientId && (
+                                  <CommandItem
+                                    value="clear"
+                                    onSelect={() => {
+                                      setSelectedPatientId(null);
+                                      setPatientSearchOpen(false);
+                                    }}
+                                    className="text-muted-foreground"
+                                  >
+                                    <span className="text-sm">Limpar seleção</span>
+                                  </CommandItem>
+                                )}
+                                {filteredPatients.map((patient) => (
+                                  <CommandItem
+                                    key={patient.id}
+                                    value={patient.id}
+                                    onSelect={() => {
+                                      setSelectedPatientId(patient.id);
+                                      setPatientSearchOpen(false);
+                                      setPatientSearchQuery("");
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className={cn(
+                                        "font-medium",
+                                        selectedPatientId === patient.id && "text-primary"
+                                      )}>
+                                        {patient.full_name}
+                                      </span>
+                                      {patient.phone && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {patient.phone}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <p className="text-xs text-muted-foreground">
+                        Vincule a venda a um paciente ou deixe em branco para venda avulsa
+                      </p>
                     </div>
                   )}
                   

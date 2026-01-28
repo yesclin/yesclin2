@@ -174,11 +174,22 @@ export function useCreateSale() {
       return response.sale;
     },
     onSuccess: () => {
+      // Invalidate sales queries
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
+      
+      // Invalidate stock/product queries for immediate UI update
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-products"] });
       queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-categories"] });
+      
+      // Invalidate finance queries for dashboard update
       queryClient.invalidateQueries({ queryKey: ["finance-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
+      
       toast.success("Venda registrada com sucesso!");
     },
     onError: (error: Error) => {
@@ -299,10 +310,16 @@ export function useCancelSale() {
       return { id };
     },
     onSuccess: () => {
+      // Invalidate all relevant queries after sale cancellation
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-products"] });
       queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
       toast.success("Venda cancelada e estoque restaurado!");
     },
     onError: (error: Error) => {

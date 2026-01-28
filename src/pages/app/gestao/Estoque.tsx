@@ -31,23 +31,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useStockData } from "@/hooks/useGestaoMockData";
-import { stockUnits, movementTypeLabels, movementReasons, type MovementType } from "@/types/gestao";
+import { useStockData } from "@/hooks/useStockData";
+import { stockUnits, movementReasons, type MovementType } from "@/types/gestao";
+import { stockMovementTypeLabels, type StockMovementType } from "@/types/inventory";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Estoque() {
-  const { categories, products, movements, lowStockProducts, outOfStockProducts, expiringProducts, stats } = useStockData();
+  const { categories, products, movements, lowStockProducts, outOfStockProducts, expiringProducts, stats, isLoading } = useStockData();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [movementType, setMovementType] = useState<MovementType>("entrada");
-
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category_id === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || 
       (statusFilter === "active" && product.is_active) ||
       (statusFilter === "inactive" && !product.is_active) ||
@@ -66,10 +66,38 @@ export default function Estoque() {
     return <Badge variant="outline" className="border-green-500 text-green-600">OK</Badge>;
   };
 
-  const getCategoryName = (categoryId?: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    return category?.name || "-";
+  const getCategoryName = (category?: string | null) => {
+    return category || "Sem categoria";
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Package className="h-6 w-6 text-primary" />
+            Controle de Estoque
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Carregando dados do estoque...
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -420,7 +448,7 @@ export default function Estoque() {
                     filteredProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{getCategoryName(product.category_id)}</TableCell>
+                        <TableCell>{getCategoryName(product.category)}</TableCell>
                         <TableCell className="text-right">
                           {product.current_quantity} {product.unit}
                         </TableCell>
@@ -491,15 +519,21 @@ export default function Estoque() {
                         <TableCell className="font-medium">{product?.name || "-"}</TableCell>
                         <TableCell>
                           <Badge 
-                            variant={movement.movement_type === 'entrada' ? 'default' : movement.movement_type === 'saida' ? 'destructive' : 'secondary'}
+                            variant={
+                              movement.movement_type === 'entrada' || movement.movement_type === 'devolucao' 
+                                ? 'default' 
+                                : movement.movement_type === 'saida' || movement.movement_type === 'venda' 
+                                  ? 'destructive' 
+                                  : 'secondary'
+                            }
                           >
-                            {movement.movement_type === 'entrada' && <ArrowDownCircle className="h-3 w-3 mr-1" />}
-                            {movement.movement_type === 'saida' && <ArrowUpCircle className="h-3 w-3 mr-1" />}
-                            {movementTypeLabels[movement.movement_type]}
+                            {(movement.movement_type === 'entrada' || movement.movement_type === 'devolucao') && <ArrowDownCircle className="h-3 w-3 mr-1" />}
+                            {(movement.movement_type === 'saida' || movement.movement_type === 'venda') && <ArrowUpCircle className="h-3 w-3 mr-1" />}
+                            {stockMovementTypeLabels[movement.movement_type as StockMovementType] || movement.movement_type}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {movement.movement_type === 'saida' ? '-' : ''}{movement.quantity} {product?.unit}
+                          {(movement.movement_type === 'saida' || movement.movement_type === 'venda') ? '-' : ''}{movement.quantity} {product?.unit}
                         </TableCell>
                         <TableCell>{movement.reason}</TableCell>
                         <TableCell className="text-right">
@@ -536,15 +570,14 @@ export default function Estoque() {
                 </TableHeader>
                 <TableBody>
                   {categories.map((category) => {
-                    const productCount = products.filter(p => p.category_id === category.id).length;
                     return (
                       <TableRow key={category.id}>
                         <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell>{category.description || "-"}</TableCell>
-                        <TableCell>{productCount} produtos</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>{category.product_count} produtos</TableCell>
                         <TableCell>
-                          <Badge variant={category.is_active ? "default" : "secondary"}>
-                            {category.is_active ? "Ativa" : "Inativa"}
+                          <Badge variant="default">
+                            Ativa
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

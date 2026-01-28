@@ -108,18 +108,19 @@ export function useAccessLogs() {
     if (!clinic?.id) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      await supabase.from('access_logs').insert({
-        clinic_id: clinic.id,
-        user_id: user.id,
-        action,
-        resource,
-        ip_address: null, // Would need server-side to get real IP
-        user_agent: navigator.userAgent,
+      // Use edge function to log action (server-side logging for security)
+      await supabase.functions.invoke('log-access', {
+        body: {
+          action,
+          resource,
+          user_agent: navigator.userAgent,
+        },
       });
     } catch (err) {
+      // Silently fail - logging should not disrupt user experience
       console.error('Error logging action:', err);
     }
   };

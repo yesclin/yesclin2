@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import type { Sale, SaleFormData, SaleItem, PaymentStatus } from "@/types/inventory";
 
+// =============================================
+// HELPERS
+// =============================================
+
 async function getClinicId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
@@ -18,7 +22,10 @@ async function getClinicId(): Promise<string> {
   return profile.clinic_id;
 }
 
-// Fetch sales with filters
+// =============================================
+// QUERIES
+// =============================================
+
 export function useSales(filters?: {
   startDate?: string;
   endDate?: string;
@@ -60,7 +67,6 @@ export function useSales(filters?: {
   });
 }
 
-// Fetch single sale with items
 export function useSale(id: string | undefined) {
   return useQuery({
     queryKey: ["sales", id],
@@ -85,7 +91,58 @@ export function useSale(id: string | undefined) {
   });
 }
 
-// Stock validation error type
+export function useSalesStats(startDate?: string, endDate?: string) {
+  const today = format(new Date(), "yyyy-MM-dd");
+  const start = startDate || today;
+  const end = endDate || today;
+  
+  return useQuery({
+    queryKey: ["sales-stats", start, end],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("total_amount, payment_status, discount_amount")
+        .gte("sale_date", `${start}T00:00:00`)
+        .lte("sale_date", `${end}T23:59:59`);
+      
+      if (error) throw error;
+      
+      const stats = {
+        totalVendas: 0,
+        vendasPagas: 0,
+        vendasPendentes: 0,
+        descontosConcedidos: 0,
+        quantidadeVendas: data.length,
+        vendasCanceladas: 0,
+      };
+      
+      data.forEach((s) => {
+        const amount = Number(s.total_amount) || 0;
+        const discount = Number(s.discount_amount) || 0;
+        
+        if (s.payment_status === 'cancelado') {
+          stats.vendasCanceladas++;
+        } else {
+          stats.totalVendas += amount;
+          stats.descontosConcedidos += discount;
+          
+          if (s.payment_status === 'pago') {
+            stats.vendasPagas += amount;
+          } else if (s.payment_status === 'pendente' || s.payment_status === 'parcial') {
+            stats.vendasPendentes += amount;
+          }
+        }
+      });
+      
+      return stats;
+    },
+  });
+}
+
+// =============================================
+// MUTATIONS
+// =============================================
+
 export interface SaleStockValidationError {
   productId: string;
   productName: string;
@@ -93,198 +150,32 @@ export interface SaleStockValidationError {
   availableStock: number;
 }
 
-// Create sale with items and update stock
+/**
+ * Create sale using transactional edge function.
+ * All operations (sale, items, finance, stock) are atomic.
+ */
 export function useCreateSale() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (data: SaleFormData & { allowNegativeStock?: boolean }) => {
-      const clinicId = await getClinicId();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: response, error } = await supabase.functions.invoke("create-sale", {
+        body: data,
+      });
       
-      // Get clinic settings to check if negative stock is allowed
-      const { data: clinic } = await supabase
-        .from("clinics")
-        .select("allow_negative_stock")
-        .eq("id", clinicId)
-        .single();
-      
-      const allowNegative = data.allowNegativeStock ?? clinic?.allow_negative_stock ?? false;
-      
-      // Validate stock for all items BEFORE creating the sale
-      const stockValidationErrors: SaleStockValidationError[] = [];
-      
-      for (const item of data.items) {
-        const { data: product, error: productError } = await supabase
-          .from("products")
-          .select("id, name, stock_quantity")
-          .eq("id", item.product_id)
-          .single();
-        
-        if (productError) {
-          throw new Error(`Produto não encontrado: ${item.product_name}`);
-        }
-        
-        const currentStock = Number(product.stock_quantity) || 0;
-        
-        if (item.quantity > currentStock && !allowNegative) {
-          stockValidationErrors.push({
-            productId: product.id,
-            productName: product.name,
-            requestedQuantity: item.quantity,
-            availableStock: currentStock,
-          });
-        }
+      if (error) {
+        throw new Error(error.message || "Erro ao criar venda");
       }
       
-      // If there are stock validation errors, throw them all
-      if (stockValidationErrors.length > 0) {
-        const errorMessages = stockValidationErrors.map(
-          e => `${e.productName}: solicitado ${e.requestedQuantity}, disponível ${e.availableStock}`
-        ).join('; ');
-        throw new Error(`Estoque insuficiente: ${errorMessages}`);
+      if (!response.success) {
+        throw new Error(response.error || "Erro ao criar venda");
       }
       
-      // Calculate totals
-      const subtotal = data.items.reduce((sum, item) => {
-        return sum + (item.quantity * item.unit_price);
-      }, 0);
-      
-      const discountAmount = data.discount_amount || 
-        (data.discount_percent ? subtotal * (data.discount_percent / 100) : 0);
-      
-      const totalAmount = subtotal - discountAmount;
-      
-      // Generate sale number
-      const saleNumber = `V${Date.now().toString(36).toUpperCase()}`;
-      
-      // Create sale
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .insert({
-          clinic_id: clinicId,
-          sale_number: saleNumber,
-          patient_id: data.patient_id || null,
-          professional_id: data.professional_id || null,
-          sale_date: data.sale_date || new Date().toISOString(),
-          subtotal,
-          discount_amount: discountAmount,
-          discount_percent: data.discount_percent || 0,
-          total_amount: totalAmount,
-          payment_method: data.payment_method || null,
-          payment_status: data.payment_status || 'pendente',
-          notes: data.notes || null,
-          created_by: user?.id || null,
-        })
-        .select()
-        .single();
-      
-      if (saleError) throw saleError;
-      
-      // Create sale items
-      const saleItems = data.items.map(item => ({
-        clinic_id: clinicId,
-        sale_id: sale.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_amount: item.discount_amount || 0,
-        total_price: (item.quantity * item.unit_price) - (item.discount_amount || 0),
-        notes: item.notes || null,
-      }));
-      
-      const { error: itemsError } = await supabase
-        .from("sale_items")
-        .insert(saleItems);
-      
-      if (itemsError) throw itemsError;
-      
-      // Create stock movements for each item (reduce stock)
-      for (const item of data.items) {
-        // Get current stock (fresh read to handle race conditions)
-        const { data: product, error: stockReadError } = await supabase
-          .from("products")
-          .select("stock_quantity, cost_price, name")
-          .eq("id", item.product_id)
-          .single();
-        
-        if (stockReadError || !product) {
-          throw new Error(`Erro ao verificar estoque de ${item.product_name}`);
-        }
-        
-        const previousQty = Number(product.stock_quantity) || 0;
-        const newQty = previousQty - item.quantity;
-        
-        // Final validation before update (race condition protection)
-        if (newQty < 0 && !allowNegative) {
-          throw new Error(
-            `Estoque insuficiente para "${product.name}": ` +
-            `solicitado ${item.quantity}, disponível ${previousQty}. ` +
-            `A venda não pode ser concluída.`
-          );
-        }
-        
-        // Create movement
-        await supabase
-          .from("stock_movements")
-          .insert({
-            clinic_id: clinicId,
-            product_id: item.product_id,
-            movement_type: 'venda',
-            quantity: item.quantity,
-            previous_quantity: previousQty,
-            new_quantity: newQty,
-            unit_cost: product.cost_price || 0,
-            total_cost: (product.cost_price || 0) * item.quantity,
-            reason: 'Venda para cliente',
-            reference_type: 'sale',
-            reference_id: sale.id,
-            created_by: user?.id || null,
-          });
-        
-        // Update product stock
-        await supabase
-          .from("products")
-          .update({ 
-            stock_quantity: newQty,
-            updated_at: new Date().toISOString() 
-          })
-          .eq("id", item.product_id);
-      }
-      
-      // Create finance transaction if payment is made
-      if (data.payment_status === 'pago' && totalAmount > 0) {
-        const { data: transaction } = await supabase
-          .from("finance_transactions")
-          .insert({
-            clinic_id: clinicId,
-            type: 'entrada',
-            description: `Venda ${saleNumber}`,
-            amount: totalAmount,
-            transaction_date: format(new Date(), 'yyyy-MM-dd'),
-            payment_method: data.payment_method || null,
-            patient_id: data.patient_id || null,
-            professional_id: data.professional_id || null,
-            origin: 'venda',
-            created_by: user?.id || null,
-          })
-          .select()
-          .single();
-        
-        // Link transaction to sale
-        if (transaction) {
-          await supabase
-            .from("sales")
-            .update({ transaction_id: transaction.id })
-            .eq("id", sale.id);
-        }
-      }
-      
-      return sale;
+      return response.sale;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
       queryClient.invalidateQueries({ queryKey: ["finance-transactions"] });
@@ -297,7 +188,9 @@ export function useCreateSale() {
   });
 }
 
-// Update sale payment status
+/**
+ * Update sale payment status
+ */
 export function useUpdateSaleStatus() {
   const queryClient = useQueryClient();
   
@@ -333,7 +226,9 @@ export function useUpdateSaleStatus() {
   });
 }
 
-// Cancel sale and restore stock
+/**
+ * Cancel sale and restore stock
+ */
 export function useCancelSale() {
   const queryClient = useQueryClient();
   
@@ -405,61 +300,13 @@ export function useCancelSale() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
       toast.success("Venda cancelada e estoque restaurado!");
     },
     onError: (error: Error) => {
       toast.error("Erro ao cancelar venda: " + error.message);
-    },
-  });
-}
-
-// Get sales stats
-export function useSalesStats(startDate?: string, endDate?: string) {
-  const today = format(new Date(), "yyyy-MM-dd");
-  const start = startDate || today;
-  const end = endDate || today;
-  
-  return useQuery({
-    queryKey: ["sales-stats", start, end],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select("total_amount, payment_status, discount_amount")
-        .gte("sale_date", `${start}T00:00:00`)
-        .lte("sale_date", `${end}T23:59:59`);
-      
-      if (error) throw error;
-      
-      const stats = {
-        totalVendas: 0,
-        vendasPagas: 0,
-        vendasPendentes: 0,
-        descontosConcedidos: 0,
-        quantidadeVendas: data.length,
-        vendasCanceladas: 0,
-      };
-      
-      data.forEach((s) => {
-        const amount = Number(s.total_amount) || 0;
-        const discount = Number(s.discount_amount) || 0;
-        
-        if (s.payment_status === 'cancelado') {
-          stats.vendasCanceladas++;
-        } else {
-          stats.totalVendas += amount;
-          stats.descontosConcedidos += discount;
-          
-          if (s.payment_status === 'pago') {
-            stats.vendasPagas += amount;
-          } else if (s.payment_status === 'pendente' || s.payment_status === 'parcial') {
-            stats.vendasPendentes += amount;
-          }
-        }
-      });
-      
-      return stats;
     },
   });
 }

@@ -1,0 +1,449 @@
+import { useState, useCallback, useMemo } from "react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, CalendarPlus, Ban, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAgendaMockData } from "@/hooks/useAgendaMockData";
+import { useTissGuideGeneration } from "@/hooks/useTissGuideGeneration";
+import { usePermissions } from "@/hooks/usePermissions";
+import { AgendaFilters } from "@/components/agenda/AgendaFilters";
+import { AgendaStats } from "@/components/agenda/AgendaStats";
+import { AgendaGrid } from "@/components/agenda/AgendaGrid";
+import { AgendaInsights } from "@/components/agenda/AgendaInsights";
+import { AgendaEmptyState } from "@/components/agenda/AgendaEmptyState";
+import { ProfessionalTabs } from "@/components/agenda/ProfessionalTabs";
+import { AppointmentDialog } from "@/components/agenda/AppointmentDialog";
+import { BlockDialog } from "@/components/agenda/BlockDialog";
+import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agenda/TissGuideGenerationDialog";
+import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
+import type { AgendaFilters as FiltersType, ViewMode, GroupBy, Appointment, AppointmentStatus } from "@/types/agenda";
+import { toast } from "sonner";
+import { getDefaultWeekSchedule, WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
+
+export default function Agenda() {
+  const navigate = useNavigate();
+  const { role } = usePermissions();
+  
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
+  const [groupBy, setGroupBy] = useState<GroupBy>('professional');
+  const [filters, setFilters] = useState<FiltersType>({
+    startDate: new Date(),
+    endDate: new Date(),
+  });
+  
+  // Professional tabs state - null means "Todos"
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
+  
+  // Dialogs
+  const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+  const [appointmentDialogMode, setAppointmentDialogMode] = useState<'create' | 'fitIn' | 'reschedule'>('create');
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>();
+  
+  // TISS Guide Generation
+  const [tissDialogOpen, setTissDialogOpen] = useState(false);
+  const { pendingAppointment, setPendingAppointment, generateGuide } = useTissGuideGeneration();
+  
+  // Material Consumption
+  const [materialsDialogOpen, setMaterialsDialogOpen] = useState(false);
+  const [finalizingAppointment, setFinalizingAppointment] = useState<Appointment | null>(null);
+  
+  const { 
+    specialties, 
+    rooms, 
+    professionals, 
+    patients, 
+    insurances, 
+    appointments, 
+    stats, 
+    insights 
+  } = useAgendaMockData(selectedDate);
+
+  // Default clinic schedule for slot suggestions (mock - will be replaced with real data)
+  const clinicSchedule = useMemo<WeekSchedule>(() => {
+    const defaultSchedule = getDefaultWeekSchedule();
+    // Enable weekdays with standard clinic hours
+    return {
+      ...defaultSchedule,
+      seg: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
+      ter: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
+      qua: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
+      qui: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
+      sex: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
+      sab: { enabled: true, open: "08:00", close: "12:00", hasLunch: false, lunchStart: "", lunchEnd: "" },
+      dom: { enabled: false, open: "", close: "", hasLunch: false, lunchStart: "", lunchEnd: "" },
+    };
+  }, []);
+
+  // Professional schedules map (mock - using clinic default for all)
+  const professionalSchedules = useMemo(() => {
+    const scheduleMap = new Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>();
+    professionals.forEach(prof => {
+      scheduleMap.set(prof.id, { useClinicDefault: true, workingDays: clinicSchedule });
+    });
+    return scheduleMap;
+  }, [professionals, clinicSchedule]);
+
+  // RBAC: Profissional vê apenas sua própria aba
+  // TODO: Replace with actual user's professional_id when available
+  const userProfessionalId = role === 'profissional' ? professionals[0]?.id : null;
+  
+  // If user is a professional, force their tab
+  const effectiveSelectedProfessionalId = role === 'profissional' 
+    ? userProfessionalId 
+    : selectedProfessionalId;
+
+  // Filter professionals based on role
+  const visibleProfessionals = useMemo(() => {
+    if (role === 'profissional' && userProfessionalId) {
+      return professionals.filter(p => p.id === userProfessionalId);
+    }
+    return professionals;
+  }, [professionals, role, userProfessionalId]);
+
+  // Filter appointments by selected professional tab and other filters
+  const filteredAppointments = useMemo(() => {
+    let result = appointments;
+    
+    // Filter by professional tab
+    if (effectiveSelectedProfessionalId) {
+      result = result.filter(apt => apt.professional_id === effectiveSelectedProfessionalId);
+    }
+    
+    // Apply other filters (only professionalId if not using tabs)
+    if (filters.professionalId && !effectiveSelectedProfessionalId) {
+      result = result.filter(apt => apt.professional_id === filters.professionalId);
+    }
+    if (filters.specialtyId) {
+      result = result.filter(apt => apt.specialty_id === filters.specialtyId);
+    }
+    if (filters.roomId) {
+      result = result.filter(apt => apt.room_id === filters.roomId);
+    }
+    if (filters.appointmentType) {
+      result = result.filter(apt => apt.appointment_type === filters.appointmentType);
+    }
+    if (filters.paymentType) {
+      result = result.filter(apt => apt.payment_type === filters.paymentType);
+    }
+    if (filters.status) {
+      result = result.filter(apt => apt.status === filters.status);
+    }
+    
+    return result;
+  }, [appointments, effectiveSelectedProfessionalId, filters]);
+
+  // Get selected professional name for empty state
+  const selectedProfessionalName = effectiveSelectedProfessionalId
+    ? professionals.find(p => p.id === effectiveSelectedProfessionalId)?.full_name
+    : undefined;
+
+  const openCreateDialog = () => {
+    setAppointmentDialogMode('create');
+    setSelectedAppointment(undefined);
+    setAppointmentDialogOpen(true);
+  };
+
+  const openFitInDialog = () => {
+    setAppointmentDialogMode('fitIn');
+    setSelectedAppointment(undefined);
+    setAppointmentDialogOpen(true);
+  };
+
+  const handleReschedule = (apt: Appointment) => {
+    setAppointmentDialogMode('reschedule');
+    setSelectedAppointment(apt);
+    setAppointmentDialogOpen(true);
+  };
+
+  // Handle status change with material consumption and TISS guide generation
+  const handleStatusChange = useCallback((appointmentId: string, newStatus: AppointmentStatus) => {
+    const apt = appointments.find(a => a.id === appointmentId);
+    
+    if (!apt) return;
+    
+    // Check if finalizing an appointment - show materials dialog first
+    if (newStatus === 'finalizado') {
+      setFinalizingAppointment(apt);
+      setMaterialsDialogOpen(true);
+    } else {
+      toast.success(`Status atualizado para: ${newStatus}`);
+    }
+  }, [appointments]);
+
+  // After materials dialog confirms, proceed with TISS if needed
+  const handleMaterialsConfirm = useCallback(() => {
+    setMaterialsDialogOpen(false);
+    
+    if (!finalizingAppointment) return;
+    
+    // Check if appointment has insurance for TISS guide
+    if (finalizingAppointment.payment_type === 'convenio' && finalizingAppointment.insurance) {
+      const finalizedApt: Appointment = { ...finalizingAppointment, status: 'finalizado' };
+      setPendingAppointment(finalizedApt);
+      setTissDialogOpen(true);
+    }
+    
+    toast.success('Atendimento finalizado com sucesso!');
+    setFinalizingAppointment(null);
+  }, [finalizingAppointment, setPendingAppointment]);
+
+  const handleMaterialsCancel = useCallback(() => {
+    setMaterialsDialogOpen(false);
+    setFinalizingAppointment(null);
+  }, []);
+
+  const handleTissGuideConfirm = useCallback(async (guideData: GeneratedGuideData) => {
+    await generateGuide(guideData);
+    setPendingAppointment(null);
+  }, [generateGuide, setPendingAppointment]);
+
+  const handleTissGuideSkip = useCallback(() => {
+    setPendingAppointment(null);
+  }, [setPendingAppointment]);
+
+  // Handle professional tab change
+  const handleProfessionalTabChange = useCallback((professionalId: string | null) => {
+    setSelectedProfessionalId(professionalId);
+    // Clear professional filter when using tabs
+    if (filters.professionalId) {
+      setFilters(prev => ({ ...prev, professionalId: undefined }));
+    }
+  }, [filters.professionalId]);
+
+  // Determine if professional field should be locked in dialog
+  const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || undefined;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Agenda</h1>
+          <p className="text-muted-foreground">Gerencie os atendimentos da clínica</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={openFitInDialog}>
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            Encaixe
+          </Button>
+          <Button variant="outline" onClick={() => setBlockDialogOpen(true)}>
+            <Ban className="mr-2 h-4 w-4" />
+            Bloquear
+          </Button>
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="agenda" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="sala-espera">Sala de Espera</TabsTrigger>
+          <TabsTrigger value="bloqueios">Bloqueios</TabsTrigger>
+          <TabsTrigger value="config" onClick={() => navigate('/app/config/agenda')}>
+            <Settings className="h-4 w-4 mr-1" />
+            Configurações
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agenda" className="space-y-4">
+          {/* Professional Tabs - Only show if not a professional user or has multiple professionals */}
+          {(role !== 'profissional' || visibleProfessionals.length > 1) && (
+            <ProfessionalTabs
+              professionals={visibleProfessionals}
+              selectedProfessionalId={effectiveSelectedProfessionalId}
+              onSelectProfessional={handleProfessionalTabChange}
+              maxVisibleTabs={5}
+            />
+          )}
+          
+          <AgendaStats stats={stats} />
+          
+          <AgendaFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            groupBy={groupBy}
+            onGroupByChange={setGroupBy}
+            professionals={visibleProfessionals}
+            specialties={specialties}
+            rooms={rooms}
+            insurances={insurances}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+          />
+
+          {filteredAppointments.length > 0 ? (
+            <AgendaGrid
+              appointments={filteredAppointments}
+              viewMode={viewMode}
+              groupBy={effectiveSelectedProfessionalId ? 'general' : groupBy}
+              selectedDate={selectedDate}
+              professionals={visibleProfessionals}
+              rooms={rooms}
+              specialties={specialties}
+              onReschedule={handleReschedule}
+              onStatusChange={handleStatusChange}
+            />
+          ) : (
+            <AgendaEmptyState
+              professionalName={selectedProfessionalName}
+              onCreateAppointment={openCreateDialog}
+            />
+          )}
+
+          <AgendaInsights insights={insights} />
+        </TabsContent>
+
+        <TabsContent value="sala-espera">
+          <WaitingRoomContent 
+            appointments={appointments.filter(a => 
+              a.scheduled_date === format(new Date(), 'yyyy-MM-dd') &&
+              ['chegou', 'em_atendimento'].includes(a.status)
+            )}
+            onStatusChange={handleStatusChange}
+          />
+        </TabsContent>
+
+        <TabsContent value="bloqueios">
+          <div className="text-center py-12 text-muted-foreground">
+            <Ban className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhum bloqueio configurado</p>
+            <Button variant="outline" className="mt-4" onClick={() => setBlockDialogOpen(true)}>
+              Criar Bloqueio
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
+      <AppointmentDialog
+        open={appointmentDialogOpen}
+        onOpenChange={setAppointmentDialogOpen}
+        mode={appointmentDialogMode}
+        professionals={professionals}
+        patients={patients}
+        rooms={rooms}
+        specialties={specialties}
+        insurances={insurances}
+        appointment={selectedAppointment}
+        defaultDate={selectedDate}
+        lockedProfessionalId={lockedProfessionalIdForDialog}
+        existingAppointments={appointments}
+        clinicSchedule={clinicSchedule}
+        professionalSchedules={professionalSchedules}
+      />
+
+      <BlockDialog
+        open={blockDialogOpen}
+        onOpenChange={setBlockDialogOpen}
+      />
+
+      {/* TISS Guide Generation Dialog */}
+      <TissGuideGenerationDialog
+        open={tissDialogOpen}
+        onOpenChange={setTissDialogOpen}
+        appointment={pendingAppointment}
+        onConfirm={handleTissGuideConfirm}
+        onSkip={handleTissGuideSkip}
+      />
+
+      {/* Material Consumption Dialog */}
+      <AppointmentMaterialsDialog
+        open={materialsDialogOpen}
+        onOpenChange={setMaterialsDialogOpen}
+        appointmentId={finalizingAppointment?.id || ''}
+        procedureName={finalizingAppointment?.procedure?.name}
+        onConfirm={handleMaterialsConfirm}
+        onCancel={handleMaterialsCancel}
+      />
+    </div>
+  );
+}
+
+// Waiting Room inline component
+interface WaitingRoomContentProps {
+  appointments: Appointment[];
+  onStatusChange?: (id: string, status: AppointmentStatus) => void;
+}
+
+function WaitingRoomContent({ appointments, onStatusChange }: WaitingRoomContentProps) {
+  const waiting = appointments.filter(a => a.status === 'chegou');
+  const inProgress = appointments.filter(a => a.status === 'em_atendimento');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="border rounded-lg p-4">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-warning" />
+          Aguardando ({waiting.length})
+        </h3>
+        <div className="space-y-3">
+          {waiting.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum paciente aguardando</p>
+          ) : (
+            waiting.map(apt => (
+              <div key={apt.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">{apt.patient?.full_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {apt.start_time.slice(0, 5)} • {apt.professional?.full_name}
+                  </p>
+                  {apt.insurance && (
+                    <p className="text-xs text-primary mt-1">{apt.insurance.name}</p>
+                  )}
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => onStatusChange?.(apt.id, 'em_atendimento')}
+                >
+                  Iniciar
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="border rounded-lg p-4">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-primary" />
+          Em Atendimento ({inProgress.length})
+        </h3>
+        <div className="space-y-3">
+          {inProgress.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum atendimento em andamento</p>
+          ) : (
+            inProgress.map(apt => (
+              <div key={apt.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">{apt.patient?.full_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {apt.professional?.full_name}
+                  </p>
+                  {apt.insurance && (
+                    <p className="text-xs text-primary mt-1">{apt.insurance.name}</p>
+                  )}
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => onStatusChange?.(apt.id, 'finalizado')}
+                >
+                  Finalizar
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

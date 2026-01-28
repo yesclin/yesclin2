@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock } from "lucide-react";
+import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,7 @@ import { stockUnits, movementReasons, type MovementType } from "@/types/gestao";
 import { stockMovementTypeLabels, type StockMovementType } from "@/types/inventory";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
 
 export default function Estoque() {
   const { categories, products, movements, lowStockProducts, outOfStockProducts, expiringProducts, stats, isLoading } = useStockData();
@@ -45,6 +46,16 @@ export default function Estoque() {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [movementType, setMovementType] = useState<MovementType>("entrada");
+  
+  // Sale details dialog state
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [isSaleDialogOpen, setIsSaleDialogOpen] = useState(false);
+  
+  const handleViewSale = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    setIsSaleDialogOpen(true);
+  };
+  
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
@@ -542,6 +553,15 @@ export default function Estoque() {
                             {isSale && movement.notes && (
                               <span className="text-xs text-muted-foreground">{movement.notes}</span>
                             )}
+                            {isSale && movement.reference_id && (
+                              <button
+                                onClick={() => handleViewSale(movement.reference_id!)}
+                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Ver venda
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -602,6 +622,13 @@ export default function Estoque() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Sale Details Dialog */}
+      <SaleDetailsDialog
+        saleId={selectedSaleId}
+        open={isSaleDialogOpen}
+        onOpenChange={setIsSaleDialogOpen}
+      />
     </div>
   );
 }

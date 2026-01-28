@@ -277,6 +277,18 @@ serve(async (req) => {
         productData.stock_quantity = newQty;
       }
 
+      // STEP 6: Log audit entry for sale creation
+      await serviceClient
+        .from("access_logs")
+        .insert({
+          clinic_id: clinicId,
+          user_id: user.id,
+          action: "SALE_CREATED",
+          resource: `sales/${saleId}`,
+          ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+          user_agent: req.headers.get("user-agent") || null,
+        });
+
       // SUCCESS - Return the created sale
       return new Response(
         JSON.stringify({

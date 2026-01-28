@@ -21,9 +21,13 @@ export type TimelineEventType =
   | 'PDF_EXPORTED'
   // Security
   | 'UNAUTHORIZED_ACCESS_ATTEMPT'
-  | 'ACCESS_LOGGED';
+  | 'ACCESS_LOGGED'
+  // Sales
+  | 'SALE_CREATED'
+  | 'SALE_STATUS_UPDATED'
+  | 'SALE_CANCELLED';
 
-export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security';
+export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security' | 'sales';
 
 export interface TimelineEvent {
   id: string;
@@ -185,6 +189,28 @@ export const TIMELINE_EVENT_CONFIG: Record<TimelineEventType, {
     bgColor: 'bg-gray-100',
     targetTab: 'auditoria',
   },
+  // Sales
+  SALE_CREATED: {
+    label: 'Venda Realizada',
+    icon: 'ShoppingCart',
+    category: 'sales',
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-100',
+  },
+  SALE_STATUS_UPDATED: {
+    label: 'Status da Venda Atualizado',
+    icon: 'RefreshCw',
+    category: 'sales',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100',
+  },
+  SALE_CANCELLED: {
+    label: 'Venda Cancelada',
+    icon: 'XCircle',
+    category: 'sales',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100',
+  },
 };
 
 export const CATEGORY_LABELS: Record<TimelineEventCategory, { label: string; color: string }> = {
@@ -193,4 +219,5 @@ export const CATEGORY_LABELS: Record<TimelineEventCategory, { label: string; col
   files: { label: 'Arquivos', color: 'text-purple-600' },
   lgpd: { label: 'LGPD / Legal', color: 'text-teal-600' },
   security: { label: 'Segurança', color: 'text-gray-600' },
+  sales: { label: 'Vendas', color: 'text-emerald-600' },
 };

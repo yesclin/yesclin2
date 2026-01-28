@@ -3681,6 +3681,71 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          clinic_id: string
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          min_stock_quantity: number | null
+          name: string
+          sale_price: number
+          sku: string | null
+          stock_quantity: number
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          clinic_id: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_quantity?: number | null
+          name: string
+          sale_price?: number
+          sku?: string | null
+          stock_quantity?: number
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          clinic_id?: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_quantity?: number | null
+          name?: string
+          sale_price?: number
+          sku?: string | null
+          stock_quantity?: number
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_anamnesis_models: {
         Row: {
           clinic_id: string
@@ -4208,6 +4273,159 @@ export type Database = {
           },
         ]
       }
+      sale_items: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          discount_amount: number | null
+          id: string
+          notes: string | null
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          notes: string | null
+          patient_id: string | null
+          payment_method: string | null
+          payment_status: string
+          professional_id: string | null
+          sale_date: string
+          sale_number: string | null
+          subtotal: number
+          total_amount: number
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          professional_id?: string | null
+          sale_date?: string
+          sale_number?: string | null
+          subtotal?: number
+          total_amount?: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          professional_id?: string | null
+          sale_date?: string
+          sale_number?: string | null
+          subtotal?: number
+          total_amount?: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_sales_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "finance_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_blocks: {
         Row: {
           all_day: boolean
@@ -4471,12 +4689,17 @@ export type Database = {
           created_by: string | null
           id: string
           movement_type: string
+          new_quantity: number | null
           notes: string | null
+          previous_quantity: number | null
           procedure_id: string | null
           product_id: string
           professional_id: string | null
           quantity: number
           reason: string
+          reference_id: string | null
+          reference_type: string | null
+          total_cost: number | null
           unit_cost: number | null
         }
         Insert: {
@@ -4485,12 +4708,17 @@ export type Database = {
           created_by?: string | null
           id?: string
           movement_type: string
+          new_quantity?: number | null
           notes?: string | null
+          previous_quantity?: number | null
           procedure_id?: string | null
           product_id: string
           professional_id?: string | null
           quantity: number
           reason: string
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number | null
           unit_cost?: number | null
         }
         Update: {
@@ -4499,12 +4727,17 @@ export type Database = {
           created_by?: string | null
           id?: string
           movement_type?: string
+          new_quantity?: number | null
           notes?: string | null
+          previous_quantity?: number | null
           procedure_id?: string | null
           product_id?: string
           professional_id?: string | null
           quantity?: number
           reason?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number | null
           unit_cost?: number | null
         }
         Relationships: [
@@ -4551,6 +4784,7 @@ export type Database = {
           min_quantity: number
           name: string
           notes: string | null
+          sale_price: number | null
           supplier: string | null
           unit: string
           updated_at: string
@@ -4567,6 +4801,7 @@ export type Database = {
           min_quantity?: number
           name: string
           notes?: string | null
+          sale_price?: number | null
           supplier?: string | null
           unit?: string
           updated_at?: string
@@ -4583,6 +4818,7 @@ export type Database = {
           min_quantity?: number
           name?: string
           notes?: string | null
+          sale_price?: number | null
           supplier?: string | null
           unit?: string
           updated_at?: string

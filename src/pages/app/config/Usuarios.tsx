@@ -82,7 +82,7 @@ export default function ConfigUsuarios() {
   const [newUserForm, setNewUserForm] = useState({
     full_name: "",
     email: "",
-    role: "" as string,
+    userRole: "" as string,
   });
 
   const { 
@@ -130,7 +130,7 @@ export default function ConfigUsuarios() {
 
   const handleCreateUser = async () => {
     // Validate form
-    if (!newUserForm.full_name || !newUserForm.email || !newUserForm.role) {
+    if (!newUserForm.full_name || !newUserForm.email || !newUserForm.userRole) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -145,13 +145,13 @@ export default function ConfigUsuarios() {
     const success = await sendInvite({
       email: newUserForm.email,
       fullName: newUserForm.full_name,
-      role: newUserForm.role,
+      role: newUserForm.userRole,
       permissions: selectedPermissions,
     });
 
     if (success) {
       setIsDialogOpen(false);
-      setNewUserForm({ full_name: "", email: "", role: "" });
+      setNewUserForm({ full_name: "", email: "", userRole: "" });
       setSelectedPermissions([]);
     }
   };
@@ -262,8 +262,8 @@ export default function ConfigUsuarios() {
                           <div className="grid gap-2">
                             <Label htmlFor="role">Perfil *</Label>
                             <Select
-                              value={newUserForm.role}
-                              onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}
+                              value={newUserForm.userRole}
+                              onValueChange={(value) => setNewUserForm(prev => ({ ...prev, userRole: value }))}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione o perfil" />
@@ -293,7 +293,7 @@ export default function ConfigUsuarios() {
                                     id={perm.key}
                                     checked={selectedPermissions.includes(perm.key)}
                                     onCheckedChange={() => togglePermission(perm.key)}
-                                    disabled={newUserForm.role === "admin"}
+                                    disabled={newUserForm.userRole === "admin"}
                                   />
                                   <Label htmlFor={perm.key} className="text-sm font-normal cursor-pointer">
                                     {perm.label}
@@ -301,7 +301,7 @@ export default function ConfigUsuarios() {
                                 </div>
                               ))}
                             </div>
-                            {newUserForm.role === "admin" && (
+                            {newUserForm.userRole === "admin" && (
                               <p className="text-xs text-muted-foreground italic">
                                 Administradores têm acesso total a todos os módulos.
                               </p>
@@ -607,7 +607,7 @@ export default function ConfigUsuarios() {
           </Card>
 
           {/* Admin info card */}
-          {currentUser && (currentUser.role === "owner" || currentUser.role === "admin") && (
+          {currentUser && isAdmin && (
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">

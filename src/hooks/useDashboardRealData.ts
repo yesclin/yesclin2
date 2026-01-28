@@ -601,8 +601,8 @@ export function useDashboardRealData() {
     userContext?.clinicId || null
   );
   
-  // Margin alerts - apenas para admin/owner
-  const isAdmin = userContext?.role === 'admin' || userContext?.role === 'owner';
+  // Margin alerts - apenas para perfis elevados
+  const isAdmin = !!userContext?.role && ['admin', 'owner'].includes(userContext.role);
   const { data: marginAlerts = [] } = useMarginAlerts(
     isAdmin ? userContext?.clinicId || null : null
   );

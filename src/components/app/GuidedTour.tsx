@@ -3,9 +3,10 @@ import { driver, DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useClinicUsers";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Tour steps by role
-const getStepsForRole = (role: string): DriveStep[] => {
+const getStepsForRole = (role: string, isAdmin: boolean): DriveStep[] => {
   const baseSteps: DriveStep[] = [
     {
       element: '[data-tour="dashboard"]',
@@ -46,7 +47,7 @@ const getStepsForRole = (role: string): DriveStep[] => {
   ];
 
   // Add role-specific steps
-  if (role === "admin" || role === "owner") {
+  if (isAdmin) {
     baseSteps.push(
       {
         element: '[data-tour="management"]',
@@ -101,6 +102,7 @@ interface GuidedTourProps {
 
 export function GuidedTour({ onComplete }: GuidedTourProps) {
   const { user } = useCurrentUser();
+  const { role, isAdmin, isLoading: permissionsLoading } = usePermissions();
   const [hasCheckedTour, setHasCheckedTour] = useState(false);
 
   const completeTour = useCallback(async () => {
@@ -123,7 +125,7 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
   }, [user?.id, onComplete]);
 
   const startTour = useCallback((role: string) => {
-    const steps = getStepsForRole(role);
+    const steps = getStepsForRole(role, isAdmin);
     
     const driverInstance = driver({
       showProgress: true,
@@ -148,10 +150,10 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
     setTimeout(() => {
       driverInstance.drive();
     }, 500);
-  }, [completeTour]);
+  }, [completeTour, isAdmin]);
 
   useEffect(() => {
-    if (!user?.id || hasCheckedTour) return;
+    if (!user?.id || hasCheckedTour || permissionsLoading) return;
 
     const checkTourStatus = async () => {
       try {
@@ -174,21 +176,14 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
           return;
         }
 
-        // Get user role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
-
-        const role = roleData?.role || "profissional";
+        const effectiveRole = role || "profissional";
 
         // Start tour after a brief delay to let the UI settle
         setHasCheckedTour(true);
         
         // Small delay to ensure the dashboard is fully rendered
         setTimeout(() => {
-          startTour(role);
+          startTour(effectiveRole);
         }, 1500);
 
       } catch (err) {
@@ -198,7 +193,7 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
     };
 
     checkTourStatus();
-  }, [user?.id, hasCheckedTour, startTour]);
+  }, [user?.id, hasCheckedTour, startTour, role, permissionsLoading]);
 
   return null; // This component doesn't render anything visible
 }

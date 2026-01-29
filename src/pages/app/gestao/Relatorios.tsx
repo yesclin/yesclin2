@@ -7,8 +7,10 @@ import { useSalesReport } from '@/hooks/useSalesReport';
 import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
 import { useSalesReportExport } from '@/hooks/useSalesReportExport';
 import { useProductMarginReport } from '@/hooks/useProductMarginReport';
+import { useProductMarginReportOptions } from '@/hooks/useProductMarginReportOptions';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
+import { ProductMarginFilters } from '@/components/relatorios/ProductMarginFilters';
 import { FinancialReports } from '@/components/relatorios/FinancialReports';
 import { AppointmentReports } from '@/components/relatorios/AppointmentReports';
 import { PatientReports } from '@/components/relatorios/PatientReports';
@@ -24,6 +26,7 @@ import { ReportEmptyState } from '@/components/relatorios/ReportEmptyState';
 import { toast } from 'sonner';
 import type { ReportFilters } from '@/types/relatorios';
 import type { SalesReportFilters as SalesFiltersType } from '@/types/salesReport';
+import type { ProductMarginFilters as MarginFiltersType } from '@/types/productMarginReport';
 
 const reportTabs = [
   { value: 'gerencial', label: 'Gerencial', icon: Briefcase },
@@ -54,12 +57,20 @@ export default function Relatorios() {
     status: 'all',
   });
 
+  // Filtros específicos para margem
+  const [marginFilters, setMarginFilters] = useState<MarginFiltersType>({
+    startDate: startOfMonth(today),
+    endDate: endOfMonth(today),
+    status: 'all',
+  });
+
   const [activeTab, setActiveTab] = useState('gerencial');
 
   const data = useRelatoriosMockData(filters);
   const salesReport = useSalesReport(salesFilters);
-  const marginReport = useProductMarginReport(salesFilters);
+  const marginReport = useProductMarginReport(marginFilters);
   const salesOptions = useSalesReportOptions();
+  const marginOptions = useProductMarginReportOptions();
   const { exportCSV, exportPDF } = useSalesReportExport();
 
   const handleExportSalesCSV = () => {
@@ -114,7 +125,7 @@ export default function Relatorios() {
         </TabsList>
 
         {/* Filtros - condicional baseado na tab */}
-        {(activeTab === 'vendas' || activeTab === 'margem') ? (
+        {activeTab === 'vendas' ? (
           <SalesReportFilters
             filters={salesFilters}
             onFiltersChange={setSalesFilters}
@@ -123,6 +134,15 @@ export default function Relatorios() {
             users={salesOptions.users}
             onExportCSV={handleExportSalesCSV}
             onExportPDF={handleExportSalesPDF}
+          />
+        ) : activeTab === 'margem' ? (
+          <ProductMarginFilters
+            filters={marginFilters}
+            onFiltersChange={setMarginFilters}
+            products={marginOptions.products}
+            categories={marginOptions.categories}
+            onExportCSV={() => toast.success('Exportando relatório em CSV...')}
+            onExportPDF={() => toast.success('Exportando relatório em PDF...')}
           />
         ) : (
           <ReportFiltersBar

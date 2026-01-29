@@ -32,6 +32,7 @@ import {
   useToggleProcedureStatus,
 } from "@/hooks/useProceduresCRUD";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useProcedureProductCosts } from "@/hooks/useProcedureProductCosts";
 
 export default function ConfigProcedimentos() {
   const [search, setSearch] = useState("");
@@ -43,8 +44,24 @@ export default function ConfigProcedimentos() {
   const [productsDialogProcedure, setProductsDialogProcedure] = useState<Procedure | null>(null);
 
   const { data: procedures, isLoading, error } = useProceduresList(true);
+  const { data: productCosts } = useProcedureProductCosts();
   const toggleStatusMutation = useToggleProcedureStatus();
   const { can, isAdmin } = usePermissions();
+
+  // Helper para formatar custo
+  const formatCurrency = (value: number) => 
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  // Obter custo do procedimento
+  const getProcedureCost = (procedureId: string) => {
+    const cost = productCosts?.[procedureId];
+    return cost?.total_cost || 0;
+  };
+
+  const getProductCount = (procedureId: string) => {
+    const cost = productCosts?.[procedureId];
+    return cost?.product_count || 0;
+  };
 
   // Check if user can manage procedures (admin only)
   const canManage = isAdmin || can("configuracoes", "edit");
@@ -174,13 +191,18 @@ export default function ConfigProcedimentos() {
                   <TableHead>Especialidade</TableHead>
                   <TableHead>Duração</TableHead>
                   <TableHead>Valor</TableHead>
+                  <TableHead>Custo</TableHead>
                   <TableHead>Retorno</TableHead>
                   <TableHead>Status</TableHead>
                   {canManage && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProcedures.map((procedure) => (
+                {filteredProcedures.map((procedure) => {
+                  const procedureCost = getProcedureCost(procedure.id);
+                  const productCount = getProductCount(procedure.id);
+                  
+                  return (
                   <TableRow 
                     key={procedure.id}
                     className={!procedure.is_active ? "opacity-60" : ""}
@@ -197,11 +219,25 @@ export default function ConfigProcedimentos() {
                     <TableCell>{procedure.duration_minutes} min</TableCell>
                     <TableCell>
                       {procedure.price
-                        ? procedure.price.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })
+                        ? formatCurrency(procedure.price)
                         : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className={procedureCost > 0 ? "cursor-help" : ""}>
+                            {procedureCost > 0 
+                              ? formatCurrency(procedureCost)
+                              : <span className="text-muted-foreground">—</span>
+                            }
+                          </span>
+                        </TooltipTrigger>
+                        {productCount > 0 && (
+                          <TooltipContent>
+                            {productCount} produto(s) vinculado(s)
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       {procedure.allows_return ? (
@@ -259,7 +295,8 @@ export default function ConfigProcedimentos() {
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

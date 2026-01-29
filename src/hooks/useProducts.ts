@@ -141,6 +141,10 @@ export function useUpdateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      // Atualizar custos de procedimentos quando cost_price mudar
+      queryClient.invalidateQueries({ queryKey: ["procedure-product-costs"] });
+      queryClient.invalidateQueries({ queryKey: ["procedure-product-cost"] });
+      queryClient.invalidateQueries({ queryKey: ["procedure-products"] });
       toast.success("Produto atualizado!");
     },
     onError: (error: Error) => {

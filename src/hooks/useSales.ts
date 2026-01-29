@@ -300,88 +300,30 @@ export function useUpdateSaleStatus() {
 /**
  * Cancel sale and restore stock
  */
+/**
+ * Cancel sale using transactional edge function.
+ * All operations (status update, stock revert, finance reversal) are atomic.
+ */
 export function useCancelSale() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (id: string) => {
-      const clinicId = await getClinicId();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Get sale with items
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .select(`*, sale_items(*)`)
-        .eq("id", id)
-        .single();
-      
-      if (saleError) throw saleError;
-      
-      // Restore stock for each item
-      for (const item of (sale.sale_items || []) as SaleItem[]) {
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product_id)
-          .single();
-        
-        if (product) {
-          const previousQty = Number(product.stock_quantity) || 0;
-          const newQty = previousQty + item.quantity;
-          
-          // Create return movement
-          await supabase
-            .from("stock_movements")
-            .insert({
-              clinic_id: clinicId,
-              product_id: item.product_id,
-              movement_type: 'devolucao',
-              quantity: item.quantity,
-              previous_quantity: previousQty,
-              new_quantity: newQty,
-              reason: 'Cancelamento de venda',
-              reference_type: 'sale',
-              reference_id: id,
-              created_by: user?.id || null,
-            });
-          
-          // Update product stock
-          await supabase
-            .from("products")
-            .update({ 
-              stock_quantity: newQty,
-              updated_at: new Date().toISOString() 
-            })
-            .eq("id", item.product_id);
-        }
-      }
-      
-      // Update sale status
-      const { error: updateError } = await supabase
-        .from("sales")
-        .update({ 
-          payment_status: 'cancelado',
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
-          canceled_by: user?.id || null,
-          updated_at: new Date().toISOString() 
-        })
-        .eq("id", id);
-      
-      if (updateError) throw updateError;
-      
-      // Log audit entry for sale cancellation
-      await supabase.functions.invoke('log-access', {
-        body: {
-          action: 'SALE_CANCELLED',
-          resource: `sales/${id}`,
-          user_agent: navigator.userAgent,
-        },
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { data: response, error } = await supabase.functions.invoke("cancel-sale", {
+        body: { sale_id: id, reason },
       });
       
-      return { id };
+      if (error) {
+        throw new Error(error.message || "Erro ao cancelar venda");
+      }
+      
+      if (!response.success) {
+        throw new Error(response.error || "Erro ao cancelar venda");
+      }
+      
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate all relevant queries after sale cancellation
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
@@ -392,7 +334,8 @@ export function useCancelSale() {
       queryClient.invalidateQueries({ queryKey: ["stock-stats"] });
       queryClient.invalidateQueries({ queryKey: ["finance-transactions"] });
       queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
-      toast.success("Venda cancelada e estoque restaurado!");
+      
+      toast.success(`Venda cancelada! ${data.items_reverted} itens devolvidos ao estoque.`);
     },
     onError: (error: Error) => {
       toast.error("Erro ao cancelar venda: " + error.message);

@@ -98,6 +98,7 @@ export interface Sale {
 export interface SaleFormData {
   patient_id?: string;
   professional_id?: string;
+  appointment_id?: string;
   sale_date?: string;
   discount_amount?: number;
   discount_percent?: number;

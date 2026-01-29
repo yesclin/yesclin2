@@ -4,7 +4,9 @@ import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, Messa
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
 import { useSalesReport } from '@/hooks/useSalesReport';
+import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
+import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
 import { FinancialReports } from '@/components/relatorios/FinancialReports';
 import { AppointmentReports } from '@/components/relatorios/AppointmentReports';
 import { PatientReports } from '@/components/relatorios/PatientReports';
@@ -16,6 +18,7 @@ import { ExecutiveReport } from '@/components/relatorios/ExecutiveReport';
 import { SalesReports } from '@/components/relatorios/SalesReports';
 import { toast } from 'sonner';
 import type { ReportFilters } from '@/types/relatorios';
+import type { SalesReportFilters as SalesFiltersType } from '@/types/salesReport';
 
 const reportTabs = [
   { value: 'gerencial', label: 'Gerencial', icon: Briefcase },
@@ -31,13 +34,25 @@ const reportTabs = [
 
 export default function Relatorios() {
   const today = new Date();
+  
+  // Filtros gerais para outros relatórios
   const [filters, setFilters] = useState<ReportFilters>({
     startDate: startOfMonth(today),
     endDate: endOfMonth(today),
   });
 
+  // Filtros específicos para vendas
+  const [salesFilters, setSalesFilters] = useState<SalesFiltersType>({
+    startDate: startOfMonth(today),
+    endDate: endOfMonth(today),
+    status: 'all',
+  });
+
+  const [activeTab, setActiveTab] = useState('gerencial');
+
   const data = useRelatoriosMockData(filters);
-  const salesReport = useSalesReport(filters);
+  const salesReport = useSalesReport(salesFilters);
+  const salesOptions = useSalesReportOptions();
 
   const handleExportPDF = () => {
     toast.success('Exportando relatório em PDF...');
@@ -64,18 +79,8 @@ export default function Relatorios() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <ReportFiltersBar
-        filters={filters}
-        onFiltersChange={setFilters}
-        professionals={data.professionals}
-        insurances={data.insurances}
-        onExportPDF={handleExportPDF}
-        onExportExcel={handleExportExcel}
-      />
-
       {/* Tabs de Relatórios */}
-      <Tabs defaultValue="gerencial" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="flex-wrap h-auto gap-1 p-1">
           {reportTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
@@ -84,6 +89,26 @@ export default function Relatorios() {
             </TabsTrigger>
           ))}
         </TabsList>
+
+        {/* Filtros - condicional baseado na tab */}
+        {activeTab === 'vendas' ? (
+          <SalesReportFilters
+            filters={salesFilters}
+            onFiltersChange={setSalesFilters}
+            products={salesOptions.products}
+            patients={salesOptions.patients}
+            users={salesOptions.users}
+          />
+        ) : (
+          <ReportFiltersBar
+            filters={filters}
+            onFiltersChange={setFilters}
+            professionals={data.professionals}
+            insurances={data.insurances}
+            onExportPDF={handleExportPDF}
+            onExportExcel={handleExportExcel}
+          />
+        )}
 
         <TabsContent value="gerencial">
           <ExecutiveReport summary={data.executiveSummary} financialTrend={data.financialData} />

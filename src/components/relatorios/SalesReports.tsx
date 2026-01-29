@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ShoppingCart, RotateCcw, TrendingUp, Percent, Ban, CheckCircle, Eye, ShieldX, EyeOff } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { ShoppingCart, TrendingUp, Percent, Ban, CheckCircle, Eye, ShieldX, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -21,6 +21,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { ReportKPICards } from './ReportKPICards';
 import { SaleReportDetailsDialog } from './SaleReportDetailsDialog';
+import { ReportEmptyState } from './ReportEmptyState';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -111,10 +112,18 @@ export function SalesReports({
   const canAccessReport = can('relatorios', 'view');
   const canViewFinancials = can('financeiro', 'view');
 
-  const handleOpenDetails = (saleId: string) => {
+  // Memoiza para otimização de performance
+  const hasData = useMemo(() => salesList.length > 0, [salesList.length]);
+  const memoizedSalesList = useMemo(() => salesList, [salesList]);
+  const memoizedSalesByPeriod = useMemo(() => salesByPeriod, [salesByPeriod]);
+  const memoizedSalesByPaymentMethod = useMemo(() => salesByPaymentMethod, [salesByPaymentMethod]);
+  
+  const valorLiquido = useMemo(() => summary.totalVendas - summary.totalEstornos, [summary.totalVendas, summary.totalEstornos]);
+
+  const handleOpenDetails = useCallback((saleId: string) => {
     setSelectedSaleId(saleId);
     setDetailsOpen(true);
-  };
+  }, []);
 
   if (isLoading || permissionsLoading) {
     return (
@@ -134,7 +143,16 @@ export function SalesReports({
     return <AccessDeniedMessage />;
   }
 
-  const valorLiquido = summary.totalVendas - summary.totalEstornos;
+  // Mensagem clara quando não houver dados
+  if (!hasData) {
+    return (
+      <ReportEmptyState
+        title="Nenhuma venda encontrada"
+        description="Não foram encontradas vendas para os filtros selecionados. Experimente alterar o período, status ou outros filtros para visualizar os dados."
+        icon={<ShoppingCart className="h-8 w-8 text-muted-foreground" />}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -264,62 +282,54 @@ export function SalesReports({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {salesList.length > 0 ? (
-                    salesList.map((sale) => (
-                      <TableRow 
-                        key={sale.id} 
-                        className={`cursor-pointer transition-colors ${sale.status === 'canceled' 
-                          ? 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30' 
-                          : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => handleOpenDetails(sale.id)}
-                      >
-                        <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
-                        <TableCell className="text-center">
-                          {sale.status === 'canceled' ? (
-                            <Badge variant="destructive" className="font-semibold">
-                              <Ban className="h-3 w-3 mr-1" />
-                              Cancelada
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Ativa
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {sale.patientName || <span className="text-muted-foreground italic">Sem paciente</span>}
-                        </TableCell>
-                        <TableCell className={`text-right font-semibold ${sale.status === 'canceled' ? 'text-red-600 dark:text-red-400 line-through' : ''}`}>
-                          {formatCurrency(sale.totalAmount, canViewFinancials)}
-                        </TableCell>
-                        <TableCell>{formatPaymentMethod(sale.paymentMethod)}</TableCell>
-                        <TableCell>
-                          {sale.createdByName || <span className="text-muted-foreground">-</span>}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDetails(sale.id);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Nenhuma venda encontrada no período
+                  {memoizedSalesList.map((sale) => (
+                    <TableRow 
+                      key={sale.id} 
+                      className={`cursor-pointer transition-colors ${sale.status === 'canceled' 
+                        ? 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                        : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => handleOpenDetails(sale.id)}
+                    >
+                      <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
+                      <TableCell className="text-center">
+                        {sale.status === 'canceled' ? (
+                          <Badge variant="destructive" className="font-semibold">
+                            <Ban className="h-3 w-3 mr-1" />
+                            Cancelada
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Ativa
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {sale.patientName || <span className="text-muted-foreground italic">Sem paciente</span>}
+                      </TableCell>
+                      <TableCell className={`text-right font-semibold ${sale.status === 'canceled' ? 'text-red-600 dark:text-red-400 line-through' : ''}`}>
+                        {formatCurrency(sale.totalAmount, canViewFinancials)}
+                      </TableCell>
+                      <TableCell>{formatPaymentMethod(sale.paymentMethod)}</TableCell>
+                      <TableCell>
+                        {sale.createdByName || <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetails(sale.id);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
@@ -335,7 +345,7 @@ export function SalesReports({
             <CardContent>
               {canViewFinancials ? (
               <ChartContainer config={chartConfig} className="h-[350px] w-full">
-                <BarChart data={salesByPeriod}>
+                <BarChart data={memoizedSalesByPeriod}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="period" className="text-xs" />
                   <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} className="text-xs" />
@@ -370,11 +380,11 @@ export function SalesReports({
                       <EyeOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
                       <p>Valores financeiros ocultos</p>
                     </div>
-                  ) : salesByPaymentMethod.length > 0 ? (
+                  ) : memoizedSalesByPaymentMethod.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={salesByPaymentMethod}
+                          data={memoizedSalesByPaymentMethod}
                           cx="50%"
                           cy="50%"
                           innerRadius={60}
@@ -384,7 +394,7 @@ export function SalesReports({
                           label={({ label, percentage }) => `${label}: ${percentage}%`}
                           labelLine={false}
                         >
-                          {salesByPaymentMethod.map((_, index) => (
+                          {memoizedSalesByPaymentMethod.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -406,8 +416,8 @@ export function SalesReports({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {salesByPaymentMethod.length > 0 ? (
-                      salesByPaymentMethod.map((method, index) => (
+                    {memoizedSalesByPaymentMethod.length > 0 ? (
+                      memoizedSalesByPaymentMethod.map((method, index) => (
                         <TableRow key={method.method}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">

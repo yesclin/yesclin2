@@ -1,4 +1,5 @@
-import { Package, TrendingUp, DollarSign, Percent, ShieldX, EyeOff, Lock } from 'lucide-react';
+import { useMemo } from 'react';
+import { Package, TrendingUp, DollarSign, Percent, EyeOff, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
+import { ReportEmptyState } from './ReportEmptyState';
 import type { ProductMarginItem, ProductMarginSummary } from '@/hooks/useProductMarginReport';
 
 interface ProductMarginReportProps {
@@ -45,6 +47,14 @@ function getMarginBadge(margin: number) {
 export function ProductMarginReport({ items, summary, isLoading }: ProductMarginReportProps) {
   const { canViewRevenue, canViewCost, canViewProfit, canViewMargin, isLoading: accessLoading } = useFinancialAccessControl();
 
+  // Memoiza cálculos para otimização de performance
+  const canViewFullMetrics = useMemo(() => canViewCost && canViewProfit && canViewMargin, [canViewCost, canViewProfit, canViewMargin]);
+  
+  const hasData = useMemo(() => items.length > 0, [items.length]);
+
+  // Memoiza a lista de itens para evitar re-renders desnecessários
+  const memoizedItems = useMemo(() => items, [items]);
+
   if (isLoading || accessLoading) {
     return (
       <div className="space-y-6">
@@ -71,9 +81,17 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
       </Alert>
     );
   }
-  
-  // Verifica se pode ver métricas completas (custo, lucro, margem)
-  const canViewFullMetrics = canViewCost && canViewProfit && canViewMargin;
+
+  // Mensagem clara quando não houver dados
+  if (!hasData) {
+    return (
+      <ReportEmptyState
+        title="Nenhum produto vendido no período"
+        description="Não foram encontradas vendas de produtos para os filtros selecionados. Experimente alterar o período ou ajustar os filtros."
+        icon={<Package className="h-8 w-8 text-muted-foreground" />}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -199,45 +217,37 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <TableRow key={item.productId}>
-                    <TableCell className="font-medium">{item.productName}</TableCell>
-                    <TableCell className="text-right">{item.quantitySold}</TableCell>
-                    {canViewRevenue && (
-                      <TableCell className="text-right text-green-600 dark:text-green-400">
-                        {formatCurrency(item.totalRevenue, true)}
-                      </TableCell>
-                    )}
-                    {canViewCost && (
-                      <TableCell className="text-right text-red-600 dark:text-red-400">
-                        {formatCurrency(item.totalCost, true)}
-                      </TableCell>
-                    )}
-                    {canViewProfit && (
-                      <TableCell className={`text-right font-semibold ${item.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
-                        {formatCurrency(item.totalProfit, true)}
-                      </TableCell>
-                    )}
-                    {canViewMargin && (
-                      <TableCell className="text-right">
-                        {formatPercent(item.marginPercent, true)}
-                      </TableCell>
-                    )}
-                    {canViewMargin && (
-                      <TableCell className="text-center">
-                        {getMarginBadge(item.marginPercent)}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Nenhum produto vendido no período
-                  </TableCell>
+              {memoizedItems.map((item) => (
+                <TableRow key={item.productId}>
+                  <TableCell className="font-medium">{item.productName}</TableCell>
+                  <TableCell className="text-right">{item.quantitySold}</TableCell>
+                  {canViewRevenue && (
+                    <TableCell className="text-right text-green-600 dark:text-green-400">
+                      {formatCurrency(item.totalRevenue, true)}
+                    </TableCell>
+                  )}
+                  {canViewCost && (
+                    <TableCell className="text-right text-red-600 dark:text-red-400">
+                      {formatCurrency(item.totalCost, true)}
+                    </TableCell>
+                  )}
+                  {canViewProfit && (
+                    <TableCell className={`text-right font-semibold ${item.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
+                      {formatCurrency(item.totalProfit, true)}
+                    </TableCell>
+                  )}
+                  {canViewMargin && (
+                    <TableCell className="text-right">
+                      {formatPercent(item.marginPercent, true)}
+                    </TableCell>
+                  )}
+                  {canViewMargin && (
+                    <TableCell className="text-center">
+                      {getMarginBadge(item.marginPercent)}
+                    </TableCell>
+                  )}
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>

@@ -78,6 +78,54 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check user permissions using database function
+    const { data: permissions, error: permError } = await supabase.rpc(
+      "get_user_all_permissions",
+      { _user_id: user.id }
+    );
+
+    if (permError) {
+      console.error("[cancel-sale] Error fetching permissions:", permError);
+    }
+
+    // Check if user has admin/owner role OR delete permission on financeiro module
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("clinic_id", profile.clinic_id)
+      .single();
+
+    const isAdmin = roleData?.role === "owner" || roleData?.role === "admin";
+    const financeiroPerms = permissions?.find((p: any) => p.module === "financeiro");
+    const canDelete = financeiroPerms?.actions?.includes("delete") || false;
+    const canCancelSale = isAdmin || canDelete;
+
+    if (!canCancelSale) {
+      console.warn(`[cancel-sale] Permission denied for user ${user.id} on sale ${sale_id}`);
+      
+      // Log denied attempt to audit
+      try {
+        await supabase.from("access_logs").insert({
+          clinic_id: profile.clinic_id,
+          user_id: user.id,
+          action: "PERMISSION_DENIED_CANCEL_SALE",
+          resource: `sales/${sale_id}`,
+          user_agent: req.headers.get("user-agent") || null,
+        });
+      } catch (auditError) {
+        console.warn("[cancel-sale] Failed to log denied attempt:", auditError);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Você não tem permissão para cancelar vendas. Apenas administradores ou usuários com permissão de exclusão no módulo financeiro podem realizar esta ação." 
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Verify sale belongs to user's clinic
     const { data: sale, error: saleCheckError } = await supabase
       .from("sales")

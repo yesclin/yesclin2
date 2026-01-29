@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PermissionsProvider } from "@/hooks/usePermissions";
+import { RequireAuth } from "@/components/app/RequireAuth";
 
 // Páginas Públicas
 import Index from "./pages/Index";
@@ -57,7 +58,14 @@ const App = () => (
           <Route path="/aceitar-convite" element={<AceitarConvite />} />
           
           {/* Área do App (protegida) */}
-          <Route path="/app" element={<AppLayout />}>
+          <Route
+            path="/app"
+            element={
+              <RequireAuth>
+                <AppLayout />
+              </RequireAuth>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="agenda" element={<Agenda />} />
             <Route path="prontuario" element={<Prontuario />} />

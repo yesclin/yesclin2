@@ -239,7 +239,8 @@ export type ReportCategory =
   | 'profissionais'
   | 'estoque'
   | 'comunicacao'
-  | 'gerencial';
+  | 'gerencial'
+  | 'vendas';
 
 export interface ReportDefinition {
   id: string;
@@ -258,6 +259,7 @@ export const reportCategoryLabels: Record<ReportCategory, string> = {
   estoque: 'Estoque',
   comunicacao: 'Comunicação',
   gerencial: 'Gerencial',
+  vendas: 'Vendas & Estornos',
 };
 
 export const reportCategoryColors: Record<ReportCategory, string> = {
@@ -269,4 +271,73 @@ export const reportCategoryColors: Record<ReportCategory, string> = {
   estoque: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   comunicacao: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
   gerencial: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  vendas: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
 };
+
+// =============================================
+// RELATÓRIOS DE VENDAS E ESTORNOS
+// =============================================
+
+export type SaleStatus = 'active' | 'canceled';
+
+export interface SaleReportItem {
+  id: string;
+  saleDate: string;
+  status: SaleStatus;
+  patientId: string | null;
+  patientName: string | null;
+  totalAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  itemCount: number;
+  professionalId: string | null;
+  professionalName: string | null;
+}
+
+export interface SalesReportSummary {
+  totalVendas: number;
+  totalEstornos: number;
+  vendasAtivas: number;
+  vendasCanceladas: number;
+  quantidadeVendas: number;
+  quantidadeEstornos: number;
+  descontosConcedidos: number;
+  ticketMedio: number;
+}
+
+export interface SalesByPeriod {
+  period: string;
+  vendas: number;
+  estornos: number;
+  liquido: number;
+}
+
+export interface SalesByPaymentMethod {
+  method: string;
+  label: string;
+  totalAmount: number;
+  count: number;
+  percentage: number;
+}
+
+export interface SaleItemDetail {
+  id: string;
+  saleId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface StockMovementForSale {
+  id: string;
+  saleId: string;
+  productId: string;
+  productName: string;
+  movementType: 'sale' | 'sale_reversal';
+  quantity: number;
+  movementDate: string;
+}

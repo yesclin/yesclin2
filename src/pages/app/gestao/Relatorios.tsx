@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase } from 'lucide-react';
+import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
+import { useSalesReport } from '@/hooks/useSalesReport';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { FinancialReports } from '@/components/relatorios/FinancialReports';
 import { AppointmentReports } from '@/components/relatorios/AppointmentReports';
@@ -12,12 +13,14 @@ import { ProfessionalReports } from '@/components/relatorios/ProfessionalReports
 import { StockReports } from '@/components/relatorios/StockReports';
 import { CommunicationReports } from '@/components/relatorios/CommunicationReports';
 import { ExecutiveReport } from '@/components/relatorios/ExecutiveReport';
+import { SalesReports } from '@/components/relatorios/SalesReports';
 import { toast } from 'sonner';
 import type { ReportFilters } from '@/types/relatorios';
 
 const reportTabs = [
   { value: 'gerencial', label: 'Gerencial', icon: Briefcase },
   { value: 'financeiro', label: 'Financeiro', icon: DollarSign },
+  { value: 'vendas', label: 'Vendas', icon: ShoppingCart },
   { value: 'agenda', label: 'Agenda', icon: Calendar },
   { value: 'pacientes', label: 'Pacientes', icon: Users },
   { value: 'convenios', label: 'Convênios', icon: Building2 },
@@ -34,6 +37,7 @@ export default function Relatorios() {
   });
 
   const data = useRelatoriosMockData(filters);
+  const salesReport = useSalesReport(filters);
 
   const handleExportPDF = () => {
     toast.success('Exportando relatório em PDF...');
@@ -94,6 +98,16 @@ export default function Relatorios() {
             packagesReport={data.packagesReport}
             totals={data.totals}
             filters={filters}
+          />
+        </TabsContent>
+
+        <TabsContent value="vendas">
+          <SalesReports
+            summary={salesReport.summary}
+            salesByPeriod={salesReport.salesByPeriod}
+            salesByPaymentMethod={salesReport.salesByPaymentMethod}
+            salesList={salesReport.salesList}
+            isLoading={salesReport.isLoading}
           />
         </TabsContent>
 

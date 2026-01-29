@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Search, X } from 'lucide-react';
+import { Calendar, Search, X, Download, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,8 @@ interface SalesReportFiltersProps {
   products?: { id: string; name: string }[];
   patients?: { id: string; name: string }[];
   users?: { id: string; name: string }[];
+  onExportCSV?: () => void;
+  onExportPDF?: () => void;
 }
 
 type QuickPeriod = 'today' | 'week' | 'month' | 'custom';
@@ -51,6 +53,8 @@ export function SalesReportFilters({
   products = [],
   patients = [],
   users = [],
+  onExportCSV,
+  onExportPDF,
 }: SalesReportFiltersProps) {
   const [period, setPeriod] = useState<QuickPeriod>('month');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -199,6 +203,18 @@ export function SalesReportFilters({
             Limpar
           </Button>
         )}
+
+        {/* Botões de exportação */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onExportPDF} className="gap-2">
+            <Download className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={onExportCSV} className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filtros avançados */}

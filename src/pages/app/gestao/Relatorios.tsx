@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
 import { useSalesReport } from '@/hooks/useSalesReport';
 import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
+import { useSalesReportExport } from '@/hooks/useSalesReportExport';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
 import { FinancialReports } from '@/components/relatorios/FinancialReports';
@@ -53,7 +54,23 @@ export default function Relatorios() {
   const data = useRelatoriosMockData(filters);
   const salesReport = useSalesReport(salesFilters);
   const salesOptions = useSalesReportOptions();
+  const { exportCSV, exportPDF } = useSalesReportExport();
 
+  const handleExportSalesCSV = () => {
+    exportCSV({
+      salesList: salesReport.salesList,
+      summary: salesReport.summary,
+      filters: salesFilters,
+    });
+  };
+
+  const handleExportSalesPDF = () => {
+    exportPDF({
+      salesList: salesReport.salesList,
+      summary: salesReport.summary,
+      filters: salesFilters,
+    });
+  };
   const handleExportPDF = () => {
     toast.success('Exportando relatório em PDF...');
   };
@@ -98,6 +115,8 @@ export default function Relatorios() {
             products={salesOptions.products}
             patients={salesOptions.patients}
             users={salesOptions.users}
+            onExportCSV={handleExportSalesCSV}
+            onExportPDF={handleExportSalesPDF}
           />
         ) : (
           <ReportFiltersBar

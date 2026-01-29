@@ -36,6 +36,7 @@ import {
 import { useMaterialsList } from "@/hooks/useMaterialsCRUD";
 import { materialUnits } from "@/types/cadastros-clinicos";
 import { usePermissions } from "@/hooks/usePermissions";
+import { MaterialConsumptionConfirmDialog } from "./MaterialConsumptionConfirmDialog";
 
 interface AppointmentMaterialsDialogProps {
   open: boolean;
@@ -59,6 +60,7 @@ export function AppointmentMaterialsDialog({
   const [extraMaterialId, setExtraMaterialId] = useState("");
   const [extraQuantity, setExtraQuantity] = useState(1);
   const [extraUnit, setExtraUnit] = useState("unidade");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const { data: appointmentMaterials = [], isLoading } = useAppointmentMaterials(open ? appointmentId : null);
   const { data: allMaterials = [] } = useMaterialsList();
@@ -68,6 +70,9 @@ export function AppointmentMaterialsDialog({
   // Permissão para executar procedimentos que consomem estoque
   const { isAdmin, can } = usePermissions();
   const canConsumeStock = isAdmin || can("estoque", "edit");
+  
+  // Whether we should consume stock on confirm
+  const shouldConsumeStock = canConsumeStock && autoConsumptionEnabled && materials.length > 0;
 
   // Initialize materials from appointment
   useEffect(() => {
@@ -127,15 +132,32 @@ export function AppointmentMaterialsDialog({
     setExtraUnit("unidade");
   };
 
-  const handleConfirm = async () => {
-    // Apenas processa consumo se tiver permissão e estiver habilitado
-    if (canConsumeStock && autoConsumptionEnabled && materials.length > 0) {
+  const handleRequestConfirm = () => {
+    // If we should consume stock, show confirmation dialog first
+    if (shouldConsumeStock) {
+      setShowConfirmDialog(true);
+    } else {
+      // No stock consumption, proceed directly
+      onConfirm();
+    }
+  };
+
+  const handleConfirmConsumption = async () => {
+    try {
       await processMutation.mutateAsync({
         appointmentId,
         materials,
       });
+      setShowConfirmDialog(false);
+      onConfirm();
+    } catch (error) {
+      // Error is already handled in the mutation
+      setShowConfirmDialog(false);
     }
-    onConfirm();
+  };
+
+  const handleCancelConfirmation = () => {
+    setShowConfirmDialog(false);
   };
 
   const availableMaterials = allMaterials.filter(
@@ -364,13 +386,24 @@ export function AppointmentMaterialsDialog({
             Cancelar
           </Button>
           <Button 
-            onClick={handleConfirm}
+            onClick={handleRequestConfirm}
             disabled={processMutation.isPending}
           >
             {processMutation.isPending ? "Processando..." : "Finalizar Atendimento"}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Confirmation dialog for stock consumption */}
+      <MaterialConsumptionConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        materials={materials}
+        totalCost={totalCost}
+        onConfirm={handleConfirmConsumption}
+        onCancel={handleCancelConfirmation}
+        isProcessing={processMutation.isPending}
+      />
     </Dialog>
   );
 }

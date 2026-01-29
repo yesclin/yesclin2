@@ -273,16 +273,60 @@ export function useProcessMaterialConsumption() {
       queryClient.invalidateQueries({ queryKey: ['materials-list'] });
       
       if (result?.consumed_count && result.consumed_count > 0) {
-        toast.success(`Baixa de ${result.consumed_count} materiais registrada!`);
+        const totalCost = result.total_cost 
+          ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(result.total_cost) 
+          : "";
+        
+        toast.success(
+          `✅ Baixa realizada com sucesso!`, 
+          { 
+            description: `${result.consumed_count} material(is) consumido(s)${totalCost ? ` • Custo total: ${totalCost}` : ""}`,
+            duration: 5000,
+          }
+        );
       }
       
       if (result?.alerts_count && result.alerts_count > 0) {
-        toast.warning(`${result.alerts_count} alerta(s) de estoque gerado(s)`);
+        toast.warning(
+          `⚠️ Atenção: Estoque baixo detectado`,
+          {
+            description: `${result.alerts_count} material(is) atingiram o limite mínimo de estoque`,
+            duration: 6000,
+          }
+        );
       }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error processing material consumption:', error);
-      toast.error('Erro ao processar baixa de materiais');
+      
+      // Parse specific error messages for better UX
+      const errorMessage = error.message || '';
+      
+      if (errorMessage.includes('insufficient') || errorMessage.includes('estoque insuficiente')) {
+        toast.error(
+          '❌ Estoque insuficiente',
+          {
+            description: 'Um ou mais materiais não possuem quantidade suficiente em estoque. Verifique e reponha antes de continuar.',
+            duration: 8000,
+          }
+        );
+      } else if (errorMessage.includes('not found') || errorMessage.includes('não encontrado')) {
+        toast.error(
+          '❌ Material não encontrado',
+          {
+            description: 'Um ou mais materiais não foram encontrados no cadastro. Verifique a configuração do procedimento.',
+            duration: 6000,
+          }
+        );
+      } else {
+        toast.error(
+          '❌ Erro ao processar baixa',
+          {
+            description: 'Não foi possível realizar a baixa de materiais. Tente novamente ou contate o suporte.',
+            duration: 6000,
+          }
+        );
+      }
     },
   });
 }

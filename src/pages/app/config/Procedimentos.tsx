@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ListChecks, Plus, Search, Edit, ToggleLeft, ToggleRight, Loader2, ShieldAlert } from "lucide-react";
+import { ListChecks, Plus, Search, Edit, ToggleLeft, ToggleRight, Loader2, ShieldAlert, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -23,7 +23,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProcedureFormDialog } from "@/components/procedures/ProcedureFormDialog";
+import { ProcedureProductsDialog } from "@/components/procedures/ProcedureProductsDialog";
 import {
   Procedure,
   useProceduresList,
@@ -37,6 +39,8 @@ export default function ConfigProcedimentos() {
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<Procedure | null>(null);
+  const [productsDialogOpen, setProductsDialogOpen] = useState(false);
+  const [productsDialogProcedure, setProductsDialogProcedure] = useState<Procedure | null>(null);
 
   const { data: procedures, isLoading, error } = useProceduresList(true);
   const toggleStatusMutation = useToggleProcedureStatus();
@@ -64,6 +68,11 @@ export default function ConfigProcedimentos() {
 
   const handleToggleStatus = (procedure: Procedure) => {
     setConfirmToggle(procedure);
+  };
+
+  const handleOpenProducts = (procedure: Procedure) => {
+    setProductsDialogProcedure(procedure);
+    setProductsDialogOpen(true);
   };
 
   const confirmStatusChange = async () => {
@@ -211,6 +220,18 @@ export default function ConfigProcedimentos() {
                     {canManage && (
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenProducts(procedure)}
+                              >
+                                <Package className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Configurar produtos</TooltipContent>
+                          </Tooltip>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -251,6 +272,13 @@ export default function ConfigProcedimentos() {
         onOpenChange={setIsDialogOpen}
         procedure={selectedProcedure}
         mode={dialogMode}
+      />
+
+      {/* Products Configuration Dialog */}
+      <ProcedureProductsDialog
+        open={productsDialogOpen}
+        onOpenChange={setProductsDialogOpen}
+        procedure={productsDialogProcedure}
       />
 
       {/* Confirm Toggle Status Dialog */}

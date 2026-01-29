@@ -111,6 +111,8 @@ export function useCreateProcedureProduct() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['procedure-products', variables.procedure_id] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-costs'] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-cost', variables.procedure_id] });
       toast.success('Produto vinculado com sucesso!');
     },
     onError: (error: any) => {
@@ -141,6 +143,8 @@ export function useUpdateProcedureProduct() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['procedure-products', result.procedureId] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-costs'] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-cost', result.procedureId] });
       toast.success('Vínculo atualizado com sucesso!');
     },
     onError: (error) => {
@@ -165,6 +169,8 @@ export function useDeleteProcedureProduct() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['procedure-products', result.procedureId] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-costs'] });
+      queryClient.invalidateQueries({ queryKey: ['procedure-product-cost', result.procedureId] });
       toast.success('Produto removido do procedimento!');
     },
     onError: (error) => {

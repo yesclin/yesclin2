@@ -85,27 +85,22 @@ export function AppSidebar() {
   };
 
   // Filter items based on permissions
-  // Always show menu items during loading or when no user is logged in
-  // This ensures the sidebar is always visible and navigable
+  // Always show all items during loading to prevent empty sidebar
   const filterByPermission = (items: MenuItem[]) => {
-    // During loading, show all items to prevent empty sidebar
     if (isLoading) return items;
-    // If no permissions loaded (not logged in), show all items for navigation
-    // RLS will protect actual data access
     return items.filter(item => !item.module || can(item.module, "view"));
   };
 
-  // Always show main menu items regardless of permission state
-  // This prevents the sidebar from being completely empty
+  // Always show all menu items during loading
   const visibleMainItems = isLoading ? mainMenuItems : filterByPermission(mainMenuItems);
-  const visibleGestaoItems = filterByPermission(gestaoItems);
-  const visibleConfigItems = filterByPermission(configItems);
+  const visibleGestaoItems = isLoading ? gestaoItems : filterByPermission(gestaoItems);
+  const visibleConfigItems = isLoading ? configItems : filterByPermission(configItems);
 
   const isGestaoActive = visibleGestaoItems.some((item) => isActive(item.url));
   const isConfigActive = visibleConfigItems.some((item) => isActive(item.url));
 
-  // Check if user can access config at all
-  const canAccessConfig = can("configuracoes", "view");
+  // Check if user can access config - show during loading
+  const canAccessConfig = isLoading || can("configuracoes", "view");
 
   return (
     <Sidebar className="border-r">

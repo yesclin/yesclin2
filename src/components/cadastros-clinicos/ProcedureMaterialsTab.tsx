@@ -95,7 +95,8 @@ export function ProcedureMaterialsTab() {
   const { formData: kitForm, updateField: updateKitField, resetForm: resetKitForm, isValid: isKitValid } = useProcedureKitForm();
   
   const { isAdmin, can } = usePermissions();
-  const canManage = isAdmin || can("configuracoes", "edit");
+  // Permissão para configurar produtos nos procedimentos: requer "estoque" + "edit" 
+  const canManage = isAdmin || (can("configuracoes", "edit") && can("estoque", "edit"));
 
   const isLoading = loadingMaterials || loadingKits || loadingCosts;
 

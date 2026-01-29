@@ -44,7 +44,8 @@ export function MaterialConsumptionSettings() {
   const resolveAlertMutation = useResolveStockAlert();
   
   const { isAdmin, can } = usePermissions();
-  const canManage = isAdmin || can("configuracoes", "edit");
+  // Permissão para gerenciar configurações de consumo de estoque: requer "estoque" + "edit"
+  const canManage = isAdmin || (can("configuracoes", "edit") && can("estoque", "edit"));
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {

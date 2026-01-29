@@ -175,13 +175,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Log audit entry (non-critical, don't fail if this errors)
+    // Log audit entry with detailed metadata (non-critical, don't fail if this errors)
     try {
+      // Get sale details for audit log
+      const { data: saleDetails } = await supabase
+        .from("sales")
+        .select("patient_id, sale_number, total_amount")
+        .eq("id", sale_id)
+        .single();
+
       await supabase.from("access_logs").insert({
         clinic_id: profile.clinic_id,
         user_id: user.id,
         action: "SALE_CANCELLED",
-        resource: `sales/${sale_id}`,
+        resource: `sales/${sale_id}|patient:${saleDetails?.patient_id || 'unknown'}|sale_number:${saleDetails?.sale_number || 'N/A'}|amount:${cancelResult.amount_reversed || 0}|reason:${reason || 'Cancelamento de venda'}`,
         user_agent: req.headers.get("user-agent") || null,
       });
     } catch (auditError) {

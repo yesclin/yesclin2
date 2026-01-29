@@ -74,7 +74,7 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
 
   const handleCancelSale = () => {
     if (!saleId) return;
-    cancelSale.mutate(saleId, {
+    cancelSale.mutate({ id: saleId }, {
       onSuccess: () => {
         setShowCancelConfirm(false);
         onOpenChange(false);

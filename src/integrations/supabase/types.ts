@@ -4343,6 +4343,8 @@ export type Database = {
       sales: {
         Row: {
           appointment_id: string | null
+          canceled_at: string | null
+          canceled_by: string | null
           clinic_id: string
           created_at: string
           created_by: string | null
@@ -4356,6 +4358,7 @@ export type Database = {
           professional_id: string | null
           sale_date: string
           sale_number: string | null
+          status: string
           subtotal: number
           total_amount: number
           transaction_id: string | null
@@ -4363,6 +4366,8 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
           clinic_id: string
           created_at?: string
           created_by?: string | null
@@ -4376,6 +4381,7 @@ export type Database = {
           professional_id?: string | null
           sale_date?: string
           sale_number?: string | null
+          status?: string
           subtotal?: number
           total_amount?: number
           transaction_id?: string | null
@@ -4383,6 +4389,8 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
           clinic_id?: string
           created_at?: string
           created_by?: string | null
@@ -4396,6 +4404,7 @@ export type Database = {
           professional_id?: string | null
           sale_date?: string
           sale_number?: string | null
+          status?: string
           subtotal?: number
           total_amount?: number
           transaction_id?: string | null

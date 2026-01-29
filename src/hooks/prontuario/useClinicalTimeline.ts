@@ -293,18 +293,21 @@ export function useClinicalTimeline(patientId: string | null) {
     }));
   }, []);
 
-  // Transform sales to timeline events
+  // Transform sales to timeline events (including cancellations)
   const transformSales = useCallback((
     sales: RawSale[],
     profiles: Map<string, string>
   ): TimelineEvent[] => {
-    return sales.map(sale => {
+    const events: TimelineEvent[] = [];
+    
+    sales.forEach(sale => {
       const formattedAmount = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
       }).format(sale.total_amount);
 
-      return {
+      // Sale created event
+      events.push({
         id: `sale-${sale.id}`,
         event_type: 'SALE_CREATED' as TimelineEventType,
         category: 'sales' as TimelineEventCategory,
@@ -322,9 +325,55 @@ export function useClinicalTimeline(patientId: string | null) {
         },
         target_tab: 'vendas',
         can_navigate: true,
-      };
+      });
     });
+    
+    return events;
   }, []);
+
+  // Transform cancelled sales from access logs to timeline events
+  const transformCancelledSales = useCallback((
+    logs: RawAccessLog[],
+    profiles: Map<string, string>
+  ): TimelineEvent[] => {
+    return logs
+      .filter(log => log.action === 'SALE_CANCELLED' && log.resource?.includes('patient:'))
+      .map(log => {
+        // Parse resource: sales/{id}|patient:{id}|sale_number:{num}|amount:{val}|reason:{text}
+        const parts = log.resource?.split('|') || [];
+        const saleIdPart = parts[0]?.replace('sales/', '') || '';
+        const patientPart = parts.find(p => p.startsWith('patient:'))?.replace('patient:', '') || '';
+        const saleNumberPart = parts.find(p => p.startsWith('sale_number:'))?.replace('sale_number:', '') || 'N/A';
+        const amountPart = parts.find(p => p.startsWith('amount:'))?.replace('amount:', '') || '0';
+        const reasonPart = parts.find(p => p.startsWith('reason:'))?.replace('reason:', '') || 'Cancelamento';
+        
+        const formattedAmount = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(Number(amountPart) || 0);
+
+        return {
+          id: `sale-cancelled-${log.id}`,
+          event_type: 'SALE_CANCELLED' as TimelineEventType,
+          category: 'sales' as TimelineEventCategory,
+          entity: 'access_logs',
+          entity_id: log.id,
+          patient_id: patientPart || patientId || '',
+          author_id: log.user_id,
+          author_name: log.user_id ? (profiles.get(log.user_id) || 'Usuário') : 'Sistema',
+          timestamp: log.created_at,
+          summary: `Venda ${saleNumberPart} cancelada - ${formattedAmount} - Motivo: ${reasonPart}`,
+          metadata: { 
+            sale_id: saleIdPart,
+            sale_number: saleNumberPart, 
+            amount_reversed: Number(amountPart),
+            reason: reasonPart,
+          },
+          target_tab: 'vendas',
+          can_navigate: false,
+        };
+      });
+  }, [patientId]);
 
   // Main fetch function that aggregates all sources
   const fetchTimeline = useCallback(async (reset = false) => {
@@ -425,6 +474,7 @@ export function useClinicalTimeline(patientId: string | null) {
         ...transformAccessLogs((accessLogsRes.data || []) as RawAccessLog[], profiles),
         ...transformAppointments((appointmentsRes.data || []) as RawAppointment[], profiles),
         ...transformSales((salesRes.data || []) as RawSale[], profiles),
+        ...transformCancelledSales((accessLogsRes.data || []) as RawAccessLog[], profiles),
       ];
 
       // Apply filters
@@ -479,6 +529,7 @@ export function useClinicalTimeline(patientId: string | null) {
     transformAccessLogs,
     transformAppointments,
     transformSales,
+    transformCancelledSales,
   ]);
 
   // Initial load

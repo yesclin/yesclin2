@@ -71,6 +71,8 @@ export interface StockMovementFormData {
 
 export type PaymentStatus = 'pendente' | 'pago' | 'parcial' | 'cancelado';
 
+export type SaleStatus = 'active' | 'canceled';
+
 export interface Sale {
   id: string;
   clinic_id: string;
@@ -84,6 +86,9 @@ export interface Sale {
   total_amount: number;
   payment_method?: string | null;
   payment_status: PaymentStatus;
+  status: SaleStatus;
+  canceled_at?: string | null;
+  canceled_by?: string | null;
   notes?: string | null;
   transaction_id?: string | null;
   created_by?: string | null;

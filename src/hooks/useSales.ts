@@ -361,6 +361,9 @@ export function useCancelSale() {
         .from("sales")
         .update({ 
           payment_status: 'cancelado',
+          status: 'canceled',
+          canceled_at: new Date().toISOString(),
+          canceled_by: user?.id || null,
           updated_at: new Date().toISOString() 
         })
         .eq("id", id);

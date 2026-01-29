@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Package, Plus, Minus, Trash2, Layers, AlertTriangle, Check } from "lucide-react";
+import { Package, Plus, Minus, Trash2, Layers, AlertTriangle, Check, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   useAppointmentMaterials, 
   useProcessMaterialConsumption,
@@ -34,6 +35,7 @@ import {
 } from "@/hooks/useMaterialConsumption";
 import { useMaterialsList } from "@/hooks/useMaterialsCRUD";
 import { materialUnits } from "@/types/cadastros-clinicos";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface AppointmentMaterialsDialogProps {
   open: boolean;
@@ -62,6 +64,10 @@ export function AppointmentMaterialsDialog({
   const { data: allMaterials = [] } = useMaterialsList();
   const { data: autoConsumptionEnabled } = useAutoConsumptionConfig();
   const processMutation = useProcessMaterialConsumption();
+  
+  // Permissão para executar procedimentos que consomem estoque
+  const { isAdmin, can } = usePermissions();
+  const canConsumeStock = isAdmin || can("estoque", "edit");
 
   // Initialize materials from appointment
   useEffect(() => {
@@ -122,7 +128,8 @@ export function AppointmentMaterialsDialog({
   };
 
   const handleConfirm = async () => {
-    if (autoConsumptionEnabled && materials.length > 0) {
+    // Apenas processa consumo se tiver permissão e estiver habilitado
+    if (canConsumeStock && autoConsumptionEnabled && materials.length > 0) {
       await processMutation.mutateAsync({
         appointmentId,
         materials,
@@ -339,6 +346,16 @@ export function AppointmentMaterialsDialog({
                 <p>Os materiais serão registrados apenas para cálculo de custo.</p>
               </div>
             </div>
+          )}
+
+          {/* Warning if user doesn't have permission to consume stock */}
+          {!canConsumeStock && autoConsumptionEnabled && materials.length > 0 && (
+            <Alert className="mt-4">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertDescription>
+                Você não tem permissão para baixar estoque. Os materiais serão exibidos apenas para referência.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
 

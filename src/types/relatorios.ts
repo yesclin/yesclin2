@@ -294,6 +294,10 @@ export interface SaleReportItem {
   itemCount: number;
   professionalId: string | null;
   professionalName: string | null;
+  createdBy: string | null;
+  createdByName: string | null;
+  canceledBy: string | null;
+  canceledByName: string | null;
 }
 
 export interface SalesReportSummary {

@@ -43,6 +43,16 @@ const chartConfig = {
   liquido: { label: 'Líquido', color: '#10b981' },
 };
 
+const paymentLabels: Record<string, string> = {
+  pix: 'PIX',
+  credito: 'Cartão de Crédito',
+  debito: 'Cartão de Débito',
+  dinheiro: 'Dinheiro',
+  convenio: 'Convênio',
+  boleto: 'Boleto',
+  transferencia: 'Transferência',
+};
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
@@ -53,6 +63,11 @@ function formatDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+function formatPaymentMethod(method: string | null): string {
+  if (!method) return '-';
+  return paymentLabels[method] || method;
 }
 
 export function SalesReports({
@@ -141,13 +156,79 @@ export function SalesReports({
         </Card>
       </div>
 
-      <Tabs defaultValue="evolucao" className="space-y-4">
+      <Tabs defaultValue="listagem" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="listagem">Listagem Principal</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="pagamento">Por Pagamento</TabsTrigger>
-          <TabsTrigger value="lista">Lista de Vendas</TabsTrigger>
-          <TabsTrigger value="estornos">Estornos</TabsTrigger>
         </TabsList>
+
+        {/* Listagem Principal Unificada */}
+        <TabsContent value="listagem">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Relatório de Vendas e Estornos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data da Venda</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Paciente</TableHead>
+                    <TableHead className="text-right">Valor Total</TableHead>
+                    <TableHead>Forma de Pagamento</TableHead>
+                    <TableHead>Usuário Responsável</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesList.length > 0 ? (
+                    salesList.map((sale) => (
+                      <TableRow 
+                        key={sale.id} 
+                        className={sale.status === 'canceled' 
+                          ? 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                          : ''
+                        }
+                      >
+                        <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
+                        <TableCell className="text-center">
+                          {sale.status === 'canceled' ? (
+                            <Badge variant="destructive" className="font-semibold">
+                              <Ban className="h-3 w-3 mr-1" />
+                              Cancelada
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Ativa
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {sale.patientName || <span className="text-muted-foreground italic">Sem paciente</span>}
+                        </TableCell>
+                        <TableCell className={`text-right font-semibold ${sale.status === 'canceled' ? 'text-red-600 dark:text-red-400 line-through' : ''}`}>
+                          {formatCurrency(sale.totalAmount)}
+                        </TableCell>
+                        <TableCell>{formatPaymentMethod(sale.paymentMethod)}</TableCell>
+                        <TableCell>
+                          {sale.createdByName || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        Nenhuma venda encontrada no período
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Evolução das Vendas */}
         <TabsContent value="evolucao">
@@ -242,112 +323,6 @@ export function SalesReports({
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Lista de Vendas Ativas */}
-        <TabsContent value="lista">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Vendas Realizadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Profissional</TableHead>
-                    <TableHead className="text-center">Itens</TableHead>
-                    <TableHead className="text-right">Desconto</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {salesList.filter(s => s.status === 'active').length > 0 ? (
-                    salesList
-                      .filter(s => s.status === 'active')
-                      .map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
-                          <TableCell className="font-medium">{sale.patientName || '-'}</TableCell>
-                          <TableCell>{sale.professionalName || '-'}</TableCell>
-                          <TableCell className="text-center">{sale.itemCount}</TableCell>
-                          <TableCell className="text-right text-muted-foreground">
-                            {sale.discountAmount > 0 ? formatCurrency(sale.discountAmount) : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(sale.totalAmount)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              {sale.paymentStatus === 'pago' ? 'Pago' : sale.paymentStatus === 'pendente' ? 'Pendente' : sale.paymentStatus}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Nenhuma venda encontrada no período
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Lista de Estornos */}
-        <TabsContent value="estornos">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Vendas Canceladas (Estornos)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Profissional</TableHead>
-                    <TableHead className="text-center">Itens</TableHead>
-                    <TableHead className="text-right">Valor Estornado</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {salesList.filter(s => s.status === 'canceled').length > 0 ? (
-                    salesList
-                      .filter(s => s.status === 'canceled')
-                      .map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
-                          <TableCell className="font-medium">{sale.patientName || '-'}</TableCell>
-                          <TableCell>{sale.professionalName || '-'}</TableCell>
-                          <TableCell className="text-center">{sale.itemCount}</TableCell>
-                          <TableCell className="text-right font-semibold text-red-600 dark:text-red-400">
-                            {formatCurrency(sale.totalAmount)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="destructive">
-                              Cancelado
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        Nenhum estorno encontrado no período
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
             </CardContent>
           </Card>
         </TabsContent>

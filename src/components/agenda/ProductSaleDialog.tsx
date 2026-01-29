@@ -85,7 +85,7 @@ export function ProductSaleDialog({
     setValidationErrors(errors);
   }, []);
 
-  // Validation: patient required only when from appointment
+  // Validation: patient required ONLY when from appointment context
   const patientError = useMemo(() => {
     if (isFromAppointment && !currentPatientId) {
       return "Paciente é obrigatório para vendas vinculadas a atendimentos.";
@@ -93,14 +93,26 @@ export function ProductSaleDialog({
     return null;
   }, [isFromAppointment, currentPatientId]);
 
+  // Check if form can be submitted
   const canSubmit = useMemo(() => {
     const hasProducts = selectedProducts.length > 0;
     const noStockErrors = validationErrors.length === 0;
     const notBlocked = !salePermissions.isBlocked;
     const patientValid = !patientError;
+    const notProcessing = !createSale.isPending;
     
-    return hasProducts && noStockErrors && notBlocked && patientValid;
-  }, [selectedProducts, validationErrors, salePermissions.isBlocked, patientError]);
+    return hasProducts && noStockErrors && notBlocked && patientValid && notProcessing;
+  }, [selectedProducts, validationErrors, salePermissions.isBlocked, patientError, createSale.isPending]);
+
+  // Get descriptive button text based on current state
+  const getSubmitButtonText = useCallback(() => {
+    if (createSale.isPending) return "Processando...";
+    if (salePermissions.isBlocked) return "Bloqueado";
+    if (validationErrors.length > 0) return "Corrija os erros de estoque";
+    if (selectedProducts.length === 0) return "Adicione produtos";
+    if (patientError) return "Paciente obrigatório";
+    return "Registrar Venda";
+  }, [createSale.isPending, salePermissions.isBlocked, validationErrors.length, selectedProducts.length, patientError]);
 
   const handleSubmit = async () => {
     if (!canSubmit || createSale.isPending) return;
@@ -130,14 +142,29 @@ export function ProductSaleDialog({
     } catch (error: any) {
       console.error("Erro ao criar venda:", error);
       
-      // Provide clear error messages
-      const errorMessage = error?.message || "Erro desconhecido";
-      if (errorMessage.includes("stock") || errorMessage.includes("estoque")) {
-        toast.error("Erro de estoque: Quantidade solicitada não disponível.");
-      } else if (errorMessage.includes("patient") || errorMessage.includes("paciente")) {
-        toast.error("Erro: Paciente inválido ou não encontrado.");
+      // Provide clear, user-friendly error messages
+      const errorMessage = error?.message?.toLowerCase() || "";
+      
+      if (errorMessage.includes("stock") || errorMessage.includes("estoque") || errorMessage.includes("insufficient")) {
+        toast.error("Estoque insuficiente: A quantidade solicitada excede o disponível. Verifique os produtos e tente novamente.", {
+          duration: 5000,
+        });
+      } else if (errorMessage.includes("patient") || errorMessage.includes("paciente") || errorMessage.includes("not found")) {
+        toast.error("Paciente inválido: O paciente selecionado não foi encontrado ou está inativo.", {
+          duration: 5000,
+        });
+      } else if (errorMessage.includes("permission") || errorMessage.includes("denied") || errorMessage.includes("unauthorized")) {
+        toast.error("Sem permissão: Você não tem autorização para registrar esta venda.", {
+          duration: 5000,
+        });
+      } else if (errorMessage.includes("network") || errorMessage.includes("connection") || errorMessage.includes("timeout")) {
+        toast.error("Erro de conexão: Verifique sua internet e tente novamente.", {
+          duration: 5000,
+        });
       } else {
-        toast.error(`Erro ao registrar venda: ${errorMessage}`);
+        toast.error(`Erro ao registrar venda: ${error?.message || "Ocorreu um erro inesperado. Tente novamente."}`, {
+          duration: 5000,
+        });
       }
     }
   };
@@ -228,27 +255,33 @@ export function ProductSaleDialog({
                   <p className="font-medium">{currentPatientName}</p>
                 </div>
               ) : (
-                /* Patient selector for standalone sales */
+                /* Patient selector for standalone sales - NOT required */
                 <div className="space-y-2">
                   <Label htmlFor="patient-select">
-                    Paciente <span className="text-muted-foreground text-xs">(opcional)</span>
+                    Paciente <span className="text-muted-foreground text-xs">(opcional - vincule a um paciente se desejar)</span>
                   </Label>
                   <Select 
-                    value={selectedPatientId || ""} 
-                    onValueChange={(value) => setSelectedPatientId(value || null)}
+                    value={selectedPatientId || "none"} 
+                    onValueChange={(value) => setSelectedPatientId(value === "none" ? null : value)}
                     disabled={createSale.isPending}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um paciente (opcional)" />
+                      <SelectValue placeholder="Venda sem paciente vinculado" />
                     </SelectTrigger>
                     <SelectContent>
-                    {patients.map((patient) => (
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">Sem paciente (venda avulsa)</span>
+                      </SelectItem>
+                      {patients.map((patient) => (
                         <SelectItem key={patient.id} value={patient.id}>
                           {patient.full_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Vendas avulsas não ficam vinculadas ao histórico de nenhum paciente.
+                  </p>
                 </div>
               )}
 
@@ -319,19 +352,16 @@ export function ProductSaleDialog({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!canSubmit || createSale.isPending || salePermissions.isLoading || patientsLoading}
+            disabled={!canSubmit || salePermissions.isLoading || patientsLoading}
+            className="min-w-[140px]"
           >
             {createSale.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processando...
               </>
-            ) : salePermissions.isBlocked ? (
-              "Bloqueado"
-            ) : validationErrors.length > 0 ? (
-              "Corrija os erros"
             ) : (
-              "Registrar Venda"
+              getSubmitButtonText()
             )}
           </Button>
         </DialogFooter>

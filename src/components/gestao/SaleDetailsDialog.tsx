@@ -14,6 +14,7 @@ import {
   ArrowUpCircle,
   Ban,
   AlertTriangle,
+  ShieldX,
 } from "lucide-react";
 import {
   Dialog,
@@ -44,9 +45,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSale, useCancelSale } from "@/hooks/useSales";
+import { useSalePermissions } from "@/hooks/useSalePermissions";
 import { paymentStatusLabels, paymentStatusColors, type PaymentStatus } from "@/types/inventory";
 import { paymentMethods } from "@/types/gestao";
+import { toast } from "sonner";
 
 interface SaleDetailsDialogProps {
   saleId: string | null;
@@ -57,8 +66,8 @@ interface SaleDetailsDialogProps {
 export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDialogProps) {
   const { data: sale, isLoading } = useSale(saleId || undefined);
   const cancelSale = useCancelSale();
+  const { canCancelSale, isLoading: permissionsLoading, logDeniedAction } = useSalePermissions(sale?.patient_id || null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -72,14 +81,33 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
 
   const isCanceled = sale?.status === 'cancelado' || sale?.payment_status === 'cancelado';
 
-  const handleCancelSale = () => {
+  const handleCancelSale = async () => {
     if (!saleId) return;
+    
+    // Double-check permission before attempting cancellation
+    if (!canCancelSale) {
+      await logDeniedAction('CANCEL_SALE', saleId);
+      toast.error("Você não tem permissão para cancelar vendas. Contate o administrador.");
+      setShowCancelConfirm(false);
+      return;
+    }
+    
     cancelSale.mutate({ id: saleId }, {
       onSuccess: () => {
         setShowCancelConfirm(false);
         onOpenChange(false);
       },
     });
+  };
+
+  const handleCancelButtonClick = async () => {
+    if (!canCancelSale) {
+      // Log denied attempt
+      await logDeniedAction('CANCEL_SALE_ATTEMPT', saleId || undefined);
+      toast.error("Você não tem permissão para cancelar vendas.");
+      return;
+    }
+    setShowCancelConfirm(true);
   };
 
   if (!open) return null;
@@ -244,15 +272,32 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
               {/* Cancel Action */}
               {!isCanceled && (
                 <div className="pt-4">
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => setShowCancelConfirm(true)}
-                    disabled={cancelSale.isPending}
-                  >
-                    <Ban className="h-4 w-4 mr-2" />
-                    Cancelar Venda
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full">
+                          <Button
+                            variant="destructive"
+                            className="w-full"
+                            onClick={handleCancelButtonClick}
+                            disabled={cancelSale.isPending || permissionsLoading}
+                          >
+                            {!canCancelSale && !permissionsLoading ? (
+                              <ShieldX className="h-4 w-4 mr-2" />
+                            ) : (
+                              <Ban className="h-4 w-4 mr-2" />
+                            )}
+                            Cancelar Venda
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!canCancelSale && !permissionsLoading && (
+                        <TooltipContent>
+                          <p>Você não tem permissão para cancelar vendas</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               )}
 

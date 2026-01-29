@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, eachDayOfInterval, differenceInDays } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { ReportFilters } from "@/types/relatorios";
+import type { SalesReportFilters } from "@/types/salesReport";
 
 // =============================================
 // TYPES
@@ -17,34 +17,35 @@ interface SaleRow {
   discount_amount: number | null;
   patient_id: string | null;
   professional_id: string | null;
+  created_by: string | null;
+  canceled_by: string | null;
   patients: { id: string; full_name: string } | null;
   professionals: { id: string; full_name: string } | null;
-  sale_items: { id: string }[];
-}
-
-interface FinanceTransactionRow {
-  id: string;
-  type: string;
-  amount: number;
-  transaction_date: string;
-  payment_method: string | null;
-  origin: string | null;
-  patient_id: string | null;
+  sale_items: { id: string; product_id: string }[];
 }
 
 // =============================================
 // HOOK PRINCIPAL
 // =============================================
 
-export function useSalesReport(filters: ReportFilters) {
+export function useSalesReport(filters: SalesReportFilters) {
   const startDate = format(filters.startDate, "yyyy-MM-dd");
   const endDate = format(filters.endDate, "yyyy-MM-dd");
 
-  // Query vendas ativas
+  // Query vendas com todos os filtros
   const salesQuery = useQuery({
-    queryKey: ["sales-report", startDate, endDate, "active"],
+    queryKey: [
+      "sales-report",
+      startDate,
+      endDate,
+      filters.status,
+      filters.productId,
+      filters.patientId,
+      filters.paymentMethod,
+      filters.responsibleUserId,
+    ],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select(`
           id,
@@ -55,72 +56,62 @@ export function useSalesReport(filters: ReportFilters) {
           discount_amount,
           patient_id,
           professional_id,
+          created_by,
+          canceled_by,
           patients(id, full_name),
           professionals(id, full_name),
-          sale_items(id)
+          sale_items(id, product_id)
         `)
         .gte("sale_date", `${startDate}T00:00:00`)
         .lte("sale_date", `${endDate}T23:59:59`)
-        .neq("payment_status", "cancelado")
         .order("sale_date", { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as SaleRow[];
-    },
-  });
+      // Filtro de status
+      if (filters.status === "active") {
+        query = query.neq("payment_status", "cancelado");
+      } else if (filters.status === "canceled") {
+        query = query.eq("payment_status", "cancelado");
+      }
 
-  // Query vendas canceladas (estornos)
-  const canceledSalesQuery = useQuery({
-    queryKey: ["sales-report", startDate, endDate, "canceled"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select(`
-          id,
-          sale_date,
-          payment_status,
-          payment_method,
-          total_amount,
-          discount_amount,
-          patient_id,
-          professional_id,
-          patients(id, full_name),
-          professionals(id, full_name),
-          sale_items(id)
-        `)
-        .gte("sale_date", `${startDate}T00:00:00`)
-        .lte("sale_date", `${endDate}T23:59:59`)
-        .eq("payment_status", "cancelado")
-        .order("sale_date", { ascending: false });
+      // Filtro por paciente
+      if (filters.patientId) {
+        query = query.eq("patient_id", filters.patientId);
+      }
+
+      // Filtro por forma de pagamento
+      if (filters.paymentMethod) {
+        query = query.eq("payment_method", filters.paymentMethod);
+      }
+
+      // Filtro por usuário responsável (criou ou cancelou)
+      if (filters.responsibleUserId) {
+        query = query.or(`created_by.eq.${filters.responsibleUserId},canceled_by.eq.${filters.responsibleUserId}`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
-      return (data || []) as SaleRow[];
-    },
-  });
 
-  // Query transações financeiras relacionadas a vendas
-  const transactionsQuery = useQuery({
-    queryKey: ["sales-report-transactions", startDate, endDate],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("finance_transactions")
-        .select("id, type, amount, transaction_date, payment_method, origin, patient_id")
-        .gte("transaction_date", `${startDate}T00:00:00`)
-        .lte("transaction_date", `${endDate}T23:59:59`)
-        .or("origin.eq.sale,origin.eq.sale_reversal");
+      let sales = (data || []) as SaleRow[];
 
-      if (error) throw error;
-      return (data || []) as FinanceTransactionRow[];
+      // Filtro por produto (precisa ser feito client-side devido ao join)
+      if (filters.productId) {
+        sales = sales.filter((sale) =>
+          sale.sale_items?.some((item) => item.product_id === filters.productId)
+        );
+      }
+
+      return sales;
     },
   });
 
   // Processar dados
-  const isLoading = salesQuery.isLoading || canceledSalesQuery.isLoading || transactionsQuery.isLoading;
-  const isError = salesQuery.isError || canceledSalesQuery.isError || transactionsQuery.isError;
+  const isLoading = salesQuery.isLoading;
+  const isError = salesQuery.isError;
 
-  const activeSales = salesQuery.data || [];
-  const canceledSales = canceledSalesQuery.data || [];
-  const allSales = [...activeSales, ...canceledSales];
+  const allSales = salesQuery.data || [];
+  const activeSales = allSales.filter((s) => s.payment_status !== "cancelado");
+  const canceledSales = allSales.filter((s) => s.payment_status === "cancelado");
 
   // Sumário
   const summary = {
@@ -142,7 +133,7 @@ export function useSalesReport(filters: ReportFilters) {
     const dateStr = format(day, "yyyy-MM-dd");
     const dayActive = activeSales.filter((s) => s.sale_date.startsWith(dateStr));
     const dayCanceled = canceledSales.filter((s) => s.sale_date.startsWith(dateStr));
-    
+
     const vendas = dayActive.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
     const estornos = dayCanceled.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
 
@@ -176,19 +167,21 @@ export function useSalesReport(filters: ReportFilters) {
   });
 
   const totalSalesAmount = summary.totalVendas;
-  const salesByPaymentMethod = Object.entries(paymentMethodMap).map(([method, data]) => ({
-    method,
-    label: data.label,
-    totalAmount: data.total,
-    count: data.count,
-    percentage: totalSalesAmount > 0 ? Math.round((data.total / totalSalesAmount) * 100) : 0,
-  })).sort((a, b) => b.totalAmount - a.totalAmount);
+  const salesByPaymentMethod = Object.entries(paymentMethodMap)
+    .map(([method, data]) => ({
+      method,
+      label: data.label,
+      totalAmount: data.total,
+      count: data.count,
+      percentage: totalSalesAmount > 0 ? Math.round((data.total / totalSalesAmount) * 100) : 0,
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount);
 
   // Lista de vendas formatada
   const salesList = allSales.map((sale) => ({
     id: sale.id,
     saleDate: sale.sale_date,
-    status: sale.payment_status === "cancelado" ? "canceled" as const : "active" as const,
+    status: sale.payment_status === "cancelado" ? ("canceled" as const) : ("active" as const),
     patientId: sale.patient_id,
     patientName: sale.patients?.full_name || null,
     totalAmount: Number(sale.total_amount) || 0,
@@ -199,6 +192,8 @@ export function useSalesReport(filters: ReportFilters) {
     itemCount: sale.sale_items?.length || 0,
     professionalId: sale.professional_id,
     professionalName: sale.professionals?.full_name || null,
+    createdBy: sale.created_by,
+    canceledBy: sale.canceled_by,
   }));
 
   return {

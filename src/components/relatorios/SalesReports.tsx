@@ -90,23 +90,78 @@ export function SalesReports({
     );
   }
 
+  const valorLiquido = summary.totalVendas - summary.totalEstornos;
+
   return (
     <div className="space-y-6">
-      {/* KPIs */}
+      {/* Resumo Principal */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Resumo do Período
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/30">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm text-muted-foreground">Vendas Ativas</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(summary.totalVendas)}
+              </p>
+              <p className="text-xs text-muted-foreground">{summary.quantidadeVendas} venda(s)</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-red-100 dark:bg-red-900/30">
+                  <Ban className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <span className="text-sm text-muted-foreground">Estornos</span>
+              </div>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(summary.totalEstornos)}
+              </p>
+              <p className="text-xs text-muted-foreground">{summary.quantidadeEstornos} cancelamento(s)</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-primary/10">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm text-muted-foreground">Valor Líquido</span>
+              </div>
+              <p className={`text-2xl font-bold ${valorLiquido >= 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'}`}>
+                {formatCurrency(valorLiquido)}
+              </p>
+              <p className="text-xs text-muted-foreground">vendas - estornos</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/30">
+                  <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-sm text-muted-foreground">Total no Período</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {summary.quantidadeVendas + summary.quantidadeEstornos}
+              </p>
+              <p className="text-xs text-muted-foreground">transações registradas</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs Secundários */}
       <ReportKPICards
         cards={[
-          { 
-            title: 'Total em Vendas', 
-            value: summary.totalVendas, 
-            format: 'currency', 
-            icon: <ShoppingCart className="h-5 w-5" /> 
-          },
-          { 
-            title: 'Total Estornado', 
-            value: summary.totalEstornos, 
-            format: 'currency', 
-            icon: <RotateCcw className="h-5 w-5" /> 
-          },
           { 
             title: 'Ticket Médio', 
             value: summary.ticketMedio, 
@@ -121,40 +176,6 @@ export function SalesReports({
           },
         ]}
       />
-
-      {/* Cards de contagem */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vendas Realizadas</p>
-                  <p className="text-2xl font-bold">{summary.quantidadeVendas}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
-                  <Ban className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vendas Canceladas</p>
-                  <p className="text-2xl font-bold">{summary.quantidadeEstornos}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       <Tabs defaultValue="listagem" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">

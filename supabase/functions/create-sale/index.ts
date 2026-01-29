@@ -172,18 +172,31 @@ serve(async (req) => {
 
       saleId = sale.id;
 
-      // STEP 2: Create sale_items records
-      const saleItems = input.items.map((item) => ({
-        clinic_id: clinicId,
-        sale_id: saleId,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_amount: item.discount_amount || 0,
-        total_price: item.quantity * item.unit_price - (item.discount_amount || 0),
-        notes: item.notes || null,
-      }));
+      // STEP 2: Create sale_items records with cost and margin calculations
+      const saleItems = input.items.map((item) => {
+        const productData = productsData.get(item.product_id)!;
+        const costPrice = productData.cost_price;
+        const totalCost = item.quantity * costPrice;
+        const totalPrice = item.quantity * item.unit_price - (item.discount_amount || 0);
+        const profit = totalPrice - totalCost;
+        const marginPercent = totalPrice > 0 ? (profit / totalPrice) * 100 : 0;
+
+        return {
+          clinic_id: clinicId,
+          sale_id: saleId,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_amount: item.discount_amount || 0,
+          total_price: totalPrice,
+          cost_price: costPrice,
+          total_cost: totalCost,
+          profit: profit,
+          margin_percent: marginPercent,
+          notes: item.notes || null,
+        };
+      });
 
       const { error: itemsError } = await serviceClient
         .from("sale_items")

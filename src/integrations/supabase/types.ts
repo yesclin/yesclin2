@@ -4279,40 +4279,52 @@ export type Database = {
       sale_items: {
         Row: {
           clinic_id: string
+          cost_price: number | null
           created_at: string
           discount_amount: number | null
           id: string
+          margin_percent: number | null
           notes: string | null
           product_id: string
           product_name: string
+          profit: number | null
           quantity: number
           sale_id: string
+          total_cost: number | null
           total_price: number
           unit_price: number
         }
         Insert: {
           clinic_id: string
+          cost_price?: number | null
           created_at?: string
           discount_amount?: number | null
           id?: string
+          margin_percent?: number | null
           notes?: string | null
           product_id: string
           product_name: string
+          profit?: number | null
           quantity: number
           sale_id: string
+          total_cost?: number | null
           total_price: number
           unit_price: number
         }
         Update: {
           clinic_id?: string
+          cost_price?: number | null
           created_at?: string
           discount_amount?: number | null
           id?: string
+          margin_percent?: number | null
           notes?: string | null
           product_id?: string
           product_name?: string
+          profit?: number | null
           quantity?: number
           sale_id?: string
+          total_cost?: number | null
           total_price?: number
           unit_price?: number
         }

@@ -123,6 +123,10 @@ export interface SaleItem {
   unit_price: number;
   discount_amount: number;
   total_price: number;
+  cost_price: number;
+  total_cost: number;
+  profit: number;
+  margin_percent: number;
   notes?: string | null;
   created_at: string;
   // Relations

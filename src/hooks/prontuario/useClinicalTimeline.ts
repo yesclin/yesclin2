@@ -75,6 +75,17 @@ interface RawAccessLog {
   created_at: string;
 }
 
+interface RawSale {
+  id: string;
+  sale_number: string | null;
+  patient_id: string;
+  sale_date: string;
+  total_amount: number;
+  payment_status: string;
+  created_at: string;
+  created_by: string | null;
+}
+
 interface RawAppointment {
   id: string;
   patient_id: string;
@@ -282,6 +293,39 @@ export function useClinicalTimeline(patientId: string | null) {
     }));
   }, []);
 
+  // Transform sales to timeline events
+  const transformSales = useCallback((
+    sales: RawSale[],
+    profiles: Map<string, string>
+  ): TimelineEvent[] => {
+    return sales.map(sale => {
+      const formattedAmount = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(sale.total_amount);
+
+      return {
+        id: `sale-${sale.id}`,
+        event_type: 'SALE_CREATED' as TimelineEventType,
+        category: 'sales' as TimelineEventCategory,
+        entity: 'sales',
+        entity_id: sale.id,
+        patient_id: sale.patient_id,
+        author_id: sale.created_by,
+        author_name: sale.created_by ? (profiles.get(sale.created_by) || 'Usuário') : 'Sistema',
+        timestamp: sale.created_at,
+        summary: `Venda ${sale.sale_number || ''} - ${formattedAmount}`,
+        metadata: { 
+          sale_number: sale.sale_number, 
+          total_amount: sale.total_amount,
+          payment_status: sale.payment_status,
+        },
+        target_tab: 'vendas',
+        can_navigate: true,
+      };
+    });
+  }, []);
+
   // Main fetch function that aggregates all sources
   const fetchTimeline = useCallback(async (reset = false) => {
     if (!clinic?.id || !patientId) return;
@@ -298,6 +342,7 @@ export function useClinicalTimeline(patientId: string | null) {
         consentsRes,
         accessLogsRes,
         appointmentsRes,
+        salesRes,
       ] = await Promise.all([
         // Medical record entries
         supabase
@@ -347,6 +392,14 @@ export function useClinicalTimeline(patientId: string | null) {
           .eq('clinic_id', clinic.id)
           .eq('patient_id', patientId)
           .order('created_at', { ascending: false }),
+
+        // Sales
+        supabase
+          .from('sales')
+          .select('id, sale_number, patient_id, sale_date, total_amount, payment_status, created_at, created_by')
+          .eq('clinic_id', clinic.id)
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false }),
       ]);
 
       // Collect all user IDs for profile lookup
@@ -357,6 +410,7 @@ export function useClinicalTimeline(patientId: string | null) {
       (consentsRes.data || []).forEach(c => c.granted_by && allUserIds.add(c.granted_by));
       (accessLogsRes.data || []).forEach(l => l.user_id && allUserIds.add(l.user_id));
       (appointmentsRes.data || []).forEach(a => a.created_by && allUserIds.add(a.created_by));
+      (salesRes.data || []).forEach(s => s.created_by && allUserIds.add(s.created_by));
 
       // Fetch profiles
       const profiles = await fetchProfiles(Array.from(allUserIds));
@@ -370,6 +424,7 @@ export function useClinicalTimeline(patientId: string | null) {
         ...transformConsents((consentsRes.data || []) as RawConsent[], profiles),
         ...transformAccessLogs((accessLogsRes.data || []) as RawAccessLog[], profiles),
         ...transformAppointments((appointmentsRes.data || []) as RawAppointment[], profiles),
+        ...transformSales((salesRes.data || []) as RawSale[], profiles),
       ];
 
       // Apply filters
@@ -423,6 +478,7 @@ export function useClinicalTimeline(patientId: string | null) {
     transformConsents,
     transformAccessLogs,
     transformAppointments,
+    transformSales,
   ]);
 
   // Initial load

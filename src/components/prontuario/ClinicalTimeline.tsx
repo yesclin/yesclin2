@@ -40,6 +40,8 @@ import {
   Syringe,
   Pill,
   Loader2,
+  ShoppingCart,
+  XCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { format, parseISO, isToday, isYesterday } from 'date-fns';
@@ -54,6 +56,7 @@ import {
   CATEGORY_LABELS,
   TimelineFilters,
 } from '@/types/timeline';
+import { SaleDetailsDialog } from '@/components/gestao/SaleDetailsDialog';
 
 // Icon mapping
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -73,6 +76,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FileText,
   ShieldAlert,
   Eye,
+  ShoppingCart,
+  XCircle,
 };
 
 interface ClinicalTimelineProps {
@@ -102,6 +107,7 @@ export function ClinicalTimeline({
 
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState<TimelineFilters>({});
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -174,6 +180,12 @@ export function ClinicalTimeline({
 
   // Handle event click
   const handleEventClick = (event: TimelineEvent) => {
+    // Handle sale events - open sale details dialog
+    if (event.event_type === 'SALE_CREATED' && event.entity === 'sales') {
+      setSelectedSaleId(event.entity_id);
+      return;
+    }
+    
     if (event.can_navigate && event.target_tab && onNavigateToTab) {
       onNavigateToTab(event.target_tab, event.entity_id);
     }
@@ -441,6 +453,13 @@ export function ClinicalTimeline({
           )}
         </ScrollArea>
       </CardContent>
+
+      {/* Sale Details Dialog */}
+      <SaleDetailsDialog
+        saleId={selectedSaleId}
+        open={!!selectedSaleId}
+        onOpenChange={(open) => !open && setSelectedSaleId(null)}
+      />
     </Card>
   );
 }

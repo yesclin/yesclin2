@@ -104,7 +104,13 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
                       <User className="h-3.5 w-3.5" />
                       Cliente
                     </p>
-                    <p className="font-medium">{sale.patients.full_name}</p>
+                    <a 
+                      href={`/app/prontuario/${sale.patient_id}`}
+                      className="font-medium text-primary hover:underline flex items-center gap-1"
+                    >
+                      {sale.patients.full_name}
+                      <Receipt className="h-3 w-3" />
+                    </a>
                   </div>
                 )}
                 <div className="space-y-1">

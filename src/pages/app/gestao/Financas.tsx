@@ -74,6 +74,9 @@ export default function Financas() {
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [patientFilter, setPatientFilter] = useState<string | null>(null);
+  const [patientFilterOpen, setPatientFilterOpen] = useState(false);
+  const [patientFilterSearch, setPatientFilterSearch] = useState("");
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<TransactionType>("entrada");
@@ -152,10 +155,26 @@ export default function Financas() {
     setFormData(prev => ({ ...prev, amount: total.toString() }));
   }, []);
 
+  // Filter patients for the filter dropdown
+  const filteredPatientsForFilter = useMemo(() => {
+    if (!patientFilterSearch) return patients.slice(0, 50);
+    const query = patientFilterSearch.toLowerCase();
+    return patients.filter(p => 
+      p.full_name.toLowerCase().includes(query)
+    ).slice(0, 50);
+  }, [patients, patientFilterSearch]);
+  
+  // Get selected patient name for filter display
+  const selectedFilterPatient = useMemo(() => 
+    patients.find(p => p.id === patientFilter),
+    [patients, patientFilter]
+  );
+
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === "all" || transaction.type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesPatient = !patientFilter || transaction.patient_id === patientFilter;
+    return matchesSearch && matchesType && matchesPatient;
   });
 
   const handleSubmitTransaction = async () => {
@@ -323,6 +342,64 @@ export default function Financas() {
                   <SelectItem value="saida">Saídas</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Patient Filter */}
+              <Popover open={patientFilterOpen} onOpenChange={setPatientFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={patientFilterOpen}
+                    className={cn(
+                      "w-[200px] justify-between",
+                      patientFilter && "text-foreground"
+                    )}
+                  >
+                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    {selectedFilterPatient ? selectedFilterPatient.full_name : "Paciente"}
+                    {patientFilter && (
+                      <span
+                        className="ml-auto text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPatientFilter(null);
+                          setPatientFilterSearch("");
+                        }}
+                      >
+                        ×
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Buscar paciente..." 
+                      value={patientFilterSearch}
+                      onValueChange={setPatientFilterSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredPatientsForFilter.map((patient) => (
+                          <CommandItem
+                            key={patient.id}
+                            value={patient.id}
+                            onSelect={() => {
+                              setPatientFilter(patient.id);
+                              setPatientFilterOpen(false);
+                              setPatientFilterSearch("");
+                            }}
+                          >
+                            <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {patient.full_name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             
             <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
@@ -621,6 +698,7 @@ export default function Financas() {
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Descrição</TableHead>
+                    <TableHead>Paciente</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Pagamento</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
@@ -630,7 +708,7 @@ export default function Financas() {
                 <TableBody>
                   {filteredTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Nenhuma transação encontrada
                       </TableCell>
                     </TableRow>
@@ -655,6 +733,19 @@ export default function Financas() {
                                 </button>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {transaction.patients ? (
+                              <a 
+                                href={`/app/prontuario/${transaction.patient_id}`}
+                                className="flex items-center gap-1 text-primary hover:underline"
+                              >
+                                <User className="h-3 w-3" />
+                                {transaction.patients.full_name}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge 

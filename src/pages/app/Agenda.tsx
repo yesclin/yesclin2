@@ -18,8 +18,10 @@ import { BlockDialog } from "@/components/agenda/BlockDialog";
 import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agenda/TissGuideGenerationDialog";
 import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
 import { ProductSaleDialog } from "@/components/agenda/ProductSaleDialog";
+import { StockValidationDialog } from "@/components/agenda/StockValidationDialog";
 import type { AgendaFilters as FiltersType, ViewMode, GroupBy, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
+import { validateProcedureStock, StockValidationResult } from "@/hooks/useProcedureStockValidation";
 import { getDefaultWeekSchedule, WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
 export default function Agenda() {
@@ -54,6 +56,11 @@ export default function Agenda() {
   // Product Sale
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [saleAppointment, setSaleAppointment] = useState<Appointment | null>(null);
+  
+  // Stock Validation
+  const [stockValidationDialogOpen, setStockValidationDialogOpen] = useState(false);
+  const [stockValidationResult, setStockValidationResult] = useState<StockValidationResult | null>(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ appointmentId: string; status: AppointmentStatus } | null>(null);
   
   const { 
     specialties, 
@@ -163,11 +170,30 @@ export default function Agenda() {
     setAppointmentDialogOpen(true);
   };
 
-  // Handle status change with material consumption and TISS guide generation
-  const handleStatusChange = useCallback((appointmentId: string, newStatus: AppointmentStatus) => {
+  // Handle status change with stock validation and material consumption
+  const handleStatusChange = useCallback(async (appointmentId: string, newStatus: AppointmentStatus) => {
     const apt = appointments.find(a => a.id === appointmentId);
     
     if (!apt) return;
+    
+    // Check if starting service ("em_atendimento") - validate stock first
+    if (newStatus === 'em_atendimento' && apt.procedure_id) {
+      try {
+        const validation = await validateProcedureStock(apt.procedure_id);
+        
+        if (!validation.isValid) {
+          // Stock is insufficient
+          setStockValidationResult(validation);
+          setPendingStatusChange({ appointmentId, status: newStatus });
+          setStockValidationDialogOpen(true);
+          return; // Don't proceed until user decides
+        }
+      } catch (error) {
+        console.error("Error validating stock:", error);
+        toast.error("Erro ao validar estoque do procedimento");
+        return;
+      }
+    }
     
     // Check if finalizing an appointment - show materials dialog first
     if (newStatus === 'finalizado') {
@@ -177,6 +203,28 @@ export default function Agenda() {
       toast.success(`Status atualizado para: ${newStatus}`);
     }
   }, [appointments]);
+
+  // Handle stock validation confirmation (allow negative stock)
+  const handleStockValidationConfirm = useCallback(() => {
+    setStockValidationDialogOpen(false);
+    
+    if (pendingStatusChange) {
+      // Proceed with status change even with insufficient stock
+      toast.success(`Status atualizado para: ${pendingStatusChange.status}`);
+      toast.warning("Atenção: Estoque ficará negativo após consumo dos materiais");
+    }
+    
+    setStockValidationResult(null);
+    setPendingStatusChange(null);
+  }, [pendingStatusChange]);
+
+  // Handle stock validation cancel
+  const handleStockValidationCancel = useCallback(() => {
+    setStockValidationDialogOpen(false);
+    setStockValidationResult(null);
+    setPendingStatusChange(null);
+    toast.info("Atendimento não iniciado. Reponha o estoque antes de continuar.");
+  }, []);
 
   // After materials dialog confirms, proceed with TISS if needed
   const handleMaterialsConfirm = useCallback(() => {
@@ -379,6 +427,15 @@ export default function Agenda() {
         procedureName={finalizingAppointment?.procedure?.name}
         onConfirm={handleMaterialsConfirm}
         onCancel={handleMaterialsCancel}
+      />
+
+      {/* Stock Validation Dialog */}
+      <StockValidationDialog
+        open={stockValidationDialogOpen}
+        onOpenChange={setStockValidationDialogOpen}
+        validationResult={stockValidationResult}
+        onConfirm={handleStockValidationConfirm}
+        onCancel={handleStockValidationCancel}
       />
 
       {/* Product Sale Dialog */}

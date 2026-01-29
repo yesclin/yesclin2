@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, Wallet, Target, CreditCard, Building2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, CreditCard, Building2, Lock } from 'lucide-react';
+import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
 import type { DashboardFinance } from '@/types/dashboard';
 
 interface FinanceOverviewProps {
@@ -8,6 +9,8 @@ interface FinanceOverviewProps {
 }
 
 export function FinanceOverview({ finance }: FinanceOverviewProps) {
+  const { canViewRevenue, canViewCost, isLoading } = useFinancialAccessControl();
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -20,6 +23,25 @@ export function FinanceOverview({ finance }: FinanceOverviewProps) {
   const particularPercent = finance.month.accumulated > 0 
     ? Math.round((finance.month.particular / finance.month.accumulated) * 100)
     : 0;
+
+  // Se não tem permissão para ver faturamento, mostra mensagem de acesso restrito
+  if (!isLoading && !canViewRevenue) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+            Visão Financeira
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Você não tem permissão para visualizar dados financeiros.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

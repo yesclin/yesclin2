@@ -1,4 +1,4 @@
-import { Package, TrendingUp, DollarSign, Percent, ShieldX, EyeOff } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, Percent, ShieldX, EyeOff, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePermissions } from '@/hooks/usePermissions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
 import type { ProductMarginItem, ProductMarginSummary } from '@/hooks/useProductMarginReport';
 
 interface ProductMarginReportProps {
@@ -41,30 +42,10 @@ function getMarginBadge(margin: number) {
   }
 }
 
-function AccessDeniedMessage() {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-        <ShieldX className="h-8 w-8 text-destructive" />
-      </div>
-      <h2 className="text-xl font-semibold text-foreground mb-2">
-        Acesso Restrito
-      </h2>
-      <p className="text-muted-foreground max-w-md">
-        Você não tem permissão para acessar o <strong>Relatório de Margem por Produto</strong>.
-        Entre em contato com o administrador da clínica.
-      </p>
-    </div>
-  );
-}
-
 export function ProductMarginReport({ items, summary, isLoading }: ProductMarginReportProps) {
-  const { can, isLoading: permissionsLoading } = usePermissions();
-  
-  const canAccessReport = can('relatorios', 'view');
-  const canViewFinancials = can('financeiro', 'view');
+  const { canViewRevenue, canViewCost, canViewProfit, canViewMargin, isLoading: accessLoading } = useFinancialAccessControl();
 
-  if (isLoading || permissionsLoading) {
+  if (isLoading || accessLoading) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-4">
@@ -77,20 +58,33 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
     );
   }
 
-  if (!canAccessReport) {
-    return <AccessDeniedMessage />;
+  // Se não pode ver nem faturamento, bloqueia o relatório
+  if (!canViewRevenue) {
+    return (
+      <Alert>
+        <Lock className="h-4 w-4" />
+        <AlertTitle>Acesso Restrito</AlertTitle>
+        <AlertDescription>
+          Você não tem permissão para acessar o Relatório de Margem por Produto.
+          Entre em contato com o administrador da clínica.
+        </AlertDescription>
+      </Alert>
+    );
   }
+  
+  // Verifica se pode ver métricas completas (custo, lucro, margem)
+  const canViewFullMetrics = canViewCost && canViewProfit && canViewMargin;
 
   return (
     <div className="space-y-6">
       {/* Warning for hidden financial values */}
-      {!canViewFinancials && (
+      {!canViewFullMetrics && (
         <Card className="border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="py-3">
             <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
               <EyeOff className="h-4 w-4" />
               <span className="text-sm">
-                Você não tem permissão para visualizar valores financeiros.
+                Você não tem permissão para visualizar custos, lucros e margens.
               </span>
             </div>
           </CardContent>
@@ -120,57 +114,65 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
               <p className="text-xs text-muted-foreground">{summary.totalQuantitySold} un. vendidas</p>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/30">
-                  <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+            {canViewRevenue && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/30">
+                    <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Faturamento</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Faturamento</span>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(summary.totalRevenue, true)}
+                </p>
+                <p className="text-xs text-muted-foreground">receita total</p>
               </div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {formatCurrency(summary.totalRevenue, canViewFinancials)}
-              </p>
-              <p className="text-xs text-muted-foreground">receita total</p>
-            </div>
+            )}
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-red-100 dark:bg-red-900/30">
-                  <DollarSign className="h-4 w-4 text-red-600 dark:text-red-400" />
+            {canViewCost && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-red-100 dark:bg-red-900/30">
+                    <DollarSign className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Custo Total</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Custo Total</span>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {formatCurrency(summary.totalCost, true)}
+                </p>
+                <p className="text-xs text-muted-foreground">custo dos produtos</p>
               </div>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {formatCurrency(summary.totalCost, canViewFinancials)}
-              </p>
-              <p className="text-xs text-muted-foreground">custo dos produtos</p>
-            </div>
+            )}
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-primary/10">
-                  <TrendingUp className="h-4 w-4 text-primary" />
+            {canViewProfit && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-primary/10">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Lucro Total</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Lucro Total</span>
+                <p className={`text-2xl font-bold ${summary.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
+                  {formatCurrency(summary.totalProfit, true)}
+                </p>
+                <p className="text-xs text-muted-foreground">faturamento - custo</p>
               </div>
-              <p className={`text-2xl font-bold ${summary.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
-                {formatCurrency(summary.totalProfit, canViewFinancials)}
-              </p>
-              <p className="text-xs text-muted-foreground">faturamento - custo</p>
-            </div>
+            )}
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/30">
-                  <Percent className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            {canViewMargin && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/30">
+                    <Percent className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Margem Média</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Margem Média</span>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {formatPercent(summary.averageMargin, true)}
+                </p>
+                <p className="text-xs text-muted-foreground">lucro / faturamento</p>
               </div>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {formatPercent(summary.averageMargin, canViewFinancials)}
-              </p>
-              <p className="text-xs text-muted-foreground">lucro / faturamento</p>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -189,11 +191,11 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
               <TableRow>
                 <TableHead>Produto</TableHead>
                 <TableHead className="text-right">Qtd. Vendida</TableHead>
-                <TableHead className="text-right">Faturamento</TableHead>
-                <TableHead className="text-right">Custo Total</TableHead>
-                <TableHead className="text-right">Lucro</TableHead>
-                <TableHead className="text-right">Margem (%)</TableHead>
-                <TableHead className="text-center">Nível</TableHead>
+                {canViewRevenue && <TableHead className="text-right">Faturamento</TableHead>}
+                {canViewCost && <TableHead className="text-right">Custo Total</TableHead>}
+                {canViewProfit && <TableHead className="text-right">Lucro</TableHead>}
+                {canViewMargin && <TableHead className="text-right">Margem (%)</TableHead>}
+                {canViewMargin && <TableHead className="text-center">Nível</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -202,21 +204,31 @@ export function ProductMarginReport({ items, summary, isLoading }: ProductMargin
                   <TableRow key={item.productId}>
                     <TableCell className="font-medium">{item.productName}</TableCell>
                     <TableCell className="text-right">{item.quantitySold}</TableCell>
-                    <TableCell className="text-right text-green-600 dark:text-green-400">
-                      {formatCurrency(item.totalRevenue, canViewFinancials)}
-                    </TableCell>
-                    <TableCell className="text-right text-red-600 dark:text-red-400">
-                      {formatCurrency(item.totalCost, canViewFinancials)}
-                    </TableCell>
-                    <TableCell className={`text-right font-semibold ${item.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
-                      {formatCurrency(item.totalProfit, canViewFinancials)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatPercent(item.marginPercent, canViewFinancials)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {canViewFinancials ? getMarginBadge(item.marginPercent) : '•••'}
-                    </TableCell>
+                    {canViewRevenue && (
+                      <TableCell className="text-right text-green-600 dark:text-green-400">
+                        {formatCurrency(item.totalRevenue, true)}
+                      </TableCell>
+                    )}
+                    {canViewCost && (
+                      <TableCell className="text-right text-red-600 dark:text-red-400">
+                        {formatCurrency(item.totalCost, true)}
+                      </TableCell>
+                    )}
+                    {canViewProfit && (
+                      <TableCell className={`text-right font-semibold ${item.totalProfit >= 0 ? 'text-primary' : 'text-red-600'}`}>
+                        {formatCurrency(item.totalProfit, true)}
+                      </TableCell>
+                    )}
+                    {canViewMargin && (
+                      <TableCell className="text-right">
+                        {formatPercent(item.marginPercent, true)}
+                      </TableCell>
+                    )}
+                    {canViewMargin && (
+                      <TableCell className="text-center">
+                        {getMarginBadge(item.marginPercent)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               ) : (

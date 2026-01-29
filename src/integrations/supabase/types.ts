@@ -5622,6 +5622,10 @@ export type Database = {
         Args: { p_appointment_id: string; p_materials?: Json }
         Returns: Json
       }
+      process_procedure_product_consumption: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       user_clinic_id: { Args: { _user_id: string }; Returns: string }
       user_has_module_permission: {
         Args: {

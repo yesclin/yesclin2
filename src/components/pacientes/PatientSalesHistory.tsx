@@ -70,45 +70,55 @@ export function PatientSalesHistory({ patientId }: PatientSalesHistoryProps) {
         <CardContent>
           {sales.length > 0 ? (
             <div className="space-y-3">
-              {sales.map((sale) => (
-                <div
-                  key={sale.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => setSelectedSaleId(sale.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="text-center min-w-[50px]">
-                      <p className="text-lg font-semibold">
-                        {format(parseISO(sale.sale_date), 'dd', { locale: ptBR })}
-                      </p>
-                      <p className="text-xs text-muted-foreground uppercase">
-                        {format(parseISO(sale.sale_date), 'MMM', { locale: ptBR })}
-                      </p>
-                    </div>
-                    <Separator orientation="vertical" className="h-10" />
-                    <div>
-                      <p className="font-medium">{formatCurrency(sale.total_amount)}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CreditCard className="h-3.5 w-3.5" />
-                        <span>{getPaymentMethodLabel(sale.payment_method)}</span>
-                      </div>
-                      {sale.sale_items && sale.sale_items.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {sale.sale_items.length} {sale.sale_items.length === 1 ? 'item' : 'itens'}
+              {sales.map((sale) => {
+                const isCanceled = sale.payment_status === 'cancelado' || sale.status === 'cancelado';
+                
+                return (
+                  <div
+                    key={sale.id}
+                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors cursor-pointer ${
+                      isCanceled 
+                        ? 'bg-muted/50 border-destructive/30 opacity-75' 
+                        : 'hover:bg-muted/30'
+                    }`}
+                    onClick={() => setSelectedSaleId(sale.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`text-center min-w-[50px] ${isCanceled ? 'opacity-60' : ''}`}>
+                        <p className="text-lg font-semibold">
+                          {format(parseISO(sale.sale_date), 'dd', { locale: ptBR })}
                         </p>
-                      )}
+                        <p className="text-xs text-muted-foreground uppercase">
+                          {format(parseISO(sale.sale_date), 'MMM', { locale: ptBR })}
+                        </p>
+                      </div>
+                      <Separator orientation="vertical" className="h-10" />
+                      <div className={isCanceled ? 'opacity-60' : ''}>
+                        <p className={`font-medium ${isCanceled ? 'line-through text-muted-foreground' : ''}`}>
+                          {formatCurrency(sale.total_amount)}
+                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CreditCard className="h-3.5 w-3.5" />
+                          <span>{getPaymentMethodLabel(sale.payment_method)}</span>
+                        </div>
+                        {sale.sale_items && sale.sale_items.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {sale.sale_items.length} {sale.sale_items.length === 1 ? 'item' : 'itens'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={paymentStatusColors[sale.payment_status as PaymentStatus]}>
+                        {paymentStatusLabels[sale.payment_status as PaymentStatus] || sale.payment_status}
+                      </Badge>
+                      <Button variant="ghost" size="icon" disabled={isCanceled}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={paymentStatusColors[sale.payment_status as PaymentStatus]}>
-                      {paymentStatusLabels[sale.payment_status as PaymentStatus] || sale.payment_status}
-                    </Badge>
-                    <Button variant="ghost" size="icon">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

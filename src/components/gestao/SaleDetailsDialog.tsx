@@ -117,8 +117,13 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+            <ShoppingCart className={`h-5 w-5 ${isCanceled ? 'text-destructive' : 'text-primary'}`} />
             Detalhes da Venda
+            {isCanceled && (
+              <Badge variant="destructive" className="ml-2">
+                Cancelada
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
             {sale?.sale_number ? `Venda ${sale.sale_number}` : "Visualize os detalhes da venda"}
@@ -222,7 +227,9 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
                 )}
                 <div className="flex justify-between font-medium text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-green-600">{formatCurrency(sale.total_amount)}</span>
+                  <span className={isCanceled ? 'text-muted-foreground line-through' : 'text-green-600'}>
+                    {formatCurrency(sale.total_amount)}
+                  </span>
                 </div>
               </div>
 

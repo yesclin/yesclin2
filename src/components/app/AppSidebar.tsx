@@ -85,12 +85,19 @@ export function AppSidebar() {
   };
 
   // Filter items based on permissions
+  // Always show menu items during loading or when no user is logged in
+  // This ensures the sidebar is always visible and navigable
   const filterByPermission = (items: MenuItem[]) => {
-    if (isLoading) return items; // Show all while loading
+    // During loading, show all items to prevent empty sidebar
+    if (isLoading) return items;
+    // If no permissions loaded (not logged in), show all items for navigation
+    // RLS will protect actual data access
     return items.filter(item => !item.module || can(item.module, "view"));
   };
 
-  const visibleMainItems = filterByPermission(mainMenuItems);
+  // Always show main menu items regardless of permission state
+  // This prevents the sidebar from being completely empty
+  const visibleMainItems = isLoading ? mainMenuItems : filterByPermission(mainMenuItems);
   const visibleGestaoItems = filterByPermission(gestaoItems);
   const visibleConfigItems = filterByPermission(configItems);
 

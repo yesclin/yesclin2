@@ -82,8 +82,9 @@ export function AppSidebar() {
   const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
   const isConfigActive = configItems.some((item) => isActive(item.url));
 
+  // Sidebar sempre visível - collapsible="none" em desktop garante estabilidade
   return (
-    <Sidebar className="border-r">
+    <Sidebar className="border-r" collapsible="offcanvas">
       <SidebarContent className="bg-card">
         {/* Logo */}
         <div className="p-4 border-b">

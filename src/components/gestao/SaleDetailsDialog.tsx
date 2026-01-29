@@ -93,9 +93,34 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
     }
     
     cancelSale.mutate({ id: saleId }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         setShowCancelConfirm(false);
+        toast.success(
+          `Venda cancelada com sucesso! ${data?.items_reverted || 0} ${data?.items_reverted === 1 ? 'item devolvido' : 'itens devolvidos'} ao estoque.`,
+          {
+            description: "O estoque foi restaurado e a transação financeira foi revertida.",
+            duration: 5000,
+          }
+        );
         onOpenChange(false);
+      },
+      onError: (error: Error) => {
+        const errorMessage = error.message || "Erro desconhecido ao cancelar venda.";
+        
+        // Parse known error types for clearer messages
+        let userFriendlyMessage = errorMessage;
+        if (errorMessage.includes("permissão")) {
+          userFriendlyMessage = "Você não tem permissão para cancelar vendas. Apenas administradores ou usuários com permissão de exclusão podem realizar esta ação.";
+        } else if (errorMessage.includes("não encontrada")) {
+          userFriendlyMessage = "A venda não foi encontrada. Ela pode ter sido excluída ou já cancelada.";
+        } else if (errorMessage.includes("já cancelada") || errorMessage.includes("already")) {
+          userFriendlyMessage = "Esta venda já foi cancelada anteriormente.";
+        }
+        
+        toast.error("Falha ao cancelar venda", {
+          description: userFriendlyMessage,
+          duration: 6000,
+        });
       },
     });
   };
@@ -289,12 +314,22 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
                             onClick={handleCancelButtonClick}
                             disabled={cancelSale.isPending || permissionsLoading}
                           >
-                            {!canCancelSale && !permissionsLoading ? (
-                              <ShieldX className="h-4 w-4 mr-2" />
+                            {cancelSale.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processando...
+                              </>
+                            ) : !canCancelSale && !permissionsLoading ? (
+                              <>
+                                <ShieldX className="h-4 w-4 mr-2" />
+                                Cancelar Venda
+                              </>
                             ) : (
-                              <Ban className="h-4 w-4 mr-2" />
+                              <>
+                                <Ban className="h-4 w-4 mr-2" />
+                                Cancelar Venda
+                              </>
                             )}
-                            Cancelar Venda
                           </Button>
                         </div>
                       </TooltipTrigger>

@@ -323,7 +323,7 @@ export function useCancelSale() {
       
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate all relevant queries after sale cancellation
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["sales-stats"] });
@@ -334,11 +334,9 @@ export function useCancelSale() {
       queryClient.invalidateQueries({ queryKey: ["stock-stats"] });
       queryClient.invalidateQueries({ queryKey: ["finance-transactions"] });
       queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
-      
-      toast.success(`Venda cancelada! ${data.items_reverted} itens devolvidos ao estoque.`);
+      queryClient.invalidateQueries({ queryKey: ["patient-sales"] });
+      // Note: Success toast is handled by the component for better UX control
     },
-    onError: (error: Error) => {
-      toast.error("Erro ao cancelar venda: " + error.message);
-    },
+    // Note: Error toast is handled by the component for better UX control
   });
 }

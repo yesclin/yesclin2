@@ -70,7 +70,7 @@ export function SaleDetailsDialog({ saleId, open, onOpenChange }: SaleDetailsDia
     return paymentMethods.find((m) => m.value === method)?.label || method || "-";
   };
 
-  const isCanceled = sale?.status === 'canceled' || sale?.payment_status === 'cancelado';
+  const isCanceled = sale?.status === 'cancelado' || sale?.payment_status === 'cancelado';
 
   const handleCancelSale = () => {
     if (!saleId) return;

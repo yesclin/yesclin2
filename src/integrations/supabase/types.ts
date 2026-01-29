@@ -5520,6 +5520,10 @@ export type Database = {
         Args: { p_procedure_id: string }
         Returns: number
       }
+      cancel_sale_transaction: {
+        Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
+        Returns: Json
+      }
       check_medical_record_action_permission: {
         Args: { _action_key: string; _user_id: string }
         Returns: boolean

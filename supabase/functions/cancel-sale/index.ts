@@ -11,6 +11,16 @@ interface CancelSaleRequest {
   reason?: string;
 }
 
+interface CancelSaleResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  sale_id?: string;
+  items_reverted?: number;
+  amount_reversed?: number;
+  reversal_transaction_id?: string;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -30,7 +40,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create client with service role for transaction
+    // Create client with service role for RPC call
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Verify user token
@@ -44,7 +54,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user's clinic
+    // Get user's clinic to verify access
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("clinic_id")
@@ -58,7 +68,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const clinicId = profile.clinic_id;
     const body: CancelSaleRequest = await req.json();
     const { sale_id, reason } = body;
 
@@ -69,167 +78,59 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[cancel-sale] Starting cancellation for sale ${sale_id} by user ${user.id}`);
-
-    // ========================================
-    // TRANSACTIONAL CANCELLATION
-    // Using RPC to ensure atomicity
-    // ========================================
-
-    // Step 1: Get sale with items and verify ownership
-    const { data: sale, error: saleError } = await supabase
+    // Verify sale belongs to user's clinic
+    const { data: sale, error: saleCheckError } = await supabase
       .from("sales")
-      .select(`
-        *,
-        sale_items(*)
-      `)
+      .select("clinic_id")
       .eq("id", sale_id)
-      .eq("clinic_id", clinicId)
       .single();
 
-    if (saleError || !sale) {
-      console.error("[cancel-sale] Sale not found:", saleError);
+    if (saleCheckError || !sale) {
       return new Response(
         JSON.stringify({ success: false, error: "Venda não encontrada" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check if already canceled
-    if (sale.status === "canceled" || sale.payment_status === "cancelado") {
+    if (sale.clinic_id !== profile.clinic_id) {
       return new Response(
-        JSON.stringify({ success: false, error: "Venda já está cancelada" }),
+        JSON.stringify({ success: false, error: "Venda não pertence à sua clínica" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[cancel-sale] Starting transactional cancellation for sale ${sale_id} by user ${user.id}`);
+
+    // Call the transactional database function
+    // This ensures all operations are atomic - if any step fails, everything is rolled back
+    const { data: result, error: rpcError } = await supabase.rpc("cancel_sale_transaction", {
+      p_sale_id: sale_id,
+      p_user_id: user.id,
+      p_reason: reason || "Cancelamento de venda",
+    });
+
+    if (rpcError) {
+      console.error("[cancel-sale] RPC error:", rpcError);
+      return new Response(
+        JSON.stringify({ success: false, error: rpcError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const cancelResult = result as CancelSaleResult;
+
+    if (!cancelResult.success) {
+      console.error("[cancel-sale] Transaction failed:", cancelResult.error);
+      return new Response(
+        JSON.stringify({ success: false, error: cancelResult.error }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const now = new Date().toISOString();
-    const saleItems = sale.sale_items || [];
-
-    // Step 2: Update sale status
-    const { error: updateSaleError } = await supabase
-      .from("sales")
-      .update({
-        status: "canceled",
-        payment_status: "cancelado",
-        canceled_at: now,
-        canceled_by: user.id,
-        updated_at: now,
-      })
-      .eq("id", sale_id)
-      .eq("clinic_id", clinicId);
-
-    if (updateSaleError) {
-      console.error("[cancel-sale] Failed to update sale:", updateSaleError);
-      throw new Error("Falha ao atualizar status da venda");
-    }
-
-    console.log(`[cancel-sale] Sale ${sale_id} marked as canceled`);
-
-    // Step 3: Revert stock for each item
-    for (const item of saleItems) {
-      // Get current product stock
-      const { data: product, error: productError } = await supabase
-        .from("products")
-        .select("id, stock_quantity, name")
-        .eq("id", item.product_id)
-        .single();
-
-      if (productError) {
-        console.warn(`[cancel-sale] Product ${item.product_id} not found, skipping stock revert`);
-        continue;
-      }
-
-      const previousQty = Number(product.stock_quantity) || 0;
-      const returnQty = Number(item.quantity) || 0;
-      const newQty = previousQty + returnQty;
-
-      // Create stock movement for return
-      const { error: movementError } = await supabase
-        .from("stock_movements")
-        .insert({
-          clinic_id: clinicId,
-          product_id: item.product_id,
-          movement_type: "devolucao",
-          quantity: returnQty,
-          previous_quantity: previousQty,
-          new_quantity: newQty,
-          reason: reason || "Cancelamento de venda",
-          reference_type: "sale",
-          reference_id: sale_id,
-          created_by: user.id,
-        });
-
-      if (movementError) {
-        console.error("[cancel-sale] Failed to create stock movement:", movementError);
-        throw new Error(`Falha ao registrar movimento de estoque para ${product.name}`);
-      }
-
-      // Update product stock
-      const { error: stockUpdateError } = await supabase
-        .from("products")
-        .update({
-          stock_quantity: newQty,
-          updated_at: now,
-        })
-        .eq("id", item.product_id);
-
-      if (stockUpdateError) {
-        console.error("[cancel-sale] Failed to update product stock:", stockUpdateError);
-        throw new Error(`Falha ao atualizar estoque do produto ${product.name}`);
-      }
-
-      console.log(`[cancel-sale] Stock reverted for product ${item.product_id}: ${previousQty} -> ${newQty}`);
-    }
-
-    // Step 4: Handle financial reversal
-    // Check if there's a linked transaction
-    if (sale.transaction_id) {
-      // Mark original transaction as reversed
-      const { error: txUpdateError } = await supabase
-        .from("finance_transactions")
-        .update({
-          notes: `[ESTORNADO] ${sale.notes || ""} - Cancelamento em ${new Date().toLocaleDateString("pt-BR")}`,
-          updated_at: now,
-        })
-        .eq("id", sale.transaction_id);
-
-      if (txUpdateError) {
-        console.warn("[cancel-sale] Failed to update original transaction:", txUpdateError);
-      }
-    }
-
-    // Create reversal transaction
-    const saleAmount = Number(sale.total_amount) || 0;
-    if (saleAmount > 0) {
-      const { error: reversalError } = await supabase
-        .from("finance_transactions")
-        .insert({
-          clinic_id: clinicId,
-          type: "saida",
-          description: `Estorno - Cancelamento de venda #${sale_id.slice(0, 8)}`,
-          amount: saleAmount,
-          transaction_date: now.split("T")[0],
-          payment_method: sale.payment_method || null,
-          patient_id: sale.patient_id || null,
-          professional_id: sale.professional_id || null,
-          origin: "sale_cancellation",
-          notes: `Estorno referente à venda cancelada. Motivo: ${reason || "Não informado"}. Venda original: ${sale_id}`,
-          created_by: user.id,
-        });
-
-      if (reversalError) {
-        console.error("[cancel-sale] Failed to create reversal transaction:", reversalError);
-        throw new Error("Falha ao criar transação de estorno");
-      }
-
-      console.log(`[cancel-sale] Reversal transaction created for amount ${saleAmount}`);
-    }
-
-    // Step 5: Log audit entry
+    // Log audit entry (non-critical, don't fail if this errors)
     try {
       await supabase.from("access_logs").insert({
-        clinic_id: clinicId,
+        clinic_id: profile.clinic_id,
         user_id: user.id,
         action: "SALE_CANCELLED",
         resource: `sales/${sale_id}`,
@@ -237,19 +138,12 @@ Deno.serve(async (req) => {
       });
     } catch (auditError) {
       console.warn("[cancel-sale] Failed to log audit:", auditError);
-      // Don't fail the operation for audit logging
     }
 
-    console.log(`[cancel-sale] Successfully cancelled sale ${sale_id}`);
+    console.log(`[cancel-sale] Successfully cancelled sale ${sale_id} - Items reverted: ${cancelResult.items_reverted}, Amount: ${cancelResult.amount_reversed}`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Venda cancelada com sucesso",
-        sale_id,
-        items_reverted: saleItems.length,
-        amount_reversed: saleAmount,
-      }),
+      JSON.stringify(cancelResult),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

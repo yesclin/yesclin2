@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart } from 'lucide-react';
+import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
 import { useSalesReport } from '@/hooks/useSalesReport';
 import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
 import { useSalesReportExport } from '@/hooks/useSalesReportExport';
+import { useProductMarginReport } from '@/hooks/useProductMarginReport';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
 import { FinancialReports } from '@/components/relatorios/FinancialReports';
@@ -17,6 +18,7 @@ import { StockReports } from '@/components/relatorios/StockReports';
 import { CommunicationReports } from '@/components/relatorios/CommunicationReports';
 import { ExecutiveReport } from '@/components/relatorios/ExecutiveReport';
 import { SalesReports } from '@/components/relatorios/SalesReports';
+import { ProductMarginReport } from '@/components/relatorios/ProductMarginReport';
 import { ReportSkeleton } from '@/components/relatorios/ReportSkeleton';
 import { ReportEmptyState } from '@/components/relatorios/ReportEmptyState';
 import { toast } from 'sonner';
@@ -27,6 +29,7 @@ const reportTabs = [
   { value: 'gerencial', label: 'Gerencial', icon: Briefcase },
   { value: 'financeiro', label: 'Financeiro', icon: DollarSign },
   { value: 'vendas', label: 'Vendas', icon: ShoppingCart },
+  { value: 'margem', label: 'Margem', icon: TrendingUp },
   { value: 'agenda', label: 'Agenda', icon: Calendar },
   { value: 'pacientes', label: 'Pacientes', icon: Users },
   { value: 'convenios', label: 'Convênios', icon: Building2 },
@@ -55,6 +58,7 @@ export default function Relatorios() {
 
   const data = useRelatoriosMockData(filters);
   const salesReport = useSalesReport(salesFilters);
+  const marginReport = useProductMarginReport(salesFilters);
   const salesOptions = useSalesReportOptions();
   const { exportCSV, exportPDF } = useSalesReportExport();
 
@@ -110,7 +114,7 @@ export default function Relatorios() {
         </TabsList>
 
         {/* Filtros - condicional baseado na tab */}
-        {activeTab === 'vendas' ? (
+        {(activeTab === 'vendas' || activeTab === 'margem') ? (
           <SalesReportFilters
             filters={salesFilters}
             onFiltersChange={setSalesFilters}
@@ -166,6 +170,14 @@ export default function Relatorios() {
             salesByPaymentMethod={salesReport.salesByPaymentMethod}
             salesList={salesReport.salesList}
             isLoading={salesReport.isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="margem">
+          <ProductMarginReport
+            items={marginReport.items}
+            summary={marginReport.summary}
+            isLoading={marginReport.isLoading}
           />
         </TabsContent>
 

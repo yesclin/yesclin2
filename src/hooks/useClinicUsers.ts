@@ -326,29 +326,44 @@ export function useCurrentUser() {
           .eq("user_id", authUser.id)
           .single();
 
-        if (!profile) {
-          setIsLoading(false);
-          return;
+        // Get role if profile exists
+        let roleValue: "owner" | "admin" | "profissional" | "recepcionista" = "admin";
+        
+        if (profile?.clinic_id) {
+          const { data: roleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", authUser.id)
+            .eq("clinic_id", profile.clinic_id)
+            .single();
+          
+          if (roleData?.role) {
+            roleValue = roleData.role as typeof roleValue;
+          }
         }
 
-        // Get role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", authUser.id)
-          .eq("clinic_id", profile.clinic_id)
-          .single();
-
+        // Always set user data - use auth email and name from profile or email
         setUser({
           id: authUser.id,
-          name: profile.full_name || "Usuário",
+          name: profile?.full_name || authUser.email?.split("@")[0] || "Usuário",
           email: authUser.email || "",
-          role: (roleData?.role || "profissional") as "owner" | "admin" | "profissional" | "recepcionista",
-          avatarUrl: profile.avatar_url,
+          role: roleValue,
+          avatarUrl: profile?.avatar_url || null,
         });
         setIsLoading(false);
       } catch (err) {
         console.error("Error loading current user:", err);
+        // Even on error, try to show basic auth user info
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          setUser({
+            id: authUser.id,
+            name: authUser.email?.split("@")[0] || "Usuário",
+            email: authUser.email || "",
+            role: "admin",
+            avatarUrl: null,
+          });
+        }
         setIsLoading(false);
       }
     }

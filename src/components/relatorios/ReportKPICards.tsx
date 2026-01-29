@@ -4,15 +4,17 @@ import { cn } from '@/lib/utils';
 
 interface KPICardProps {
   title: string;
-  value: string | number;
+  value: string | number | null;
   previousValue?: string | number;
   variation?: number;
   format?: 'currency' | 'percentage' | 'number';
   icon?: React.ReactNode;
   className?: string;
+  masked?: boolean;
 }
 
-function formatValue(value: string | number, format?: 'currency' | 'percentage' | 'number'): string {
+function formatValue(value: string | number | null, format?: 'currency' | 'percentage' | 'number', masked?: boolean): string {
+  if (masked || value === null) return '•••••';
   if (typeof value === 'string') return value;
   
   switch (format) {
@@ -32,7 +34,8 @@ export function ReportKPICard({
   variation, 
   format, 
   icon,
-  className 
+  className,
+  masked = false
 }: KPICardProps) {
   const trend = variation ? (variation > 0 ? 'up' : variation < 0 ? 'down' : 'stable') : undefined;
 
@@ -42,8 +45,8 @@ export function ReportKPICard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{formatValue(value, format)}</p>
-            {variation !== undefined && (
+            <p className="text-2xl font-bold">{formatValue(value, format, masked)}</p>
+            {variation !== undefined && !masked && (
               <div className="flex items-center gap-1">
                 {trend === 'up' && <TrendingUp className="h-4 w-4 text-green-600" />}
                 {trend === 'down' && <TrendingDown className="h-4 w-4 text-red-600" />}

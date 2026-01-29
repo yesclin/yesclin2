@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingCart, RotateCcw, TrendingUp, Percent, Ban, CheckCircle, Eye } from 'lucide-react';
+import { ShoppingCart, RotateCcw, TrendingUp, Percent, Ban, CheckCircle, Eye, ShieldX, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -23,6 +23,7 @@ import { ReportKPICards } from './ReportKPICards';
 import { SaleReportDetailsDialog } from './SaleReportDetailsDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { 
   SalesReportSummary, 
   SalesByPeriod, 
@@ -56,7 +57,8 @@ const paymentLabels: Record<string, string> = {
   transferencia: 'Transferência',
 };
 
-function formatCurrency(value: number): string {
+function formatCurrency(value: number, canViewFinancials: boolean): string {
+  if (!canViewFinancials) return '•••••';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
@@ -73,6 +75,26 @@ function formatPaymentMethod(method: string | null): string {
   return paymentLabels[method] || method;
 }
 
+/**
+ * Access denied message for users without permission
+ */
+function AccessDeniedMessage() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+        <ShieldX className="h-8 w-8 text-destructive" />
+      </div>
+      <h2 className="text-xl font-semibold text-foreground mb-2">
+        Acesso Restrito
+      </h2>
+      <p className="text-muted-foreground max-w-md">
+        Você não tem permissão para acessar o <strong>Relatório de Vendas e Estornos</strong>.
+        Entre em contato com o administrador da clínica.
+      </p>
+    </div>
+  );
+}
+
 export function SalesReports({
   summary,
   salesByPeriod,
@@ -82,13 +104,19 @@ export function SalesReports({
 }: SalesReportsProps) {
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  const { can, isLoading: permissionsLoading } = usePermissions();
+  
+  // Check permissions: relatorios view for access, financeiro view for values
+  const canAccessReport = can('relatorios', 'view');
+  const canViewFinancials = can('financeiro', 'view');
 
   const handleOpenDetails = (saleId: string) => {
     setSelectedSaleId(saleId);
     setDetailsOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoading || permissionsLoading) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-4">
@@ -101,10 +129,29 @@ export function SalesReports({
     );
   }
 
+  // Block access if user cannot view reports
+  if (!canAccessReport) {
+    return <AccessDeniedMessage />;
+  }
+
   const valorLiquido = summary.totalVendas - summary.totalEstornos;
 
   return (
     <div className="space-y-6">
+      {/* Warning for hidden financial values */}
+      {!canViewFinancials && (
+        <Card className="border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <EyeOff className="h-4 w-4" />
+              <span className="text-sm">
+                Você não tem permissão para visualizar valores financeiros. Entre em contato com o administrador.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Resumo Principal */}
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
         <CardHeader className="pb-2">
@@ -123,7 +170,7 @@ export function SalesReports({
                 <span className="text-sm text-muted-foreground">Vendas Ativas</span>
               </div>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {formatCurrency(summary.totalVendas)}
+                {formatCurrency(summary.totalVendas, canViewFinancials)}
               </p>
               <p className="text-xs text-muted-foreground">{summary.quantidadeVendas} venda(s)</p>
             </div>
@@ -136,7 +183,7 @@ export function SalesReports({
                 <span className="text-sm text-muted-foreground">Estornos</span>
               </div>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {formatCurrency(summary.totalEstornos)}
+                {formatCurrency(summary.totalEstornos, canViewFinancials)}
               </p>
               <p className="text-xs text-muted-foreground">{summary.quantidadeEstornos} cancelamento(s)</p>
             </div>
@@ -149,7 +196,7 @@ export function SalesReports({
                 <span className="text-sm text-muted-foreground">Valor Líquido</span>
               </div>
               <p className={`text-2xl font-bold ${valorLiquido >= 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'}`}>
-                {formatCurrency(valorLiquido)}
+                {formatCurrency(valorLiquido, canViewFinancials)}
               </p>
               <p className="text-xs text-muted-foreground">vendas - estornos</p>
             </div>
@@ -175,15 +222,17 @@ export function SalesReports({
         cards={[
           { 
             title: 'Ticket Médio', 
-            value: summary.ticketMedio, 
+            value: canViewFinancials ? summary.ticketMedio : null, 
             format: 'currency', 
-            icon: <TrendingUp className="h-5 w-5" /> 
+            icon: <TrendingUp className="h-5 w-5" />,
+            masked: !canViewFinancials,
           },
           { 
             title: 'Descontos Concedidos', 
-            value: summary.descontosConcedidos, 
+            value: canViewFinancials ? summary.descontosConcedidos : null, 
             format: 'currency', 
-            icon: <Percent className="h-5 w-5" /> 
+            icon: <Percent className="h-5 w-5" />,
+            masked: !canViewFinancials,
           },
         ]}
       />
@@ -243,7 +292,7 @@ export function SalesReports({
                           {sale.patientName || <span className="text-muted-foreground italic">Sem paciente</span>}
                         </TableCell>
                         <TableCell className={`text-right font-semibold ${sale.status === 'canceled' ? 'text-red-600 dark:text-red-400 line-through' : ''}`}>
-                          {formatCurrency(sale.totalAmount)}
+                          {formatCurrency(sale.totalAmount, canViewFinancials)}
                         </TableCell>
                         <TableCell>{formatPaymentMethod(sale.paymentMethod)}</TableCell>
                         <TableCell>
@@ -284,16 +333,25 @@ export function SalesReports({
               <CardTitle className="text-lg">Vendas e Estornos por Período</CardTitle>
             </CardHeader>
             <CardContent>
+              {canViewFinancials ? (
               <ChartContainer config={chartConfig} className="h-[350px] w-full">
                 <BarChart data={salesByPeriod}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="period" className="text-xs" />
                   <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value), true)} />} />
                   <Bar dataKey="vendas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Vendas" />
                   <Bar dataKey="estornos" fill="#ef4444" radius={[4, 4, 0, 0]} name="Estornos" />
                 </BarChart>
               </ChartContainer>
+              ) : (
+                <div className="h-[350px] flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <EyeOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Valores financeiros ocultos</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -307,7 +365,12 @@ export function SalesReports({
             <CardContent>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="h-[300px] flex items-center justify-center">
-                  {salesByPaymentMethod.length > 0 ? (
+                  {!canViewFinancials ? (
+                    <div className="text-center text-muted-foreground">
+                      <EyeOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Valores financeiros ocultos</p>
+                    </div>
+                  ) : salesByPaymentMethod.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -325,7 +388,7 @@ export function SalesReports({
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <ChartTooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <ChartTooltip formatter={(value) => formatCurrency(Number(value), true)} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
@@ -356,8 +419,8 @@ export function SalesReports({
                             </div>
                           </TableCell>
                           <TableCell className="text-right">{method.count}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(method.totalAmount)}</TableCell>
-                          <TableCell className="text-right">{method.percentage}%</TableCell>
+                          <TableCell className="text-right">{formatCurrency(method.totalAmount, canViewFinancials)}</TableCell>
+                          <TableCell className="text-right">{canViewFinancials ? `${method.percentage}%` : '•••'}</TableCell>
                         </TableRow>
                       ))
                     ) : (

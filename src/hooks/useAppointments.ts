@@ -221,10 +221,40 @@ export function useUpdateAppointmentStatus() {
         .eq("id", id);
       
       if (error) throw error;
+
+      // Process product consumption when finalizing procedure
+      if (status === "finalizado") {
+        interface ConsumptionResult {
+          success: boolean;
+          error?: string;
+          message?: string;
+          processed_count?: number;
+          total_cost?: number;
+          alerts_count?: number;
+        }
+        
+        const { data: consumptionResult, error: consumptionError } = await supabase
+          .rpc("process_procedure_product_consumption", { p_appointment_id: id }) as { 
+            data: ConsumptionResult | null; 
+            error: Error | null 
+          };
+        
+        if (consumptionError) {
+          console.error("Error processing product consumption:", consumptionError);
+          // Don't throw - status update succeeded, just log the consumption error
+        } else if (consumptionResult && !consumptionResult.success) {
+          console.error("Product consumption failed:", consumptionResult.error);
+        } else if (consumptionResult?.processed_count && consumptionResult.processed_count > 0) {
+          console.log(`Processed ${consumptionResult.processed_count} products, total cost: ${consumptionResult.total_cost}`);
+        }
+      }
+
       return { id, status };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
       
       const statusLabels: Record<AppointmentStatus, string> = {
         nao_confirmado: "Não confirmado",

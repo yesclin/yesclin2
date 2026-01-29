@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import type { SalesReportFilters } from "@/types/salesReport";
+import type { ProductMarginFilters } from "@/types/productMarginReport";
 
 // =============================================
 // TYPES
@@ -10,6 +10,7 @@ import type { SalesReportFilters } from "@/types/salesReport";
 export interface ProductMarginItem {
   productId: string;
   productName: string;
+  category: string | null;
   quantitySold: number;
   totalRevenue: number;
   totalCost: number;
@@ -30,20 +31,35 @@ export interface ProductMarginSummary {
 // HOOK
 // =============================================
 
-export function useProductMarginReport(filters: SalesReportFilters) {
+export function useProductMarginReport(filters: ProductMarginFilters) {
   const startDate = format(filters.startDate, "yyyy-MM-dd");
   const endDate = format(filters.endDate, "yyyy-MM-dd");
 
   const query = useQuery({
-    queryKey: ["product-margin-report", startDate, endDate],
+    queryKey: [
+      "product-margin-report",
+      startDate,
+      endDate,
+      filters.status,
+      filters.productId,
+      filters.categoryId,
+    ],
     queryFn: async () => {
-      // First get active sales in the period
-      const { data: sales, error: salesError } = await supabase
+      // Build sales query with status filter
+      let salesQuery = supabase
         .from("sales")
         .select("id")
         .gte("sale_date", `${startDate}T00:00:00`)
-        .lte("sale_date", `${endDate}T23:59:59`)
-        .neq("payment_status", "cancelado");
+        .lte("sale_date", `${endDate}T23:59:59`);
+
+      // Apply status filter
+      if (filters.status === "active") {
+        salesQuery = salesQuery.neq("payment_status", "cancelado");
+      } else if (filters.status === "canceled") {
+        salesQuery = salesQuery.eq("payment_status", "cancelado");
+      }
+
+      const { data: sales, error: salesError } = await salesQuery;
 
       if (salesError) throw salesError;
 
@@ -54,7 +70,7 @@ export function useProductMarginReport(filters: SalesReportFilters) {
       const saleIds = sales.map((s) => s.id);
 
       // Get sale_items for these sales
-      const { data: saleItems, error: itemsError } = await supabase
+      let itemsQuery = supabase
         .from("sale_items")
         .select(`
           product_id,
@@ -68,12 +84,45 @@ export function useProductMarginReport(filters: SalesReportFilters) {
         `)
         .in("sale_id", saleIds);
 
+      // Apply product filter
+      if (filters.productId) {
+        itemsQuery = itemsQuery.eq("product_id", filters.productId);
+      }
+
+      const { data: saleItems, error: itemsError } = await itemsQuery;
+
       if (itemsError) throw itemsError;
+
+      // If category filter is set, we need to filter by product category
+      let filteredItems = saleItems || [];
+      if (filters.categoryId) {
+        // Get products with the specified category
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, category")
+          .eq("category", filters.categoryId);
+
+        const productIdsWithCategory = new Set((products || []).map((p) => p.id));
+        filteredItems = filteredItems.filter((item) =>
+          productIdsWithCategory.has(item.product_id)
+        );
+      }
+
+      // Get product categories for display
+      const productIds = [...new Set(filteredItems.map((item) => item.product_id))];
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("id, category")
+        .in("id", productIds);
+
+      const productCategoryMap = new Map(
+        (productsData || []).map((p) => [p.id, p.category])
+      );
 
       // Aggregate by product
       const productMap = new Map<string, ProductMarginItem>();
 
-      (saleItems || []).forEach((item) => {
+      filteredItems.forEach((item) => {
         const existing = productMap.get(item.product_id);
         const quantity = item.quantity || 0;
         const revenue = Number(item.total_price) || 0;
@@ -89,6 +138,7 @@ export function useProductMarginReport(filters: SalesReportFilters) {
           productMap.set(item.product_id, {
             productId: item.product_id,
             productName: item.product_name,
+            category: productCategoryMap.get(item.product_id) || null,
             quantitySold: quantity,
             totalRevenue: revenue,
             totalCost: cost,

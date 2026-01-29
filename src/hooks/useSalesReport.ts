@@ -24,6 +24,11 @@ interface SaleRow {
   sale_items: { id: string; product_id: string }[];
 }
 
+interface ProfileRow {
+  id: string;
+  full_name: string;
+}
+
 // =============================================
 // HOOK PRINCIPAL
 // =============================================
@@ -101,7 +106,30 @@ export function useSalesReport(filters: SalesReportFilters) {
         );
       }
 
-      return sales;
+      // Coletar IDs únicos de usuários para buscar perfis
+      const userIds = new Set<string>();
+      sales.forEach((sale) => {
+        if (sale.created_by) userIds.add(sale.created_by);
+        if (sale.canceled_by) userIds.add(sale.canceled_by);
+      });
+
+      // Buscar perfis dos usuários
+      let profilesMap: Record<string, string> = {};
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", Array.from(userIds));
+
+        if (profiles) {
+          profilesMap = profiles.reduce((acc, p) => {
+            acc[p.id] = p.full_name || "";
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
+      return { sales, profilesMap };
     },
   });
 
@@ -109,7 +137,8 @@ export function useSalesReport(filters: SalesReportFilters) {
   const isLoading = salesQuery.isLoading;
   const isError = salesQuery.isError;
 
-  const allSales = salesQuery.data || [];
+  const allSales = salesQuery.data?.sales || [];
+  const profilesMap = salesQuery.data?.profilesMap || {};
   const activeSales = allSales.filter((s) => s.payment_status !== "cancelado");
   const canceledSales = allSales.filter((s) => s.payment_status === "cancelado");
 
@@ -193,7 +222,9 @@ export function useSalesReport(filters: SalesReportFilters) {
     professionalId: sale.professional_id,
     professionalName: sale.professionals?.full_name || null,
     createdBy: sale.created_by,
+    createdByName: sale.created_by ? profilesMap[sale.created_by] || null : null,
     canceledBy: sale.canceled_by,
+    canceledByName: sale.canceled_by ? profilesMap[sale.canceled_by] || null : null,
   }));
 
   return {

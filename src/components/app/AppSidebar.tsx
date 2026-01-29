@@ -82,9 +82,10 @@ export function AppSidebar() {
   const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
   const isConfigActive = configItems.some((item) => isActive(item.url));
 
-  // Sidebar sempre visível - collapsible="none" em desktop garante estabilidade
+  // Importante: evitar "offcanvas" no desktop, pois pode esconder o sidebar totalmente.
+  // "icon" mantém um rail mínimo, garantindo que o menu não "some".
   return (
-    <Sidebar className="border-r" collapsible="offcanvas">
+    <Sidebar className="border-r" collapsible="icon">
       <SidebarContent className="bg-card">
         {/* Logo */}
         <div className="p-4 border-b">

@@ -95,6 +95,28 @@ interface RawAppointment {
   created_by: string | null;
 }
 
+interface RawStockMovement {
+  id: string;
+  product_id: string;
+  movement_type: string;
+  quantity: number;
+  reason: string;
+  reference_type: string | null;
+  reference_id: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  products?: {
+    name: string;
+    unit: string;
+  } | null;
+  appointments?: {
+    patient_id: string;
+    scheduled_date: string;
+    procedure_id: string | null;
+  } | null;
+}
+
 const PAGE_SIZE = 50;
 
 export function useClinicalTimeline(patientId: string | null) {
@@ -375,6 +397,45 @@ export function useClinicalTimeline(patientId: string | null) {
       });
   }, [patientId]);
 
+  // Transform stock movements (product consumption) to timeline events
+  const transformStockMovements = useCallback((
+    movements: RawStockMovement[],
+    profiles: Map<string, string>
+  ): TimelineEvent[] => {
+    return movements
+      .filter(m => 
+        m.reference_type === 'procedure_execution' && 
+        m.appointments?.patient_id === patientId
+      )
+      .map(movement => {
+        const productName = movement.products?.name || 'Produto';
+        const productUnit = movement.products?.unit || 'un';
+        
+        return {
+          id: `stock-${movement.id}`,
+          event_type: 'PRODUCT_CONSUMED' as TimelineEventType,
+          category: 'stock' as TimelineEventCategory,
+          entity: 'stock_movements',
+          entity_id: movement.id,
+          patient_id: movement.appointments?.patient_id || patientId || '',
+          author_id: movement.created_by,
+          author_name: movement.created_by ? (profiles.get(movement.created_by) || 'Profissional') : 'Sistema',
+          timestamp: movement.created_at,
+          summary: `${productName}: ${movement.quantity} ${productUnit} consumido(s) - Uso em Procedimento`,
+          metadata: { 
+            product_id: movement.product_id,
+            product_name: productName,
+            quantity: movement.quantity,
+            unit: productUnit,
+            appointment_id: movement.reference_id,
+            reason: movement.reason,
+          },
+          target_tab: 'procedimentos',
+          can_navigate: false,
+        };
+      });
+  }, [patientId]);
+
   // Main fetch function that aggregates all sources
   const fetchTimeline = useCallback(async (reset = false) => {
     if (!clinic?.id || !patientId) return;
@@ -383,6 +444,15 @@ export function useClinicalTimeline(patientId: string | null) {
     const currentPage = reset ? 0 : page;
     
     try {
+      // First get appointment IDs for this patient to filter stock movements
+      const patientAppointmentsRes = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('clinic_id', clinic.id)
+        .eq('patient_id', patientId);
+      
+      const patientAppointmentIds = (patientAppointmentsRes.data || []).map(a => a.id);
+
       // Fetch all data sources in parallel
       const [
         entriesRes,
@@ -392,6 +462,7 @@ export function useClinicalTimeline(patientId: string | null) {
         accessLogsRes,
         appointmentsRes,
         salesRes,
+        stockMovementsRes,
       ] = await Promise.all([
         // Medical record entries
         supabase
@@ -449,6 +520,21 @@ export function useClinicalTimeline(patientId: string | null) {
           .eq('clinic_id', clinic.id)
           .eq('patient_id', patientId)
           .order('created_at', { ascending: false }),
+
+        // Stock movements (product consumption linked to patient appointments)
+        patientAppointmentIds.length > 0
+          ? supabase
+              .from('stock_movements')
+              .select(`
+                id, product_id, movement_type, quantity, reason, 
+                reference_type, reference_id, notes, created_by, created_at,
+                products(name, unit)
+              `)
+              .eq('clinic_id', clinic.id)
+              .eq('reference_type', 'procedure_execution')
+              .in('reference_id', patientAppointmentIds)
+              .order('created_at', { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       // Collect all user IDs for profile lookup
@@ -460,10 +546,27 @@ export function useClinicalTimeline(patientId: string | null) {
       (accessLogsRes.data || []).forEach(l => l.user_id && allUserIds.add(l.user_id));
       (appointmentsRes.data || []).forEach(a => a.created_by && allUserIds.add(a.created_by));
       (salesRes.data || []).forEach(s => s.created_by && allUserIds.add(s.created_by));
+      (stockMovementsRes.data || []).forEach((m: RawStockMovement) => m.created_by && allUserIds.add(m.created_by));
 
       // Fetch profiles
       const profiles = await fetchProfiles(Array.from(allUserIds));
       setProfileMap(profiles);
+
+      // Build a map of appointment_id -> patient_id for stock movements
+      const appointmentPatientMap = new Map<string, string>();
+      (appointmentsRes.data || []).forEach(a => {
+        appointmentPatientMap.set(a.id, a.patient_id);
+      });
+
+      // Transform stock movements with patient info
+      const stockMovementsWithPatient = (stockMovementsRes.data || []).map((m: RawStockMovement) => ({
+        ...m,
+        appointments: {
+          patient_id: m.reference_id ? appointmentPatientMap.get(m.reference_id) || '' : '',
+          scheduled_date: '',
+          procedure_id: null,
+        },
+      }));
 
       // Transform all data to timeline events
       let allEvents: TimelineEvent[] = [
@@ -475,6 +578,7 @@ export function useClinicalTimeline(patientId: string | null) {
         ...transformAppointments((appointmentsRes.data || []) as RawAppointment[], profiles),
         ...transformSales((salesRes.data || []) as RawSale[], profiles),
         ...transformCancelledSales((accessLogsRes.data || []) as RawAccessLog[], profiles),
+        ...transformStockMovements(stockMovementsWithPatient as RawStockMovement[], profiles),
       ];
 
       // Apply filters
@@ -530,6 +634,7 @@ export function useClinicalTimeline(patientId: string | null) {
     transformAppointments,
     transformSales,
     transformCancelledSales,
+    transformStockMovements,
   ]);
 
   // Initial load

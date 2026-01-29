@@ -238,7 +238,7 @@ export function useStockStats() {
 // RECENT STOCK MOVEMENTS
 // =============================================
 
-export function useRecentStockMovements(limit = 20) {
+export function useRecentStockMovements(limit = 50) {
   return useQuery({
     queryKey: ["stock-movements", "recent", limit],
     queryFn: async () => {
@@ -252,6 +252,38 @@ export function useRecentStockMovements(limit = 20) {
         .limit(limit);
       
       if (error) throw error;
+
+      // Enrich procedure execution movements with patient info
+      const procedureMovements = (data || []).filter(
+        m => m.reference_type === 'procedure_execution' && m.reference_id
+      );
+      
+      if (procedureMovements.length > 0) {
+        const appointmentIds = procedureMovements.map(m => m.reference_id);
+        
+        const { data: appointments } = await supabase
+          .from('appointments')
+          .select('id, patient_id, patients(full_name)')
+          .in('id', appointmentIds);
+        
+        const appointmentMap = new Map(
+          (appointments || []).map(a => [a.id, a])
+        );
+        
+        // Attach patient info to movements
+        return (data as StockMovement[]).map(m => {
+          if (m.reference_type === 'procedure_execution' && m.reference_id) {
+            const apt = appointmentMap.get(m.reference_id);
+            return {
+              ...m,
+              patient_name: (apt as any)?.patients?.full_name || null,
+              patient_id: apt?.patient_id || null,
+            };
+          }
+          return m;
+        });
+      }
+      
       return data as StockMovement[];
     },
   });

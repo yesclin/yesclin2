@@ -17,6 +17,8 @@ import { StockReports } from '@/components/relatorios/StockReports';
 import { CommunicationReports } from '@/components/relatorios/CommunicationReports';
 import { ExecutiveReport } from '@/components/relatorios/ExecutiveReport';
 import { SalesReports } from '@/components/relatorios/SalesReports';
+import { ReportSkeleton } from '@/components/relatorios/ReportSkeleton';
+import { ReportEmptyState } from '@/components/relatorios/ReportEmptyState';
 import { toast } from 'sonner';
 import type { ReportFilters } from '@/types/relatorios';
 import type { SalesReportFilters as SalesFiltersType } from '@/types/salesReport';
@@ -130,19 +132,31 @@ export default function Relatorios() {
         )}
 
         <TabsContent value="gerencial">
-          <ExecutiveReport summary={data.executiveSummary} financialTrend={data.financialData} />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.financialData.length === 0 ? (
+            <ReportEmptyState title="Sem dados gerenciais" />
+          ) : (
+            <ExecutiveReport summary={data.executiveSummary} financialTrend={data.financialData} />
+          )}
         </TabsContent>
 
         <TabsContent value="financeiro">
-          <FinancialReports
-            financialData={data.financialData}
-            revenueByProfessional={data.revenueByProfessional}
-            revenueByProcedure={data.revenueByProcedure}
-            revenueByPaymentMethod={data.revenueByPaymentMethod}
-            packagesReport={data.packagesReport}
-            totals={data.totals}
-            filters={filters}
-          />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.financialData.length === 0 ? (
+            <ReportEmptyState title="Sem dados financeiros" />
+          ) : (
+            <FinancialReports
+              financialData={data.financialData}
+              revenueByProfessional={data.revenueByProfessional}
+              revenueByProcedure={data.revenueByProcedure}
+              revenueByPaymentMethod={data.revenueByPaymentMethod}
+              packagesReport={data.packagesReport}
+              totals={data.totals}
+              filters={filters}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="vendas">
@@ -156,36 +170,72 @@ export default function Relatorios() {
         </TabsContent>
 
         <TabsContent value="agenda">
-          <AppointmentReports
-            appointmentData={data.appointmentData}
-            attendanceByProfessional={data.attendanceByProfessional}
-            attendanceBySpecialty={data.attendanceBySpecialty}
-            totals={data.totals}
-          />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.appointmentData.length === 0 ? (
+            <ReportEmptyState title="Sem dados de agenda" />
+          ) : (
+            <AppointmentReports
+              appointmentData={data.appointmentData}
+              attendanceByProfessional={data.attendanceByProfessional}
+              attendanceBySpecialty={data.attendanceBySpecialty}
+              totals={data.totals}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="pacientes">
-          <PatientReports
-            patientData={data.patientData}
-            patientRetention={data.patientRetention}
-            patientsByInsurance={data.patientsByInsurance}
-          />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.patientData.length === 0 ? (
+            <ReportEmptyState title="Sem dados de pacientes" />
+          ) : (
+            <PatientReports
+              patientData={data.patientData}
+              patientRetention={data.patientRetention}
+              patientsByInsurance={data.patientsByInsurance}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="convenios">
-          <InsuranceReports insuranceReport={data.insuranceReport} />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.insuranceReport.length === 0 ? (
+            <ReportEmptyState title="Sem dados de convênios" />
+          ) : (
+            <InsuranceReports insuranceReport={data.insuranceReport} />
+          )}
         </TabsContent>
 
         <TabsContent value="profissionais">
-          <ProfessionalReports professionalPerformance={data.professionalPerformance} />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.professionalPerformance.length === 0 ? (
+            <ReportEmptyState title="Sem dados de profissionais" />
+          ) : (
+            <ProfessionalReports professionalPerformance={data.professionalPerformance} />
+          )}
         </TabsContent>
 
         <TabsContent value="estoque">
-          <StockReports stockConsumption={data.stockConsumption} />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.stockConsumption.length === 0 ? (
+            <ReportEmptyState title="Sem dados de estoque" />
+          ) : (
+            <StockReports stockConsumption={data.stockConsumption} />
+          )}
         </TabsContent>
 
         <TabsContent value="comunicacao">
-          <CommunicationReports communicationData={data.communicationData} />
+          {data.isLoading ? (
+            <ReportSkeleton />
+          ) : data.communicationData.length === 0 ? (
+            <ReportEmptyState title="Sem dados de comunicação" />
+          ) : (
+            <CommunicationReports communicationData={data.communicationData} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

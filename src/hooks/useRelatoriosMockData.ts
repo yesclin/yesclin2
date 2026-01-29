@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { format, subDays, startOfMonth, endOfMonth, subMonths, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns';
+import { useMemo, useState, useEffect } from 'react';
+import { format, subDays, startOfMonth, endOfMonth, subMonths, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type {
   ReportFilters,
@@ -62,16 +62,43 @@ const paymentMethods = [
 // =============================================
 
 export function useRelatoriosMockData(filters: ReportFilters) {
-  // Dados financeiros por período
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading when filters change
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 400); // Quick loading simulation
+    
+    return () => clearTimeout(timer);
+  }, [filters.startDate, filters.endDate, filters.professionalId, filters.insuranceId]);
+
+  // Generate consistent seed based on filters for reproducible data
+  const filterSeed = useMemo(() => {
+    return filters.startDate.getTime() + filters.endDate.getTime() + 
+           (filters.professionalId?.length || 0) + (filters.insuranceId?.length || 0);
+  }, [filters]);
+
+  // Seeded random function for consistent data
+  const seededRandom = (seed: number, index: number) => {
+    const x = Math.sin(seed + index) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Calculate period length for scaling data
+  const periodDays = differenceInDays(filters.endDate, filters.startDate) + 1;
+
+  // Dados financeiros por período - reactive to filters
   const financialData = useMemo((): FinancialReportData[] => {
     const days = eachDayOfInterval({ start: filters.startDate, end: filters.endDate });
-    return days.map(day => ({
+    return days.map((day, index) => ({
       period: format(day, 'dd/MM', { locale: ptBR }),
-      faturamento: Math.floor(Math.random() * 5000) + 2000,
-      recebido: Math.floor(Math.random() * 4000) + 1500,
-      pendente: Math.floor(Math.random() * 1500) + 200,
+      faturamento: Math.floor(seededRandom(filterSeed, index * 3) * 5000) + 2000,
+      recebido: Math.floor(seededRandom(filterSeed, index * 3 + 1) * 4000) + 1500,
+      pendente: Math.floor(seededRandom(filterSeed, index * 3 + 2) * 1500) + 200,
     }));
-  }, [filters.startDate, filters.endDate]);
+  }, [filters.startDate, filters.endDate, filterSeed]);
 
   // Faturamento por profissional
   const revenueByProfessional = useMemo((): RevenueByProfessional[] => {
@@ -319,6 +346,8 @@ export function useRelatoriosMockData(filters: ReportFilters) {
   }, [financialData, appointmentData]);
 
   return {
+    // Estado de carregamento
+    isLoading,
     // Listas para filtros
     professionals,
     procedures,

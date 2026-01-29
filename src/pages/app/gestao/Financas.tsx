@@ -57,6 +57,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MarginAlertSettings } from "@/components/config/MarginAlertSettings";
 import { ProductSaleSelector, type SelectedProduct } from "@/components/gestao/ProductSaleSelector";
+import { AppointmentSaleSelector } from "@/components/gestao/AppointmentSaleSelector";
 import { useCreateSale } from "@/hooks/useSales";
 import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +97,7 @@ export default function Financas() {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [productSaleTotal, setProductSaleTotal] = useState(0);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   
@@ -164,10 +166,11 @@ export default function Financas() {
       if (selectedProducts.length === 0) return;
       
       // Create sale with products (this handles stock updates and transaction creation)
-      // Patient is optional for manual sales
+      // Patient and appointment are optional for manual sales
       await createSale.mutateAsync({
         sale_date: formData.date,
         patient_id: selectedPatientId || undefined,
+        appointment_id: selectedAppointmentId || undefined,
         payment_method: formData.payment_method || undefined,
         payment_status: 'pago',
         notes: formData.notes || undefined,
@@ -212,6 +215,7 @@ export default function Financas() {
     setSelectedProducts([]);
     setProductSaleTotal(0);
     setSelectedPatientId(null);
+    setSelectedAppointmentId(null);
     setPatientSearchQuery("");
   };
 
@@ -450,11 +454,12 @@ export default function Financas() {
                         value={formData.origin}
                         onValueChange={(value) => {
                           setFormData(prev => ({ ...prev, origin: value }));
-                          // Reset product and patient selection when origin changes
+                          // Reset product, patient, and appointment selection when origin changes
                           if (value !== 'produto') {
                             setSelectedProducts([]);
                             setProductSaleTotal(0);
                             setSelectedPatientId(null);
+                            setSelectedAppointmentId(null);
                             setPatientSearchQuery("");
                           }
                         }}
@@ -509,6 +514,7 @@ export default function Financas() {
                                     value="clear"
                                     onSelect={() => {
                                       setSelectedPatientId(null);
+                                      setSelectedAppointmentId(null);
                                       setPatientSearchOpen(false);
                                     }}
                                     className="text-muted-foreground"
@@ -521,6 +527,10 @@ export default function Financas() {
                                     key={patient.id}
                                     value={patient.id}
                                     onSelect={() => {
+                                      // Clear appointment when patient changes
+                                      if (selectedPatientId !== patient.id) {
+                                        setSelectedAppointmentId(null);
+                                      }
                                       setSelectedPatientId(patient.id);
                                       setPatientSearchOpen(false);
                                       setPatientSearchQuery("");
@@ -550,6 +560,16 @@ export default function Financas() {
                         Vincule a venda a um paciente ou deixe em branco para venda avulsa
                       </p>
                     </div>
+                  )}
+                  
+                  {/* Appointment Selector for Product Sales (only shows when patient is selected) */}
+                  {transactionType === 'entrada' && formData.origin === 'produto' && (
+                    <AppointmentSaleSelector
+                      patientId={selectedPatientId}
+                      selectedAppointmentId={selectedAppointmentId}
+                      onSelect={setSelectedAppointmentId}
+                      disabled={createSale.isPending}
+                    />
                   )}
                   
                   {/* Product Sale Selector */}

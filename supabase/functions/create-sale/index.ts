@@ -18,6 +18,7 @@ interface SaleItemInput {
 interface CreateSaleInput {
   patient_id?: string;
   professional_id?: string;
+  appointment_id?: string;
   sale_date?: string;
   discount_amount?: number;
   discount_percent?: number;
@@ -151,6 +152,7 @@ serve(async (req) => {
           sale_number: saleNumber,
           patient_id: input.patient_id || null,
           professional_id: input.professional_id || null,
+          appointment_id: input.appointment_id || null,
           sale_date: input.sale_date || new Date().toISOString(),
           subtotal,
           discount_amount: discountAmount,

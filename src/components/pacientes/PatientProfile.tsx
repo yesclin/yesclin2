@@ -23,6 +23,7 @@ import {
   Heart,
   Pill,
   Activity,
+  ShoppingCart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import type { Patient, PatientAppointmentHistory, PatientAttachment } from '@/types/pacientes';
 import { genderLabels } from '@/types/pacientes';
+import { PatientSalesHistory } from './PatientSalesHistory';
 
 interface PatientProfileProps {
   patient: Patient;
@@ -192,7 +194,7 @@ export function PatientProfile({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="dados">
             <User className="h-4 w-4 mr-2" />
             Dados Gerais
@@ -200,6 +202,10 @@ export function PatientProfile({
           <TabsTrigger value="historico">
             <Clock className="h-4 w-4 mr-2" />
             Histórico
+          </TabsTrigger>
+          <TabsTrigger value="vendas">
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Vendas
           </TabsTrigger>
           <TabsTrigger value="prontuario">
             <FileText className="h-4 w-4 mr-2" />
@@ -474,6 +480,11 @@ export function PatientProfile({
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Vendas Tab */}
+          <TabsContent value="vendas" className="m-0">
+            <PatientSalesHistory patientId={patient.id} />
           </TabsContent>
 
           {/* Prontuário Tab */}

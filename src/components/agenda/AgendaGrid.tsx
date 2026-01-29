@@ -17,6 +17,7 @@ interface AgendaGridProps {
   onAppointmentClick?: (appointment: Appointment) => void;
   onStatusChange?: (id: string, status: Appointment['status']) => void;
   onReschedule?: (appointment: Appointment) => void;
+  onLaunchSale?: (appointment: Appointment) => void;
 }
 
 const timeSlots = Array.from({ length: 20 }, (_, i) => {
@@ -36,6 +37,7 @@ export function AgendaGrid({
   onAppointmentClick,
   onStatusChange,
   onReschedule,
+  onLaunchSale,
 }: AgendaGridProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -126,6 +128,7 @@ export function AgendaGrid({
                           onClick={onAppointmentClick}
                           onStatusChange={onStatusChange}
                           onReschedule={onReschedule}
+                          onLaunchSale={onLaunchSale}
                         />
                       ))}
                     </div>
@@ -198,6 +201,7 @@ export function AgendaGrid({
                           onClick={onAppointmentClick}
                           onStatusChange={onStatusChange}
                           onReschedule={onReschedule}
+                          onLaunchSale={onLaunchSale}
                         />
                       ))}
                       {slotAppointments.length > 2 && (
@@ -296,6 +300,7 @@ export function AgendaGrid({
                       onClick={onAppointmentClick}
                       onStatusChange={onStatusChange}
                       onReschedule={onReschedule}
+                      onLaunchSale={onLaunchSale}
                     />
                   </div>
                 ))}

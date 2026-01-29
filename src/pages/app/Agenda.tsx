@@ -17,6 +17,7 @@ import { AppointmentDialog } from "@/components/agenda/AppointmentDialog";
 import { BlockDialog } from "@/components/agenda/BlockDialog";
 import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agenda/TissGuideGenerationDialog";
 import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
+import { ProductSaleDialog } from "@/components/agenda/ProductSaleDialog";
 import type { AgendaFilters as FiltersType, ViewMode, GroupBy, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
 import { getDefaultWeekSchedule, WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
@@ -49,6 +50,10 @@ export default function Agenda() {
   // Material Consumption
   const [materialsDialogOpen, setMaterialsDialogOpen] = useState(false);
   const [finalizingAppointment, setFinalizingAppointment] = useState<Appointment | null>(null);
+  
+  // Product Sale
+  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [saleAppointment, setSaleAppointment] = useState<Appointment | null>(null);
   
   const { 
     specialties, 
@@ -213,6 +218,16 @@ export default function Agenda() {
     }
   }, [filters.professionalId]);
 
+  // Handle launch sale
+  const handleLaunchSale = useCallback((apt: Appointment) => {
+    if (!apt.patient) {
+      toast.error("Agendamento sem paciente vinculado");
+      return;
+    }
+    setSaleAppointment(apt);
+    setSaleDialogOpen(true);
+  }, []);
+
   // Determine if professional field should be locked in dialog
   const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || undefined;
 
@@ -291,6 +306,7 @@ export default function Agenda() {
               specialties={specialties}
               onReschedule={handleReschedule}
               onStatusChange={handleStatusChange}
+              onLaunchSale={handleLaunchSale}
             />
           ) : (
             <AgendaEmptyState
@@ -364,6 +380,18 @@ export default function Agenda() {
         onConfirm={handleMaterialsConfirm}
         onCancel={handleMaterialsCancel}
       />
+
+      {/* Product Sale Dialog */}
+      {saleAppointment && saleAppointment.patient && (
+        <ProductSaleDialog
+          open={saleDialogOpen}
+          onOpenChange={setSaleDialogOpen}
+          patientId={saleAppointment.patient_id}
+          patientName={saleAppointment.patient.full_name}
+          appointmentId={saleAppointment.id}
+          onSuccess={() => setSaleAppointment(null)}
+        />
+      )}
     </div>
   );
 }

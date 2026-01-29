@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   DollarSign,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types/agenda";
@@ -36,6 +37,7 @@ interface AppointmentCardProps {
   onStatusChange?: (id: string, status: Appointment['status']) => void;
   onReschedule?: (appointment: Appointment) => void;
   onClick?: (appointment: Appointment) => void;
+  onLaunchSale?: (appointment: Appointment) => void;
 }
 
 export function AppointmentCard({ 
@@ -44,6 +46,7 @@ export function AppointmentCard({
   onStatusChange,
   onReschedule,
   onClick,
+  onLaunchSale,
 }: AppointmentCardProps) {
   const { 
     patient, 
@@ -219,6 +222,14 @@ export function AppointmentCard({
             ))}
             
             {statusActions.length > 0 && <DropdownMenuSeparator />}
+            
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onLaunchSale?.(appointment);
+            }}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Lançar Venda
+            </DropdownMenuItem>
             
             <DropdownMenuItem onClick={(e) => {
               e.stopPropagation();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink } from "lucide-react";
+import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink, User, Syringe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -523,6 +523,17 @@ export default function Estoque() {
                   {movements.map((movement) => {
                     const product = products.find(p => p.id === movement.product_id);
                     const isSale = movement.reference_type === 'sale';
+                    const isProcedureUse = movement.reference_type === 'procedure_execution';
+                    const patientName = (movement as any).patient_name;
+                    
+                    // Format the reason display
+                    const getReasonDisplay = () => {
+                      if (isProcedureUse) {
+                        return 'Uso em Procedimento';
+                      }
+                      return movement.reason;
+                    };
+                    
                     return (
                       <TableRow key={movement.id}>
                         <TableCell>
@@ -548,8 +559,20 @@ export default function Estoque() {
                           {(movement.movement_type === 'saida' || movement.movement_type === 'venda') ? '-' : ''}{movement.quantity} {product?.unit || (movement as any).products?.unit}
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span>{movement.reason}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              {isProcedureUse && <Syringe className="h-3.5 w-3.5 text-orange-600" />}
+                              <span className={isProcedureUse ? 'text-orange-700 font-medium' : ''}>{getReasonDisplay()}</span>
+                            </div>
+                            {isProcedureUse && patientName && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <User className="h-3 w-3" />
+                                <span>Paciente: {patientName}</span>
+                              </div>
+                            )}
+                            {isProcedureUse && movement.notes && (
+                              <span className="text-xs text-muted-foreground">{movement.notes}</span>
+                            )}
                             {isSale && movement.notes && (
                               <span className="text-xs text-muted-foreground">{movement.notes}</span>
                             )}

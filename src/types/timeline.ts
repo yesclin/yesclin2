@@ -25,9 +25,11 @@ export type TimelineEventType =
   // Sales
   | 'SALE_CREATED'
   | 'SALE_STATUS_UPDATED'
+  // Stock / Product consumption
+  | 'PRODUCT_CONSUMED'
   | 'SALE_CANCELLED';
 
-export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security' | 'sales';
+export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security' | 'sales' | 'stock';
 
 export interface TimelineEvent {
   id: string;
@@ -211,6 +213,15 @@ export const TIMELINE_EVENT_CONFIG: Record<TimelineEventType, {
     color: 'text-red-700',
     bgColor: 'bg-red-100',
   },
+  // Stock / Product consumption
+  PRODUCT_CONSUMED: {
+    label: 'Produto Consumido',
+    icon: 'Package',
+    category: 'stock',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100',
+    targetTab: 'procedimentos',
+  },
 };
 
 export const CATEGORY_LABELS: Record<TimelineEventCategory, { label: string; color: string }> = {
@@ -220,4 +231,5 @@ export const CATEGORY_LABELS: Record<TimelineEventCategory, { label: string; col
   lgpd: { label: 'LGPD / Legal', color: 'text-teal-600' },
   security: { label: 'Segurança', color: 'text-gray-600' },
   sales: { label: 'Vendas', color: 'text-emerald-600' },
+  stock: { label: 'Estoque', color: 'text-orange-600' },
 };

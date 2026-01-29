@@ -44,6 +44,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { SlotSuggestions } from "./SlotSuggestions";
 import { ConflictAlert } from "./ConflictAlert";
 import { ConflictConfirmDialog } from "./ConflictConfirmDialog";
+import { ProcedureProductsPreview } from "./ProcedureProductsPreview";
 import { WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
 const appointmentSchema = z.object({
@@ -419,6 +420,12 @@ export function AppointmentDialog({
                         Duração e valor preenchidos automaticamente com base no procedimento selecionado.
                       </p>
                     )}
+                    
+                    {/* Procedure Products Preview */}
+                    <ProcedureProductsPreview 
+                      procedureId={watchProcedureId === "none" ? null : watchProcedureId}
+                      procedureName={selectedProcedure?.name}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import {
   ShoppingCart,
   Package,
@@ -21,6 +21,9 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  ExternalLink,
+  Clock,
+  UserX,
 } from "lucide-react";
 import {
   Dialog,
@@ -59,14 +62,15 @@ function useSaleFullDetails(saleId: string | undefined) {
     queryFn: async () => {
       if (!saleId) return null;
 
-      // Buscar venda com itens
+      // Buscar venda com itens e relacionamentos
       const { data: sale, error: saleError } = await supabase
         .from("sales")
         .select(`
           *,
           patients(id, full_name),
           professionals(id, full_name),
-          sale_items(*)
+          sale_items(*),
+          appointments(id, scheduled_date, start_time, status, appointment_type)
         `)
         .eq("id", saleId)
         .single();
@@ -122,10 +126,32 @@ function useSaleFullDetails(saleId: string | undefined) {
         transactions = [...transactions, ...notesTx];
       }
 
+      // Buscar perfis dos usuários (criador e cancelador)
+      const userIds = new Set<string>();
+      if (sale.created_by) userIds.add(sale.created_by);
+      if (sale.canceled_by) userIds.add(sale.canceled_by);
+
+      let profilesMap: Record<string, string> = {};
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", Array.from(userIds));
+
+        if (profiles) {
+          profilesMap = profiles.reduce((acc, p) => {
+            acc[p.id] = p.full_name || "Usuário desconhecido";
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
       return {
         sale,
         stockMovements: stockMovements || [],
         transactions,
+        createdByName: sale.created_by ? profilesMap[sale.created_by] || null : null,
+        canceledByName: sale.canceled_by ? profilesMap[sale.canceled_by] || null : null,
       };
     },
     enabled: !!saleId,
@@ -183,6 +209,8 @@ export function SaleReportDetailsDialog({ saleId, open, onOpenChange }: SaleRepo
   const sale = data?.sale;
   const stockMovements = data?.stockMovements || [];
   const transactions = data?.transactions || [];
+  const createdByName = data?.createdByName;
+  const canceledByName = data?.canceledByName;
 
   const isCanceled = sale?.status === 'cancelado' || sale?.payment_status === 'cancelado';
 
@@ -241,6 +269,38 @@ export function SaleReportDetailsDialog({ saleId, open, onOpenChange }: SaleRepo
 
               {/* Tab Resumo */}
               <TabsContent value="resumo" className="space-y-4">
+                {/* Alerta de Cancelamento */}
+                {isCanceled && (
+                  <Card className="border-destructive/50 bg-destructive/5">
+                    <CardContent className="py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-full bg-destructive/10">
+                          <UserX className="h-5 w-5 text-destructive" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="font-semibold text-destructive">Venda Cancelada</h4>
+                          <div className="text-sm space-y-1">
+                            {sale.canceled_at && (
+                              <p className="flex items-center gap-2">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span className="text-muted-foreground">Cancelado em:</span>
+                                <span className="font-medium">{formatDateTime(sale.canceled_at)}</span>
+                              </p>
+                            )}
+                            {canceledByName && (
+                              <p className="flex items-center gap-2">
+                                <User className="h-3.5 w-3.5" />
+                                <span className="text-muted-foreground">Cancelado por:</span>
+                                <span className="font-medium">{canceledByName}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Info básica */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -265,12 +325,14 @@ export function SaleReportDetailsDialog({ saleId, open, onOpenChange }: SaleRepo
                         <User className="h-3.5 w-3.5" />
                         Cliente
                       </p>
-                      <a 
-                        href={`/app/prontuario/${sale.patient_id}`}
-                        className="font-medium text-primary hover:underline"
+                      <Link 
+                        to={`/app/prontuario/${sale.patient_id}`}
+                        className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                        onClick={() => onOpenChange(false)}
                       >
                         {sale.patients.full_name}
-                      </a>
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
                     </div>
                   )}
                   <div className="space-y-1">
@@ -281,6 +343,39 @@ export function SaleReportDetailsDialog({ saleId, open, onOpenChange }: SaleRepo
                     <p className="font-medium">{getPaymentMethodLabel(sale.payment_method)}</p>
                   </div>
                 </div>
+
+                {/* Atendimento vinculado */}
+                {sale.appointments && (
+                  <>
+                    <Separator />
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" />
+                              Atendimento Vinculado
+                            </p>
+                            <p className="font-medium">
+                              {format(new Date(sale.appointments.scheduled_date), "dd/MM/yyyy", { locale: ptBR })} às {sale.appointments.start_time?.slice(0, 5)}
+                              {sale.appointments.appointment_type && (
+                                <span className="text-muted-foreground"> - {sale.appointments.appointment_type}</span>
+                              )}
+                            </p>
+                          </div>
+                          <Link 
+                            to={`/app/agenda?date=${sale.appointments.scheduled_date}`}
+                            className="text-primary hover:underline text-sm flex items-center gap-1"
+                            onClick={() => onOpenChange(false)}
+                          >
+                            Ver na agenda
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
 
                 <Separator />
 
@@ -326,20 +421,42 @@ export function SaleReportDetailsDialog({ saleId, open, onOpenChange }: SaleRepo
                 )}
 
                 {/* Rastreabilidade */}
-                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                   <h4 className="font-medium text-sm flex items-center gap-2">
                     <ArrowUpCircle className="h-4 w-4" />
                     Rastreabilidade
                   </h4>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p><span className="font-medium">ID da Venda:</span> {sale.id}</p>
-                    {sale.sale_number && <p><span className="font-medium">Número:</span> {sale.sale_number}</p>}
-                    {sale.transaction_id && <p><span className="font-medium">ID Transação:</span> {sale.transaction_id}</p>}
-                    <p><span className="font-medium">Criado em:</span> {formatDateTime(sale.created_at)}</p>
-                    {sale.canceled_at && (
-                      <p className="text-destructive">
-                        <span className="font-medium">Cancelado em:</span> {formatDateTime(sale.canceled_at)}
-                      </p>
+                  <div className="text-xs space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-muted-foreground">ID da Venda:</span>
+                        <p className="font-mono text-[10px] break-all">{sale.id}</p>
+                      </div>
+                      {sale.sale_number && (
+                        <div>
+                          <span className="text-muted-foreground">Número:</span>
+                          <p className="font-medium">{sale.sale_number}</p>
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-muted-foreground">Criado em:</span>
+                        <p className="font-medium">{formatDateTime(sale.created_at)}</p>
+                      </div>
+                      {createdByName && (
+                        <div>
+                          <span className="text-muted-foreground">Criado por:</span>
+                          <p className="font-medium">{createdByName}</p>
+                        </div>
+                      )}
+                    </div>
+                    {sale.transaction_id && (
+                      <div>
+                        <span className="text-muted-foreground">ID Transação Financeira:</span>
+                        <p className="font-mono text-[10px] break-all">{sale.transaction_id}</p>
+                      </div>
                     )}
                   </div>
                 </div>

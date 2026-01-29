@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { ShoppingCart, Loader2 } from "lucide-react";
+import { ShoppingCart, Loader2, ShieldX, ShieldAlert } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProductSaleSelector, type SelectedProduct, type StockValidationError } from "@/components/gestao/ProductSaleSelector";
 import { useCreateSale } from "@/hooks/useSales";
+import { useSalePermissions } from "@/hooks/useSalePermissions";
 import { toast } from "sonner";
 import { paymentMethods } from "@/types/gestao";
 
@@ -41,6 +44,7 @@ export function ProductSaleDialog({
   onSuccess,
 }: ProductSaleDialogProps) {
   const createSale = useCreateSale();
+  const salePermissions = useSalePermissions(patientId);
   
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [productSaleTotal, setProductSaleTotal] = useState(0);
@@ -64,8 +68,12 @@ export function ProductSaleDialog({
   }, []);
 
   const canSubmit = useMemo(() => {
-    return selectedProducts.length > 0 && validationErrors.length === 0;
-  }, [selectedProducts, validationErrors]);
+    return (
+      selectedProducts.length > 0 && 
+      validationErrors.length === 0 && 
+      !salePermissions.isBlocked
+    );
+  }, [selectedProducts, validationErrors, salePermissions.isBlocked]);
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -125,64 +133,95 @@ export function ProductSaleDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Patient info (read-only) */}
-          <div className="p-3 bg-muted rounded-lg">
-            <Label className="text-xs text-muted-foreground">Paciente</Label>
-            <p className="font-medium">{patientName}</p>
-          </div>
-
-          {/* Product Selector */}
-          <ProductSaleSelector
-            selectedProducts={selectedProducts}
-            onProductsChange={setSelectedProducts}
-            onTotalChange={handleProductTotalChange}
-            onValidationChange={handleValidationChange}
-            disabled={createSale.isPending}
-          />
-
-          {/* Payment Method */}
-          <div className="space-y-2">
-            <Label htmlFor="payment-method">Forma de Pagamento</Label>
-            <Select 
-              value={paymentMethod} 
-              onValueChange={setPaymentMethod}
-              disabled={createSale.isPending}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method.value} value={method.value}>
-                    {method.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              placeholder="Observações sobre a venda..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={createSale.isPending}
-            />
-          </div>
-
-          {/* Total */}
-          {selectedProducts.length > 0 && (
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Total da Venda</span>
-                <span className="text-2xl font-bold text-primary">
-                  {formatCurrency(productSaleTotal)}
-                </span>
-              </div>
+          {/* Loading State */}
+          {salePermissions.isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
+          ) : salePermissions.isBlocked ? (
+            /* Permission/LGPD Block Alert */
+            <Alert variant="destructive">
+              <ShieldX className="h-4 w-4" />
+              <AlertTitle>Ação Bloqueada</AlertTitle>
+              <AlertDescription>
+                {salePermissions.blockReason}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              {/* LGPD Warning (when enabled but has consent) */}
+              {salePermissions.lgpdStatus.isEnforcementEnabled && salePermissions.lgpdStatus.hasValidConsent && (
+                <Alert className="border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>LGPD Ativo</AlertTitle>
+                  <AlertDescription>
+                    O paciente possui consentimento LGPD válido. Esta venda será vinculada ao prontuário.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Patient info (read-only) */}
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-xs text-muted-foreground">Paciente</Label>
+                <p className="font-medium">{patientName}</p>
+              </div>
+
+              {/* Product Selector */}
+              <ProductSaleSelector
+                selectedProducts={selectedProducts}
+                onProductsChange={setSelectedProducts}
+                onTotalChange={handleProductTotalChange}
+                onValidationChange={handleValidationChange}
+                disabled={createSale.isPending}
+              />
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label htmlFor="payment-method">Forma de Pagamento</Label>
+                <Select 
+                  value={paymentMethod} 
+                  onValueChange={setPaymentMethod}
+                  disabled={createSale.isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Observações sobre a venda..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={createSale.isPending}
+                />
+              </div>
+
+              {/* Total */}
+              {selectedProducts.length > 0 && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Total da Venda</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {formatCurrency(productSaleTotal)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -196,13 +235,15 @@ export function ProductSaleDialog({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!canSubmit || createSale.isPending}
+            disabled={!canSubmit || createSale.isPending || salePermissions.isLoading}
           >
             {createSale.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Registrando...
               </>
+            ) : salePermissions.isBlocked ? (
+              "Bloqueado"
             ) : (
               "Registrar Venda"
             )}

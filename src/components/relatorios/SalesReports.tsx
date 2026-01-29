@@ -1,4 +1,5 @@
-import { ShoppingCart, RotateCcw, TrendingUp, Percent, Ban, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingCart, RotateCcw, TrendingUp, Percent, Ban, CheckCircle, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import {
   ChartContainer,
   ChartTooltip,
@@ -18,6 +20,7 @@ import {
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { ReportKPICards } from './ReportKPICards';
+import { SaleReportDetailsDialog } from './SaleReportDetailsDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { 
@@ -77,6 +80,14 @@ export function SalesReports({
   salesList,
   isLoading,
 }: SalesReportsProps) {
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const handleOpenDetails = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    setDetailsOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -200,6 +211,7 @@ export function SalesReports({
                     <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead>Forma de Pagamento</TableHead>
                     <TableHead>Usuário Responsável</TableHead>
+                    <TableHead className="text-center w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,10 +219,11 @@ export function SalesReports({
                     salesList.map((sale) => (
                       <TableRow 
                         key={sale.id} 
-                        className={sale.status === 'canceled' 
+                        className={`cursor-pointer transition-colors ${sale.status === 'canceled' 
                           ? 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30' 
-                          : ''
-                        }
+                          : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => handleOpenDetails(sale.id)}
                       >
                         <TableCell className="text-sm">{formatDate(sale.saleDate)}</TableCell>
                         <TableCell className="text-center">
@@ -236,11 +249,24 @@ export function SalesReports({
                         <TableCell>
                           {sale.createdByName || <span className="text-muted-foreground">-</span>}
                         </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDetails(sale.id);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Nenhuma venda encontrada no período
                       </TableCell>
                     </TableRow>
@@ -348,6 +374,13 @@ export function SalesReports({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de detalhes */}
+      <SaleReportDetailsDialog
+        saleId={selectedSaleId}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
 import { useSalesReportExport } from '@/hooks/useSalesReportExport';
 import { useProductMarginReport } from '@/hooks/useProductMarginReport';
 import { useProductMarginReportOptions } from '@/hooks/useProductMarginReportOptions';
+import { useProductMarginReportExport } from '@/hooks/useProductMarginReportExport';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
 import { ProductMarginFilters } from '@/components/relatorios/ProductMarginFilters';
@@ -72,6 +73,7 @@ export default function Relatorios() {
   const salesOptions = useSalesReportOptions();
   const marginOptions = useProductMarginReportOptions();
   const { exportCSV, exportPDF } = useSalesReportExport();
+  const { exportCSV: exportMarginCSV, exportPDF: exportMarginPDF } = useProductMarginReportExport();
 
   const handleExportSalesCSV = () => {
     exportCSV({
@@ -86,6 +88,22 @@ export default function Relatorios() {
       salesList: salesReport.salesList,
       summary: salesReport.summary,
       filters: salesFilters,
+    });
+  };
+
+  const handleExportMarginCSV = () => {
+    exportMarginCSV({
+      items: marginReport.items,
+      summary: marginReport.summary,
+      filters: marginFilters,
+    });
+  };
+
+  const handleExportMarginPDF = () => {
+    exportMarginPDF({
+      items: marginReport.items,
+      summary: marginReport.summary,
+      filters: marginFilters,
     });
   };
   const handleExportPDF = () => {
@@ -141,8 +159,8 @@ export default function Relatorios() {
             onFiltersChange={setMarginFilters}
             products={marginOptions.products}
             categories={marginOptions.categories}
-            onExportCSV={() => toast.success('Exportando relatório em CSV...')}
-            onExportPDF={() => toast.success('Exportando relatório em PDF...')}
+            onExportCSV={handleExportMarginCSV}
+            onExportPDF={handleExportMarginPDF}
           />
         ) : (
           <ReportFiltersBar

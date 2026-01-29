@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, CreditCard, Users, PieChartIcon } from 'lucide-react';
+import { DollarSign, TrendingUp, CreditCard, Users, PieChartIcon, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -18,6 +18,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieCha
 import { ReportKPICards } from './ReportKPICards';
 import { ProcedureProfitabilityReport } from './ProcedureProfitabilityReport';
 import { useProcedureProfitabilityReport } from '@/hooks/useProcedureProfitabilityReport';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
 import type {
   FinancialReportData,
   RevenueByProfessional,
@@ -62,29 +64,48 @@ export function FinancialReports({
   totals,
   filters,
 }: FinancialReportsProps) {
+  const { canViewRevenue, canViewCost, canViewMargin, isLoading } = useFinancialAccessControl();
   const ticketMedio = totals.faturamento / (revenueByProfessional.reduce((acc, p) => acc + p.appointmentCount, 0) || 1);
   
   // Hook para relatório de rentabilidade
   const profitabilityReport = useProcedureProfitabilityReport(filters);
 
+  // Se não tem permissão para ver faturamento, mostra mensagem de acesso restrito
+  if (!isLoading && !canViewRevenue) {
+    return (
+      <Alert>
+        <Lock className="h-4 w-4" />
+        <AlertTitle>Acesso Restrito</AlertTitle>
+        <AlertDescription>
+          Você não tem permissão para visualizar relatórios financeiros. 
+          Entre em contato com o administrador da clínica.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Montar KPIs baseado nas permissões
+  const kpiCards = [
+    { title: 'Faturamento Total', value: totals.faturamento, format: 'currency' as const, variation: 8, icon: <DollarSign className="h-5 w-5" /> },
+    { title: 'Valor Recebido', value: totals.recebido, format: 'currency' as const, icon: <TrendingUp className="h-5 w-5" /> },
+    { title: 'Valor Pendente', value: totals.pendente, format: 'currency' as const, icon: <CreditCard className="h-5 w-5" /> },
+    { title: 'Ticket Médio', value: Math.round(ticketMedio), format: 'currency' as const, variation: 5, icon: <Users className="h-5 w-5" /> },
+  ];
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <ReportKPICards
-        cards={[
-          { title: 'Faturamento Total', value: totals.faturamento, format: 'currency', variation: 8, icon: <DollarSign className="h-5 w-5" /> },
-          { title: 'Valor Recebido', value: totals.recebido, format: 'currency', icon: <TrendingUp className="h-5 w-5" /> },
-          { title: 'Valor Pendente', value: totals.pendente, format: 'currency', icon: <CreditCard className="h-5 w-5" /> },
-          { title: 'Ticket Médio', value: Math.round(ticketMedio), format: 'currency', variation: 5, icon: <Users className="h-5 w-5" /> },
-        ]}
-      />
+      <ReportKPICards cards={kpiCards} />
 
-      <Tabs defaultValue="rentabilidade" className="space-y-4">
+      <Tabs defaultValue={canViewCost ? "rentabilidade" : "evolucao"} className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="rentabilidade" className="gap-1.5">
-            <PieChartIcon className="h-4 w-4" />
-            Custo x Faturamento
-          </TabsTrigger>
+          {/* Aba de Custo x Faturamento - apenas se pode ver custos */}
+          {canViewCost && (
+            <TabsTrigger value="rentabilidade" className="gap-1.5">
+              <PieChartIcon className="h-4 w-4" />
+              Custo x Faturamento
+            </TabsTrigger>
+          )}
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="profissional">Por Profissional</TabsTrigger>
           <TabsTrigger value="procedimento">Por Procedimento</TabsTrigger>
@@ -92,14 +113,16 @@ export function FinancialReports({
           <TabsTrigger value="pacotes">Pacotes</TabsTrigger>
         </TabsList>
 
-        {/* Custo x Faturamento por Procedimento */}
-        <TabsContent value="rentabilidade">
-          <ProcedureProfitabilityReport
-            data={profitabilityReport.data}
-            summary={profitabilityReport.summary}
-            isLoading={profitabilityReport.isLoading}
-          />
-        </TabsContent>
+        {/* Custo x Faturamento por Procedimento - apenas se pode ver custos */}
+        {canViewCost && (
+          <TabsContent value="rentabilidade">
+            <ProcedureProfitabilityReport
+              data={profitabilityReport.data}
+              summary={profitabilityReport.summary}
+              isLoading={profitabilityReport.isLoading}
+            />
+          </TabsContent>
+        )}
 
         {/* Evolução do Faturamento */}
         <TabsContent value="evolucao">

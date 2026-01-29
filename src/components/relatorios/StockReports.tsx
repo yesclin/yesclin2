@@ -1,4 +1,4 @@
-import { Package, AlertTriangle, TrendingDown, DollarSign } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, DollarSign, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ReportKPICards } from './ReportKPICards';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
 import type { StockConsumptionReport } from '@/types/relatorios';
 
 interface StockReportsProps {
@@ -34,6 +36,22 @@ const chartConfig = {
 };
 
 export function StockReports({ stockConsumption }: StockReportsProps) {
+  const { canViewCost, isLoading } = useFinancialAccessControl();
+  
+  // Se não pode ver custo, mostra mensagem de acesso restrito para relatório de estoque com custos
+  if (!isLoading && !canViewCost) {
+    return (
+      <Alert>
+        <Lock className="h-4 w-4" />
+        <AlertTitle>Acesso Restrito</AlertTitle>
+        <AlertDescription>
+          Você não tem permissão para visualizar custos de estoque. 
+          Entre em contato com o administrador da clínica.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
   const totalItens = stockConsumption.reduce((acc, s) => acc + s.consumed, 0);
   const custoTotal = stockConsumption.reduce((acc, s) => acc + s.estimatedCost, 0);
   const categorias = [...new Set(stockConsumption.map(s => s.category))].length;

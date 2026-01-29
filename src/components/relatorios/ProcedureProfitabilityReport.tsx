@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Target, BarChart3 } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Target, BarChart3, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import type { ProcedureProfitabilityData, ProfitabilitySummary } from '@/hooks/useProcedureProfitabilityReport';
 import { useMarginAlerts, useMarginAlertConfig } from '@/hooks/useMarginAlerts';
 import { useClinicData } from '@/hooks/useClinicData';
+import { useFinancialAccessControl } from '@/hooks/useFinancialAccessControl';
 
 interface ProcedureProfitabilityReportProps {
   data: ProcedureProfitabilityData[];
@@ -64,10 +65,30 @@ export function ProcedureProfitabilityReport({
   const { data: marginAlerts = [] } = useMarginAlerts(clinicId || null);
   const { data: marginConfig } = useMarginAlertConfig(clinicId || null);
   
+  // Controle de acesso financeiro
+  const { canViewRevenue, canViewCost, canViewProfit, canViewMargin, isLoading: accessLoading } = useFinancialAccessControl();
+  
   // Create a set of procedure IDs that have margin alerts
   const proceduresWithAlerts = new Set(
     marginAlerts.map(a => a.procedureId)
   );
+  
+  // Se não tem permissão para ver custos/margem, mostra mensagem de acesso restrito
+  if (!accessLoading && !canViewCost && !canViewMargin) {
+    // Se também não pode ver faturamento, bloqueia completamente
+    if (!canViewRevenue) {
+      return (
+        <Alert>
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Acesso Restrito</AlertTitle>
+          <AlertDescription>
+            Você não tem permissão para visualizar este relatório. 
+            Entre em contato com o administrador da clínica.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+  }
 
   if (isLoading) {
     return (
@@ -108,46 +129,62 @@ export function ProcedureProfitabilityReport({
     cost: proc.totalCost,
   }));
 
+  // Monta lista de KPIs baseado nas permissões
+  const kpiCards = [];
+  
+  if (canViewRevenue) {
+    kpiCards.push({ 
+      title: 'Quanto Faturou', 
+      value: summary.totalRevenue, 
+      format: 'currency' as const, 
+      icon: <DollarSign className="h-5 w-5" /> 
+    });
+  }
+  
+  if (canViewCost) {
+    kpiCards.push({ 
+      title: 'Quanto Custou', 
+      value: summary.totalCost, 
+      format: 'currency' as const, 
+      icon: <TrendingDown className="h-5 w-5" /> 
+    });
+  }
+  
+  if (canViewProfit) {
+    kpiCards.push({ 
+      title: 'Quanto Sobrou', 
+      value: summary.totalMargin, 
+      format: 'currency' as const,
+      variation: canViewMargin ? Math.round(summary.marginPercentage) : undefined,
+      icon: <TrendingUp className="h-5 w-5" /> 
+    });
+  }
+  
+  if (canViewMargin) {
+    kpiCards.push({ 
+      title: 'Mais Rentável', 
+      value: summary.mostProfitable?.name || 'N/A', 
+      icon: <Target className="h-5 w-5" /> 
+    });
+    kpiCards.push({ 
+      title: 'Menor Margem', 
+      value: summary.leastProfitable?.name || 'N/A', 
+      icon: <AlertTriangle className="h-5 w-5" /> 
+    });
+  }
+
   return (
     <div className="space-y-6">
-      {/* KPIs de Resumo */}
-      <ReportKPICards
-        columns={5}
-        cards={[
-          { 
-            title: 'Quanto Faturou', 
-            value: summary.totalRevenue, 
-            format: 'currency', 
-            icon: <DollarSign className="h-5 w-5" /> 
-          },
-          { 
-            title: 'Quanto Custou', 
-            value: summary.totalCost, 
-            format: 'currency', 
-            icon: <TrendingDown className="h-5 w-5" /> 
-          },
-          { 
-            title: 'Quanto Sobrou', 
-            value: summary.totalMargin, 
-            format: 'currency',
-            variation: Math.round(summary.marginPercentage),
-            icon: <TrendingUp className="h-5 w-5" /> 
-          },
-          { 
-            title: 'Mais Rentável', 
-            value: summary.mostProfitable?.name || 'N/A', 
-            icon: <Target className="h-5 w-5" /> 
-          },
-          { 
-            title: 'Menor Margem', 
-            value: summary.leastProfitable?.name || 'N/A', 
-            icon: <AlertTriangle className="h-5 w-5" /> 
-          },
-        ]}
-      />
+      {/* KPIs de Resumo - baseado em permissões */}
+      {kpiCards.length > 0 && (
+        <ReportKPICards
+          columns={Math.min(kpiCards.length, 5) as 2 | 3 | 4 | 5}
+          cards={kpiCards}
+        />
+      )}
 
-      {/* Alerta de procedimentos sem custo */}
-      {summary.proceduresWithoutCost > 0 && (
+      {/* Alerta de procedimentos sem custo - apenas se pode ver custos */}
+      {canViewCost && summary.proceduresWithoutCost > 0 && (
         <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertTitle className="text-yellow-800 dark:text-yellow-400">Atenção</AlertTitle>
@@ -158,78 +195,80 @@ export function ProcedureProfitabilityReport({
         </Alert>
       )}
 
-      {/* Gráfico de Margem por Procedimento */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <CardTitle className="text-lg">Margem por Procedimento</CardTitle>
-              <CardDescription>Top 10 procedimentos por volume de atendimentos</CardDescription>
+      {/* Gráfico de Margem por Procedimento - apenas se pode ver margem */}
+      {canViewMargin && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle className="text-lg">Margem por Procedimento</CardTitle>
+                <CardDescription>Top 10 procedimentos por volume de atendimentos</CardDescription>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-[350px] w-full">
-            <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
-              <XAxis 
-                type="number" 
-                domain={[-20, 100]} 
-                tickFormatter={(v) => `${v}%`} 
-                className="text-xs"
-              />
-              <YAxis 
-                dataKey="name" 
-                type="category" 
-                width={150} 
-                className="text-xs" 
-                tick={{ fontSize: 11 }}
-              />
-              <ReferenceLine x={0} stroke="hsl(var(--border))" strokeWidth={2} />
-              <ReferenceLine x={15} stroke="hsl(45, 93%, 47%)" strokeDasharray="5 5" strokeWidth={1} />
-              <ReferenceLine x={40} stroke="hsl(142, 76%, 36%)" strokeDasharray="5 5" strokeWidth={1} />
-              <ChartTooltip 
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const data = payload[0].payload;
-                  return (
-                    <div className="bg-popover border rounded-lg p-3 shadow-lg">
-                      <p className="font-medium mb-2">{data.fullName}</p>
-                      <div className="space-y-1 text-sm">
-                        <p>Faturamento: {formatCurrency(data.revenue)}</p>
-                        <p>Custo: {formatCurrency(data.cost)}</p>
-                        <p className="font-medium">Margem: {formatCurrency(data.marginValue)} ({data.margin}%)</p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[350px] w-full">
+              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
+                <XAxis 
+                  type="number" 
+                  domain={[-20, 100]} 
+                  tickFormatter={(v) => `${v}%`} 
+                  className="text-xs"
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={150} 
+                  className="text-xs" 
+                  tick={{ fontSize: 11 }}
+                />
+                <ReferenceLine x={0} stroke="hsl(var(--border))" strokeWidth={2} />
+                <ReferenceLine x={15} stroke="hsl(45, 93%, 47%)" strokeDasharray="5 5" strokeWidth={1} />
+                <ReferenceLine x={40} stroke="hsl(142, 76%, 36%)" strokeDasharray="5 5" strokeWidth={1} />
+                <ChartTooltip 
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                        <p className="font-medium mb-2">{data.fullName}</p>
+                        <div className="space-y-1 text-sm">
+                          {canViewRevenue && <p>Faturamento: {formatCurrency(data.revenue)}</p>}
+                          {canViewCost && <p>Custo: {formatCurrency(data.cost)}</p>}
+                          {canViewProfit && <p className="font-medium">Margem: {formatCurrency(data.marginValue)} ({data.margin}%)</p>}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="margin" radius={[0, 4, 4, 0]} name="Margem %">
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getBarColor(entry.margin)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ChartContainer>
-          
-          {/* Legenda */}
-          <div className="flex items-center justify-center gap-6 mt-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-              <span>≥ 40% Positiva</span>
+                    );
+                  }}
+                />
+                <Bar dataKey="margin" radius={[0, 4, 4, 0]} name="Margem %">
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getBarColor(entry.margin)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+            
+            {/* Legenda */}
+            <div className="flex items-center justify-center gap-6 mt-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                <span>≥ 40% Positiva</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(45, 93%, 47%)' }} />
+                <span>15-40% Atenção</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(0, 84%, 60%)' }} />
+                <span>&lt; 15% Negativa</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(45, 93%, 47%)' }} />
-              <span>15-40% Atenção</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(0, 84%, 60%)' }} />
-              <span>&lt; 15% Negativa</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabela Detalhada */}
       <Card>
@@ -243,11 +282,11 @@ export function ProcedureProfitabilityReport({
               <TableRow>
                 <TableHead>Procedimento</TableHead>
                 <TableHead className="text-center">Qtd</TableHead>
-                <TableHead className="text-right">Faturou</TableHead>
-                <TableHead className="text-right">Custou</TableHead>
-                <TableHead className="text-right">Sobrou</TableHead>
-                <TableHead className="text-center">Margem</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                {canViewRevenue && <TableHead className="text-right">Faturou</TableHead>}
+                {canViewCost && <TableHead className="text-right">Custou</TableHead>}
+                {canViewProfit && <TableHead className="text-right">Sobrou</TableHead>}
+                {canViewMargin && <TableHead className="text-center">Margem</TableHead>}
+                {canViewMargin && <TableHead className="text-center">Status</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -259,24 +298,24 @@ export function ProcedureProfitabilityReport({
                 return (
                   <TableRow 
                     key={proc.procedureId} 
-                    className={cn(hasAlert && alertData?.alertType === 'critical' && 'bg-destructive/5')}
+                    className={cn(canViewMargin && hasAlert && alertData?.alertType === 'critical' && 'bg-destructive/5')}
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span>{proc.procedureName}</span>
-                          {hasAlert && alertData?.alertType === 'critical' && (
+                          {canViewMargin && hasAlert && alertData?.alertType === 'critical' && (
                             <Badge variant="destructive" className="text-xs">
                               Prejuízo
                             </Badge>
                           )}
-                          {hasAlert && alertData?.alertType === 'warning' && (
+                          {canViewMargin && hasAlert && alertData?.alertType === 'warning' && (
                             <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
                               Atenção
                             </Badge>
                           )}
                         </div>
-                        {!proc.hasCostDefined && (
+                        {canViewCost && !proc.hasCostDefined && (
                           <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
                             Custo não definido
@@ -285,30 +324,40 @@ export function ProcedureProfitabilityReport({
                       </div>
                     </TableCell>
                     <TableCell className="text-center">{proc.quantity}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(proc.totalRevenue)}</TableCell>
-                    <TableCell className="text-right">
-                      {proc.hasCostDefined ? formatCurrency(proc.totalCost) : '-'}
-                    </TableCell>
-                    <TableCell className={cn("text-right font-medium", status.color)}>
-                      {proc.hasCostDefined ? formatCurrency(proc.marginValue) : '-'}
-                    </TableCell>
-                    <TableCell className={cn("text-center font-medium", status.color)}>
-                      {proc.hasCostDefined ? `${Math.round(proc.marginPercentage)}%` : '-'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {proc.hasCostDefined ? (
-                        <Badge variant="outline" className={status.bgClass}>
-                          {proc.marginPercentage >= 40 && <TrendingUp className="h-3 w-3 mr-1" />}
-                          {proc.marginPercentage < 15 && <TrendingDown className="h-3 w-3 mr-1" />}
-                          {status.label}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-muted">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Incompleto
-                        </Badge>
-                      )}
-                    </TableCell>
+                    {canViewRevenue && (
+                      <TableCell className="text-right">{formatCurrency(proc.totalRevenue)}</TableCell>
+                    )}
+                    {canViewCost && (
+                      <TableCell className="text-right">
+                        {proc.hasCostDefined ? formatCurrency(proc.totalCost) : '-'}
+                      </TableCell>
+                    )}
+                    {canViewProfit && (
+                      <TableCell className={cn("text-right font-medium", status.color)}>
+                        {proc.hasCostDefined ? formatCurrency(proc.marginValue) : '-'}
+                      </TableCell>
+                    )}
+                    {canViewMargin && (
+                      <TableCell className={cn("text-center font-medium", status.color)}>
+                        {proc.hasCostDefined ? `${Math.round(proc.marginPercentage)}%` : '-'}
+                      </TableCell>
+                    )}
+                    {canViewMargin && (
+                      <TableCell className="text-center">
+                        {proc.hasCostDefined ? (
+                          <Badge variant="outline" className={status.bgClass}>
+                            {proc.marginPercentage >= 40 && <TrendingUp className="h-3 w-3 mr-1" />}
+                            {proc.marginPercentage < 15 && <TrendingDown className="h-3 w-3 mr-1" />}
+                            {status.label}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-muted">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Incompleto
+                          </Badge>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

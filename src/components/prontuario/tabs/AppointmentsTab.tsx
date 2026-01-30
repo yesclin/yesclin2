@@ -11,7 +11,8 @@ import {
   Clock,
   FileText,
   Eye,
-  ChevronRight
+  ChevronRight,
+  DollarSign
 } from "lucide-react";
 import { 
   ClinicalEvolution,
@@ -23,6 +24,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface AppointmentsTabProps {
   evolutions: ClinicalEvolution[];
@@ -32,6 +34,10 @@ interface AppointmentsTabProps {
 export function AppointmentsTab({ evolutions, onViewEvolution }: AppointmentsTabProps) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const { can, isLoading: permissionsLoading } = usePermissions();
+  
+  // Check if user can view financial data
+  const canViewCosts = can("financeiro", "view");
 
   // Filter only signed evolutions (completed appointments)
   const appointments = evolutions.filter(e => e.status === 'signed');
@@ -165,9 +171,20 @@ export function AppointmentsTab({ evolutions, onViewEvolution }: AppointmentsTab
                                 <Clock className="h-3 w-3" />
                                 {format(parseISO(apt.created_at), "dd/MM/yyyy", { locale: ptBR })}
                               </div>
-                              <Badge className={`mt-1 ${statusColors[apt.status]}`}>
-                                {evolutionStatusLabels[apt.status]}
-                              </Badge>
+                              <div className="flex items-center gap-2 mt-1">
+                                {canViewCosts && (apt as any).procedure_cost !== undefined && (apt as any).procedure_cost !== null && (
+                                  <Badge variant="outline" className="text-xs gap-1">
+                                    <DollarSign className="h-3 w-3" />
+                                    {new Intl.NumberFormat("pt-BR", { 
+                                      style: "currency", 
+                                      currency: "BRL" 
+                                    }).format((apt as any).procedure_cost)}
+                                  </Badge>
+                                )}
+                                <Badge className={`${statusColors[apt.status]}`}>
+                                  {evolutionStatusLabels[apt.status]}
+                                </Badge>
+                              </div>
                             </div>
                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           </div>

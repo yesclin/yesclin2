@@ -25,11 +25,13 @@ import {
   DollarSign,
   RotateCcw,
   Sparkles,
-  ShoppingCart
+  ShoppingCart,
+  Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types/agenda";
 import { statusLabels, statusColors, typeLabels } from "@/types/agenda";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -60,7 +62,12 @@ export function AppointmentCard({
     has_pending_payment,
     is_fit_in,
     notes,
+    procedure_cost,
   } = appointment;
+
+  // Check if user can view costs
+  const { can } = usePermissions();
+  const canViewCosts = can("financeiro", "view");
 
   const getStatusActions = () => {
     switch (status) {
@@ -189,6 +196,22 @@ export function AppointmentCard({
             <Badge variant="outline" className="text-xs">
               {typeLabels[appointment_type]}
             </Badge>
+            
+            {/* Show procedure cost for finalized appointments - only for authorized users */}
+            {status === 'finalizado' && canViewCosts && procedure_cost !== undefined && procedure_cost !== null && procedure_cost > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-xs gap-1 text-emerald-600 border-emerald-300">
+                    <Package className="h-3 w-3" />
+                    {new Intl.NumberFormat("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    }).format(procedure_cost)}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>Custo do procedimento (materiais consumidos)</TooltipContent>
+              </Tooltip>
+            )}
           </div>
           
           {notes && (

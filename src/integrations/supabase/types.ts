@@ -211,6 +211,7 @@ export type Database = {
           notes: string | null
           patient_id: string
           payment_type: string | null
+          procedure_cost: number | null
           procedure_id: string | null
           professional_id: string
           room_id: string | null
@@ -241,6 +242,7 @@ export type Database = {
           notes?: string | null
           patient_id: string
           payment_type?: string | null
+          procedure_cost?: number | null
           procedure_id?: string | null
           professional_id: string
           room_id?: string | null
@@ -271,6 +273,7 @@ export type Database = {
           notes?: string | null
           patient_id?: string
           payment_type?: string | null
+          procedure_cost?: number | null
           procedure_id?: string | null
           professional_id?: string
           room_id?: string | null

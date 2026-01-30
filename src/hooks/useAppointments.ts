@@ -102,6 +102,7 @@ export function useAppointments(startDate: Date, endDate?: Date) {
         .from("appointments")
         .select(`
           *,
+          procedure_cost,
           patients!inner(id, full_name, phone, has_clinical_alert, clinical_alert_text),
           professionals!inner(id, full_name, color),
           rooms(id, name),
@@ -131,6 +132,7 @@ export function useTodayAppointments() {
         .from("appointments")
         .select(`
           *,
+          procedure_cost,
           patients!inner(id, full_name, phone, has_clinical_alert, clinical_alert_text),
           professionals!inner(id, full_name, color),
           rooms(id, name),

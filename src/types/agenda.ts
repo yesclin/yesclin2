@@ -103,6 +103,7 @@ export interface Appointment {
   is_fit_in: boolean;
   payment_type: PaymentType;
   expected_value?: number;
+  procedure_cost?: number; // Historical cost calculated at execution time
   notes?: string;
   cancellation_reason?: string;
   arrived_at?: string;

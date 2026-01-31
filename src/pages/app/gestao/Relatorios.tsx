@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart, TrendingUp } from 'lucide-react';
+import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart, TrendingUp, Receipt } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
 import { useSalesReport } from '@/hooks/useSalesReport';
@@ -9,6 +9,7 @@ import { useSalesReportExport } from '@/hooks/useSalesReportExport';
 import { useProductMarginReport } from '@/hooks/useProductMarginReport';
 import { useProductMarginReportOptions } from '@/hooks/useProductMarginReportOptions';
 import { useProductMarginReportExport } from '@/hooks/useProductMarginReportExport';
+import { useProcedureCostReport } from '@/hooks/useProcedureCostReport';
 import { ReportFiltersBar } from '@/components/relatorios/ReportFiltersBar';
 import { SalesReportFilters } from '@/components/relatorios/SalesReportFilters';
 import { ProductMarginFilters } from '@/components/relatorios/ProductMarginFilters';
@@ -22,6 +23,7 @@ import { CommunicationReports } from '@/components/relatorios/CommunicationRepor
 import { ExecutiveReport } from '@/components/relatorios/ExecutiveReport';
 import { SalesReports } from '@/components/relatorios/SalesReports';
 import { ProductMarginReport } from '@/components/relatorios/ProductMarginReport';
+import { ProcedureCostReport } from '@/components/relatorios/ProcedureCostReport';
 import { ReportSkeleton } from '@/components/relatorios/ReportSkeleton';
 import { ReportEmptyState } from '@/components/relatorios/ReportEmptyState';
 import { toast } from 'sonner';
@@ -33,6 +35,7 @@ const reportTabs = [
   { value: 'gerencial', label: 'Gerencial', icon: Briefcase },
   { value: 'financeiro', label: 'Financeiro', icon: DollarSign },
   { value: 'vendas', label: 'Vendas', icon: ShoppingCart },
+  { value: 'custos', label: 'Custos', icon: Receipt },
   { value: 'margem', label: 'Margem', icon: TrendingUp },
   { value: 'agenda', label: 'Agenda', icon: Calendar },
   { value: 'pacientes', label: 'Pacientes', icon: Users },
@@ -70,6 +73,7 @@ export default function Relatorios() {
   const data = useRelatoriosMockData(filters);
   const salesReport = useSalesReport(salesFilters);
   const marginReport = useProductMarginReport(marginFilters);
+  const costReport = useProcedureCostReport(filters);
   const salesOptions = useSalesReportOptions();
   const marginOptions = useProductMarginReportOptions();
   const { exportCSV, exportPDF } = useSalesReportExport();
@@ -208,6 +212,14 @@ export default function Relatorios() {
             salesByPaymentMethod={salesReport.salesByPaymentMethod}
             salesList={salesReport.salesList}
             isLoading={salesReport.isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="custos">
+          <ProcedureCostReport
+            data={costReport.data}
+            summary={costReport.summary}
+            isLoading={costReport.isLoading}
           />
         </TabsContent>
 

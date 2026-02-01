@@ -2754,6 +2754,8 @@ export type Database = {
           clinic_id: string
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           error_message: string | null
           external_id: string | null
           id: string
@@ -2772,6 +2774,8 @@ export type Database = {
           clinic_id: string
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           error_message?: string | null
           external_id?: string | null
           id?: string
@@ -2790,6 +2794,8 @@ export type Database = {
           clinic_id?: string
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           error_message?: string | null
           external_id?: string | null
           id?: string

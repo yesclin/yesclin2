@@ -46,7 +46,7 @@ export default function ConfigProcedimentos() {
   const { data: procedures, isLoading, error } = useProceduresList(true);
   const { data: productCosts } = useProcedureProductCosts();
   const toggleStatusMutation = useToggleProcedureStatus();
-  const { can, isOwner } = usePermissions();
+  const { can, isOwner, isAdmin } = usePermissions();
 
   // Helper para formatar custo
   const formatCurrency = (value: number) => 
@@ -63,8 +63,8 @@ export default function ConfigProcedimentos() {
     return cost?.product_count || 0;
   };
 
-  // Check if user can manage procedures (owner has total bypass)
-  const canManage = isOwner || can("configuracoes", "edit");
+  // Check if user can manage procedures (owner and admin have total bypass)
+  const canManage = isOwner || isAdmin || can("configuracoes", "edit");
 
   const filteredProcedures = (procedures || []).filter((proc) =>
     proc.name.toLowerCase().includes(search.toLowerCase()) ||

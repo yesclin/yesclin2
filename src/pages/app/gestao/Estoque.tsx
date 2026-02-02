@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink, User, Syringe } from "lucide-react";
+import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink, User, Syringe, Boxes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,7 @@ import { stockMovementTypeLabels, type StockMovementType } from "@/types/invento
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
+import { ProductKitsTab } from "@/components/estoque/ProductKitsTab";
 
 export default function Estoque() {
   const { categories, products, movements, lowStockProducts, outOfStockProducts, expiringProducts, stats, isLoading } = useStockData();
@@ -199,6 +200,10 @@ export default function Estoque() {
       <Tabs defaultValue="products" className="space-y-4">
         <TabsList>
           <TabsTrigger value="products">Produtos</TabsTrigger>
+          <TabsTrigger value="kits" className="flex items-center gap-1">
+            <Boxes className="h-4 w-4" />
+            Kits
+          </TabsTrigger>
           <TabsTrigger value="movements">Movimentações</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
         </TabsList>
@@ -496,6 +501,11 @@ export default function Estoque() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Kits Tab */}
+        <TabsContent value="kits" className="space-y-4">
+          <ProductKitsTab />
         </TabsContent>
 
         {/* Movements Tab */}

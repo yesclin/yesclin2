@@ -16,7 +16,7 @@ import {
   CalendarCog,
   Shield,
   ChevronDown,
-  LucideIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -29,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -36,6 +37,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { UserProfileFooter } from "./UserProfileFooter";
+import { cn } from "@/lib/utils";
 
 interface MenuItem {
   title: string;
@@ -73,6 +75,8 @@ const configItems: MenuItem[] = [
 export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   const isActive = (path: string) => {
     if (path === "/app") return currentPath === path;
@@ -82,32 +86,46 @@ export function AppSidebar() {
   const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
   const isConfigActive = configItems.some((item) => isActive(item.url));
 
-  // Importante: evitar "offcanvas" no desktop, pois pode esconder o sidebar totalmente.
-  // "icon" mantém um rail mínimo, garantindo que o menu não "some".
   return (
-    <Sidebar className="border-r" collapsible="icon">
-      <SidebarContent className="bg-card">
+    <Sidebar className="border-r border-sidebar-border" collapsible="icon">
+      <SidebarContent className="bg-sidebar">
         {/* Logo */}
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+        <div className="p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">Y</span>
             </div>
-            <span className="font-semibold text-lg text-foreground">Yesclin</span>
+            <span className={cn(
+              "font-semibold text-lg text-sidebar-foreground truncate transition-opacity duration-200",
+              isCollapsed && "opacity-0 w-0"
+            )}>
+              Yesclin
+            </span>
           </div>
         </div>
 
         {/* Menu Principal */}
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className={cn(isCollapsed && "sr-only")}>
+            Menu Principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title} data-tour={item.tourId}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)}
+                    tooltip={item.title}
+                  >
                     <NavLink to={item.url} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className={cn(
+                        "truncate transition-opacity duration-200",
+                        isCollapsed && "opacity-0 w-0 overflow-hidden"
+                      )}>
+                        {item.title}
+                      </span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,11 +136,14 @@ export function AppSidebar() {
 
         {/* Gestão */}
         <SidebarGroup data-tour="management">
-          <Collapsible defaultOpen={isGestaoActive}>
-            <CollapsibleTrigger className="w-full">
-              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1.5">
-                <span>Gestão</span>
-                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          <Collapsible defaultOpen={isGestaoActive || !isCollapsed}>
+            <CollapsibleTrigger className={cn("w-full", isCollapsed && "pointer-events-none")}>
+              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
+                <span className={cn(isCollapsed && "sr-only")}>Gestão</span>
+                <ChevronDown className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180",
+                  isCollapsed && "hidden"
+                )} />
               </SidebarGroupLabel>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -130,10 +151,19 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {gestaoItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive(item.url)}
+                        tooltip={item.title}
+                      >
                         <NavLink to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className={cn(
+                            "truncate transition-opacity duration-200",
+                            isCollapsed && "opacity-0 w-0 overflow-hidden"
+                          )}>
+                            {item.title}
+                          </span>
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -146,14 +176,22 @@ export function AppSidebar() {
 
         {/* Configurações */}
         <SidebarGroup data-tour="settings">
-          <Collapsible defaultOpen={isConfigActive}>
-            <CollapsibleTrigger className="w-full">
-              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1.5">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Configurações</span>
+          <Collapsible defaultOpen={isConfigActive || !isCollapsed}>
+            <CollapsibleTrigger className={cn("w-full", isCollapsed && "pointer-events-none")}>
+              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span className={cn(
+                    "truncate transition-opacity duration-200",
+                    isCollapsed && "opacity-0 w-0 overflow-hidden"
+                  )}>
+                    Configurações
+                  </span>
                 </div>
-                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                <ChevronDown className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180",
+                  isCollapsed && "hidden"
+                )} />
               </SidebarGroupLabel>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -161,10 +199,19 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {configItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive(item.url)}
+                        tooltip={item.title}
+                      >
                         <NavLink to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className={cn(
+                            "truncate transition-opacity duration-200",
+                            isCollapsed && "opacity-0 w-0 overflow-hidden"
+                          )}>
+                            {item.title}
+                          </span>
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -176,7 +223,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="p-0" data-tour="user-profile">
+      <SidebarFooter className="p-0 border-t border-sidebar-border" data-tour="user-profile">
         <UserProfileFooter />
       </SidebarFooter>
     </Sidebar>

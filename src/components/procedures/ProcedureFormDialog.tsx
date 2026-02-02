@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import {
   Procedure,
-  ProcedureFormData,
   useProcedureForm,
   useCreateProcedure,
   useUpdateProcedure,
@@ -34,6 +33,12 @@ import {
   useDeleteProcedureProduct,
   useUpdateProcedureProduct,
 } from "@/hooks/useProcedureProductsCRUD";
+import {
+  useProcedureProductKitsByProcedure,
+  useCreateProcedureProductKit,
+  useDeleteProcedureProductKit,
+  useUpdateProcedureProductKit,
+} from "@/hooks/useProcedureProductKitsCRUD";
 import {
   ProcedureProductsSection,
   type ProcedureProductItem,
@@ -77,14 +82,25 @@ export function ProcedureFormDialog({
   const updateProductMutation = useUpdateProcedureProduct();
   const deleteProductMutation = useDeleteProcedureProduct();
 
-  const [productItems, setProductItems] = useState<ProcedureProductItem[]>([]);
+  // Kits linked to procedure
+  const { data: existingKits = [] } = useProcedureProductKitsByProcedure(
+    mode === "edit" && procedure ? procedure.id : null
+  );
+  const createKitMutation = useCreateProcedureProductKit();
+  const updateKitMutation = useUpdateProcedureProductKit();
+  const deleteKitMutation = useDeleteProcedureProductKit();
+
+  const [items, setItems] = useState<ProcedureProductItem[]>([]);
 
   const isLoading =
     createMutation.isPending ||
     updateMutation.isPending ||
     createProductMutation.isPending ||
     updateProductMutation.isPending ||
-    deleteProductMutation.isPending;
+    deleteProductMutation.isPending ||
+    createKitMutation.isPending ||
+    updateKitMutation.isPending ||
+    deleteKitMutation.isPending;
 
   useEffect(() => {
     if (open) {
@@ -92,24 +108,34 @@ export function ProcedureFormDialog({
         loadProcedure(procedure);
       } else {
         resetForm();
-        setProductItems([]);
+        setItems([]);
       }
     }
   }, [open, mode, procedure]);
 
-  // Sync existing products when editing
+  // Sync existing products and kits when editing
   useEffect(() => {
-    if (mode === "edit" && existingProducts.length > 0) {
-      setProductItems(
-        existingProducts.map((p) => ({
-          product_id: p.product_id,
-          product_name: p.product_name || "",
-          product_unit: p.product_unit || "",
-          quantity: p.quantity,
-        }))
-      );
+    if (mode === "edit") {
+      const productItems: ProcedureProductItem[] = existingProducts.map((p) => ({
+        id: p.product_id,
+        type: "product" as const,
+        name: p.product_name || "",
+        unit: p.product_unit || "",
+        quantity: p.quantity,
+      }));
+
+      const kitItems: ProcedureProductItem[] = existingKits.map((k) => ({
+        id: k.kit_id,
+        type: "kit" as const,
+        name: k.kit_name || "",
+        unit: "kit",
+        quantity: k.quantity,
+        hasItems: true, // Assume they have items if saved
+      }));
+
+      setItems([...productItems, ...kitItems]);
     }
-  }, [existingProducts, mode]);
+  }, [existingProducts, existingKits, mode]);
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -121,13 +147,14 @@ export function ProcedureFormDialog({
         await updateMutation.mutateAsync({ id: procedure.id, formData });
         procedureId = procedure.id;
 
-        // Sync products: delete removed, update existing, add new
-        const existingIds = existingProducts.map((p) => p.product_id);
-        const newIds = productItems.map((p) => p.product_id);
+        // Sync products
+        const currentProducts = items.filter((i) => i.type === "product");
+        const existingProductIds = existingProducts.map((p) => p.product_id);
+        const newProductIds = currentProducts.map((p) => p.id);
 
         // Delete removed products
         for (const existing of existingProducts) {
-          if (!newIds.includes(existing.product_id)) {
+          if (!newProductIds.includes(existing.product_id)) {
             await deleteProductMutation.mutateAsync({
               id: existing.id,
               procedureId,
@@ -136,12 +163,9 @@ export function ProcedureFormDialog({
         }
 
         // Update or add products
-        for (const item of productItems) {
-          const existingItem = existingProducts.find(
-            (p) => p.product_id === item.product_id
-          );
+        for (const item of currentProducts) {
+          const existingItem = existingProducts.find((p) => p.product_id === item.id);
           if (existingItem) {
-            // Update if quantity changed
             if (existingItem.quantity !== item.quantity) {
               await updateProductMutation.mutateAsync({
                 id: existingItem.id,
@@ -150,11 +174,46 @@ export function ProcedureFormDialog({
               });
             }
           } else {
-            // Add new product
             await createProductMutation.mutateAsync({
               procedure_id: procedureId,
-              product_id: item.product_id,
+              product_id: item.id,
               quantity: item.quantity,
+            });
+          }
+        }
+
+        // Sync kits
+        const currentKits = items.filter((i) => i.type === "kit");
+        const existingKitIds = existingKits.map((k) => k.kit_id);
+        const newKitIds = currentKits.map((k) => k.id);
+
+        // Delete removed kits
+        for (const existing of existingKits) {
+          if (!newKitIds.includes(existing.kit_id)) {
+            await deleteKitMutation.mutateAsync({
+              id: existing.id,
+              procedureId,
+            });
+          }
+        }
+
+        // Update or add kits
+        for (const item of currentKits) {
+          const existingItem = existingKits.find((k) => k.kit_id === item.id);
+          if (existingItem) {
+            if (existingItem.quantity !== item.quantity) {
+              await updateKitMutation.mutateAsync({
+                id: existingItem.id,
+                procedureId,
+                formData: { quantity: item.quantity },
+              });
+            }
+          } else {
+            await createKitMutation.mutateAsync({
+              procedure_id: procedureId,
+              kit_id: item.id,
+              quantity: item.quantity,
+              is_required: true,
             });
           }
         }
@@ -163,18 +222,28 @@ export function ProcedureFormDialog({
         procedureId = newProcedure.id;
 
         // Add all products
-        for (const item of productItems) {
+        for (const item of items.filter((i) => i.type === "product")) {
           await createProductMutation.mutateAsync({
             procedure_id: procedureId,
-            product_id: item.product_id,
+            product_id: item.id,
             quantity: item.quantity,
+          });
+        }
+
+        // Add all kits
+        for (const item of items.filter((i) => i.type === "kit")) {
+          await createKitMutation.mutateAsync({
+            procedure_id: procedureId,
+            kit_id: item.id,
+            quantity: item.quantity,
+            is_required: true,
           });
         }
       }
 
       onOpenChange(false);
       resetForm();
-      setProductItems([]);
+      setItems([]);
     } catch (error) {
       // Error handled by mutation
     }
@@ -184,7 +253,7 @@ export function ProcedureFormDialog({
     if (!isLoading) {
       onOpenChange(false);
       resetForm();
-      setProductItems([]);
+      setItems([]);
     }
   };
 
@@ -307,8 +376,8 @@ export function ProcedureFormDialog({
           {/* Products/Materials Section */}
           <Separator className="my-2" />
           <ProcedureProductsSection
-            items={productItems}
-            onChange={setProductItems}
+            items={items}
+            onChange={setItems}
             disabled={isLoading}
           />
         </div>

@@ -225,6 +225,10 @@ export function useUpdateAppointmentStatus() {
       if (error) throw error;
 
       // Process product consumption and record historical cost when finalizing procedure
+      // The RPC function process_procedure_product_consumption handles:
+      // 1. Stock deduction (stock_movements)
+      // 2. Material consumption tracking (material_consumption)
+      // 3. Historical cost storage on appointment (procedure_cost)
       if (status === "finalizado") {
         interface ConsumptionResult {
           success: boolean;
@@ -246,18 +250,8 @@ export function useUpdateAppointmentStatus() {
           // Don't throw - status update succeeded, just log the consumption error
         } else if (consumptionResult && !consumptionResult.success) {
           console.error("Product consumption failed:", consumptionResult.error);
-        } else if (consumptionResult?.total_cost !== undefined) {
-          // Store the calculated cost as historical record
-          const { error: costUpdateError } = await supabase
-            .from("appointments")
-            .update({ procedure_cost: consumptionResult.total_cost })
-            .eq("id", id);
-          
-          if (costUpdateError) {
-            console.error("Error storing procedure cost:", costUpdateError);
-          } else {
-            console.log(`Stored historical procedure cost: R$ ${consumptionResult.total_cost?.toFixed(2)}`);
-          }
+        } else if (consumptionResult?.processed_count && consumptionResult.processed_count > 0) {
+          console.log(`Procedure cost recorded: R$ ${consumptionResult.total_cost?.toFixed(2)} (${consumptionResult.processed_count} items)`);
         }
       }
 

@@ -5596,6 +5596,10 @@ export type Database = {
         Args: { p_procedure_id: string }
         Returns: number
       }
+      calculate_procedure_cost_from_products: {
+        Args: { p_procedure_id: string }
+        Returns: number
+      }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
         Returns: Json

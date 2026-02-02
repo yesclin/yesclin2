@@ -43,6 +43,7 @@ import {
   ShoppingCart,
   XCircle,
   Package,
+  DollarSign,
   type LucideIcon,
 } from 'lucide-react';
 import { format, parseISO, isToday, isYesterday } from 'date-fns';
@@ -80,6 +81,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ShoppingCart,
   XCircle,
   Package,
+  DollarSign,
 };
 
 interface ClinicalTimelineProps {

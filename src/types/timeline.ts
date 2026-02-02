@@ -27,6 +27,7 @@ export type TimelineEventType =
   | 'SALE_STATUS_UPDATED'
   // Stock / Product consumption
   | 'PRODUCT_CONSUMED'
+  | 'PROCEDURE_COST_RECORDED'
   | 'SALE_CANCELLED';
 
 export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security' | 'sales' | 'stock';
@@ -220,6 +221,14 @@ export const TIMELINE_EVENT_CONFIG: Record<TimelineEventType, {
     category: 'stock',
     color: 'text-orange-700',
     bgColor: 'bg-orange-100',
+    targetTab: 'procedimentos',
+  },
+  PROCEDURE_COST_RECORDED: {
+    label: 'Custo Registrado',
+    icon: 'DollarSign',
+    category: 'stock',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100',
     targetTab: 'procedimentos',
   },
 };

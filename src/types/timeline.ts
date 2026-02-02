@@ -28,6 +28,7 @@ export type TimelineEventType =
   // Stock / Product consumption
   | 'PRODUCT_CONSUMED'
   | 'PROCEDURE_COST_RECORDED'
+  | 'KIT_CONSUMED'
   | 'SALE_CANCELLED';
 
 export type TimelineEventCategory = 'administrative' | 'clinical' | 'files' | 'lgpd' | 'security' | 'sales' | 'stock';
@@ -229,6 +230,14 @@ export const TIMELINE_EVENT_CONFIG: Record<TimelineEventType, {
     category: 'stock',
     color: 'text-green-700',
     bgColor: 'bg-green-100',
+    targetTab: 'procedimentos',
+  },
+  KIT_CONSUMED: {
+    label: 'Kit Consumido',
+    icon: 'Boxes',
+    category: 'stock',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-100',
     targetTab: 'procedimentos',
   },
 };

@@ -3640,6 +3640,58 @@ export type Database = {
           },
         ]
       }
+      procedure_product_kits: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          is_required: boolean
+          kit_id: string
+          procedure_id: string
+          quantity: number
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          kit_id: string
+          procedure_id: string
+          quantity?: number
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          kit_id?: string
+          procedure_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_product_kits_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procedure_product_kits_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "product_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procedure_product_kits_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_products: {
         Row: {
           clinic_id: string
@@ -3741,6 +3793,86 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "procedures_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_kit_items: {
+        Row: {
+          created_at: string
+          id: string
+          kit_id: string
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kit_id: string
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kit_id?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_kit_items_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "product_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_kit_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_kits: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_kits_clinic_id_fkey"
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
@@ -5600,6 +5732,14 @@ export type Database = {
         Args: { p_procedure_id: string }
         Returns: number
       }
+      calculate_procedure_total_cost: {
+        Args: { p_procedure_id: string }
+        Returns: number
+      }
+      calculate_product_kit_cost: {
+        Args: { p_kit_id: string }
+        Returns: number
+      }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
         Returns: Json
@@ -5637,6 +5777,14 @@ export type Database = {
       }
       process_procedure_product_consumption: {
         Args: { p_appointment_id: string }
+        Returns: Json
+      }
+      process_product_kit_consumption: {
+        Args: {
+          p_appointment_id: string
+          p_kit_id: string
+          p_kit_quantity?: number
+        }
         Returns: Json
       }
       user_clinic_id: { Args: { _user_id: string }; Returns: string }

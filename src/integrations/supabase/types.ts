@@ -5001,6 +5001,44 @@ export type Database = {
           },
         ]
       }
+      stock_prediction_settings: {
+        Row: {
+          alert_level: string
+          clinic_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          prediction_days: number
+          updated_at: string
+        }
+        Insert: {
+          alert_level?: string
+          clinic_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          prediction_days?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_level?: string
+          clinic_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          prediction_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_prediction_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_products: {
         Row: {
           avg_cost: number | null
@@ -5739,6 +5777,20 @@ export type Database = {
       calculate_product_kit_cost: {
         Args: { p_kit_id: string }
         Returns: number
+      }
+      calculate_stock_predictions: {
+        Args: { p_clinic_id: string; p_days_ahead?: number }
+        Returns: {
+          current_stock: number
+          first_shortage_date: string
+          impacting_procedures: Json
+          min_stock: number
+          predicted_consumption: number
+          product_id: string
+          product_name: string
+          product_unit: string
+          projected_stock: number
+        }[]
       }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }

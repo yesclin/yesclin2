@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink, User, Syringe, Boxes } from "lucide-react";
+import { Package, Plus, Search, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Edit, ToggleLeft, ToggleRight, History, TrendingDown, Clock, ExternalLink, User, Syringe, Boxes, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SaleDetailsDialog } from "@/components/gestao/SaleDetailsDialog";
 import { ProductKitsTab } from "@/components/estoque/ProductKitsTab";
+import { StockPredictionAlerts } from "@/components/estoque/StockPredictionAlerts";
 
 export default function Estoque() {
   const { categories, products, movements, lowStockProducts, outOfStockProducts, expiringProducts, stats, isLoading } = useStockData();
@@ -168,13 +169,16 @@ export default function Estoque() {
         </Card>
       </div>
 
-      {/* Alerts Section */}
+      {/* Stock Prediction Alerts - Based on Future Agenda */}
+      <StockPredictionAlerts />
+
+      {/* Traditional Alerts Section */}
       {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
         <Card className="border-yellow-200 bg-yellow-50/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              Alertas de Estoque
+              Alertas de Estoque Atual
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">

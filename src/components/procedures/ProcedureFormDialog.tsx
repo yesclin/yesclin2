@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,16 @@ import {
   useCreateProcedure,
   useUpdateProcedure,
 } from "@/hooks/useProceduresCRUD";
+import {
+  useProcedureProductsByProcedure,
+  useCreateProcedureProduct,
+  useDeleteProcedureProduct,
+  useUpdateProcedureProduct,
+} from "@/hooks/useProcedureProductsCRUD";
+import {
+  ProcedureProductsSection,
+  type ProcedureProductItem,
+} from "./ProcedureProductsSection";
 
 const SPECIALTIES = [
   "Clínica Geral",
@@ -58,7 +69,22 @@ export function ProcedureFormDialog({
   const createMutation = useCreateProcedure();
   const updateMutation = useUpdateProcedure();
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  // Products linked to procedure
+  const { data: existingProducts = [] } = useProcedureProductsByProcedure(
+    mode === "edit" && procedure ? procedure.id : null
+  );
+  const createProductMutation = useCreateProcedureProduct();
+  const updateProductMutation = useUpdateProcedureProduct();
+  const deleteProductMutation = useDeleteProcedureProduct();
+
+  const [productItems, setProductItems] = useState<ProcedureProductItem[]>([]);
+
+  const isLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    createProductMutation.isPending ||
+    updateProductMutation.isPending ||
+    deleteProductMutation.isPending;
 
   useEffect(() => {
     if (open) {
@@ -66,21 +92,89 @@ export function ProcedureFormDialog({
         loadProcedure(procedure);
       } else {
         resetForm();
+        setProductItems([]);
       }
     }
   }, [open, mode, procedure]);
+
+  // Sync existing products when editing
+  useEffect(() => {
+    if (mode === "edit" && existingProducts.length > 0) {
+      setProductItems(
+        existingProducts.map((p) => ({
+          product_id: p.product_id,
+          product_name: p.product_name || "",
+          product_unit: p.product_unit || "",
+          quantity: p.quantity,
+        }))
+      );
+    }
+  }, [existingProducts, mode]);
 
   const handleSubmit = async () => {
     if (!isValid) return;
 
     try {
+      let procedureId: string;
+
       if (mode === "edit" && procedure) {
         await updateMutation.mutateAsync({ id: procedure.id, formData });
+        procedureId = procedure.id;
+
+        // Sync products: delete removed, update existing, add new
+        const existingIds = existingProducts.map((p) => p.product_id);
+        const newIds = productItems.map((p) => p.product_id);
+
+        // Delete removed products
+        for (const existing of existingProducts) {
+          if (!newIds.includes(existing.product_id)) {
+            await deleteProductMutation.mutateAsync({
+              id: existing.id,
+              procedureId,
+            });
+          }
+        }
+
+        // Update or add products
+        for (const item of productItems) {
+          const existingItem = existingProducts.find(
+            (p) => p.product_id === item.product_id
+          );
+          if (existingItem) {
+            // Update if quantity changed
+            if (existingItem.quantity !== item.quantity) {
+              await updateProductMutation.mutateAsync({
+                id: existingItem.id,
+                procedureId,
+                formData: { quantity: item.quantity },
+              });
+            }
+          } else {
+            // Add new product
+            await createProductMutation.mutateAsync({
+              procedure_id: procedureId,
+              product_id: item.product_id,
+              quantity: item.quantity,
+            });
+          }
+        }
       } else {
-        await createMutation.mutateAsync(formData);
+        const newProcedure = await createMutation.mutateAsync(formData);
+        procedureId = newProcedure.id;
+
+        // Add all products
+        for (const item of productItems) {
+          await createProductMutation.mutateAsync({
+            procedure_id: procedureId,
+            product_id: item.product_id,
+            quantity: item.quantity,
+          });
+        }
       }
+
       onOpenChange(false);
       resetForm();
+      setProductItems([]);
     } catch (error) {
       // Error handled by mutation
     }
@@ -90,12 +184,13 @@ export function ProcedureFormDialog({
     if (!isLoading) {
       onOpenChange(false);
       resetForm();
+      setProductItems([]);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Editar Procedimento" : "Novo Procedimento"}
@@ -208,6 +303,14 @@ export function ProcedureFormDialog({
               />
             </div>
           )}
+
+          {/* Products/Materials Section */}
+          <Separator className="my-2" />
+          <ProcedureProductsSection
+            items={productItems}
+            onChange={setProductItems}
+            disabled={isLoading}
+          />
         </div>
 
         <DialogFooter>

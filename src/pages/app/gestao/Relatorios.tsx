@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { BarChart3, DollarSign, Calendar, Users, Building2, User, Package, MessageSquare, Briefcase, ShoppingCart, TrendingUp, Receipt } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRelatoriosMockData } from '@/hooks/useRelatoriosMockData';
+import { useReportsRealData } from '@/hooks/useReportsRealData';
 import { useSalesReport } from '@/hooks/useSalesReport';
 import { useSalesReportOptions } from '@/hooks/useSalesReportOptions';
 import { useSalesReportExport } from '@/hooks/useSalesReportExport';
@@ -70,7 +71,7 @@ export default function Relatorios() {
 
   const [activeTab, setActiveTab] = useState('gerencial');
 
-  const data = useRelatoriosMockData(filters);
+  const data = useReportsRealData(filters);
   const salesReport = useSalesReport(salesFilters);
   const marginReport = useProductMarginReport(marginFilters);
   const costReport = useProcedureCostReport(filters);
@@ -111,11 +112,94 @@ export default function Relatorios() {
     });
   };
   const handleExportPDF = () => {
-    toast.success('Exportando relatório em PDF...');
+    const periodStr = `${format(filters.startDate, 'dd/MM/yyyy', { locale: ptBR })} - ${format(filters.endDate, 'dd/MM/yyyy', { locale: ptBR })}`;
+    
+    // Preparar dados para exportação
+    const reportData = {
+      periodo: periodStr,
+      faturamento: data.totals.faturamento,
+      recebido: data.totals.recebido,
+      atendimentos: data.totals.atendimentos,
+      realizados: data.totals.realizados,
+      taxaOcupacao: data.totals.taxaOcupacao,
+    };
+    
+    // Criar conteúdo do relatório
+    const content = `
+RELATÓRIO GERENCIAL - YESCLIN
+Período: ${periodStr}
+Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+
+===== RESUMO FINANCEIRO =====
+Faturamento Total: R$ ${reportData.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Valor Recebido: R$ ${reportData.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+===== ATENDIMENTOS =====
+Total de Atendimentos: ${reportData.atendimentos}
+Realizados: ${reportData.realizados}
+Taxa de Ocupação: ${reportData.taxaOcupacao}%
+
+===== PROFISSIONAIS =====
+${data.professionalPerformance.map(p => `${p.professionalName}: ${p.appointmentsRealized} atendimentos - R$ ${p.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`).join('\n')}
+    `.trim();
+
+    // Criar e baixar arquivo
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-${format(filters.startDate, 'yyyy-MM-dd')}-${format(filters.endDate, 'yyyy-MM-dd')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Relatório exportado com sucesso!');
   };
 
   const handleExportExcel = () => {
-    toast.success('Exportando relatório em Excel...');
+    const periodStr = `${format(filters.startDate, 'dd/MM/yyyy', { locale: ptBR })} - ${format(filters.endDate, 'dd/MM/yyyy', { locale: ptBR })}`;
+    
+    // Criar CSV
+    let csv = 'RELATÓRIO GERENCIAL - YESCLIN\n';
+    csv += `Período:,${periodStr}\n\n`;
+    
+    // Resumo
+    csv += 'RESUMO FINANCEIRO\n';
+    csv += 'Indicador,Valor\n';
+    csv += `Faturamento Total,"R$ ${data.totals.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}"\n`;
+    csv += `Valor Recebido,"R$ ${data.totals.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}"\n`;
+    csv += `Total Atendimentos,${data.totals.atendimentos}\n`;
+    csv += `Realizados,${data.totals.realizados}\n`;
+    csv += `Taxa de Ocupação,${data.totals.taxaOcupacao}%\n\n`;
+    
+    // Profissionais
+    csv += 'DESEMPENHO POR PROFISSIONAL\n';
+    csv += 'Profissional,Especialidade,Atendimentos,Faturamento,Ticket Médio,Ocupação\n';
+    data.professionalPerformance.forEach(p => {
+      csv += `"${p.professionalName}","${p.specialty}",${p.appointmentsRealized},"R$ ${p.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}","R$ ${p.averageTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}",${p.occupancyRate}%\n`;
+    });
+    csv += '\n';
+    
+    // Procedimentos
+    csv += 'FATURAMENTO POR PROCEDIMENTO\n';
+    csv += 'Procedimento,Quantidade,Faturamento,Valor Médio\n';
+    data.revenueByProcedure.forEach(p => {
+      csv += `"${p.procedureName}",${p.quantity},"R$ ${p.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}","R$ ${p.averageValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}"\n`;
+    });
+
+    // Criar e baixar arquivo
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-${format(filters.startDate, 'yyyy-MM-dd')}-${format(filters.endDate, 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Relatório exportado em Excel (CSV)!');
   };
 
   return (

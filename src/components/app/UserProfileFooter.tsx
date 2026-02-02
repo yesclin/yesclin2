@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useClinicUsers";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 type UserRole = "admin" | "owner" | "profissional" | "recepcionista";
 
@@ -46,6 +48,8 @@ export function UserProfileFooter() {
   const navigate = useNavigate();
   const { user, isLoading } = useCurrentUser();
   const { isAdmin } = usePermissions();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   
@@ -87,7 +91,10 @@ export function UserProfileFooter() {
 
   if (isLoading) {
     return (
-      <div className="mt-auto border-t p-3">
+      <div className={cn(
+        "mt-auto border-t transition-all duration-200",
+        isCollapsed ? "p-2 flex justify-center" : "p-3"
+      )}>
         <div className="flex items-center justify-center py-3">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
@@ -103,8 +110,11 @@ export function UserProfileFooter() {
 
   return (
     <>
-      <div className="mt-auto border-t p-3">
-        {isImpersonating && (
+      <div className={cn(
+        "mt-auto border-t transition-all duration-200",
+        isCollapsed ? "p-2" : "p-3"
+      )}>
+        {!isCollapsed && isImpersonating && (
           <div className="mb-2 flex items-center justify-between rounded-md bg-amber-500/10 px-2 py-1.5 text-xs text-amber-600">
             <span className="flex items-center gap-1">
               <ArrowLeftRight className="h-3 w-3" />
@@ -121,9 +131,15 @@ export function UserProfileFooter() {
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <button className={cn(
+              "flex items-center rounded-lg transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
+              isCollapsed ? "w-full justify-center p-1" : "w-full gap-3 p-2 text-left"
+            )}>
               <div className="relative">
-                <Avatar className="h-9 w-9 border-2 border-primary/20">
+                <Avatar className={cn(
+                  "border-2 border-primary/20",
+                  isCollapsed ? "h-8 w-8" : "h-9 w-9"
+                )}>
                   <AvatarImage src={user.avatarUrl || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                     {getInitials(user.name)}
@@ -136,19 +152,23 @@ export function UserProfileFooter() {
                 )}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {user.name}
-                </p>
-                <Badge 
-                  variant="outline" 
-                  className={`text-[10px] px-1.5 py-0 h-4 ${roleColors[user.role]}`}
-                >
-                  {roleLabels[user.role]}
-                </Badge>
-              </div>
-              
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              {!isCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {user.name}
+                    </p>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-[10px] px-1.5 py-0 h-4 ${roleColors[user.role]}`}
+                    >
+                      {roleLabels[user.role]}
+                    </Badge>
+                  </div>
+                  
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                </>
+              )}
             </button>
           </DropdownMenuTrigger>
           

@@ -90,25 +90,30 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border" collapsible="icon">
       <SidebarContent className="bg-sidebar">
         {/* Logo */}
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className={cn(
+          "border-b border-sidebar-border transition-all duration-200",
+          isCollapsed ? "p-2 flex justify-center" : "p-4"
+        )}>
+          <div className={cn(
+            "flex items-center min-w-0",
+            isCollapsed ? "justify-center" : "gap-2"
+          )}>
             <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">Y</span>
             </div>
-            <span className={cn(
-              "font-semibold text-lg text-sidebar-foreground truncate transition-opacity duration-200",
-              isCollapsed && "opacity-0 w-0"
-            )}>
-              Yesclin
-            </span>
+            {!isCollapsed && (
+              <span className="font-semibold text-lg text-sidebar-foreground truncate">
+                Yesclin
+              </span>
+            )}
           </div>
         </div>
 
         {/* Menu Principal */}
         <SidebarGroup>
-          <SidebarGroupLabel className={cn(isCollapsed && "sr-only")}>
-            Menu Principal
-          </SidebarGroupLabel>
+          {!isCollapsed && (
+            <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => (
@@ -116,16 +121,17 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)}
-                    tooltip={item.title}
+                    tooltip={isCollapsed ? item.title : undefined}
                   >
-                    <NavLink to={item.url} className="flex items-center gap-2">
+                    <NavLink 
+                      to={item.url} 
+                      className={cn(
+                        "flex items-center",
+                        isCollapsed ? "justify-center" : "gap-2"
+                      )}
+                    >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span className={cn(
-                        "truncate transition-opacity duration-200",
-                        isCollapsed && "opacity-0 w-0 overflow-hidden"
-                      )}>
-                        {item.title}
-                      </span>
+                      {!isCollapsed && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -136,90 +142,111 @@ export function AppSidebar() {
 
         {/* Gestão */}
         <SidebarGroup data-tour="management">
-          <Collapsible defaultOpen={isGestaoActive || !isCollapsed}>
-            <CollapsibleTrigger className={cn("w-full", isCollapsed && "pointer-events-none")}>
-              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
-                <span className={cn(isCollapsed && "sr-only")}>Gestão</span>
-                <ChevronDown className={cn(
-                  "h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180",
-                  isCollapsed && "hidden"
-                )} />
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {gestaoItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        isActive={isActive(item.url)}
-                        tooltip={item.title}
-                      >
-                        <NavLink to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span className={cn(
-                            "truncate transition-opacity duration-200",
-                            isCollapsed && "opacity-0 w-0 overflow-hidden"
-                          )}>
-                            {item.title}
-                          </span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
+          {isCollapsed ? (
+            // Collapsed: show only icons without grouping
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {gestaoItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink to={item.url} className="flex items-center justify-center">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          ) : (
+            // Expanded: show collapsible group with labels
+            <Collapsible defaultOpen={isGestaoActive}>
+              <CollapsibleTrigger className="w-full">
+                <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
+                  <span>Gestão</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </SidebarGroupLabel>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {gestaoItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={isActive(item.url)}
+                        >
+                          <NavLink to={item.url} className="flex items-center gap-2">
+                            <item.icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </SidebarGroup>
 
         {/* Configurações */}
         <SidebarGroup data-tour="settings">
-          <Collapsible defaultOpen={isConfigActive || !isCollapsed}>
-            <CollapsibleTrigger className={cn("w-full", isCollapsed && "pointer-events-none")}>
-              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Settings className="h-4 w-4 shrink-0" />
-                  <span className={cn(
-                    "truncate transition-opacity duration-200",
-                    isCollapsed && "opacity-0 w-0 overflow-hidden"
-                  )}>
-                    Configurações
-                  </span>
-                </div>
-                <ChevronDown className={cn(
-                  "h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180",
-                  isCollapsed && "hidden"
-                )} />
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {configItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        isActive={isActive(item.url)}
-                        tooltip={item.title}
-                      >
-                        <NavLink to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span className={cn(
-                            "truncate transition-opacity duration-200",
-                            isCollapsed && "opacity-0 w-0 overflow-hidden"
-                          )}>
-                            {item.title}
-                          </span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
+          {isCollapsed ? (
+            // Collapsed: show only icons without grouping
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {configItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink to={item.url} className="flex items-center justify-center">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          ) : (
+            // Expanded: show collapsible group with labels
+            <Collapsible defaultOpen={isConfigActive}>
+              <CollapsibleTrigger className="w-full">
+                <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Settings className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Configurações</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </SidebarGroupLabel>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {configItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={isActive(item.url)}
+                        >
+                          <NavLink to={item.url} className="flex items-center gap-2">
+                            <item.icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </SidebarGroup>
       </SidebarContent>
       

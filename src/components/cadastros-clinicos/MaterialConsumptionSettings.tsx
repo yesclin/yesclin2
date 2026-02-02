@@ -43,9 +43,9 @@ export function MaterialConsumptionSettings() {
   const updateConfigMutation = useUpdateAutoConsumptionConfig();
   const resolveAlertMutation = useResolveStockAlert();
   
-  const { isAdmin, can } = usePermissions();
-  // Permissão para gerenciar configurações de consumo de estoque: requer "estoque" + "edit"
-  const canManage = isAdmin || (can("configuracoes", "edit") && can("estoque", "edit"));
+  const { isOwner, can } = usePermissions();
+  // Permissão para gerenciar configurações de consumo de estoque: owner tem bypass total
+  const canManage = isOwner || (can("configuracoes", "edit") && can("estoque", "edit"));
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {

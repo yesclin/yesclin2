@@ -28,7 +28,7 @@ interface FinancialAccessControl {
  * - Admins (owner/admin) têm acesso completo
  */
 export function useFinancialAccessControl(): FinancialAccessControl {
-  const { can, hasRestriction, isAdmin, isLoading } = usePermissions();
+  const { can, hasRestriction, isOwner, isAdmin, isLoading } = usePermissions();
 
   const access = useMemo(() => {
     // Se está carregando, nega tudo temporariamente
@@ -41,7 +41,17 @@ export function useFinancialAccessControl(): FinancialAccessControl {
       };
     }
 
-    // Admins têm acesso completo
+    // OWNER tem BYPASS TOTAL - acesso irrestrito a todas as métricas financeiras
+    if (isOwner) {
+      return {
+        canViewRevenue: true,
+        canViewCost: true,
+        canViewProfit: true,
+        canViewMargin: true,
+      };
+    }
+
+    // Admins também têm acesso completo
     if (isAdmin) {
       return {
         canViewRevenue: true,
@@ -68,7 +78,7 @@ export function useFinancialAccessControl(): FinancialAccessControl {
       canViewProfit: hasFinanceAccess && !hideCosts,
       canViewMargin: hasFinanceAccess && !hideCosts,
     };
-  }, [can, hasRestriction, isAdmin, isLoading]);
+  }, [can, hasRestriction, isOwner, isAdmin, isLoading]);
 
   const canView = (metric: FinancialMetric): boolean => {
     switch (metric) {

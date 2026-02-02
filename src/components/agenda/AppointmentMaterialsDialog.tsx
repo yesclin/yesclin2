@@ -67,9 +67,9 @@ export function AppointmentMaterialsDialog({
   const { data: autoConsumptionEnabled } = useAutoConsumptionConfig();
   const processMutation = useProcessMaterialConsumption();
   
-  // Permissão para executar procedimentos que consomem estoque
-  const { isAdmin, can } = usePermissions();
-  const canConsumeStock = isAdmin || can("estoque", "edit");
+  // Permissão para executar procedimentos que consomem estoque - owner tem bypass total
+  const { isOwner, can } = usePermissions();
+  const canConsumeStock = isOwner || can("estoque", "edit");
   
   // Whether we should consume stock on confirm
   const shouldConsumeStock = canConsumeStock && autoConsumptionEnabled && materials.length > 0;

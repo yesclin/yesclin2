@@ -45,9 +45,9 @@ export function MaterialsTab() {
 
   const { data: materials = [], isLoading, error } = useMaterialsList(true);
   const toggleStatusMutation = useToggleMaterialStatus();
-  const { isAdmin, can } = usePermissions();
+  const { isOwner, can } = usePermissions();
 
-  const canManage = isAdmin || can("configuracoes", "edit");
+  const canManage = isOwner || can("configuracoes", "edit");
 
   const filteredMaterials = materials.filter((mat) =>
     mat.name.toLowerCase().includes(search.toLowerCase()) ||

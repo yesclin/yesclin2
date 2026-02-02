@@ -10,11 +10,11 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGate } from "@/components/permissions/PermissionGate";
 
 export default function ConfigMateriais() {
-  const { isAdmin, can, isLoading } = usePermissions();
-  // Permissão para visualizar a página: requer "configuracoes" + "view" e "estoque" + "view"
-  const canView = isAdmin || (can("configuracoes", "view") && can("estoque", "view"));
-  // Permissão para gerenciar: requer "configuracoes" + "edit" e "estoque" + "edit"
-  const canManage = isAdmin || (can("configuracoes", "edit") && can("estoque", "edit"));
+  const { isOwner, can, isLoading } = usePermissions();
+  // Permissão para visualizar a página: owner tem bypass total
+  const canView = isOwner || (can("configuracoes", "view") && can("estoque", "view"));
+  // Permissão para gerenciar: owner tem bypass total
+  const canManage = isOwner || (can("configuracoes", "edit") && can("estoque", "edit"));
 
   if (isLoading) {
     return (

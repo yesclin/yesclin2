@@ -42,7 +42,7 @@ export default function ConfigClinica() {
   const [clinicId, setClinicId] = useState<string | null>(null);
   const [isFiscalValid, setIsFiscalValid] = useState(true);
   const { toast } = useToast();
-  const { isAdmin } = usePermissions();
+  const { isOwner } = usePermissions();
 
   const [formData, setFormData] = useState<ClinicFormData>({
     name: "",
@@ -275,10 +275,10 @@ export default function ConfigClinica() {
       formData.cpf !== originalFiscalData.cpf ||
       formData.cnpj !== originalFiscalData.cnpj;
 
-    if (fiscalChanged && !isAdmin && originalFiscalData.fiscal_type !== "") {
+    if (fiscalChanged && !isOwner && originalFiscalData.fiscal_type !== "") {
       toast({
         title: "Permissão negada",
-        description: "Apenas administradores podem alterar dados fiscais.",
+        description: "Apenas o proprietário pode alterar dados fiscais.",
         variant: "destructive",
       });
       return;
@@ -308,7 +308,7 @@ export default function ConfigClinica() {
     };
 
     // Only include fiscal data if admin or first time setting
-    if (isAdmin || originalFiscalData.fiscal_type === "") {
+    if (isOwner || originalFiscalData.fiscal_type === "") {
       updateData.fiscal_type = formData.fiscal_type || null;
       updateData.cpf = formData.fiscal_type === "pf" ? formData.cpf : null;
       updateData.cnpj = formData.fiscal_type === "pj" ? formData.cnpj : null;
@@ -345,7 +345,7 @@ export default function ConfigClinica() {
     }
 
     // Update original fiscal data after successful save
-    if (isAdmin || originalFiscalData.fiscal_type === "") {
+    if (isOwner || originalFiscalData.fiscal_type === "") {
       setOriginalFiscalData({
         fiscal_type: formData.fiscal_type,
         cpf: formData.cpf,
@@ -370,7 +370,7 @@ export default function ConfigClinica() {
   }
 
   const hasFiscalData = originalFiscalData.fiscal_type !== "";
-  const canEditFiscal = isAdmin || !hasFiscalData;
+  const canEditFiscal = isOwner || !hasFiscalData;
 
   return (
     <div className="space-y-6">
@@ -458,7 +458,7 @@ export default function ConfigClinica() {
         onAddressChange={handleAddressChange}
         schedule={formData.schedule}
         onScheduleChange={(schedule) => setFormData({ ...formData, schedule })}
-        canEdit={isAdmin}
+        canEdit={isOwner}
       />
 
       <div className="flex justify-end">

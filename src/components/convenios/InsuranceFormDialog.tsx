@@ -20,9 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 import type { Insurance, TissGuideType } from "@/types/convenios";
 import { guideTypeLabels, feeTypeLabels } from "@/types/convenios";
 import { toast } from "sonner";
+import { useCreateInsurance, useUpdateInsurance } from "@/hooks/useConveniosData";
 
 interface InsuranceFormDialogProps {
   open: boolean;
@@ -33,6 +35,10 @@ interface InsuranceFormDialogProps {
 const guideTypes: TissGuideType[] = ['consulta', 'sp_sadt', 'internacao', 'honorarios', 'outras_despesas'];
 
 export function InsuranceFormDialog({ open, onOpenChange, insurance }: InsuranceFormDialogProps) {
+  const createInsurance = useCreateInsurance();
+  const updateInsurance = useUpdateInsurance();
+  const isSubmitting = createInsurance.isPending || updateInsurance.isPending;
+  
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -48,6 +54,7 @@ export function InsuranceFormDialog({ open, onOpenChange, insurance }: Insurance
     default_fee_value: 50,
     default_payment_deadline_days: 30,
     notes: '',
+    is_active: true,
   });
 
   useEffect(() => {
@@ -60,13 +67,14 @@ export function InsuranceFormDialog({ open, onOpenChange, insurance }: Insurance
         contact_phone: insurance.contact_phone || '',
         contact_email: insurance.contact_email || '',
         requires_authorization: insurance.requires_authorization || false,
-        return_allowed: insurance.return_allowed || true,
+        return_allowed: insurance.return_allowed ?? true,
         return_days: insurance.return_days || 30,
         allowed_guide_types: insurance.allowed_guide_types || ['consulta', 'sp_sadt'],
         default_fee_type: insurance.default_fee_type || 'percentage',
         default_fee_value: insurance.default_fee_value || 50,
         default_payment_deadline_days: insurance.default_payment_deadline_days || 30,
         notes: insurance.notes || '',
+        is_active: insurance.is_active ?? true,
       });
     } else {
       setFormData({
@@ -84,6 +92,7 @@ export function InsuranceFormDialog({ open, onOpenChange, insurance }: Insurance
         default_fee_value: 50,
         default_payment_deadline_days: 30,
         notes: '',
+        is_active: true,
       });
     }
   }, [insurance, open]);
@@ -97,15 +106,22 @@ export function InsuranceFormDialog({ open, onOpenChange, insurance }: Insurance
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error('Nome do convênio é obrigatório');
       return;
     }
     
-    // TODO: Implement save logic with Supabase
-    toast.success(insurance ? 'Convênio atualizado!' : 'Convênio cadastrado!');
-    onOpenChange(false);
+    try {
+      if (insurance) {
+        await updateInsurance.mutateAsync({ id: insurance.id, formData });
+      } else {
+        await createInsurance.mutateAsync(formData);
+      }
+      onOpenChange(false);
+    } catch (error) {
+      // Error handling is done in the mutation
+    }
   };
 
   return (
@@ -301,10 +317,11 @@ export function InsuranceFormDialog({ open, onOpenChange, insurance }: Insurance
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {insurance ? 'Salvar Alterações' : 'Cadastrar'}
           </Button>
         </DialogFooter>

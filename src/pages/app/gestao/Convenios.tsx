@@ -1,6 +1,6 @@
 import { Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useConveniosFullData } from "@/hooks/useConveniosMockData";
+import { useConveniosFullData } from "@/hooks/useConveniosData";
 import { ConveniosStats } from "@/components/convenios/ConveniosStats";
 import { InsuranceList } from "@/components/convenios/InsuranceList";
 import { PatientInsuranceList } from "@/components/convenios/PatientInsuranceList";
@@ -9,6 +9,7 @@ import { AuthorizationList } from "@/components/convenios/AuthorizationList";
 import { InsuranceProceduresList } from "@/components/convenios/InsuranceProceduresList";
 import { FeeRulesList } from "@/components/convenios/FeeRulesList";
 import { FeeCalculationList } from "@/components/convenios/FeeCalculationList";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Convenios() {
   const {
@@ -23,7 +24,30 @@ export default function Convenios() {
     financialSummary,
     patients,
     professionals,
+    isLoading,
   } = useConveniosFullData();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary" />
+            Convênios
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Carregando dados...
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

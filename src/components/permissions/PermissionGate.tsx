@@ -26,10 +26,15 @@ export function PermissionGate({
   fallback,
   showBlocked = false,
 }: PermissionGateProps) {
-  const { can, isLoading } = usePermissions();
+  const { can, isLoading, isOwner } = usePermissions();
 
   if (isLoading) {
     return null;
+  }
+
+  // Owner bypasses all gates
+  if (isOwner) {
+    return <>{children}</>;
   }
 
   if (!can(module, action)) {

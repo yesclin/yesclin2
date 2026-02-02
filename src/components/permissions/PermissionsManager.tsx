@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Save, Users, RotateCcw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Shield, Save, Users, RotateCcw, ShieldX, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AppModule, AppAction } from "@/hooks/usePermissions";
+import { AppModule, AppAction, usePermissions } from "@/hooks/usePermissions";
 
 interface User {
   id: string;
@@ -151,6 +152,9 @@ export function PermissionsManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  
+  // Only OWNER can manage permissions
+  const { isOwner, canManageUsers } = usePermissions();
 
   // Load users
   useEffect(() => {
@@ -246,6 +250,8 @@ export function PermissionsManager() {
 
   const selectedUser = users.find(u => u.user_id === selectedUserId);
   const isOwnerOrAdmin = selectedUser && ["owner", "admin"].includes(selectedUser.role);
+  // Only owner can edit, and cannot edit owner users
+  const canEdit = canManageUsers && selectedUser && selectedUser.role !== "owner";
 
   const toggleAction = (module: AppModule, action: AppAction) => {
     setPermissions(prev => {
@@ -321,7 +327,19 @@ export function PermissionsManager() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* User selector */}
+        {/* Access Denied for non-owners */}
+        {!canManageUsers && (
+          <Alert variant="destructive">
+            <ShieldX className="h-4 w-4" />
+            <AlertDescription>
+              Apenas o proprietário do sistema pode gerenciar permissões de usuários.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {canManageUsers && (
+          <>
+            {/* User selector */}
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Label>Selecione o usuário</Label>
@@ -349,18 +367,29 @@ export function PermissionsManager() {
           </div>
         </div>
 
-        {selectedUser && (
-          <>
-            <Separator />
+            {selectedUser && (
+              <>
+                <Separator />
 
-            {isOwnerOrAdmin && (
-              <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
-                <p className="text-sm text-warning-foreground">
-                  <strong>Nota:</strong> Usuários com perfil {roleLabels[selectedUser.role]} têm acesso 
-                  total ao sistema por padrão.
-                </p>
-              </div>
-            )}
+                {selectedUser.role === "owner" && (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-600" />
+                      <p className="text-sm text-amber-700 font-medium">
+                        O proprietário tem acesso total e irrestrito ao sistema. Suas permissões não podem ser alteradas.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isOwnerOrAdmin && selectedUser.role !== "owner" && (
+                  <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
+                    <p className="text-sm text-warning-foreground">
+                      <strong>Nota:</strong> Usuários com perfil {roleLabels[selectedUser.role]} têm acesso 
+                      elevado ao sistema por padrão.
+                    </p>
+                  </div>
+                )}
 
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -389,7 +418,7 @@ export function PermissionsManager() {
                               id={`${config.module}-${action}`}
                               checked={modulePerms.includes(action)}
                               onCheckedChange={() => toggleAction(config.module, action)}
-                              disabled={isOwnerOrAdmin}
+                              disabled={!canEdit}
                             />
                             <Label
                               htmlFor={`${config.module}-${action}`}
@@ -406,18 +435,20 @@ export function PermissionsManager() {
               </div>
             )}
 
-            <Separator />
+                <Separator />
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={resetToDefault} disabled={isOwnerOrAdmin}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Restaurar Padrão
-              </Button>
-              <Button onClick={savePermissions} disabled={isSaving || isOwnerOrAdmin}>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Salvando..." : "Salvar Permissões"}
-              </Button>
-            </div>
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={resetToDefault} disabled={!canEdit}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Restaurar Padrão
+                  </Button>
+                  <Button onClick={savePermissions} disabled={isSaving || !canEdit}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSaving ? "Salvando..." : "Salvar Permissões"}
+                  </Button>
+                </div>
+              </>
+            )}
           </>
         )}
       </CardContent>

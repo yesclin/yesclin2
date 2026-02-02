@@ -27,6 +27,7 @@ export interface PermissionsState {
   role: string | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isOwner: boolean;
 }
 
 interface PermissionsContextType extends PermissionsState {
@@ -35,6 +36,7 @@ interface PermissionsContextType extends PermissionsState {
   hasRestriction: (module: AppModule, restriction: string) => boolean;
   getModulePermissions: (module: AppModule) => ModulePermission | null;
   refetch: () => Promise<void>;
+  canManageUsers: boolean;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | null>(null);
@@ -46,13 +48,14 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     role: null,
     isLoading: true,
     isAdmin: false,
+    isOwner: false,
   });
 
   const fetchPermissions = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setState({ permissions: [], role: null, isLoading: false, isAdmin: false });
+        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
         return;
       }
 
@@ -64,11 +67,14 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (!roleData) {
-        setState({ permissions: [], role: null, isLoading: false, isAdmin: false });
+        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
         return;
       }
 
       const role = roleData.role;
+      // Owner has TOTAL BYPASS - highest privilege level
+      const isOwner = role === "owner";
+      // Admin has elevated privileges but can still be restricted
       const isAdmin = ["owner", "admin"].includes(role);
 
       // Get permissions using the database function
@@ -89,7 +95,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
           restrictions: (t.restrictions || {}) as Record<string, boolean>,
         }));
 
-        setState({ permissions, role, isLoading: false, isAdmin });
+        setState({ permissions, role, isLoading: false, isAdmin, isOwner });
         return;
       }
 
@@ -99,10 +105,10 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         restrictions: (p.restrictions || {}) as Record<string, boolean>,
       }));
 
-      setState({ permissions, role, isLoading: false, isAdmin });
+      setState({ permissions, role, isLoading: false, isAdmin, isOwner });
     } catch (error) {
       console.error("Error in fetchPermissions:", error);
-      setState({ permissions: [], role: null, isLoading: false, isAdmin: false });
+      setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
     }
   }, []);
 
@@ -118,15 +124,18 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   }, [fetchPermissions]);
 
   // Check if user can perform action on module
+  // OWNER ALWAYS BYPASSES ALL PERMISSION CHECKS
   const can = useCallback((module: AppModule, action: AppAction = "view"): boolean => {
     // If still loading, deny access (avoid optimistic UI that could reveal privileged UI)
     if (state.isLoading) return false;
     
-    // Admin has full access
+    // OWNER has TOTAL BYPASS - ignores all permission checks
+    if (state.isOwner) return true;
+    
+    // Admin has full access (but can be restricted in future if needed)
     if (state.isAdmin) return true;
     
     // If no permissions loaded (no user or no role), deny by default
-    // Access control must be enforced server-side, and UI should not assume access.
     if (state.permissions.length === 0) return false;
     
     const perm = state.permissions.find(p => p.module === module);
@@ -136,7 +145,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     if (perm.restrictions?.blocked) return false;
     
     return perm.actions.includes(action);
-  }, [state.permissions, state.isAdmin, state.isLoading]);
+  }, [state.permissions, state.isAdmin, state.isOwner, state.isLoading]);
 
   // Check if user can perform any of the given actions
   const canAny = useCallback((module: AppModule, actions: AppAction[]): boolean => {
@@ -145,14 +154,19 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // Check if user has a specific restriction
   const hasRestriction = useCallback((module: AppModule, restriction: string): boolean => {
+    // Owner bypasses all restrictions
+    if (state.isOwner) return false;
     const perm = state.permissions.find(p => p.module === module);
     return perm?.restrictions?.[restriction] ?? false;
-  }, [state.permissions]);
+  }, [state.permissions, state.isOwner]);
 
   // Get full permissions for a module
   const getModulePermissions = useCallback((module: AppModule): ModulePermission | null => {
     return state.permissions.find(p => p.module === module) || null;
   }, [state.permissions]);
+
+  // Only OWNER can manage users and permissions
+  const canManageUsers = state.isOwner;
 
   const value: PermissionsContextType = {
     ...state,
@@ -161,6 +175,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     hasRestriction,
     getModulePermissions,
     refetch: fetchPermissions,
+    canManageUsers,
   };
 
   return (

@@ -23,7 +23,7 @@ export interface SalePermissionResult {
  * Respects LGPD rules and role-based permissions
  */
 export function useSalePermissions(patientId: string | null): SalePermissionResult {
-  const { can, isAdmin, isLoading: permissionsLoading } = usePermissions();
+  const { can, isOwner, isLoading: permissionsLoading } = usePermissions();
   const lgpdEnforcement = useLgpdEnforcement(patientId);
 
   // Log denied permission attempts to audit
@@ -59,8 +59,8 @@ export function useSalePermissions(patientId: string | null): SalePermissionResu
     const canCreateLinkedSale = canCreateSale && canAccessPacientes;
     
     // For canceling sales, user must have delete permission on financeiro module
-    // Only admins and users with explicit delete permission can cancel
-    const canCancelSale = canDeleteFinanceiro || isAdmin;
+    // Owner has full bypass for canceling sales
+    const canCancelSale = canDeleteFinanceiro || isOwner;
 
     // LGPD status
     const lgpdStatus = {
@@ -99,7 +99,7 @@ export function useSalePermissions(patientId: string | null): SalePermissionResu
     };
   }, [
     can,
-    isAdmin,
+    isOwner,
     permissionsLoading,
     patientId,
     lgpdEnforcement.hasValidConsent,

@@ -94,9 +94,9 @@ export function ProcedureMaterialsTab() {
   const { formData: materialForm, updateField: updateMaterialField, resetForm: resetMaterialForm, isValid: isMaterialValid } = useProcedureMaterialForm();
   const { formData: kitForm, updateField: updateKitField, resetForm: resetKitForm, isValid: isKitValid } = useProcedureKitForm();
   
-  const { isAdmin, can } = usePermissions();
-  // Permissão para configurar produtos nos procedimentos: requer "estoque" + "edit" 
-  const canManage = isAdmin || (can("configuracoes", "edit") && can("estoque", "edit"));
+  const { isOwner, can } = usePermissions();
+  // Permissão para configurar produtos nos procedimentos: owner tem bypass total
+  const canManage = isOwner || (can("configuracoes", "edit") && can("estoque", "edit"));
 
   const isLoading = loadingMaterials || loadingKits || loadingCosts;
 

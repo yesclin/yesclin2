@@ -111,7 +111,8 @@ export function AppointmentDialog({
   
   // RBAC
   // NOTE: UI-only gating. All data operations must still be protected server-side.
-  const { isAdmin } = usePermissions();
+  const { isOwner, isAdmin } = usePermissions();
+  const canOverrideConflicts = isOwner || isAdmin;
   
   // Fetch procedures from database
   const { data: procedures = [], isLoading: proceduresLoading } = useProceduresList(false);
@@ -232,14 +233,14 @@ export function AppointmentDialog({
       return;
     }
     
-    // Check for warning conflicts - show confirmation for admin
-    if (conflictResult.hasWarningConflict && isAdmin) {
+    // Check for warning conflicts - show confirmation for admins/owners
+    if (conflictResult.hasWarningConflict && canOverrideConflicts) {
       setShowConflictConfirm(true);
       return;
     }
     
-    // Warning conflicts for non-admin - block
-    if (conflictResult.hasWarningConflict && !isAdmin) {
+    // Warning conflicts for non-admin/owner - block
+    if (conflictResult.hasWarningConflict && !canOverrideConflicts) {
       toast.error("Conflito de horário detectado. Ajuste o horário ou solicite a um administrador.");
       return;
     }
@@ -725,7 +726,7 @@ export function AppointmentDialog({
                   conflictResult.hasWarningConflict && !conflictResult.hasCriticalConflict && "bg-amber-600 hover:bg-amber-700"
                 )}
               >
-                {conflictResult.hasWarningConflict && !conflictResult.hasCriticalConflict && isAdmin
+                {conflictResult.hasWarningConflict && !conflictResult.hasCriticalConflict && canOverrideConflicts
                   ? 'Confirmar com Conflito'
                   : mode === 'create' ? 'Criar Agendamento' :
                     mode === 'fitIn' ? 'Criar Encaixe' :

@@ -87,8 +87,8 @@ export function MaterialKitsTab() {
   const { formData: kitFormData, updateField: updateKitField, resetForm: resetKitForm, loadKit, isValid: isKitValid } = useMaterialKitForm();
   const { formData: itemFormData, updateField: updateItemField, resetForm: resetItemForm, isValid: isItemValid } = useMaterialKitItemForm();
   
-  const { isAdmin, can } = usePermissions();
-  const canManage = isAdmin || can("configuracoes", "edit");
+  const { isOwner, can } = usePermissions();
+  const canManage = isOwner || can("configuracoes", "edit");
 
   const filteredKits = kits.filter((kit) =>
     kit.name.toLowerCase().includes(search.toLowerCase()) ||

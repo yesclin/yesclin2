@@ -95,6 +95,8 @@ export default function ConfigUsuarios() {
     maxUsers, 
     canCreateUser,
     isAdmin,
+    isOwner,
+    canManageUsers,
     toggleUserStatus,
     refetch,
   } = useClinicUsers();
@@ -227,7 +229,7 @@ export default function ConfigUsuarios() {
                   <div>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button disabled={!canCreateUser || !isAdmin}>
+                        <Button disabled={!canCreateUser || !canManageUsers}>
                           <Plus className="h-4 w-4 mr-2" />
                           Novo Usuário
                         </Button>
@@ -330,12 +332,12 @@ export default function ConfigUsuarios() {
                     </Dialog>
                   </div>
                 </TooltipTrigger>
-                {!isAdmin && (
+                {!canManageUsers && (
                   <TooltipContent>
-                    <p>Apenas administradores podem criar usuários</p>
+                    <p>Apenas o proprietário pode criar usuários</p>
                   </TooltipContent>
                 )}
-                {!canCreateUser && isAdmin && (
+                {!canCreateUser && canManageUsers && (
                   <TooltipContent>
                     <p>Limite de {maxUsers} usuários ativos atingido</p>
                   </TooltipContent>
@@ -531,10 +533,10 @@ export default function ConfigUsuarios() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    disabled={!isAdmin}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      disabled={!canManageUsers}
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -546,10 +548,10 @@ export default function ConfigUsuarios() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    disabled={!isAdmin}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      disabled={!canManageUsers}
                                   >
                                     <RotateCcw className="h-4 w-4" />
                                   </Button>
@@ -566,7 +568,7 @@ export default function ConfigUsuarios() {
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={() => handleToggleStatus(user.user_id)}
-                                      disabled={!isAdmin}
+                                      disabled={!canManageUsers}
                                     >
                                       {user.is_active ? (
                                         <ToggleRight className="h-4 w-4 text-primary" />
@@ -606,17 +608,17 @@ export default function ConfigUsuarios() {
             </CardContent>
           </Card>
 
-          {/* Admin info card */}
-          {currentUser && isAdmin && (
+          {/* Owner info card */}
+          {currentUser && isOwner && (
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
                   <Crown className="h-5 w-5 text-amber-500 mt-0.5" />
                   <div>
-                    <h4 className="font-medium">Você é o Administrador</h4>
+                    <h4 className="font-medium">Você é o Proprietário</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Como {roleLabels[currentUser.role]}, você tem acesso total ao sistema e pode gerenciar 
-                      todos os usuários e permissões da clínica.
+                      Como proprietário, você tem controle total do sistema e pode gerenciar 
+                      todos os usuários e permissões da clínica. Este perfil não pode ser alterado ou desativado.
                     </p>
                   </div>
                 </div>

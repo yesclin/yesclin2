@@ -25,11 +25,14 @@ export interface CreateUserData {
 const MAX_USERS_PER_CLINIC = 3;
 
 const ROLE_PRIORITY: Record<ClinicUser["role"], number> = {
-  owner: 3,
+  owner: 4, // Owner has highest priority and full bypass
   admin: 2,
   profissional: 1,
   recepcionista: 1,
 };
+
+// Owner protection: owner can never be deactivated, deleted, or demoted
+const isProtectedOwner = (user: ClinicUser) => user.role === "owner";
 
 export function useClinicUsers() {
   const [users, setUsers] = useState<ClinicUser[]>([]);
@@ -165,7 +168,11 @@ export function useClinicUsers() {
 
   const activeUsersCount = users.filter(u => u.is_active).length;
   const canCreateUser = activeUsersCount < MAX_USERS_PER_CLINIC;
+  // Only OWNER can manage users (not admin)
+  const isOwner = currentUser?.role === "owner";
   const isAdmin = !!currentUser?.role && (ROLE_PRIORITY[currentUser.role] >= ROLE_PRIORITY.admin);
+  // Only owner can manage users
+  const canManageUsers = isOwner;
 
   const logAuditAction = useCallback(async (
     action: string,
@@ -193,13 +200,20 @@ export function useClinicUsers() {
   }, [clinicId]);
 
   const toggleUserStatus = useCallback(async (userId: string) => {
-    if (!isAdmin) {
-      toast.error("Apenas administradores podem alterar status de usuários");
+    // Only OWNER can toggle user status
+    if (!canManageUsers) {
+      toast.error("Apenas o proprietário pode alterar status de usuários");
       return false;
     }
 
     const user = users.find(u => u.user_id === userId);
     if (!user) return false;
+
+    // OWNER PROTECTION: owner can never be deactivated
+    if (isProtectedOwner(user)) {
+      toast.error("O proprietário do sistema não pode ser desativado");
+      return false;
+    }
 
     if (user.is_primary_admin) {
       toast.error("O administrador principal não pode ser desativado");
@@ -238,16 +252,29 @@ export function useClinicUsers() {
       toast.error("Erro ao alterar status do usuário");
       return false;
     }
-  }, [isAdmin, users, activeUsersCount, fetchUsers, logAuditAction]);
+  }, [canManageUsers, users, activeUsersCount, fetchUsers, logAuditAction]);
 
   const updateUserRole = useCallback(async (userId: string, newRole: ClinicUser["role"]) => {
-    if (!isAdmin || !clinicId) {
-      toast.error("Apenas administradores podem alterar perfis");
+    // Only OWNER can change roles
+    if (!canManageUsers || !clinicId) {
+      toast.error("Apenas o proprietário pode alterar perfis de usuários");
       return false;
     }
 
     const user = users.find(u => u.user_id === userId);
     if (!user) return false;
+
+    // OWNER PROTECTION: owner can never be demoted
+    if (isProtectedOwner(user)) {
+      toast.error("O proprietário do sistema não pode ter seu perfil alterado");
+      return false;
+    }
+
+    // Cannot promote anyone to owner (owner role is immutable)
+    if (newRole as string === "owner") {
+      toast.error("Não é possível promover usuários a proprietário");
+      return false;
+    }
 
     if (user.is_primary_admin && newRole !== "owner" && newRole !== "admin") {
       toast.error("O administrador principal deve manter perfil de administrador");
@@ -281,7 +308,7 @@ export function useClinicUsers() {
       toast.error("Erro ao atualizar perfil");
       return false;
     }
-  }, [isAdmin, clinicId, users, fetchUsers, logAuditAction]);
+  }, [canManageUsers, clinicId, users, fetchUsers, logAuditAction]);
 
   return {
     users,
@@ -294,6 +321,8 @@ export function useClinicUsers() {
     maxUsers: MAX_USERS_PER_CLINIC,
     canCreateUser,
     isAdmin,
+    isOwner,
+    canManageUsers,
     toggleUserStatus,
     updateUserRole,
   };

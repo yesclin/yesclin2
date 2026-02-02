@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Plus, Search, Edit, ToggleLeft, ToggleRight, Settings, FileText } from "lucide-react";
+import { Building2, Plus, Search, Edit, ToggleLeft, ToggleRight, Settings, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { InsuranceFormDialog } from "./InsuranceFormDialog";
 import type { Insurance } from "@/types/convenios";
 import { guideTypeLabels, type TissGuideType } from "@/types/convenios";
+import { useToggleInsuranceStatus } from "@/hooks/useConveniosData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InsuranceListProps {
   insurances: Insurance[];
@@ -25,6 +36,9 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
   const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedInsurance, setSelectedInsurance] = useState<Insurance | null>(null);
+  const [insuranceToToggle, setInsuranceToToggle] = useState<Insurance | null>(null);
+  
+  const toggleStatus = useToggleInsuranceStatus();
 
   const filteredInsurances = insurances.filter((insurance) =>
     insurance.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -40,6 +54,20 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
   const handleNew = () => {
     setSelectedInsurance(null);
     setIsDialogOpen(true);
+  };
+
+  const handleToggleStatus = (insurance: Insurance) => {
+    setInsuranceToToggle(insurance);
+  };
+
+  const confirmToggleStatus = () => {
+    if (insuranceToToggle) {
+      toggleStatus.mutate({ 
+        id: insuranceToToggle.id, 
+        is_active: !insuranceToToggle.is_active 
+      });
+      setInsuranceToToggle(null);
+    }
   };
 
   return (
@@ -81,7 +109,9 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
               {filteredInsurances.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                    Nenhum convênio encontrado
+                    {insurances.length === 0 
+                      ? "Nenhum convênio cadastrado. Clique em 'Novo Convênio' para começar."
+                      : "Nenhum convênio encontrado com os filtros aplicados."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -143,6 +173,7 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
                             e.stopPropagation();
                             handleEdit(insurance);
                           }}
+                          title="Editar"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -151,10 +182,18 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onSelectInsurance?.(insurance);
+                            handleToggleStatus(insurance);
                           }}
+                          title={insurance.is_active ? "Desativar" : "Ativar"}
+                          disabled={toggleStatus.isPending}
                         >
-                          <Settings className="h-4 w-4" />
+                          {toggleStatus.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : insurance.is_active ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -171,6 +210,27 @@ export function InsuranceList({ insurances, onSelectInsurance }: InsuranceListPr
         onOpenChange={setIsDialogOpen}
         insurance={selectedInsurance}
       />
+
+      <AlertDialog open={!!insuranceToToggle} onOpenChange={() => setInsuranceToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {insuranceToToggle?.is_active ? 'Desativar Convênio' : 'Ativar Convênio'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {insuranceToToggle?.is_active 
+                ? `Deseja desativar o convênio "${insuranceToToggle?.name}"? Ele não aparecerá mais nas listagens ativas.`
+                : `Deseja reativar o convênio "${insuranceToToggle?.name}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggleStatus}>
+              {insuranceToToggle?.is_active ? 'Desativar' : 'Ativar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

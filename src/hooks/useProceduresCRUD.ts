@@ -80,6 +80,22 @@ async function getUserClinicId(): Promise<string> {
   throw new Error("Clínica não encontrada. Complete o onboarding primeiro.");
 }
 
+// Check if procedure name already exists in clinic
+async function checkDuplicateName(name: string, clinicId: string, excludeId?: string): Promise<boolean> {
+  let query = supabase
+    .from("procedures")
+    .select("id")
+    .eq("clinic_id", clinicId)
+    .ilike("name", name.trim());
+  
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+  
+  const { data } = await query;
+  return (data?.length || 0) > 0;
+}
+
 // Create procedure mutation
 export function useCreateProcedure() {
   const queryClient = useQueryClient();
@@ -88,11 +104,27 @@ export function useCreateProcedure() {
     mutationFn: async (formData: ProcedureFormData) => {
       const clinicId = await getUserClinicId();
       
+      // Validate: check for duplicate name
+      const isDuplicate = await checkDuplicateName(formData.name, clinicId);
+      if (isDuplicate) {
+        throw new Error("Já existe um procedimento com este nome.");
+      }
+      
+      // Validate: price cannot be negative
+      if (formData.price !== undefined && formData.price < 0) {
+        throw new Error("O valor do procedimento não pode ser negativo.");
+      }
+      
+      // Validate: duration must be at least 5 minutes
+      if (formData.duration_minutes < 5) {
+        throw new Error("A duração mínima é de 5 minutos.");
+      }
+      
       const { data, error } = await supabase
         .from("procedures")
         .insert({
           clinic_id: clinicId,
-          name: formData.name,
+          name: formData.name.trim(),
           specialty: formData.specialty || null,
           description: formData.description || null,
           duration_minutes: formData.duration_minutes,
@@ -112,9 +144,9 @@ export function useCreateProcedure() {
       queryClient.invalidateQueries({ queryKey: ["procedures"] });
       toast.success("Procedimento criado com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error creating procedure:", error);
-      toast.error("Erro ao criar procedimento. Tente novamente.");
+      toast.error(error.message || "Erro ao criar procedimento. Tente novamente.");
     },
   });
 }
@@ -125,10 +157,29 @@ export function useUpdateProcedure() {
   
   return useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: ProcedureFormData }) => {
+      // Get clinic ID for duplicate check
+      const clinicId = await getUserClinicId();
+      
+      // Validate: check for duplicate name (excluding current procedure)
+      const isDuplicate = await checkDuplicateName(formData.name, clinicId, id);
+      if (isDuplicate) {
+        throw new Error("Já existe um procedimento com este nome.");
+      }
+      
+      // Validate: price cannot be negative
+      if (formData.price !== undefined && formData.price < 0) {
+        throw new Error("O valor do procedimento não pode ser negativo.");
+      }
+      
+      // Validate: duration must be at least 5 minutes
+      if (formData.duration_minutes < 5) {
+        throw new Error("A duração mínima é de 5 minutos.");
+      }
+      
       const { data, error } = await supabase
         .from("procedures")
         .update({
-          name: formData.name,
+          name: formData.name.trim(),
           specialty: formData.specialty || null,
           description: formData.description || null,
           duration_minutes: formData.duration_minutes,
@@ -149,10 +200,40 @@ export function useUpdateProcedure() {
       queryClient.invalidateQueries({ queryKey: ["procedures"] });
       toast.success("Procedimento atualizado com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error updating procedure:", error);
-      toast.error("Erro ao atualizar procedimento. Tente novamente.");
+      toast.error(error.message || "Erro ao atualizar procedimento. Tente novamente.");
     },
+  });
+}
+
+// Check if procedure is used in appointments
+export async function checkProcedureUsage(procedureId: string): Promise<{ 
+  isUsed: boolean; 
+  count: number 
+}> {
+  const { count, error } = await supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("procedure_id", procedureId);
+  
+  if (error) {
+    console.error("Error checking procedure usage:", error);
+    return { isUsed: false, count: 0 };
+  }
+  
+  return { isUsed: (count || 0) > 0, count: count || 0 };
+}
+
+// Hook to get procedure usage
+export function useProcedureUsage(procedureId: string | null) {
+  return useQuery({
+    queryKey: ["procedure-usage", procedureId],
+    queryFn: async () => {
+      if (!procedureId) return { isUsed: false, count: 0 };
+      return checkProcedureUsage(procedureId);
+    },
+    enabled: !!procedureId,
   });
 }
 

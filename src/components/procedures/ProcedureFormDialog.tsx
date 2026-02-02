@@ -157,10 +157,11 @@ export function ProcedureFormDialog({
                 id="duration"
                 type="number"
                 value={formData.duration_minutes}
-                onChange={(e) => updateField("duration_minutes", parseInt(e.target.value) || 30)}
+                onChange={(e) => updateField("duration_minutes", Math.max(5, parseInt(e.target.value) || 5))}
                 min={5}
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">Mínimo: 5 minutos</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="price">Valor (R$)</Label>
@@ -168,9 +169,13 @@ export function ProcedureFormDialog({
                 id="price"
                 type="number"
                 step="0.01"
+                min={0}
                 placeholder="0,00"
                 value={formData.price || ""}
-                onChange={(e) => updateField("price", parseFloat(e.target.value) || undefined)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  updateField("price", isNaN(val) ? undefined : Math.max(0, val));
+                }}
                 disabled={isLoading}
               />
             </div>

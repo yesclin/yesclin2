@@ -30,6 +30,7 @@ import {
   Procedure,
   useProceduresList,
   useToggleProcedureStatus,
+  checkProcedureUsage,
 } from "@/hooks/useProceduresCRUD";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProcedureProductCosts } from "@/hooks/useProcedureProductCosts";
@@ -40,6 +41,7 @@ export default function ConfigProcedimentos() {
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<Procedure | null>(null);
+  const [toggleUsageInfo, setToggleUsageInfo] = useState<{ isUsed: boolean; count: number } | null>(null);
   const [productsDialogOpen, setProductsDialogOpen] = useState(false);
   const [productsDialogProcedure, setProductsDialogProcedure] = useState<Procedure | null>(null);
 
@@ -83,7 +85,10 @@ export default function ConfigProcedimentos() {
     setIsDialogOpen(true);
   };
 
-  const handleToggleStatus = (procedure: Procedure) => {
+  const handleToggleStatus = async (procedure: Procedure) => {
+    // Check usage before showing dialog
+    const usageInfo = await checkProcedureUsage(procedure.id);
+    setToggleUsageInfo(usageInfo);
     setConfirmToggle(procedure);
   };
 
@@ -100,6 +105,12 @@ export default function ConfigProcedimentos() {
       isActive: !confirmToggle.is_active,
     });
     setConfirmToggle(null);
+    setToggleUsageInfo(null);
+  };
+  
+  const cancelStatusChange = () => {
+    setConfirmToggle(null);
+    setToggleUsageInfo(null);
   };
 
   if (error) {
@@ -319,16 +330,34 @@ export default function ConfigProcedimentos() {
       />
 
       {/* Confirm Toggle Status Dialog */}
-      <AlertDialog open={!!confirmToggle} onOpenChange={() => setConfirmToggle(null)}>
+      <AlertDialog open={!!confirmToggle} onOpenChange={cancelStatusChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmToggle?.is_active ? "Desativar Procedimento" : "Ativar Procedimento"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmToggle?.is_active
-                ? `Tem certeza que deseja desativar "${confirmToggle?.name}"? O procedimento não estará mais disponível para novos agendamentos, mas continuará visível em relatórios históricos.`
-                : `Tem certeza que deseja ativar "${confirmToggle?.name}"? O procedimento voltará a estar disponível para agendamentos.`}
+            <AlertDialogDescription className="space-y-2">
+              {confirmToggle?.is_active ? (
+                <>
+                  <p>
+                    Tem certeza que deseja desativar "{confirmToggle?.name}"?
+                  </p>
+                  {toggleUsageInfo?.isUsed && (
+                    <p className="text-amber-600 font-medium">
+                      ⚠️ Este procedimento foi utilizado em {toggleUsageInfo.count} agendamento(s).
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    O procedimento não estará mais disponível para novos agendamentos, 
+                    mas continuará visível em relatórios históricos.
+                  </p>
+                </>
+              ) : (
+                <p>
+                  Tem certeza que deseja ativar "{confirmToggle?.name}"? 
+                  O procedimento voltará a estar disponível para agendamentos.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

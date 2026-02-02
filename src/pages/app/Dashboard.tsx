@@ -8,6 +8,7 @@ import { TeamStatus } from '@/components/dashboard/TeamStatus';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StockPredictionAlerts } from '@/components/estoque/StockPredictionAlerts';
 import type { DashboardPeriod } from '@/types/dashboard';
 
 export default function Dashboard() {
@@ -86,6 +87,9 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Quick Actions */}
           <QuickActions />
+          
+          {/* Stock Prediction Alerts */}
+          <StockPredictionAlerts compact maxItems={3} />
           
           {/* Visão Financeira */}
           <FinanceOverview finance={finance} />

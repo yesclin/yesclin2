@@ -1,10 +1,11 @@
-import { Package, Layers, Link2, Info, Settings, ShieldX } from "lucide-react";
+import { Package, Layers, Link2, Info, Settings, ShieldX, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MaterialsTab } from "@/components/cadastros-clinicos/MaterialsTab";
 import { ProcedureMaterialsTab } from "@/components/cadastros-clinicos/ProcedureMaterialsTab";
 import { MaterialKitsTab } from "@/components/cadastros-clinicos/MaterialKitsTab";
 import { MaterialConsumptionSettings } from "@/components/cadastros-clinicos/MaterialConsumptionSettings";
+import { StockPredictionSettingsCard } from "@/components/config/StockPredictionSettingsCard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGate } from "@/components/permissions/PermissionGate";
 
@@ -63,7 +64,7 @@ export default function ConfigMateriais() {
       </Alert>
 
       <Tabs defaultValue="links" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl">
           <TabsTrigger value="links" className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
             Vínculos
@@ -78,7 +79,11 @@ export default function ConfigMateriais() {
           </TabsTrigger>
           <TabsTrigger value="consumption" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Baixa Automática
+            Baixa Auto
+          </TabsTrigger>
+          <TabsTrigger value="prediction" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Previsão
           </TabsTrigger>
         </TabsList>
 
@@ -96,6 +101,12 @@ export default function ConfigMateriais() {
 
         <TabsContent value="consumption">
           <MaterialConsumptionSettings />
+        </TabsContent>
+
+        <TabsContent value="prediction">
+          <div className="max-w-2xl">
+            <StockPredictionSettingsCard />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -29,6 +29,9 @@ import {
   Target,
   Activity,
   Pill,
+  Smile,
+  Crosshair,
+  Camera,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -74,6 +77,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Heart,
   ClipboardList,
   Target,
+  Smile,
+  Crosshair,
+  Camera,
 };
 
 // Tab key mapping to standard keys
@@ -81,6 +87,9 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   resumo: 'resumo',
   anamnese: 'anamnese',
   sinais_vitais: 'anamnese', // Map vital signs to anamnese for permissions
+  odontograma: 'anamnese', // Map odontogram to anamnese for permissions
+  tooth_procedures: 'procedimentos', // Map tooth procedures to procedimentos
+  fotos_intraorais: 'documentos', // Map intraoral photos to documentos
   evolucao: 'evolucao',
   diagnostico: 'diagnostico',
   exames_solicitacao: 'exames', // Map exam requests to exames
@@ -102,10 +111,13 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'resumo', label: 'Visão Geral', icon: LayoutDashboard },
   { id: 'anamnese', label: 'Anamnese', icon: FileText },
   { id: 'sinais_vitais', label: 'Sinais Vitais', icon: Heart },
+  { id: 'odontograma', label: 'Odontograma', icon: Smile },
+  { id: 'tooth_procedures', label: 'Procedimentos por Dente', icon: Crosshair },
   { id: 'evolucao', label: 'Evoluções', icon: Activity },
   { id: 'diagnostico', label: 'Diagnóstico (CID)', icon: Stethoscope },
   { id: 'exames_solicitacao', label: 'Solicitar Exames', icon: ClipboardList },
   { id: 'conduta', label: 'Plano/Conduta', icon: Target },
+  { id: 'fotos_intraorais', label: 'Fotos Intraorais', icon: Camera },
   { id: 'exames', label: 'Exames / Documentos', icon: Paperclip },
   { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },
   { id: 'alertas', label: 'Alertas', icon: AlertTriangle },
@@ -772,6 +784,96 @@ export default function Prontuario() {
             restrictedTabs={restrictedTabs}
             className="h-full"
           />
+        );
+
+      case 'odontograma':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smile className="h-5 w-5 text-teal-600" />
+                Odontograma
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground text-center py-8">
+                Odontograma interativo será exibido aqui durante o atendimento.
+              </p>
+              <p className="text-xs text-center text-muted-foreground">
+                {!hasActiveAppointment && "Inicie um atendimento para editar o odontograma."}
+              </p>
+            </CardContent>
+          </Card>
+        );
+
+      case 'tooth_procedures':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Crosshair className="h-5 w-5 text-indigo-600" />
+                Procedimentos por Dente
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground text-center py-8">
+                Lista de procedimentos associados a cada dente será exibida aqui.
+              </p>
+              <p className="text-xs text-center text-muted-foreground">
+                {!hasActiveAppointment && "Inicie um atendimento para registrar procedimentos."}
+              </p>
+            </CardContent>
+          </Card>
+        );
+
+      case 'fotos_intraorais':
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-emerald-600" />
+                  Fotos Intraorais
+                </CardTitle>
+                {canEditCurrentTab && (
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Foto
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {tabFiles.length === 0 ? (
+                <div className="text-center py-12">
+                  <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhuma foto intraoral anexada.</p>
+                  {canEditCurrentTab && (
+                    <Button className="mt-4" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Anexar Primeira Foto
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {tabFiles.map((file) => (
+                    <Card key={file.id} className="overflow-hidden">
+                      <div className="aspect-square bg-muted flex items-center justify-center">
+                        <Image className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <CardContent className="p-2">
+                        <p className="text-xs truncate">{file.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(file.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
 
       default:

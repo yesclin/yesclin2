@@ -5,6 +5,7 @@ export { useFields, type Field, type FieldInput, type FieldType } from './useFie
 export { useDefaultTemplates } from './useDefaultTemplates';
 export { useVisualSettings, type VisualSettings, type VisualSettingsInput, type LayoutMode, type LogoPosition } from './useVisualSettings';
 export { useSecurity, type SecuritySettings, type SecurityInput } from './useSecurity';
+export { useCustomProntuarioFields, type CustomProntuarioField, type CustomFieldInput, type CustomFieldType } from './useCustomProntuarioFields';
 
 // Usage hooks (for Prontuário module)
 export { useProntuarioConfig, type VisualConfig, type SecurityConfig } from './useProntuarioConfig';

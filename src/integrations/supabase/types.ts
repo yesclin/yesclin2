@@ -889,6 +889,157 @@ export type Database = {
           },
         ]
       }
+      custom_field_values: {
+        Row: {
+          appointment_id: string | null
+          clinic_id: string
+          created_at: string
+          evolution_id: string | null
+          field_id: string
+          id: string
+          patient_id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          created_at?: string
+          evolution_id?: string | null
+          field_id: string
+          id?: string
+          patient_id: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          evolution_id?: string | null
+          field_id?: string
+          id?: string
+          patient_id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_values_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_evolution_id_fkey"
+            columns: ["evolution_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_evolutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_prontuario_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_prontuario_fields: {
+        Row: {
+          all_appointments: boolean
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          field_type: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          name: string
+          options: Json | null
+          placeholder: string | null
+          procedure_id: string | null
+          specialty_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          all_appointments?: boolean
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          field_type: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name: string
+          options?: Json | null
+          placeholder?: string | null
+          procedure_id?: string | null
+          specialty_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          all_appointments?: boolean
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name?: string
+          options?: Json | null
+          placeholder?: string | null
+          procedure_id?: string | null
+          specialty_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_prontuario_fields_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_prontuario_fields_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_prontuario_fields_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_categories: {
         Row: {
           clinic_id: string

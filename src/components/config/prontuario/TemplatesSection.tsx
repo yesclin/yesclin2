@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useTemplates, type Template, type TemplateType } from '@/hooks/prontuario';
+import { useTemplates, useDefaultTemplates, type Template, type TemplateType } from '@/hooks/prontuario';
 import { TemplateDialog } from './TemplateDialog';
 
 const TYPES: { value: TemplateType; label: string; category?: string }[] = [
@@ -158,10 +158,23 @@ export function TemplatesSection() {
   const [editing, setEditing] = useState<Template | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Template | null>(null);
+  const [availableCount, setAvailableCount] = useState(0);
 
-  const { templates, loading, saving, remove, duplicate, toggleActive } = useTemplates(
+  const { templates, loading, saving, fetchTemplates, remove, duplicate, toggleActive } = useTemplates(
     typeFilter !== 'all' ? (typeFilter as TemplateType) : undefined
   );
+  const { importing, importDefaultTemplates, getAvailableTemplateCount, totalDefaultTemplates } = useDefaultTemplates();
+
+  useEffect(() => {
+    getAvailableTemplateCount().then(setAvailableCount);
+  }, [getAvailableTemplateCount, templates.length]);
+
+  const handleImport = async () => {
+    const success = await importDefaultTemplates();
+    if (success) {
+      await fetchTemplates();
+    }
+  };
 
   const handleEdit = (t: Template) => {
     setEditing(t);
@@ -204,7 +217,13 @@ export function TemplatesSection() {
               </CardTitle>
               <CardDescription>Crie modelos de anamnese, evolução e outros</CardDescription>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {availableCount > 0 && (
+                <Button variant="outline" onClick={handleImport} disabled={importing}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {importing ? 'Importando...' : `Importar Padrão (${availableCount}/${totalDefaultTemplates})`}
+                </Button>
+              )}
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-[160px]">
                   <Filter className="h-4 w-4 mr-2" />

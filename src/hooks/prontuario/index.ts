@@ -2,6 +2,7 @@
 export { useTabs, type TabConfig } from './useTabs';
 export { useTemplates, type Template, type TemplateInput, type TemplateType, type TemplateScope } from './useTemplates';
 export { useFields, type Field, type FieldInput, type FieldType } from './useFields';
+export { useDefaultTemplates } from './useDefaultTemplates';
 export { useVisualSettings, type VisualSettings, type VisualSettingsInput, type LayoutMode, type LogoPosition } from './useVisualSettings';
 export { useSecurity, type SecuritySettings, type SecurityInput } from './useSecurity';
 

@@ -9,6 +9,7 @@ export type AppModule =
   | "prontuario"
   | "comunicacao"
   | "financeiro"
+  | "meu_financeiro"
   | "convenios"
   | "estoque"
   | "relatorios"

@@ -16,6 +16,7 @@ import {
   CalendarCog,
   Shield,
   ChevronDown,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -57,6 +58,7 @@ const mainMenuItems: MenuItem[] = [
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients", requiredModule: "pacientes" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record", requiredModule: "prontuario" },
   { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication", requiredModule: "comunicacao" },
+  { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet, requiredModule: "meu_financeiro" },
 ];
 
 // Management section

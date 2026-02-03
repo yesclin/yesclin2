@@ -24,6 +24,7 @@ import Prontuario from "./pages/app/Prontuario";
 import Pacientes from "./pages/app/Pacientes";
 import Convenios from "./pages/app/gestao/Convenios";
 import Marketing from "./pages/app/Comunicacao";
+import MeuFinanceiro from "./pages/app/MeuFinanceiro";
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -72,6 +73,7 @@ const App = () => (
             <Route path="pacientes" element={<Pacientes />} />
             <Route path="gestao/convenios" element={<Convenios />} />
             <Route path="marketing" element={<Marketing />} />
+            <Route path="meu-financeiro" element={<MeuFinanceiro />} />
             
             {/* Gestão */}
             <Route path="gestao/financas" element={<Financas />} />

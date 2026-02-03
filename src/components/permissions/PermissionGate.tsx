@@ -63,6 +63,7 @@ function AccessDeniedMessage({ module }: { module: AppModule }) {
     prontuario: "Prontuário",
     comunicacao: "Comunicação",
     financeiro: "Financeiro",
+    meu_financeiro: "Meu Financeiro",
     convenios: "Convênios",
     estoque: "Estoque",
     relatorios: "Relatórios",

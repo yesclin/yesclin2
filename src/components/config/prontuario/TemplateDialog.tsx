@@ -13,8 +13,11 @@ import { useTemplates, useFields, type Template, type TemplateType, type FieldIn
 
 const TEMPLATE_TYPES: { value: TemplateType; label: string }[] = [
   { value: 'anamnese', label: 'Anamnese' },
+  { value: 'vital_signs', label: 'Sinais Vitais' },
   { value: 'evolution', label: 'Evolução' },
-  { value: 'diagnosis', label: 'Diagnóstico' },
+  { value: 'diagnosis', label: 'Diagnóstico (CID)' },
+  { value: 'exam_request', label: 'Solicitação de Exames' },
+  { value: 'conduct', label: 'Plano/Conduta' },
   { value: 'procedure', label: 'Procedimento' },
   { value: 'prescription', label: 'Prescrição' },
 ];

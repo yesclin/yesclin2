@@ -1,0 +1,99 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+
+export interface ActiveAppointment {
+  id: string;
+  scheduled_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  appointment_type: string;
+  professional_id: string;
+  professional_name: string | null;
+  procedure_id: string | null;
+  procedure_name: string | null;
+  started_at: string | null;
+}
+
+/**
+ * Check if there is an active appointment (in_progress status) for a patient today.
+ * This determines whether the medical record fields can be edited.
+ * 
+ * An appointment is considered "active" if:
+ * - It's scheduled for today AND
+ * - Its status is "em_atendimento" (in progress) OR "started_at" is not null
+ */
+export function useActiveAppointment(patientId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["active-appointment", patientId],
+    queryFn: async () => {
+      if (!patientId) return null;
+      
+      const today = format(new Date(), "yyyy-MM-dd");
+      
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(`
+          id,
+          scheduled_date,
+          start_time,
+          end_time,
+          status,
+          appointment_type,
+          professional_id,
+          started_at,
+          procedure_id,
+          professionals(full_name),
+          procedures(name)
+        `)
+        .eq("patient_id", patientId)
+        .eq("scheduled_date", today)
+        .or("status.eq.em_atendimento,status.eq.in_progress,started_at.not.is.null")
+        .is("finished_at", null) // Not finished yet
+        .order("start_time", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error fetching active appointment:", error);
+        return null;
+      }
+      
+      if (!data) return null;
+      
+      return {
+        id: data.id,
+        scheduled_date: data.scheduled_date,
+        start_time: data.start_time,
+        end_time: data.end_time,
+        status: data.status,
+        appointment_type: data.appointment_type,
+        professional_id: data.professional_id,
+        professional_name: data.professionals?.full_name || null,
+        procedure_id: data.procedure_id,
+        procedure_name: data.procedures?.name || null,
+        started_at: data.started_at,
+      } as ActiveAppointment;
+    },
+    enabled: !!patientId,
+    refetchInterval: 30000, // Refetch every 30 seconds to keep status updated
+  });
+}
+
+/**
+ * Returns whether editing is allowed based on active appointment status.
+ * Editing is allowed when there's an active appointment in progress.
+ */
+export function useCanEditMedicalRecord(patientId: string | null | undefined) {
+  const { data: activeAppointment, isLoading } = useActiveAppointment(patientId);
+  
+  return {
+    canEdit: !!activeAppointment,
+    activeAppointment,
+    isLoading,
+    reason: activeAppointment 
+      ? `Atendimento em andamento com ${activeAppointment.professional_name || 'profissional'}` 
+      : 'Nenhum atendimento ativo. Inicie um atendimento para editar o prontuário.',
+  };
+}

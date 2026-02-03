@@ -22,12 +22,14 @@ export interface TabConfig {
 const DEFAULT_TABS = [
   { name: 'Resumo', key: 'resumo', icon: 'LayoutDashboard', display_order: 1 },
   { name: 'Anamnese', key: 'anamnese', icon: 'FileText', display_order: 2 },
-  { name: 'Evolução', key: 'evolucao', icon: 'Activity', display_order: 3 },
-  { name: 'Diagnóstico', key: 'diagnostico', icon: 'Stethoscope', display_order: 4 },
-  { name: 'Prescrições', key: 'prescricoes', icon: 'Pill', display_order: 5 },
-  { name: 'Exames', key: 'exames', icon: 'Image', display_order: 6 },
-  { name: 'Documentos', key: 'documentos', icon: 'FolderOpen', display_order: 7 },
-  { name: 'Histórico', key: 'historico', icon: 'History', display_order: 8 },
+  { name: 'Sinais Vitais', key: 'sinais_vitais', icon: 'Heart', display_order: 3 },
+  { name: 'Evolução', key: 'evolucao', icon: 'Activity', display_order: 4 },
+  { name: 'Diagnóstico (CID)', key: 'diagnostico', icon: 'Stethoscope', display_order: 5 },
+  { name: 'Solicitação de Exames', key: 'exames_solicitacao', icon: 'ClipboardList', display_order: 6 },
+  { name: 'Plano/Conduta', key: 'conduta', icon: 'Target', display_order: 7 },
+  { name: 'Prescrições', key: 'prescricoes', icon: 'Pill', display_order: 8 },
+  { name: 'Exames/Documentos', key: 'exames', icon: 'Paperclip', display_order: 9 },
+  { name: 'Histórico', key: 'historico', icon: 'History', display_order: 10 },
 ];
 
 export function useTabs() {

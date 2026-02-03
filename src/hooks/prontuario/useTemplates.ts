@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
 
-export type TemplateType = 'anamnese' | 'evolution' | 'diagnosis' | 'procedure' | 'prescription';
+export type TemplateType = 'anamnese' | 'evolution' | 'diagnosis' | 'procedure' | 'prescription' | 'vital_signs' | 'exam_request' | 'conduct';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

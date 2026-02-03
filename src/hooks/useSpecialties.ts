@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
 
@@ -7,6 +7,7 @@ export interface Specialty {
   name: string;
   description: string | null;
   color: string | null;
+  area: string | null;
   is_active: boolean;
 }
 
@@ -23,7 +24,7 @@ export function useSpecialties() {
       
       const { data, error } = await supabase
         .from("specialties")
-        .select("id, name, description, color, is_active")
+        .select("id, name, description, color, area, is_active")
         .eq("clinic_id", clinic.id)
         .eq("is_active", true)
         .order("name");
@@ -37,4 +38,18 @@ export function useSpecialties() {
     },
     enabled: !!clinic?.id,
   });
+}
+
+/**
+ * Hook to invalidate specialties cache - useful after creating a new specialty
+ */
+export function useInvalidateSpecialties() {
+  const queryClient = useQueryClient();
+  const { clinic } = useClinicData();
+  
+  return () => {
+    if (clinic?.id) {
+      queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+    }
+  };
 }

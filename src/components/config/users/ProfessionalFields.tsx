@@ -5,10 +5,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { SpecialtyFormDialog } from "@/components/specialties/SpecialtyFormDialog";
 
 interface Specialty {
   id: string;
@@ -52,31 +50,6 @@ export function ProfessionalFields({
   onSpecialtyAdded,
 }: ProfessionalFieldsProps) {
   const [isAddingSpecialty, setIsAddingSpecialty] = useState(false);
-  const [newSpecialtyName, setNewSpecialtyName] = useState("");
-  const [isSavingSpecialty, setIsSavingSpecialty] = useState(false);
-
-  const handleAddSpecialty = async () => {
-    if (!newSpecialtyName.trim() || !clinicId) return;
-
-    setIsSavingSpecialty(true);
-    const { error } = await supabase.from("specialties").insert({
-      clinic_id: clinicId,
-      name: newSpecialtyName.trim(),
-      is_active: true,
-    });
-
-    setIsSavingSpecialty(false);
-
-    if (error) {
-      toast.error("Erro ao criar especialidade");
-      return;
-    }
-
-    toast.success("Especialidade criada com sucesso!");
-    setNewSpecialtyName("");
-    setIsAddingSpecialty(false);
-    onSpecialtyAdded?.();
-  };
 
   return (
     <div className="space-y-4 p-4 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/10">
@@ -112,38 +85,28 @@ export function ProfessionalFields({
             Especialidade(s) *
             {loadingSpecialties && <Loader2 className="h-3 w-3 animate-spin" />}
           </Label>
-          <Dialog open={isAddingSpecialty} onOpenChange={setIsAddingSpecialty}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
-                <Plus className="h-3 w-3 mr-1" />
-                Nova Especialidade
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle>Nova Especialidade</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                <Label htmlFor="newSpecialty">Nome da Especialidade</Label>
-                <Input
-                  id="newSpecialty"
-                  placeholder="Ex: Dermatologia, Pediatria..."
-                  value={newSpecialtyName}
-                  onChange={(e) => setNewSpecialtyName(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingSpecialty(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddSpecialty} disabled={isSavingSpecialty || !newSpecialtyName.trim()}>
-                  {isSavingSpecialty ? "Salvando..." : "Criar"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 text-xs"
+            onClick={() => setIsAddingSpecialty(true)}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Nova Especialidade
+          </Button>
         </div>
+
+        {/* Specialty Form Dialog */}
+        {clinicId && (
+          <SpecialtyFormDialog
+            open={isAddingSpecialty}
+            onOpenChange={setIsAddingSpecialty}
+            clinicId={clinicId}
+            onSuccess={() => {
+              onSpecialtyAdded?.();
+            }}
+          />
+        )}
 
         {specialties.length === 0 && !loadingSpecialties ? (
           <Alert>

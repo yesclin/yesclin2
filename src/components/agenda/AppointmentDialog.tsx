@@ -152,7 +152,7 @@ export function AppointmentDialog({
   const watchStartTime = form.watch("start_time");
   const watchIsFitIn = form.watch("is_fit_in");
 
-  // Auto-fill duration and price when procedure is selected
+  // Auto-fill duration, price, and specialty when procedure is selected
   useEffect(() => {
     if (watchProcedureId && watchProcedureId !== "none") {
       const procedure = procedures.find(p => p.id === watchProcedureId);
@@ -162,8 +162,11 @@ export function AppointmentDialog({
         if (procedure.price) {
           form.setValue("expected_value", procedure.price);
         }
-        // Set specialty if procedure has one
-        if (procedure.specialty) {
+        // Set specialty_id directly from procedure if available
+        if (procedure.specialty_id) {
+          form.setValue("specialty_id", procedure.specialty_id);
+        } else if (procedure.specialty) {
+          // Fallback: match by name for backwards compatibility
           const matchingSpecialty = specialties.find(s => 
             s.name.toLowerCase() === procedure.specialty?.toLowerCase()
           );

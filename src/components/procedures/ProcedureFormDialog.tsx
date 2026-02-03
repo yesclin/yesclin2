@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -43,19 +44,14 @@ import {
   ProcedureProductsSection,
   type ProcedureProductItem,
 } from "./ProcedureProductsSection";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useClinicData } from "@/hooks/useClinicData";
 
-const SPECIALTIES = [
-  "Clínica Geral",
-  "Dermatologia",
-  "Estética",
-  "Cardiologia",
-  "Ortopedia",
-  "Nutrição",
-  "Psicologia",
-  "Fisioterapia",
-  "Fonoaudiologia",
-  "Odontologia",
-];
+interface SpecialtyOption {
+  id: string;
+  name: string;
+}
 
 interface ProcedureFormDialogProps {
   open: boolean;
@@ -70,9 +66,28 @@ export function ProcedureFormDialog({
   procedure,
   mode,
 }: ProcedureFormDialogProps) {
+  const { clinic } = useClinicData();
   const { formData, updateField, resetForm, loadProcedure, isValid } = useProcedureForm();
   const createMutation = useCreateProcedure();
   const updateMutation = useUpdateProcedure();
+
+  // Fetch specialties from database
+  const { data: specialties = [], isLoading: specialtiesLoading } = useQuery({
+    queryKey: ["specialties-for-procedures", clinic?.id],
+    queryFn: async () => {
+      if (!clinic?.id) return [];
+      const { data, error } = await supabase
+        .from("specialties")
+        .select("id, name")
+        .eq("clinic_id", clinic.id)
+        .eq("is_active", true)
+        .order("name");
+      
+      if (error) throw error;
+      return data as SpecialtyOption[];
+    },
+    enabled: !!clinic?.id,
+  });
 
   // Products linked to procedure
   const { data: existingProducts = [] } = useProcedureProductsByProcedure(
@@ -284,23 +299,43 @@ export function ProcedureFormDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="specialty">Especialidade</Label>
+            <Label htmlFor="specialty_id">Especialidade *</Label>
             <Select
-              value={formData.specialty}
-              onValueChange={(value) => updateField("specialty", value)}
-              disabled={isLoading}
+              value={formData.specialty_id || ""}
+              onValueChange={(value) => {
+                updateField("specialty_id", value);
+                // Also update the legacy text field for backwards compatibility
+                const selectedSpec = specialties.find(s => s.id === value);
+                if (selectedSpec) {
+                  updateField("specialty", selectedSpec.name);
+                }
+              }}
+              disabled={isLoading || specialtiesLoading}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a especialidade" />
+              <SelectTrigger className={!formData.specialty_id ? "border-amber-500" : ""}>
+                <SelectValue placeholder={specialtiesLoading ? "Carregando..." : "Selecione a especialidade"} />
               </SelectTrigger>
               <SelectContent>
-                {SPECIALTIES.map((spec) => (
-                  <SelectItem key={spec} value={spec}>
-                    {spec}
+                {specialties.map((spec) => (
+                  <SelectItem key={spec.id} value={spec.id}>
+                    {spec.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {!formData.specialty_id && (
+              <p className="text-xs text-amber-600">
+                A especialidade define qual prontuário será ativado automaticamente.
+              </p>
+            )}
+            {specialties.length === 0 && !specialtiesLoading && (
+              <Alert variant="default" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Nenhuma especialidade cadastrada. Cadastre em Configurações → Clínica.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <div className="grid gap-2">

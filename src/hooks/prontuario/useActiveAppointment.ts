@@ -13,8 +13,13 @@ export interface ActiveAppointment {
   professional_name: string | null;
   procedure_id: string | null;
   procedure_name: string | null;
-  specialty_id: string | null;
+  procedure_specialty_id: string | null; // Specialty from procedure
+  procedure_specialty_name: string | null;
+  specialty_id: string | null; // Direct specialty on appointment
   specialty_name: string | null;
+  // Resolved specialty (either direct or from procedure)
+  resolved_specialty_id: string | null;
+  resolved_specialty_name: string | null;
   started_at: string | null;
 }
 
@@ -48,7 +53,11 @@ export function useActiveAppointment(patientId: string | null | undefined) {
           procedure_id,
           specialty_id,
           professionals(full_name),
-          procedures(name),
+          procedures(
+            name,
+            specialty_id,
+            specialties:specialty_id(name)
+          ),
           specialties(name)
         `)
         .eq("patient_id", patientId)
@@ -66,6 +75,14 @@ export function useActiveAppointment(patientId: string | null | undefined) {
       
       if (!data) return null;
       
+      // Get specialty from procedure if available
+      const procedureSpecialtyId = data.procedures?.specialty_id || null;
+      const procedureSpecialtyName = data.procedures?.specialties?.name || null;
+      
+      // Resolve specialty: prefer direct specialty, fallback to procedure's specialty
+      const resolvedSpecialtyId = data.specialty_id || procedureSpecialtyId;
+      const resolvedSpecialtyName = data.specialties?.name || procedureSpecialtyName;
+      
       return {
         id: data.id,
         scheduled_date: data.scheduled_date,
@@ -77,8 +94,12 @@ export function useActiveAppointment(patientId: string | null | undefined) {
         professional_name: data.professionals?.full_name || null,
         procedure_id: data.procedure_id,
         procedure_name: data.procedures?.name || null,
+        procedure_specialty_id: procedureSpecialtyId,
+        procedure_specialty_name: procedureSpecialtyName,
         specialty_id: data.specialty_id || null,
         specialty_name: data.specialties?.name || null,
+        resolved_specialty_id: resolvedSpecialtyId,
+        resolved_specialty_name: resolvedSpecialtyName,
         started_at: data.started_at,
       } as ActiveAppointment;
     },

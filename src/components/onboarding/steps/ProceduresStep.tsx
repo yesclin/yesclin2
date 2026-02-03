@@ -4,14 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { FileText, ArrowRight, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileText, ArrowRight, ArrowLeft, Plus, Trash2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProceduresStepProps {
   clinicId: string;
   onNext: () => void;
   onBack: () => void;
+}
+
+interface SpecialtyOption {
+  id: string;
+  name: string;
 }
 
 interface Procedure {
@@ -21,6 +35,7 @@ interface Procedure {
   price: number;
   allow_return: boolean;
   return_days: number;
+  specialty_id?: string;
   isNew?: boolean;
 }
 
@@ -30,12 +45,30 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
+  // Fetch specialties for the clinic
+  const { data: specialties = [], isLoading: specialtiesLoading } = useQuery({
+    queryKey: ["specialties-onboarding", clinicId],
+    queryFn: async () => {
+      if (!clinicId) return [];
+      const { data, error } = await supabase
+        .from("specialties")
+        .select("id, name")
+        .eq("clinic_id", clinicId)
+        .eq("is_active", true)
+        .order("name");
+      
+      if (error) throw error;
+      return data as SpecialtyOption[];
+    },
+    enabled: !!clinicId,
+  });
+
   useEffect(() => {
     async function loadProcedures() {
       setIsLoading(true);
       const { data } = await supabase
         .from("procedures")
-        .select("id, name, duration_minutes, price, return_days")
+        .select("id, name, duration_minutes, price, return_days, specialty_id")
         .eq("clinic_id", clinicId)
         .eq("is_active", true);
 
@@ -47,6 +80,7 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
           price: Number(p.price) || 0,
           allow_return: true,
           return_days: p.return_days || 30,
+          specialty_id: p.specialty_id || undefined,
           isNew: false 
         })));
       }
@@ -67,6 +101,7 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
         price: 0,
         allow_return: true,
         return_days: 30,
+        specialty_id: specialties.length > 0 ? specialties[0].id : undefined,
         isNew: true,
       },
     ]);
@@ -98,8 +133,9 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
         name: proc.name,
         duration_minutes: proc.duration_minutes,
         price: proc.price,
-        allow_return: proc.allow_return,
+        allows_return: proc.allow_return,
         return_days: proc.return_days,
+        specialty_id: proc.specialty_id || null,
       });
 
       if (error) {
@@ -177,6 +213,37 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
                 </Button>
               )}
             </div>
+
+            {/* Specialty selection for new procedures */}
+            {proc.isNew && (
+              <div className="grid gap-2">
+                <Label>Especialidade *</Label>
+                <Select
+                  value={proc.specialty_id || ""}
+                  onValueChange={(value) => updateProcedure(index, "specialty_id", value)}
+                  disabled={specialtiesLoading}
+                >
+                  <SelectTrigger className={!proc.specialty_id ? "border-amber-500" : ""}>
+                    <SelectValue placeholder={specialtiesLoading ? "Carregando..." : "Selecione a especialidade"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialties.map((spec) => (
+                      <SelectItem key={spec.id} value={spec.id}>
+                        {spec.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {specialties.length === 0 && !specialtiesLoading && (
+                  <Alert variant="default" className="mt-1">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Cadastre especialidades primeiro em Configurações → Clínica.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">

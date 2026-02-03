@@ -124,10 +124,13 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
   }, [clinic?.id]);
 
   // Determine the active specialty ID
+  // Priority: 1) Active appointment's resolved specialty (direct or from procedure)
+  //           2) Manual selection
+  //           3) null (defaults to 'geral' key)
   const activeSpecialtyId = useMemo(() => {
-    // Priority 1: Active appointment's specialty
-    if (activeAppointment?.specialty_id) {
-      return activeAppointment.specialty_id;
+    // Priority 1: Active appointment's resolved specialty (from procedure or direct)
+    if (activeAppointment?.resolved_specialty_id) {
+      return activeAppointment.resolved_specialty_id;
     }
     
     // Priority 2: Manual selection
@@ -136,7 +139,7 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     }
     
     return null;
-  }, [activeAppointment?.specialty_id, manualSpecialtyId]);
+  }, [activeAppointment?.resolved_specialty_id, manualSpecialtyId]);
 
   // Get the active specialty details
   const activeSpecialty = useMemo((): SpecialtyOption | null => {
@@ -155,7 +158,8 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
   }, []);
 
   // Check if specialty is from active appointment (read-only)
-  const isFromAppointment = !!activeAppointment?.specialty_id;
+  // Now considers resolved specialty from either direct or procedure
+  const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
 
   return {
     activeSpecialtyId,

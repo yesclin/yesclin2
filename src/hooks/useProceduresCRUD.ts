@@ -8,6 +8,8 @@ export interface Procedure {
   clinic_id: string;
   name: string;
   specialty: string | null;
+  specialty_id: string | null;
+  specialty_name?: string | null; // Joined from specialties table
   description: string | null;
   duration_minutes: number;
   price: number | null;
@@ -21,6 +23,7 @@ export interface Procedure {
 export interface ProcedureFormData {
   name: string;
   specialty?: string;
+  specialty_id?: string;
   description?: string;
   duration_minutes: number;
   price?: number;
@@ -35,7 +38,10 @@ export function useProceduresList(includeInactive: boolean = true) {
     queryFn: async () => {
       let query = supabase
         .from("procedures")
-        .select("*")
+        .select(`
+          *,
+          specialties(name)
+        `)
         .order("name");
       
       if (!includeInactive) {
@@ -45,7 +51,12 @@ export function useProceduresList(includeInactive: boolean = true) {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Procedure[];
+      
+      // Map joined specialty name
+      return (data || []).map(p => ({
+        ...p,
+        specialty_name: p.specialties?.name || null,
+      })) as Procedure[];
     },
   });
 }
@@ -126,6 +137,7 @@ export function useCreateProcedure() {
           clinic_id: clinicId,
           name: formData.name.trim(),
           specialty: formData.specialty || null,
+          specialty_id: formData.specialty_id || null,
           description: formData.description || null,
           duration_minutes: formData.duration_minutes,
           price: formData.price || null,
@@ -181,6 +193,7 @@ export function useUpdateProcedure() {
         .update({
           name: formData.name.trim(),
           specialty: formData.specialty || null,
+          specialty_id: formData.specialty_id || null,
           description: formData.description || null,
           duration_minutes: formData.duration_minutes,
           price: formData.price || null,
@@ -277,6 +290,7 @@ export function useProcedureForm(initialData?: Procedure | null) {
   const [formData, setFormData] = useState<ProcedureFormData>({
     name: initialData?.name || "",
     specialty: initialData?.specialty || "",
+    specialty_id: initialData?.specialty_id || "",
     description: initialData?.description || "",
     duration_minutes: initialData?.duration_minutes || 30,
     price: initialData?.price || undefined,
@@ -295,6 +309,7 @@ export function useProcedureForm(initialData?: Procedure | null) {
     setFormData({
       name: "",
       specialty: "",
+      specialty_id: "",
       description: "",
       duration_minutes: 30,
       price: undefined,
@@ -307,6 +322,7 @@ export function useProcedureForm(initialData?: Procedure | null) {
     setFormData({
       name: procedure.name,
       specialty: procedure.specialty || "",
+      specialty_id: procedure.specialty_id || "",
       description: procedure.description || "",
       duration_minutes: procedure.duration_minutes,
       price: procedure.price || undefined,
@@ -315,6 +331,7 @@ export function useProcedureForm(initialData?: Procedure | null) {
     });
   };
 
+  // Validation: name required, duration > 0, and specialty_id required
   const isValid = formData.name.trim().length > 0 && formData.duration_minutes > 0;
 
   return {

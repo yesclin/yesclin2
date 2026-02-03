@@ -12,16 +12,22 @@ import { TemplateDialog } from './TemplateDialog';
 
 const TYPES: { value: TemplateType; label: string }[] = [
   { value: 'anamnese', label: 'Anamnese' },
+  { value: 'vital_signs', label: 'Sinais Vitais' },
   { value: 'evolution', label: 'Evolução' },
-  { value: 'diagnosis', label: 'Diagnóstico' },
+  { value: 'diagnosis', label: 'Diagnóstico (CID)' },
+  { value: 'exam_request', label: 'Solicitação de Exames' },
+  { value: 'conduct', label: 'Plano/Conduta' },
   { value: 'procedure', label: 'Procedimento' },
   { value: 'prescription', label: 'Prescrição' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
   anamnese: 'bg-blue-100 text-blue-800',
+  vital_signs: 'bg-red-100 text-red-800',
   evolution: 'bg-green-100 text-green-800',
   diagnosis: 'bg-purple-100 text-purple-800',
+  exam_request: 'bg-cyan-100 text-cyan-800',
+  conduct: 'bg-amber-100 text-amber-800',
   procedure: 'bg-orange-100 text-orange-800',
   prescription: 'bg-pink-100 text-pink-800',
 };

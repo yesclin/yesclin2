@@ -24,12 +24,18 @@ import {
   Shield,
   ShieldX,
   GitBranch,
+  Heart,
+  ClipboardList,
+  Target,
+  Activity,
+  Pill,
   type LucideIcon
 } from "lucide-react";
 import { 
   useProntuarioData, 
   useMedicalRecordSignatures, 
   useCurrentUserMedicalRecordPermissions,
+  useCanEditMedicalRecord,
   type TabConfig, 
   type MedicalRecordEntry,
   type TabKey,
@@ -60,19 +66,25 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Image,
   AlertTriangle,
   History,
-  Activity: Clock,
-  Pill: FileText,
+  Activity,
+  Pill,
   FolderOpen: Paperclip,
   Shield: AlertTriangle,
   GitBranch,
+  Heart,
+  ClipboardList,
+  Target,
 };
 
 // Tab key mapping to standard keys
 const TAB_KEY_MAP: Record<string, TabKey> = {
   resumo: 'resumo',
   anamnese: 'anamnese',
+  sinais_vitais: 'anamnese', // Map vital signs to anamnese for permissions
   evolucao: 'evolucao',
   diagnostico: 'diagnostico',
+  exames_solicitacao: 'exames', // Map exam requests to exames
+  conduta: 'evolucao', // Map conduct to evolucao for permissions
   procedimentos: 'procedimentos',
   prescricoes: 'prescricoes',
   exames: 'exames',
@@ -88,11 +100,14 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
 // Fallback nav items when no config exists
 const DEFAULT_NAV_ITEMS = [
   { id: 'resumo', label: 'Visão Geral', icon: LayoutDashboard },
-  { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },
-  { id: 'anamnese', label: 'Anamnese', icon: Stethoscope },
-  { id: 'evolucao', label: 'Evoluções', icon: Clock },
+  { id: 'anamnese', label: 'Anamnese', icon: FileText },
+  { id: 'sinais_vitais', label: 'Sinais Vitais', icon: Heart },
+  { id: 'evolucao', label: 'Evoluções', icon: Activity },
+  { id: 'diagnostico', label: 'Diagnóstico (CID)', icon: Stethoscope },
+  { id: 'exames_solicitacao', label: 'Solicitar Exames', icon: ClipboardList },
+  { id: 'conduta', label: 'Plano/Conduta', icon: Target },
   { id: 'exames', label: 'Exames / Documentos', icon: Paperclip },
-  { id: 'imagens', label: 'Imagens', icon: Image },
+  { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },
   { id: 'alertas', label: 'Alertas', icon: AlertTriangle },
   { id: 'historico', label: 'Histórico', icon: History },
 ];
@@ -158,6 +173,14 @@ export default function Prontuario() {
     isAdmin,
   } = useCurrentUserMedicalRecordPermissions();
 
+  // Active appointment check for edit control
+  const {
+    canEdit: hasActiveAppointment,
+    activeAppointment,
+    reason: appointmentReason,
+    isLoading: appointmentLoading,
+  } = useCanEditMedicalRecord(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -199,10 +222,10 @@ export default function Prontuario() {
     return TAB_KEY_MAP[tabId] || 'resumo';
   };
 
-  // Check if current tab allows editing (respects LGPD blocking + permissions)
-  const canEditCurrentTab = canEditTab(getStandardTabKey(activeTab)) && !shouldBlockEditing;
+  // Check if current tab allows editing (respects LGPD blocking + permissions + active appointment)
+  const canEditCurrentTab = canEditTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && hasActiveAppointment;
   const canExportCurrentTab = canExportTab(getStandardTabKey(activeTab)) && !shouldBlockEditing;
-  const canSignCurrentTab = canSignTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && isDigitalSignatureEnabled;
+  const canSignCurrentTab = canSignTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && isDigitalSignatureEnabled && hasActiveAppointment;
 
   // Build nav items from configuration or use defaults, filtered by permissions
   const allNavItems = getActiveTabs().length > 0
@@ -433,7 +456,11 @@ export default function Prontuario() {
                         Somente Leitura
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Você não tem permissão para editar esta aba</TooltipContent>
+                    <TooltipContent>
+                      {!hasActiveAppointment 
+                        ? appointmentReason 
+                        : 'Você não tem permissão para editar esta aba'}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -565,7 +592,11 @@ export default function Prontuario() {
                         Somente Leitura
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Você não tem permissão para adicionar arquivos</TooltipContent>
+                    <TooltipContent>
+                      {!hasActiveAppointment 
+                        ? appointmentReason 
+                        : 'Você não tem permissão para adicionar arquivos'}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -635,7 +666,11 @@ export default function Prontuario() {
                         Somente Leitura
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Você não tem permissão para criar alertas</TooltipContent>
+                    <TooltipContent>
+                      {!hasActiveAppointment 
+                        ? appointmentReason 
+                        : 'Você não tem permissão para criar alertas'}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -861,6 +896,26 @@ export default function Prontuario() {
                 <Lock className="h-3 w-3" />
                 LGPD Pendente
               </Badge>
+            )}
+            {/* Active Appointment Status Badge */}
+            {hasActiveAppointment && activeAppointment && (
+              <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
+                <Activity className="h-3 w-3" />
+                Atendimento Ativo
+              </Badge>
+            )}
+            {!hasActiveAppointment && !appointmentLoading && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="gap-1 text-muted-foreground border-muted-foreground cursor-help">
+                      <ShieldX className="h-3 w-3" />
+                      Somente Leitura
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>{appointmentReason}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
 

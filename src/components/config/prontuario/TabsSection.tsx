@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTabs, type TabConfig } from '@/hooks/prontuario';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History,
+  LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip,
 };
 
 export function TabsSection() {

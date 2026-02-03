@@ -15,6 +15,9 @@ export { useMedicalRecordSignatures, type MedicalRecordSignature } from './useMe
 // Clinical Timeline
 export { useClinicalTimeline } from './useClinicalTimeline';
 
+// Active Appointment (for edit control)
+export { useActiveAppointment, useCanEditMedicalRecord, type ActiveAppointment } from './useActiveAppointment';
+
 // Permission hooks (for granular access control)
 export {
   useMedicalRecordPermissions,

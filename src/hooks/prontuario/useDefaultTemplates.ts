@@ -558,6 +558,112 @@ const CARDIOLOGY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Fisioterapia
+const PHYSIOTHERAPY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Avaliação Funcional',
+    type: 'functional_assessment',
+    description: 'Avaliação fisioterapêutica inicial',
+    fields: [
+      { label: 'Diagnóstico Clínico', field_type: 'text', placeholder: 'Diagnóstico médico de encaminhamento', is_required: true },
+      { label: 'Diagnóstico Fisioterapêutico', field_type: 'textarea', placeholder: 'Diagnóstico cinético-funcional', is_required: true },
+      { label: 'Histórico da Lesão/Patologia', field_type: 'textarea', placeholder: 'Como ocorreu, tempo de evolução', is_required: false },
+      { label: 'Tratamentos Anteriores', field_type: 'textarea', placeholder: 'Fisioterapia prévia, cirurgias', is_required: false },
+      { label: 'Medicamentos em Uso', field_type: 'textarea', placeholder: 'Analgésicos, anti-inflamatórios', is_required: false },
+      { label: 'Exames de Imagem', field_type: 'textarea', placeholder: 'RX, RNM, TC - achados relevantes', is_required: false },
+      { label: 'Avaliação Postural', field_type: 'textarea', placeholder: 'Alterações posturais observadas', is_required: false },
+      { label: 'Palpação', field_type: 'textarea', placeholder: 'Pontos dolorosos, tensões, contraturas', is_required: false },
+      { label: 'Testes Especiais', field_type: 'textarea', placeholder: 'Testes ortopédicos realizados e resultados', is_required: false },
+    ],
+  },
+  {
+    name: 'Queixa Principal',
+    type: 'chief_complaint',
+    description: 'Registro da queixa e expectativas do paciente',
+    fields: [
+      { label: 'Queixa Principal', field_type: 'textarea', placeholder: 'O que o paciente relata como principal problema', is_required: true },
+      { label: 'Localização', field_type: 'text', placeholder: 'Região anatômica afetada', is_required: true },
+      { label: 'Fatores de Piora', field_type: 'textarea', placeholder: 'O que agrava os sintomas', is_required: false },
+      { label: 'Fatores de Melhora', field_type: 'textarea', placeholder: 'O que alivia os sintomas', is_required: false },
+      { label: 'Impacto nas AVDs', field_type: 'textarea', placeholder: 'Como afeta as atividades diárias', is_required: false },
+      { label: 'Objetivos do Paciente', field_type: 'textarea', placeholder: 'O que o paciente espera do tratamento', is_required: false },
+    ],
+  },
+  {
+    name: 'Escala de Dor',
+    type: 'pain_scale',
+    description: 'Avaliação da dor do paciente',
+    fields: [
+      { label: 'Intensidade da Dor (EVA 0-10)', field_type: 'select', options: ['0 - Sem dor', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10 - Dor máxima'], is_required: true },
+      { label: 'Tipo de Dor', field_type: 'multiselect', options: ['Aguda', 'Crônica', 'Pontada', 'Queimação', 'Latejante', 'Pressão', 'Irradiada', 'Localizada', 'Constante', 'Intermitente'], is_required: false },
+      { label: 'Localização da Dor', field_type: 'text', placeholder: 'Região anatômica', is_required: true },
+      { label: 'Irradiação', field_type: 'text', placeholder: 'Para onde a dor irradia', is_required: false },
+      { label: 'Frequência', field_type: 'select', options: ['Constante', 'Várias vezes ao dia', 'Uma vez ao dia', 'Alguns dias da semana', 'Esporádica'], is_required: false },
+      { label: 'Dor Noturna', field_type: 'select', options: ['Não', 'Às vezes', 'Frequente', 'Sempre'], is_required: false },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Notas adicionais sobre a dor', is_required: false },
+    ],
+  },
+  {
+    name: 'Amplitude de Movimento',
+    type: 'range_of_motion',
+    description: 'Registro de goniometria e ADM',
+    fields: [
+      { label: 'Articulação Avaliada', field_type: 'text', placeholder: 'Ex: Ombro direito, Joelho esquerdo', is_required: true },
+      { label: 'Movimento', field_type: 'text', placeholder: 'Ex: Flexão, Extensão, Abdução', is_required: true },
+      { label: 'ADM Ativa (graus)', field_type: 'text', placeholder: 'Ex: 120°', is_required: true },
+      { label: 'ADM Passiva (graus)', field_type: 'text', placeholder: 'Ex: 140°', is_required: false },
+      { label: 'ADM Normal Esperada', field_type: 'text', placeholder: 'Ex: 180°', is_required: false },
+      { label: 'Limitação (%)', field_type: 'text', placeholder: 'Percentual de limitação', is_required: false },
+      { label: 'Sensação Final', field_type: 'select', options: ['Firme (normal)', 'Macia', 'Dura', 'Vazia', 'Espasmo'], is_required: false },
+      { label: 'Dor Durante Movimento', field_type: 'select', options: ['Ausente', 'No início', 'No meio', 'No final', 'Durante todo arco'], is_required: false },
+    ],
+  },
+  {
+    name: 'Plano Fisioterapêutico',
+    type: 'physio_therapeutic_plan',
+    description: 'Planejamento do tratamento fisioterapêutico',
+    fields: [
+      { label: 'Objetivos de Curto Prazo', field_type: 'textarea', placeholder: 'Metas para as primeiras sessões', is_required: true },
+      { label: 'Objetivos de Longo Prazo', field_type: 'textarea', placeholder: 'Metas finais do tratamento', is_required: true },
+      { label: 'Recursos Terapêuticos', field_type: 'multiselect', options: ['Cinesioterapia', 'Eletroterapia', 'Termoterapia', 'Crioterapia', 'Terapia manual', 'Hidroterapia', 'Laserterapia', 'Ultrassom', 'TENS', 'Corrente russa', 'Bandagem', 'Dry needling'], is_required: true },
+      { label: 'Frequência das Sessões', field_type: 'select', options: ['1x por semana', '2x por semana', '3x por semana', '4x por semana', '5x por semana', 'Diário'], is_required: false },
+      { label: 'Duração Estimada', field_type: 'text', placeholder: 'Ex: 10 sessões, 2 meses', is_required: false },
+      { label: 'Orientações Domiciliares', field_type: 'textarea', placeholder: 'Exercícios e cuidados para casa', is_required: false },
+      { label: 'Precauções e Contraindicações', field_type: 'textarea', placeholder: 'Cuidados especiais durante o tratamento', is_required: false },
+    ],
+  },
+  {
+    name: 'Exercícios Aplicados',
+    type: 'applied_exercises',
+    description: 'Registro de exercícios realizados na sessão',
+    fields: [
+      { label: 'Exercício', field_type: 'text', placeholder: 'Nome do exercício', is_required: true },
+      { label: 'Objetivo do Exercício', field_type: 'text', placeholder: 'Fortalecimento, alongamento, propriocepção...', is_required: false },
+      { label: 'Séries', field_type: 'number', placeholder: 'Ex: 3', is_required: false },
+      { label: 'Repetições', field_type: 'number', placeholder: 'Ex: 10', is_required: false },
+      { label: 'Tempo/Sustentação', field_type: 'text', placeholder: 'Ex: 30 segundos', is_required: false },
+      { label: 'Carga/Resistência', field_type: 'text', placeholder: 'Ex: 2kg, theraband amarela', is_required: false },
+      { label: 'Resposta do Paciente', field_type: 'select', options: ['Realizou sem dificuldade', 'Realizou com dificuldade leve', 'Realizou com dificuldade moderada', 'Realizou com muita dificuldade', 'Não conseguiu realizar'], is_required: false },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Compensações, ajustes necessários', is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução por Sessão',
+    type: 'session_evolution',
+    description: 'Registro de evolução de cada atendimento',
+    fields: [
+      { label: 'Número da Sessão', field_type: 'number', placeholder: 'Ex: 5', is_required: true },
+      { label: 'Queixa do Dia', field_type: 'textarea', placeholder: 'O que o paciente relata hoje', is_required: true },
+      { label: 'Dor (EVA 0-10)', field_type: 'select', options: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], is_required: true },
+      { label: 'Condutas Realizadas', field_type: 'textarea', placeholder: 'Recursos e exercícios aplicados', is_required: true },
+      { label: 'Resposta ao Tratamento', field_type: 'select', options: ['Melhora significativa', 'Melhora parcial', 'Sem alteração', 'Piora parcial', 'Piora significativa'], is_required: true },
+      { label: 'Evolução Funcional', field_type: 'textarea', placeholder: 'Ganhos observados', is_required: false },
+      { label: 'Intercorrências', field_type: 'textarea', placeholder: 'Eventos adversos, se houver', is_required: false },
+      { label: 'Plano para Próxima Sessão', field_type: 'textarea', placeholder: 'Próximos passos do tratamento', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -568,6 +674,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...AESTHETICS_TEMPLATES,
   ...PEDIATRICS_TEMPLATES,
   ...CARDIOLOGY_TEMPLATES,
+  ...PHYSIOTHERAPY_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

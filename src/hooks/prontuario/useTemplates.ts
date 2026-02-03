@@ -61,7 +61,16 @@ export type TemplateType =
   | 'gyneco_exams_results'
   | 'gyneco_diagnosis'
   | 'gyneco_conduct'
-  | 'gyneco_evolution';
+  | 'gyneco_evolution'
+  // Ophthalmology
+  | 'ophthalmo_anamnesis'
+  | 'visual_acuity'
+  | 'ophthalmo_exam'
+  | 'intraocular_pressure'
+  | 'ophthalmo_diagnosis'
+  | 'ophthalmo_complementary_exams'
+  | 'ophthalmo_conduct'
+  | 'ophthalmo_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

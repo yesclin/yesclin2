@@ -88,6 +88,11 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'cardio_diagnosis', label: 'Diagnóstico Cardiológico', category: 'Cardiologia' },
   { value: 'cardio_conduct', label: 'Conduta Cardiológica', category: 'Cardiologia' },
   { value: 'cardio_evolution', label: 'Evolução Cardiológica', category: 'Cardiologia' },
+  // Custom / Personalized
+  { value: 'custom_block', label: 'Bloco Personalizado', category: 'Personalizado' },
+  { value: 'custom_form', label: 'Formulário Personalizado', category: 'Personalizado' },
+  { value: 'custom_checklist', label: 'Checklist Personalizado', category: 'Personalizado' },
+  { value: 'custom_notes', label: 'Anotações Personalizadas', category: 'Personalizado' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -166,6 +171,11 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   cardio_diagnosis: 'bg-purple-100 text-purple-800',
   cardio_conduct: 'bg-indigo-100 text-indigo-800',
   cardio_evolution: 'bg-teal-100 text-teal-800',
+  // Custom / Personalized
+  custom_block: 'bg-gray-100 text-gray-800',
+  custom_form: 'bg-slate-100 text-slate-800',
+  custom_checklist: 'bg-zinc-100 text-zinc-800',
+  custom_notes: 'bg-stone-100 text-stone-800',
 };
 
 export function TemplatesSection() {

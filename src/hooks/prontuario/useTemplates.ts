@@ -78,8 +78,13 @@ export type TemplateType =
   | 'cardio_exams'
   | 'cardio_diagnosis'
   | 'cardio_conduct'
-  | 'cardio_evolution';
-export type TemplateScope = 'system' | 'specialty' | 'professional';
+  | 'cardio_evolution'
+  // Custom / Personalized
+  | 'custom_block'
+  | 'custom_form'
+  | 'custom_checklist'
+  | 'custom_notes';
+export type TemplateScope = 'system' | 'specialty' | 'professional' | 'clinic';
 
 export interface Template {
   id: string;

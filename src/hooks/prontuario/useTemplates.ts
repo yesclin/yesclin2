@@ -42,7 +42,17 @@ export type TemplateType =
   | 'range_of_motion'
   | 'physio_therapeutic_plan'
   | 'applied_exercises'
-  | 'session_evolution';
+  | 'session_evolution'
+  // Pediatrics
+  | 'pediatric_anamnesis'
+  | 'gestational_history'
+  | 'growth_data'
+  | 'growth_curve'
+  | 'neuropsychomotor_development'
+  | 'vaccines'
+  | 'pediatric_diagnosis'
+  | 'pediatric_conduct'
+  | 'pediatric_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

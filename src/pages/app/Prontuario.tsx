@@ -59,6 +59,12 @@ import {
   Move,
   Dumbbell,
   BarChart3,
+  // Pediatrics icons
+  Baby,
+  Ruler,
+  TrendingUp as GrowthChart,
+  BrainCircuit as BrainDevelopment,
+  ShieldCheck,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -135,6 +141,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Move,
   Dumbbell,
   BarChart3,
+  // Pediatrics icons
+  Baby,
+  Ruler,
+  GrowthChart,
+  BrainDevelopment,
+  ShieldCheck,
 };
 
 // Tab key mapping to standard keys
@@ -187,6 +199,16 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   physio_therapeutic_plan: 'evolucao',
   applied_exercises: 'procedimentos',
   session_evolution: 'evolucao',
+  // Pediatrics tabs - map to appropriate permissions
+  pediatric_anamnesis: 'anamnese',
+  gestational_history: 'anamnese',
+  growth_data: 'anamnese',
+  growth_curve: 'anamnese',
+  neuropsychomotor_development: 'anamnese',
+  vaccines: 'anamnese',
+  pediatric_diagnosis: 'diagnostico',
+  pediatric_conduct: 'evolucao',
+  pediatric_evolution: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -233,6 +255,16 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'physio_therapeutic_plan', label: 'Plano Terapêutico', icon: ClipboardList },
   { id: 'applied_exercises', label: 'Exercícios Aplicados', icon: Dumbbell },
   { id: 'session_evolution', label: 'Evolução por Sessão', icon: BarChart3 },
+  // Pediatrics tabs
+  { id: 'pediatric_anamnesis', label: 'Anamnese Pediátrica', icon: Baby },
+  { id: 'gestational_history', label: 'Histórico Gestacional', icon: Heart },
+  { id: 'growth_data', label: 'Dados de Crescimento', icon: Ruler },
+  { id: 'growth_curve', label: 'Curva de Crescimento', icon: GrowthChart },
+  { id: 'neuropsychomotor_development', label: 'Desenvolvimento DNPM', icon: BrainDevelopment },
+  { id: 'vaccines', label: 'Vacinas', icon: ShieldCheck },
+  { id: 'pediatric_diagnosis', label: 'Diagnóstico', icon: Stethoscope },
+  { id: 'pediatric_conduct', label: 'Conduta/Orientações', icon: Target },
+  { id: 'pediatric_evolution', label: 'Evolução Clínica', icon: Activity },
 ];
 
 export default function Prontuario() {

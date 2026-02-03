@@ -70,7 +70,15 @@ export type TemplateType =
   | 'ophthalmo_diagnosis'
   | 'ophthalmo_complementary_exams'
   | 'ophthalmo_conduct'
-  | 'ophthalmo_evolution';
+  | 'ophthalmo_evolution'
+  // Cardiology
+  | 'cardio_anamnesis'
+  | 'cardio_vital_signs'
+  | 'cardio_risk_factors'
+  | 'cardio_exams'
+  | 'cardio_diagnosis'
+  | 'cardio_conduct'
+  | 'cardio_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

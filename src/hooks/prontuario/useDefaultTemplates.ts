@@ -455,6 +455,109 @@ const PEDIATRICS_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Cardiologia
+const CARDIOLOGY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Anamnese Cardiológica',
+    type: 'cardio_anamnesis',
+    description: 'Anamnese direcionada para avaliação cardiovascular',
+    fields: [
+      { label: 'Queixa Principal', field_type: 'textarea', placeholder: 'Dor torácica, dispneia, palpitações...', is_required: true },
+      { label: 'História da Doença Atual', field_type: 'textarea', placeholder: 'Descreva a evolução dos sintomas', is_required: true },
+      { label: 'Histórico Cardiovascular', field_type: 'textarea', placeholder: 'IAM prévio, AVC, revascularização, angioplastia...', is_required: false },
+      { label: 'Antecedentes Familiares Cardiovasculares', field_type: 'textarea', placeholder: 'Doença coronariana, morte súbita, AVC em familiares', is_required: false },
+      { label: 'Medicamentos em Uso', field_type: 'textarea', placeholder: 'Anti-hipertensivos, anticoagulantes, estatinas...', is_required: false },
+      { label: 'Alergias', field_type: 'textarea', placeholder: 'Alergias a medicamentos, contrastes...', is_required: false },
+    ],
+  },
+  {
+    name: 'Sinais Vitais Cardiológicos',
+    type: 'cardio_vital_signs',
+    description: 'Registro de PA, FC e parâmetros cardiovasculares',
+    fields: [
+      { label: 'Pressão Arterial Sistólica (mmHg)', field_type: 'number', placeholder: 'Ex: 120', is_required: true },
+      { label: 'Pressão Arterial Diastólica (mmHg)', field_type: 'number', placeholder: 'Ex: 80', is_required: true },
+      { label: 'Frequência Cardíaca (bpm)', field_type: 'number', placeholder: 'Ex: 72', is_required: true },
+      { label: 'Ritmo Cardíaco', field_type: 'select', options: ['Regular', 'Irregular', 'Fibrilação atrial', 'Flutter atrial', 'Arritmia sinusal', 'Outro'], is_required: false },
+      { label: 'Saturação O2 (%)', field_type: 'number', placeholder: 'Ex: 98', is_required: false },
+      { label: 'Peso (kg)', field_type: 'number', placeholder: 'Ex: 75', is_required: false },
+      { label: 'Circunferência Abdominal (cm)', field_type: 'number', placeholder: 'Ex: 92', is_required: false },
+      { label: 'Ausculta Cardíaca', field_type: 'textarea', placeholder: 'Bulhas, sopros, ritmo...', is_required: false },
+      { label: 'Edema', field_type: 'select', options: ['Ausente', '+/4+', '++/4+', '+++/4+', '++++/4+'], is_required: false },
+    ],
+  },
+  {
+    name: 'Fatores de Risco Cardiovascular',
+    type: 'cardio_risk_factors',
+    description: 'Avaliação de fatores de risco para doença cardiovascular',
+    fields: [
+      { label: 'Hipertensão Arterial', field_type: 'select', options: ['Não', 'Sim - controlada', 'Sim - não controlada', 'Pré-hipertensão'], is_required: true },
+      { label: 'Diabetes Mellitus', field_type: 'select', options: ['Não', 'Sim - Tipo 1', 'Sim - Tipo 2', 'Pré-diabetes'], is_required: true },
+      { label: 'Dislipidemia', field_type: 'select', options: ['Não', 'Sim - em tratamento', 'Sim - sem tratamento'], is_required: true },
+      { label: 'Tabagismo', field_type: 'select', options: ['Nunca fumou', 'Ex-tabagista', 'Tabagista ativo'], is_required: true },
+      { label: 'Carga Tabágica (maços/ano)', field_type: 'number', placeholder: 'Ex: 20', is_required: false },
+      { label: 'Obesidade', field_type: 'select', options: ['Não', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III'], is_required: false },
+      { label: 'Sedentarismo', field_type: 'select', options: ['Não', 'Sim'], is_required: false },
+      { label: 'Estresse/Fatores Psicossociais', field_type: 'select', options: ['Ausente', 'Leve', 'Moderado', 'Intenso'], is_required: false },
+      { label: 'Escore de Risco', field_type: 'text', placeholder: 'Ex: Framingham, SCORE, etc.', is_required: false },
+      { label: 'Classificação de Risco', field_type: 'select', options: ['Baixo', 'Intermediário', 'Alto', 'Muito alto'], is_required: false },
+    ],
+  },
+  {
+    name: 'Exames Cardiológicos',
+    type: 'cardio_exams',
+    description: 'Registro e interpretação de exames cardiovasculares',
+    fields: [
+      { label: 'Tipo de Exame', field_type: 'select', options: ['ECG de repouso', 'Teste ergométrico', 'Holter 24h', 'MAPA 24h', 'Ecocardiograma', 'Cintilografia miocárdica', 'Angiotomografia coronariana', 'Cateterismo cardíaco', 'Ressonância cardíaca', 'Outro'], is_required: true },
+      { label: 'Data do Exame', field_type: 'date', placeholder: 'Data de realização', is_required: true },
+      { label: 'Resultado/Laudo', field_type: 'textarea', placeholder: 'Descrição dos achados', is_required: true },
+      { label: 'Fração de Ejeção (%)', field_type: 'number', placeholder: 'Ex: 60', is_required: false },
+      { label: 'Alterações Encontradas', field_type: 'textarea', placeholder: 'Alterações relevantes identificadas', is_required: false },
+      { label: 'Conclusão', field_type: 'textarea', placeholder: 'Interpretação clínica', is_required: false },
+    ],
+  },
+  {
+    name: 'Diagnóstico Cardiológico',
+    type: 'cardio_diagnosis',
+    description: 'Registro de diagnósticos cardiovasculares',
+    fields: [
+      { label: 'Diagnóstico Principal', field_type: 'textarea', placeholder: 'Diagnóstico cardiológico principal', is_required: true },
+      { label: 'Código CID-10', field_type: 'text', placeholder: 'Ex: I25.1', is_required: false },
+      { label: 'Diagnósticos Secundários', field_type: 'textarea', placeholder: 'Comorbidades cardiovasculares', is_required: false },
+      { label: 'Classificação Funcional (NYHA)', field_type: 'select', options: ['Classe I', 'Classe II', 'Classe III', 'Classe IV'], is_required: false },
+      { label: 'Estadiamento (ACC/AHA)', field_type: 'select', options: ['Estágio A', 'Estágio B', 'Estágio C', 'Estágio D'], is_required: false },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Notas adicionais sobre o diagnóstico', is_required: false },
+    ],
+  },
+  {
+    name: 'Conduta Cardiológica',
+    type: 'cardio_conduct',
+    description: 'Plano terapêutico e orientações cardiológicas',
+    fields: [
+      { label: 'Conduta Farmacológica', field_type: 'textarea', placeholder: 'Medicamentos prescritos', is_required: true },
+      { label: 'Orientações de Estilo de Vida', field_type: 'textarea', placeholder: 'Dieta, exercício, cessação tabágica...', is_required: false },
+      { label: 'Exames Solicitados', field_type: 'textarea', placeholder: 'Exames complementares solicitados', is_required: false },
+      { label: 'Encaminhamentos', field_type: 'textarea', placeholder: 'Outros especialistas, reabilitação cardíaca...', is_required: false },
+      { label: 'Metas Terapêuticas', field_type: 'textarea', placeholder: 'Alvos de PA, FC, LDL, HbA1c...', is_required: false },
+      { label: 'Retorno', field_type: 'text', placeholder: 'Prazo para retorno', is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução Cardiológica',
+    type: 'cardio_evolution',
+    description: 'Acompanhamento da evolução cardiovascular',
+    fields: [
+      { label: 'Sintomas Atuais', field_type: 'textarea', placeholder: 'Sintomas cardiovasculares presentes', is_required: true },
+      { label: 'Comparação com Consulta Anterior', field_type: 'select', options: ['Melhora significativa', 'Melhora parcial', 'Estável', 'Piora parcial', 'Piora significativa'], is_required: false },
+      { label: 'Adesão ao Tratamento', field_type: 'select', options: ['Excelente', 'Boa', 'Regular', 'Baixa', 'Não aderente'], is_required: false },
+      { label: 'Efeitos Colaterais', field_type: 'textarea', placeholder: 'Reações adversas aos medicamentos', is_required: false },
+      { label: 'PA Domiciliar (média)', field_type: 'text', placeholder: 'Ex: 130x85 mmHg', is_required: false },
+      { label: 'Evolução Clínica', field_type: 'textarea', placeholder: 'Resumo da evolução do paciente', is_required: true },
+      { label: 'Ajustes no Tratamento', field_type: 'textarea', placeholder: 'Modificações realizadas', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -464,6 +567,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...NUTRITION_TEMPLATES,
   ...AESTHETICS_TEMPLATES,
   ...PEDIATRICS_TEMPLATES,
+  ...CARDIOLOGY_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

@@ -223,6 +223,46 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Create professional if this user is a professional
+    let professionalId: string | null = null;
+    if (invitation.is_professional) {
+      console.log("[accept-invite] Creating professional record for user:", userId);
+      
+      try {
+        const { data: newProfessionalId, error: profError } = await supabaseAdmin
+          .rpc("create_professional_from_invitation", {
+            p_user_id: userId,
+            p_clinic_id: invitation.clinic_id,
+            p_full_name: invitation.full_name,
+            p_email: invitation.email,
+            p_professional_type: invitation.professional_type || null,
+            p_registration_number: invitation.registration_number || null,
+            p_specialty_ids: invitation.specialty_ids || [],
+          });
+
+        if (profError) {
+          console.error("[accept-invite] Error creating professional:", profError);
+        } else {
+          professionalId = newProfessionalId;
+          console.log("[accept-invite] Professional created:", professionalId);
+        }
+
+        // Add clinical permissions for professionals
+        const clinicalModules = ["prontuario", "atendimento", "agenda", "pacientes"];
+        for (const module of clinicalModules) {
+          await supabaseAdmin.from("module_permissions").upsert({
+            user_id: userId,
+            clinic_id: invitation.clinic_id,
+            module: module,
+            actions: ["view", "create", "edit"],
+          }, { onConflict: "user_id,clinic_id,module" });
+        }
+      } catch (profError) {
+        console.error("[accept-invite] Failed to create professional:", profError);
+        // Don't fail the whole request - user can still access the system
+      }
+    }
+
     // Mark invitation as accepted
     const { error: updateError } = await supabaseAdmin
       .from("user_invitations")

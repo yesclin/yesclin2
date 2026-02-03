@@ -35,6 +35,11 @@ interface InviteRequest {
   fullName: string;
   role: string;
   permissions?: string[];
+  // Professional data (optional)
+  isProfessional?: boolean;
+  professionalType?: string;
+  registrationNumber?: string;
+  specialtyIds?: string[];
 }
 
 // Invitation expiration in days
@@ -149,11 +154,28 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Parse and validate request body
-    const { email, fullName, role, permissions }: InviteRequest = await req.json();
+    const { 
+      email, 
+      fullName, 
+      role, 
+      permissions,
+      isProfessional,
+      professionalType,
+      registrationNumber,
+      specialtyIds,
+    }: InviteRequest = await req.json();
 
     if (!email || !fullName || !role) {
       return new Response(
         JSON.stringify({ error: "E-mail, nome e perfil são obrigatórios" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate professional data if isProfessional is true
+    if (isProfessional && (!specialtyIds || specialtyIds.length === 0)) {
+      return new Response(
+        JSON.stringify({ error: "Profissionais devem ter pelo menos uma especialidade" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -216,7 +238,12 @@ const handler = async (req: Request): Promise<Response> => {
         full_name: fullName,
         role: role,
         invited_by: user.id,
-        permissions: null,
+        permissions: permissions || null,
+        // Professional fields
+        is_professional: isProfessional || false,
+        professional_type: professionalType || null,
+        registration_number: registrationNumber || null,
+        specialty_ids: specialtyIds || [],
       })
       .select()
       .single();

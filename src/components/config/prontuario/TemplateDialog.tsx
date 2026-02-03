@@ -63,6 +63,15 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'pediatric_diagnosis', label: 'Diagnóstico', category: 'Pediatria' },
   { value: 'pediatric_conduct', label: 'Conduta/Orientações', category: 'Pediatria' },
   { value: 'pediatric_evolution', label: 'Evolução Clínica', category: 'Pediatria' },
+  // Gynecology
+  { value: 'gyneco_anamnesis', label: 'Anamnese Ginecológica', category: 'Ginecologia' },
+  { value: 'gyneco_data', label: 'Dados Ginecológicos', category: 'Ginecologia' },
+  { value: 'obstetric_history', label: 'Histórico Obstétrico (G/P/A)', category: 'Ginecologia' },
+  { value: 'gyneco_exam', label: 'Exame Ginecológico', category: 'Ginecologia' },
+  { value: 'gyneco_exams_results', label: 'Exames/Resultados', category: 'Ginecologia' },
+  { value: 'gyneco_diagnosis', label: 'Diagnóstico', category: 'Ginecologia' },
+  { value: 'gyneco_conduct', label: 'Conduta/Prescrição', category: 'Ginecologia' },
+  { value: 'gyneco_evolution', label: 'Evolução Clínica', category: 'Ginecologia' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

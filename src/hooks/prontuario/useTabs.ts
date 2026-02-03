@@ -53,6 +53,15 @@ const DEFAULT_TABS = [
   { name: 'Diagnóstico', key: 'pediatric_diagnosis', icon: 'Stethoscope', display_order: 23 },
   { name: 'Conduta/Orientações', key: 'pediatric_conduct', icon: 'Target', display_order: 24 },
   { name: 'Evolução Clínica', key: 'pediatric_evolution', icon: 'Activity', display_order: 25 },
+  // Gynecology tabs
+  { name: 'Anamnese Ginecológica', key: 'gyneco_anamnesis', icon: 'CircleUser', display_order: 26 },
+  { name: 'Dados Ginecológicos', key: 'gyneco_data', icon: 'CalendarDays', display_order: 27 },
+  { name: 'Histórico Obstétrico (G/P/A)', key: 'obstetric_history', icon: 'HeartPulse', display_order: 28 },
+  { name: 'Exame Ginecológico', key: 'gyneco_exam', icon: 'Search', display_order: 29 },
+  { name: 'Exames/Resultados', key: 'gyneco_exams_results', icon: 'ClipboardList', display_order: 30 },
+  { name: 'Diagnóstico', key: 'gyneco_diagnosis', icon: 'Stethoscope', display_order: 31 },
+  { name: 'Conduta/Prescrição', key: 'gyneco_conduct', icon: 'Target', display_order: 32 },
+  { name: 'Evolução Clínica', key: 'gyneco_evolution', icon: 'Activity', display_order: 33 },
 ];
 
 export function useTabs() {

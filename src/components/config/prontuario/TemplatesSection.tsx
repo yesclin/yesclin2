@@ -62,6 +62,15 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'pediatric_diagnosis', label: 'Diagnóstico', category: 'Pediatria' },
   { value: 'pediatric_conduct', label: 'Conduta/Orientações', category: 'Pediatria' },
   { value: 'pediatric_evolution', label: 'Evolução Clínica', category: 'Pediatria' },
+  // Gynecology
+  { value: 'gyneco_anamnesis', label: 'Anamnese Ginecológica', category: 'Ginecologia' },
+  { value: 'gyneco_data', label: 'Dados Ginecológicos', category: 'Ginecologia' },
+  { value: 'obstetric_history', label: 'Histórico Obstétrico (G/P/A)', category: 'Ginecologia' },
+  { value: 'gyneco_exam', label: 'Exame Ginecológico', category: 'Ginecologia' },
+  { value: 'gyneco_exams_results', label: 'Exames/Resultados', category: 'Ginecologia' },
+  { value: 'gyneco_diagnosis', label: 'Diagnóstico', category: 'Ginecologia' },
+  { value: 'gyneco_conduct', label: 'Conduta/Prescrição', category: 'Ginecologia' },
+  { value: 'gyneco_evolution', label: 'Evolução Clínica', category: 'Ginecologia' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -114,6 +123,15 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   pediatric_diagnosis: 'bg-purple-100 text-purple-800',
   pediatric_conduct: 'bg-orange-100 text-orange-800',
   pediatric_evolution: 'bg-teal-100 text-teal-800',
+  // Gynecology
+  gyneco_anamnesis: 'bg-rose-100 text-rose-800',
+  gyneco_data: 'bg-pink-100 text-pink-800',
+  obstetric_history: 'bg-fuchsia-100 text-fuchsia-800',
+  gyneco_exam: 'bg-purple-100 text-purple-800',
+  gyneco_exams_results: 'bg-cyan-100 text-cyan-800',
+  gyneco_diagnosis: 'bg-violet-100 text-violet-800',
+  gyneco_conduct: 'bg-amber-100 text-amber-800',
+  gyneco_evolution: 'bg-teal-100 text-teal-800',
 };
 
 export function TemplatesSection() {

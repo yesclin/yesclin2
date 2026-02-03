@@ -1,1 +1,0 @@
-export { SpecialtyFormDialog } from "./SpecialtyFormDialog";

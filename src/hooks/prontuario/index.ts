@@ -20,6 +20,16 @@ export { useClinicalTimeline } from './useClinicalTimeline';
 // Active Appointment (for edit control)
 export { useActiveAppointment, useCanEditMedicalRecord, type ActiveAppointment } from './useActiveAppointment';
 
+// Active Specialty (for tab filtering by specialty)
+export { useActiveSpecialty, mapSpecialtyNameToKey, type SpecialtyKey, type SpecialtyOption } from './useActiveSpecialty';
+export { 
+  BASE_TABS, 
+  SPECIALTY_TABS, 
+  SPECIALTY_LABELS,
+  getVisibleTabsForSpecialty, 
+  isTabVisibleForSpecialty 
+} from './specialtyTabsConfig';
+
 // Permission hooks (for granular access control)
 export {
   useMedicalRecordPermissions,

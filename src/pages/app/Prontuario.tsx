@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -86,6 +86,8 @@ import {
   type TabKey,
   type ActionKey,
 } from "@/hooks/prontuario";
+import { useActiveSpecialty } from "@/hooks/prontuario/useActiveSpecialty";
+import { isTabVisibleForSpecialty } from "@/hooks/prontuario/specialtyTabsConfig";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
 import { PatientHeader } from "@/components/prontuario/PatientHeader";
 import { ProntuarioSearchBar, type SearchResult } from "@/components/prontuario/ProntuarioSearchBar";
@@ -95,6 +97,7 @@ import { SignatureDialog } from "@/components/prontuario/SignatureDialog";
 import { SignedRecordBadge } from "@/components/prontuario/SignedRecordBadge";
 import { PatientSelector } from "@/components/prontuario/PatientSelector";
 import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
+import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -391,6 +394,17 @@ export default function Prontuario() {
     isLoading: appointmentLoading,
   } = useCanEditMedicalRecord(patientId);
 
+  // Active Specialty - determines which tabs are visible
+  const {
+    activeSpecialtyId,
+    activeSpecialty,
+    activeSpecialtyKey,
+    specialties,
+    isFromAppointment: isSpecialtyFromAppointment,
+    setActiveSpecialty,
+    loading: specialtyLoading,
+  } = useActiveSpecialty(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -438,26 +452,35 @@ export default function Prontuario() {
   const canSignCurrentTab = canSignTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && isDigitalSignatureEnabled && hasActiveAppointment;
 
   // Build nav items from configuration or use defaults, filtered by permissions
-  const allNavItems = getActiveTabs().length > 0
-    ? getActiveTabs().map((tab: TabConfig) => ({
-        id: tab.key,
-        label: tab.name,
-        icon: ICON_MAP[tab.icon || 'FileText'] || FileText,
-      }))
-    : DEFAULT_NAV_ITEMS;
+  const allNavItems = useMemo(() => {
+    return getActiveTabs().length > 0
+      ? getActiveTabs().map((tab: TabConfig) => ({
+          id: tab.key,
+          label: tab.name,
+          icon: ICON_MAP[tab.icon || 'FileText'] || FileText,
+        }))
+      : DEFAULT_NAV_ITEMS;
+  }, [getActiveTabs]);
 
-  // Filter nav items based on permissions
-  const navItems = allNavItems.filter(item => {
-    const standardKey = getStandardTabKey(item.id);
-    return canViewTab(standardKey);
-  });
+  // Filter nav items based on permissions AND active specialty
+  const navItems = useMemo(() => {
+    return allNavItems.filter(item => {
+      // Check permission first
+      const standardKey = getStandardTabKey(item.id);
+      if (!canViewTab(standardKey)) return false;
+      
+      // Check specialty visibility
+      return isTabVisibleForSpecialty(item.id, activeSpecialtyKey);
+    });
+  }, [allNavItems, activeSpecialtyKey]);
 
   // Set first tab as active when config loads
+  // Reset active tab when specialty changes or when current tab is no longer visible
   useEffect(() => {
     if (navItems.length > 0 && !navItems.find(n => n.id === activeTab)) {
       setActiveTab(navItems[0].id);
     }
-  }, [navItems, activeTab]);
+  }, [navItems, activeTab, activeSpecialtyKey]);
 
   // Handle search result click
   const handleSearchResultClick = useCallback((result: SearchResult) => {
@@ -1169,7 +1192,7 @@ export default function Prontuario() {
       {/* Header */}
       <div className="flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link to="/app/pacientes">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-1" />
@@ -1180,6 +1203,19 @@ export default function Prontuario() {
               <FileText className="h-6 w-6 text-primary" />
               <h1 className="text-2xl font-bold text-foreground">Prontuário</h1>
             </div>
+            
+            {/* Specialty Selector */}
+            {patientId && (
+              <SpecialtySelector
+                activeSpecialty={activeSpecialty}
+                activeSpecialtyKey={activeSpecialtyKey}
+                specialties={specialties}
+                isFromAppointment={isSpecialtyFromAppointment}
+                onSelect={setActiveSpecialty}
+                loading={specialtyLoading}
+              />
+            )}
+
             {criticalAlerts.length > 0 && (
               <Badge variant="destructive" className="animate-pulse">
                 {criticalAlerts.length} Alerta(s) Crítico(s)

@@ -285,6 +285,75 @@ const NUTRITION_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Estética / Harmonização
+const AESTHETICS_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Avaliação Estética',
+    type: 'aesthetic_assessment',
+    description: 'Avaliação inicial para procedimentos estéticos',
+    fields: [
+      { label: 'Queixa Principal', field_type: 'textarea', placeholder: 'O que incomoda o paciente', is_required: true },
+      { label: 'Expectativas do Paciente', field_type: 'textarea', placeholder: 'Qual resultado o paciente espera', is_required: true },
+      { label: 'Tipo de Pele', field_type: 'select', options: ['I - Muito clara', 'II - Clara', 'III - Morena clara', 'IV - Morena', 'V - Morena escura', 'VI - Negra'], is_required: false },
+      { label: 'Condições da Pele', field_type: 'multiselect', options: ['Normal', 'Oleosa', 'Seca', 'Mista', 'Sensível', 'Acneica', 'Envelhecida', 'Manchada', 'Flácida'], is_required: false },
+      { label: 'Tratamentos Anteriores', field_type: 'textarea', placeholder: 'Procedimentos estéticos já realizados', is_required: false },
+      { label: 'Uso de Medicamentos', field_type: 'textarea', placeholder: 'Medicamentos em uso (isotretinoína, anticoagulantes, etc.)', is_required: false },
+      { label: 'Alergias Conhecidas', field_type: 'textarea', placeholder: 'Alergias a anestésicos, produtos, etc.', is_required: false },
+      { label: 'Contraindicações Identificadas', field_type: 'textarea', placeholder: 'Gravidez, doenças autoimunes, etc.', is_required: false },
+    ],
+  },
+  {
+    name: 'Procedimento Estético',
+    type: 'aesthetic_procedure',
+    description: 'Registro detalhado do procedimento realizado',
+    fields: [
+      { label: 'Região Tratada', field_type: 'text', placeholder: 'Ex: Lábios, sulco nasogeniano, testa', is_required: true },
+      { label: 'Procedimento Realizado', field_type: 'select', options: ['Toxina Botulínica', 'Preenchimento com Ácido Hialurônico', 'Bioestimulador de Colágeno', 'Fios de PDO', 'Peeling Químico', 'Microagulhamento', 'Laser', 'Luz Pulsada', 'Criolipólise', 'Radiofrequência', 'Skinbooster', 'Outro'], is_required: true },
+      { label: 'Técnica Utilizada', field_type: 'text', placeholder: 'Descreva a técnica aplicada', is_required: false },
+      { label: 'Anestesia Utilizada', field_type: 'text', placeholder: 'Tipo de anestesia (tópica, infiltrativa)', is_required: false },
+      { label: 'Observações do Procedimento', field_type: 'textarea', placeholder: 'Detalhes técnicos e intercorrências', is_required: false },
+    ],
+  },
+  {
+    name: 'Produtos Utilizados',
+    type: 'products_used',
+    description: 'Registro dos produtos aplicados com rastreabilidade',
+    fields: [
+      { label: 'Produto Utilizado', field_type: 'text', placeholder: 'Nome comercial do produto', is_required: true },
+      { label: 'Fabricante', field_type: 'text', placeholder: 'Laboratório fabricante', is_required: false },
+      { label: 'Lote do Produto', field_type: 'text', placeholder: 'Número do lote', is_required: true },
+      { label: 'Validade', field_type: 'date', placeholder: 'Data de validade', is_required: false },
+      { label: 'Quantidade Aplicada', field_type: 'text', placeholder: 'Ex: 1ml, 50U', is_required: true },
+      { label: 'Pontos de Aplicação', field_type: 'textarea', placeholder: 'Descreva os pontos onde foi aplicado', is_required: false },
+      { label: 'Intercorrências', field_type: 'textarea', placeholder: 'Sangramento, hematoma, dor excessiva, etc.', is_required: false },
+    ],
+  },
+  {
+    name: 'Fotos Antes/Depois',
+    type: 'before_after_photos',
+    description: 'Documentação fotográfica do tratamento',
+    fields: [
+      { label: 'Tipo de Registro', field_type: 'select', options: ['Antes do procedimento', 'Imediatamente após', 'Retorno 7 dias', 'Retorno 15 dias', 'Retorno 30 dias', 'Retorno 90 dias', 'Resultado final'], is_required: true },
+      { label: 'Região Fotografada', field_type: 'text', placeholder: 'Ex: Face frontal, perfil direito', is_required: true },
+      { label: 'Observações da Imagem', field_type: 'textarea', placeholder: 'Notas sobre o registro fotográfico', is_required: false },
+      { label: 'Consentimento para Uso de Imagem', field_type: 'select', options: ['Sim, autorizado', 'Não autorizado', 'Apenas para prontuário'], is_required: true },
+    ],
+  },
+  {
+    name: 'Termo de Consentimento',
+    type: 'consent_form',
+    description: 'Registro de termos de consentimento assinados',
+    fields: [
+      { label: 'Tipo de Termo', field_type: 'select', options: ['Consentimento para procedimento', 'Autorização de uso de imagem', 'Termo de ciência de riscos', 'Termo de responsabilidade', 'Outro'], is_required: true },
+      { label: 'Procedimento Relacionado', field_type: 'text', placeholder: 'Qual procedimento o termo autoriza', is_required: true },
+      { label: 'Riscos Informados', field_type: 'textarea', placeholder: 'Riscos explicados ao paciente', is_required: false },
+      { label: 'Paciente Leu e Compreendeu', field_type: 'select', options: ['Sim', 'Não'], is_required: true },
+      { label: 'Data da Assinatura', field_type: 'date', placeholder: 'Data em que o termo foi assinado', is_required: true },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Anotações adicionais', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -292,6 +361,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...PSYCHOLOGY_TEMPLATES,
   ...PSYCHIATRY_TEMPLATES,
   ...NUTRITION_TEMPLATES,
+  ...AESTHETICS_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

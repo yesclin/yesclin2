@@ -44,6 +44,14 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'products_used', label: 'Produtos Utilizados', category: 'Estética' },
   { value: 'before_after_photos', label: 'Fotos Antes/Depois', category: 'Estética' },
   { value: 'consent_form', label: 'Termo de Consentimento', category: 'Estética' },
+  // Physiotherapy
+  { value: 'functional_assessment', label: 'Avaliação Funcional', category: 'Fisioterapia' },
+  { value: 'chief_complaint', label: 'Queixa Principal', category: 'Fisioterapia' },
+  { value: 'pain_scale', label: 'Escala de Dor', category: 'Fisioterapia' },
+  { value: 'range_of_motion', label: 'Amplitude de Movimento', category: 'Fisioterapia' },
+  { value: 'physio_therapeutic_plan', label: 'Plano Terapêutico', category: 'Fisioterapia' },
+  { value: 'applied_exercises', label: 'Exercícios Aplicados', category: 'Fisioterapia' },
+  { value: 'session_evolution', label: 'Evolução por Sessão', category: 'Fisioterapia' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -78,6 +86,14 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   products_used: 'bg-amber-100 text-amber-800',
   before_after_photos: 'bg-violet-100 text-violet-800',
   consent_form: 'bg-slate-100 text-slate-800',
+  // Physiotherapy
+  functional_assessment: 'bg-blue-100 text-blue-800',
+  chief_complaint: 'bg-yellow-100 text-yellow-800',
+  pain_scale: 'bg-red-100 text-red-800',
+  range_of_motion: 'bg-cyan-100 text-cyan-800',
+  physio_therapeutic_plan: 'bg-indigo-100 text-indigo-800',
+  applied_exercises: 'bg-green-100 text-green-800',
+  session_evolution: 'bg-teal-100 text-teal-800',
 };
 
 export function TemplatesSection() {

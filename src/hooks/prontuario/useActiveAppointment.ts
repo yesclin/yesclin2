@@ -13,6 +13,8 @@ export interface ActiveAppointment {
   professional_name: string | null;
   procedure_id: string | null;
   procedure_name: string | null;
+  specialty_id: string | null;
+  specialty_name: string | null;
   started_at: string | null;
 }
 
@@ -44,8 +46,10 @@ export function useActiveAppointment(patientId: string | null | undefined) {
           professional_id,
           started_at,
           procedure_id,
+          specialty_id,
           professionals(full_name),
-          procedures(name)
+          procedures(name),
+          specialties(name)
         `)
         .eq("patient_id", patientId)
         .eq("scheduled_date", today)
@@ -73,6 +77,8 @@ export function useActiveAppointment(patientId: string | null | undefined) {
         professional_name: data.professionals?.full_name || null,
         procedure_id: data.procedure_id,
         procedure_name: data.procedures?.name || null,
+        specialty_id: data.specialty_id || null,
+        specialty_name: data.specialties?.name || null,
         started_at: data.started_at,
       } as ActiveAppointment;
     },

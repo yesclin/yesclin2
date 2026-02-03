@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,7 @@ import { LgpdBlockingOverlay } from "@/components/prontuario/LgpdBlockingOverlay
 import { ConsentCollectionDialog } from "@/components/prontuario/ConsentCollectionDialog";
 import { SignatureDialog } from "@/components/prontuario/SignatureDialog";
 import { SignedRecordBadge } from "@/components/prontuario/SignedRecordBadge";
+import { PatientSelector } from "@/components/prontuario/PatientSelector";
 import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -125,7 +126,8 @@ const DEFAULT_NAV_ITEMS = [
 ];
 
 export default function Prontuario() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const patientId = searchParams.get('paciente');
   
   const {
@@ -887,18 +889,13 @@ export default function Prontuario() {
     }
   };
 
-  // No patient selected
+  // No patient selected - show patient selector
   if (!patientId) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
-        <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Nenhum paciente selecionado</h2>
-        <p className="text-muted-foreground mb-4">Selecione um paciente para visualizar o prontuário.</p>
-        <Link to="/app/pacientes">
-          <Button>Ir para Pacientes</Button>
-        </Link>
-      </div>
-    );
+    const handleSelectPatient = (selectedPatientId: string) => {
+      setSearchParams({ paciente: selectedPatientId });
+    };
+
+    return <PatientSelector onSelectPatient={handleSelectPatient} />;
   }
 
   // Handler for consent collection

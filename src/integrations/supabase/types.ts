@@ -4918,6 +4918,7 @@ export type Database = {
       }
       specialties: {
         Row: {
+          area: string | null
           clinic_id: string
           color: string | null
           created_at: string
@@ -4928,6 +4929,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area?: string | null
           clinic_id: string
           color?: string | null
           created_at?: string
@@ -4938,6 +4940,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area?: string | null
           clinic_id?: string
           color?: string | null
           created_at?: string

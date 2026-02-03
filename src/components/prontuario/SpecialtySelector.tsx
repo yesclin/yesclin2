@@ -1,4 +1,5 @@
-import { Stethoscope, ChevronDown, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { Stethoscope, ChevronDown, Lock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,6 +13,9 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SpecialtyOption, SpecialtyKey } from '@/hooks/prontuario/useActiveSpecialty';
 import { SPECIALTY_LABELS } from '@/hooks/prontuario/specialtyTabsConfig';
+import { SpecialtyFormDialog } from '@/components/specialties/SpecialtyFormDialog';
+import { useClinicData } from '@/hooks/useClinicData';
+import { useInvalidateSpecialties } from '@/hooks/useSpecialties';
 
 interface SpecialtySelectorProps {
   activeSpecialty: SpecialtyOption | null;
@@ -32,6 +36,10 @@ export function SpecialtySelector({
   loading,
   disabled,
 }: SpecialtySelectorProps) {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const { clinic } = useClinicData();
+  const invalidateSpecialties = useInvalidateSpecialties();
+  
   const displayLabel = activeSpecialty?.name || SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
 
   if (isFromAppointment) {
@@ -56,54 +64,80 @@ export function SpecialtySelector({
 
   // Manual selection allowed
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={loading || disabled}
-        >
-          <Stethoscope className="h-4 w-4" />
-          <span>{displayLabel}</span>
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
-          Selecione a especialidade para visualizar os blocos clínicos correspondentes
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        {/* Default option */}
-        <DropdownMenuItem
-          onClick={() => onSelect(null)}
-          className="gap-2"
-        >
-          <Stethoscope className="h-4 w-4" />
-          <span>Clínica Geral</span>
-          {!activeSpecialty && (
-            <Badge variant="secondary" className="ml-auto text-[10px]">Ativo</Badge>
-          )}
-        </DropdownMenuItem>
-        
-        {specialties.length > 0 && <DropdownMenuSeparator />}
-        
-        {/* Available specialties */}
-        {specialties.map((specialty) => (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={loading || disabled}
+          >
+            <Stethoscope className="h-4 w-4" />
+            <span>{displayLabel}</span>
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            Selecione a especialidade para visualizar os blocos clínicos correspondentes
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          {/* Default option */}
           <DropdownMenuItem
-            key={specialty.id}
-            onClick={() => onSelect(specialty.id)}
+            onClick={() => onSelect(null)}
             className="gap-2"
           >
             <Stethoscope className="h-4 w-4" />
-            <span>{specialty.name}</span>
-            {activeSpecialty?.id === specialty.id && (
+            <span>Clínica Geral</span>
+            {!activeSpecialty && (
               <Badge variant="secondary" className="ml-auto text-[10px]">Ativo</Badge>
             )}
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          
+          {specialties.length > 0 && <DropdownMenuSeparator />}
+          
+          {/* Available specialties */}
+          {specialties.map((specialty) => (
+            <DropdownMenuItem
+              key={specialty.id}
+              onClick={() => onSelect(specialty.id)}
+              className="gap-2"
+            >
+              <Stethoscope className="h-4 w-4" />
+              <span>{specialty.name}</span>
+              {activeSpecialty?.id === specialty.id && (
+                <Badge variant="secondary" className="ml-auto text-[10px]">Ativo</Badge>
+              )}
+            </DropdownMenuItem>
+          ))}
+          
+          <DropdownMenuSeparator />
+          
+          {/* Create new specialty option */}
+          <DropdownMenuItem
+            onClick={() => setShowCreateDialog(true)}
+            className="gap-2 text-primary font-medium"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Criar nova especialidade</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Specialty Creation Dialog */}
+      {clinic?.id && (
+        <SpecialtyFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          clinicId={clinic.id}
+          onSuccess={(newSpecialty) => {
+            invalidateSpecialties();
+            onSelect(newSpecialty.id);
+          }}
+        />
+      )}
+    </>
   );
 }

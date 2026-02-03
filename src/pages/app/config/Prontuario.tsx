@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Settings, LayoutList, FileText, Palette, Shield, Lock } from 'lucide-react';
+import { Settings, LayoutList, FileText, Palette, Shield, Lock, FormInput } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { TabsSection, TemplatesSection, VisualSection, SecuritySection, PermissionsSection } from '@/components/config/prontuario';
+import { TabsSection, TemplatesSection, VisualSection, SecuritySection, PermissionsSection, CustomFieldsSection } from '@/components/config/prontuario';
 
 const TABS = [
   { id: 'tabs', label: 'Abas', icon: LayoutList, description: 'Visibilidade e ordem' },
   { id: 'templates', label: 'Modelos', icon: FileText, description: 'Anamnese, evolução, etc.' },
+  { id: 'custom-fields', label: 'Campos', icon: FormInput, description: 'Campos personalizados', badge: 'Novo' },
   { id: 'visual', label: 'Visual', icon: Palette, description: 'Cores e layout' },
   { id: 'permissions', label: 'Permissões', icon: Lock, description: 'Acesso por perfil', badge: 'RBAC' },
   { id: 'security', label: 'Segurança', icon: Shield, description: 'LGPD e bloqueios', badge: 'LGPD' },
@@ -28,7 +29,7 @@ export default function ConfigProntuario() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 lg:grid-cols-5 h-auto gap-2 bg-transparent p-0">
+        <TabsList className="grid grid-cols-2 lg:grid-cols-6 h-auto gap-2 bg-transparent p-0">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -66,6 +67,10 @@ export default function ConfigProntuario() {
 
         <TabsContent value="templates" className="m-0">
           <TemplatesSection />
+        </TabsContent>
+
+        <TabsContent value="custom-fields" className="m-0">
+          <CustomFieldsSection />
         </TabsContent>
 
         <TabsContent value="visual" className="m-0">

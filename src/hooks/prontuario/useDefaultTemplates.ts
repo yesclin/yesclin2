@@ -116,10 +116,53 @@ const DENTISTRY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Psicologia
+const PSYCHOLOGY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Registro de Sessão',
+    type: 'session_record',
+    description: 'Documentação de sessão de psicoterapia',
+    fields: [
+      { label: 'Tipo de Sessão', field_type: 'select', options: ['Individual', 'Casal', 'Família', 'Grupo', 'Online', 'Primeira consulta', 'Retorno'], is_required: true },
+      { label: 'Relato do Paciente', field_type: 'textarea', placeholder: 'Transcreva os principais relatos e narrativas do paciente', is_required: true },
+      { label: 'Observações do Profissional', field_type: 'textarea', placeholder: 'Suas observações clínicas sobre a sessão', is_required: true },
+      { label: 'Emoções Predominantes', field_type: 'multiselect', options: ['Ansiedade', 'Tristeza', 'Raiva', 'Medo', 'Alegria', 'Culpa', 'Vergonha', 'Frustração', 'Esperança', 'Confusão', 'Alívio', 'Indiferença'], is_required: false },
+      { label: 'Temas Abordados', field_type: 'textarea', placeholder: 'Principais temas discutidos na sessão', is_required: false },
+      { label: 'Técnicas Utilizadas', field_type: 'textarea', placeholder: 'Técnicas ou intervenções aplicadas', is_required: false },
+    ],
+  },
+  {
+    name: 'Objetivos Terapêuticos',
+    type: 'therapeutic_goals',
+    description: 'Definição e acompanhamento de objetivos do tratamento',
+    fields: [
+      { label: 'Objetivo Principal', field_type: 'textarea', placeholder: 'Descreva o objetivo principal do tratamento', is_required: true },
+      { label: 'Objetivos Secundários', field_type: 'textarea', placeholder: 'Outros objetivos a serem alcançados', is_required: false },
+      { label: 'Indicadores de Progresso', field_type: 'textarea', placeholder: 'Como será medido o progresso', is_required: false },
+      { label: 'Prazo Estimado', field_type: 'text', placeholder: 'Ex: 3 meses, 10 sessões', is_required: false },
+      { label: 'Status do Objetivo', field_type: 'select', options: ['Em andamento', 'Parcialmente atingido', 'Atingido', 'Reavaliando', 'Suspenso'], is_required: false },
+    ],
+  },
+  {
+    name: 'Plano Terapêutico',
+    type: 'therapeutic_plan',
+    description: 'Planejamento do tratamento psicológico',
+    fields: [
+      { label: 'Diagnóstico / Hipótese Clínica', field_type: 'textarea', placeholder: 'Impressão diagnóstica ou hipótese clínica', is_required: true },
+      { label: 'Abordagem Terapêutica', field_type: 'select', options: ['Terapia Cognitivo-Comportamental', 'Psicanálise', 'Humanista', 'Sistêmica', 'Gestalt', 'EMDR', 'Terapia Breve', 'Outra'], is_required: true },
+      { label: 'Plano de Tratamento', field_type: 'textarea', placeholder: 'Descreva o plano terapêutico proposto', is_required: true },
+      { label: 'Frequência das Sessões', field_type: 'select', options: ['Semanal', 'Quinzenal', 'Mensal', 'Sob demanda'], is_required: false },
+      { label: 'Evolução Clínica', field_type: 'textarea', placeholder: 'Resumo da evolução do paciente', is_required: false },
+      { label: 'Encaminhamentos', field_type: 'textarea', placeholder: 'Encaminhamentos para outros profissionais, se necessário', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
   ...DENTISTRY_TEMPLATES,
+  ...PSYCHOLOGY_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

@@ -4,25 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, ArrowRight, ArrowLeft, Plus, Trash2, Stethoscope } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, ArrowRight, ArrowLeft, Plus, Trash2, Settings, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SpecialtyFormDialog } from "@/components/specialties/SpecialtyFormDialog";
-
-// Fallback specialties for when no clinic specialties exist yet
-const defaultSpecialties = [
-  "Clínico Geral",
-  "Dermatologia",
-  "Fisioterapia",
-  "Nutrição",
-  "Psicologia",
-  "Psiquiatria",
-  "Cardiologia",
-  "Ortopedia",
-  "Pediatria",
-  "Ginecologia",
-  "Oftalmologia",
-];
+import { Link } from "react-router-dom";
 
 interface ClinicSpecialty {
   id: string;
@@ -47,7 +33,6 @@ export function ProfessionalsStep({ clinicId, onNext, onBack }: ProfessionalsSte
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [clinicSpecialties, setClinicSpecialties] = useState<ClinicSpecialty[]>([]);
-  const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
   const { toast } = useToast();
 
   const loadClinicSpecialties = async () => {
@@ -168,6 +153,23 @@ export function ProfessionalsStep({ clinicId, onNext, onBack }: ProfessionalsSte
         </div>
       </div>
 
+      {/* No specialties warning */}
+      {clinicSpecialties.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex flex-col gap-2">
+            <span>Nenhuma especialidade cadastrada ainda.</span>
+            <p className="text-xs text-muted-foreground">
+              Você pode continuar o onboarding e cadastrar especialidades depois em{" "}
+              <Link to="/app/config/clinica" className="text-primary hover:underline inline-flex items-center gap-1">
+                <Settings className="h-3 w-3" />
+                Configurações da Clínica
+              </Link>
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-4">
         {professionals.map((prof, index) => (
           <motion.div
@@ -189,40 +191,18 @@ export function ProfessionalsStep({ clinicId, onNext, onBack }: ProfessionalsSte
               <Label>Especialidade</Label>
               <Select
                 value={prof.specialty}
-                onValueChange={(value) => {
-                  if (value === "__create_new__") {
-                    setShowSpecialtyDialog(true);
-                  } else {
-                    updateProfessional(index, "specialty", value);
-                  }
-                }}
-                disabled={!prof.isNew}
+                onValueChange={(value) => updateProfessional(index, "specialty", value)}
+                disabled={!prof.isNew || clinicSpecialties.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={clinicSpecialties.length === 0 ? "Configure especialidades primeiro" : "Selecione"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
-                  {/* Clinic specialties first */}
                   {clinicSpecialties.map((spec) => (
                     <SelectItem key={spec.id} value={spec.id}>
                       {spec.name}
                     </SelectItem>
                   ))}
-                  
-                  {/* Fallback to default specialties if no clinic specialties */}
-                  {clinicSpecialties.length === 0 && defaultSpecialties.map((spec) => (
-                    <SelectItem key={spec} value={spec}>
-                      {spec}
-                    </SelectItem>
-                  ))}
-                  
-                  {/* Create new specialty option */}
-                  <SelectItem value="__create_new__" className="text-primary font-medium">
-                    <div className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Criar nova especialidade
-                    </div>
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -260,16 +240,6 @@ export function ProfessionalsStep({ clinicId, onNext, onBack }: ProfessionalsSte
           </Button>
         </div>
       </div>
-
-      {/* Specialty Creation Dialog */}
-      <SpecialtyFormDialog
-        open={showSpecialtyDialog}
-        onOpenChange={setShowSpecialtyDialog}
-        clinicId={clinicId}
-        onSuccess={(newSpecialty) => {
-          loadClinicSpecialties();
-        }}
-      />
     </motion.div>
   );
 }

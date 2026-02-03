@@ -9,6 +9,7 @@ import { ClinicDataCard } from "@/components/config/ClinicDataCard";
 import { FiscalIdentificationCard } from "@/components/config/FiscalIdentificationCard";
 import { LocationHoursSection } from "@/components/config/LocationHoursSection";
 import { WeekSchedule, getDefaultWeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
+import { SpecialtiesSection } from "@/components/config/SpecialtiesSection";
 import { validateCPF, validateCNPJ } from "@/lib/validators";
 
 interface ClinicFormData {
@@ -460,6 +461,8 @@ export default function ConfigClinica() {
         onScheduleChange={(schedule) => setFormData({ ...formData, schedule })}
         canEdit={isOwner}
       />
+
+      <SpecialtiesSection />
 
       <div className="flex justify-end">
         <Button 

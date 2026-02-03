@@ -28,6 +28,11 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'session_record', label: 'Registro de Sessão', category: 'Psicologia' },
   { value: 'therapeutic_goals', label: 'Objetivos Terapêuticos', category: 'Psicologia' },
   { value: 'therapeutic_plan', label: 'Plano Terapêutico', category: 'Psicologia' },
+  // Psychiatry
+  { value: 'diagnosis_dsm', label: 'Diagnóstico (CID/DSM)', category: 'Psiquiatria' },
+  { value: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', category: 'Psiquiatria' },
+  { value: 'symptom_evolution', label: 'Evolução de Sintomas', category: 'Psiquiatria' },
+  { value: 'medication_history', label: 'Histórico de Medicamentos', category: 'Psiquiatria' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -46,6 +51,11 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   session_record: 'bg-violet-100 text-violet-800',
   therapeutic_goals: 'bg-fuchsia-100 text-fuchsia-800',
   therapeutic_plan: 'bg-rose-100 text-rose-800',
+  // Psychiatry
+  diagnosis_dsm: 'bg-purple-100 text-purple-800',
+  psychiatric_prescription: 'bg-pink-100 text-pink-800',
+  symptom_evolution: 'bg-sky-100 text-sky-800',
+  medication_history: 'bg-slate-100 text-slate-800',
 };
 
 export function TemplatesSection() {

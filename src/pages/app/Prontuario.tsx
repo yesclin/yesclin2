@@ -36,6 +36,11 @@ import {
   NotebookPen,
   Goal,
   Route,
+  // Psychiatry icons
+  BrainCircuit,
+  PillIcon,
+  TrendingUp,
+  ClipboardCheck,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -89,6 +94,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   NotebookPen,
   Goal,
   Route,
+  // Psychiatry icons
+  BrainCircuit,
+  PillIcon,
+  TrendingUp,
+  ClipboardCheck,
 };
 
 // Tab key mapping to standard keys
@@ -117,6 +127,11 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   session_record: 'evolucao',
   therapeutic_goals: 'evolucao',
   therapeutic_plan: 'evolucao',
+  // Psychiatry tabs - map to appropriate permissions
+  diagnosis_dsm: 'diagnostico',
+  psychiatric_prescription: 'prescricoes',
+  symptom_evolution: 'evolucao',
+  medication_history: 'prescricoes',
 };
 
 // Fallback nav items when no config exists
@@ -139,6 +154,11 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'session_record', label: 'Registro de Sessão', icon: NotebookPen },
   { id: 'therapeutic_goals', label: 'Objetivos Terapêuticos', icon: Goal },
   { id: 'therapeutic_plan', label: 'Plano Terapêutico', icon: Route },
+  // Psychiatry tabs
+  { id: 'diagnosis_dsm', label: 'Diagnóstico (CID/DSM)', icon: BrainCircuit },
+  { id: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', icon: PillIcon },
+  { id: 'symptom_evolution', label: 'Evolução de Sintomas', icon: TrendingUp },
+  { id: 'medication_history', label: 'Histórico de Medicamentos', icon: ClipboardCheck },
 ];
 
 export default function Prontuario() {

@@ -29,6 +29,11 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'session_record', label: 'Registro de Sessão', category: 'Psicologia' },
   { value: 'therapeutic_goals', label: 'Objetivos Terapêuticos', category: 'Psicologia' },
   { value: 'therapeutic_plan', label: 'Plano Terapêutico', category: 'Psicologia' },
+  // Psychiatry
+  { value: 'diagnosis_dsm', label: 'Diagnóstico (CID/DSM)', category: 'Psiquiatria' },
+  { value: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', category: 'Psiquiatria' },
+  { value: 'symptom_evolution', label: 'Evolução de Sintomas', category: 'Psiquiatria' },
+  { value: 'medication_history', label: 'Histórico de Medicamentos', category: 'Psiquiatria' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

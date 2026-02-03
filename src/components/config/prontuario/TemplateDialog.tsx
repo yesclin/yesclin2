@@ -39,6 +39,12 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'body_measurements', label: 'Medidas Corporais', category: 'Nutrição' },
   { value: 'meal_plan', label: 'Plano Alimentar', category: 'Nutrição' },
   { value: 'nutritional_evolution', label: 'Evolução Nutricional', category: 'Nutrição' },
+  // Aesthetics
+  { value: 'aesthetic_assessment', label: 'Avaliação Estética', category: 'Estética' },
+  { value: 'aesthetic_procedure', label: 'Procedimento Realizado', category: 'Estética' },
+  { value: 'products_used', label: 'Produtos Utilizados', category: 'Estética' },
+  { value: 'before_after_photos', label: 'Fotos Antes/Depois', category: 'Estética' },
+  { value: 'consent_form', label: 'Termo de Consentimento', category: 'Estética' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

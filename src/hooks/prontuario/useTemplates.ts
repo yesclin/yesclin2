@@ -28,7 +28,13 @@ export type TemplateType =
   | 'nutritional_assessment'
   | 'body_measurements'
   | 'meal_plan'
-  | 'nutritional_evolution';
+  | 'nutritional_evolution'
+  // Aesthetics
+  | 'aesthetic_assessment'
+  | 'aesthetic_procedure'
+  | 'products_used'
+  | 'before_after_photos'
+  | 'consent_form';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

@@ -11,18 +11,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useTemplates, useFields, type Template, type TemplateType, type FieldInput, type FieldType } from '@/hooks/prontuario';
 
-const TEMPLATE_TYPES: { value: TemplateType; label: string }[] = [
-  { value: 'anamnese', label: 'Anamnese' },
-  { value: 'vital_signs', label: 'Sinais Vitais' },
-  { value: 'evolution', label: 'Evolução' },
-  { value: 'diagnosis', label: 'Diagnóstico (CID)' },
-  { value: 'exam_request', label: 'Solicitação de Exames' },
-  { value: 'conduct', label: 'Plano/Conduta' },
-  { value: 'procedure', label: 'Procedimento' },
-  { value: 'prescription', label: 'Prescrição' },
-  { value: 'odontogram', label: 'Odontograma' },
-  { value: 'tooth_procedure', label: 'Procedimento por Dente' },
-  { value: 'dental_session', label: 'Sessão Odontológica' },
+const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[] = [
+  // General
+  { value: 'anamnese', label: 'Anamnese', category: 'Geral' },
+  { value: 'vital_signs', label: 'Sinais Vitais', category: 'Geral' },
+  { value: 'evolution', label: 'Evolução', category: 'Geral' },
+  { value: 'diagnosis', label: 'Diagnóstico (CID)', category: 'Geral' },
+  { value: 'exam_request', label: 'Solicitação de Exames', category: 'Geral' },
+  { value: 'conduct', label: 'Plano/Conduta', category: 'Geral' },
+  { value: 'procedure', label: 'Procedimento', category: 'Geral' },
+  { value: 'prescription', label: 'Prescrição', category: 'Geral' },
+  // Dentistry
+  { value: 'odontogram', label: 'Odontograma', category: 'Odontologia' },
+  { value: 'tooth_procedure', label: 'Procedimento por Dente', category: 'Odontologia' },
+  { value: 'dental_session', label: 'Sessão Odontológica', category: 'Odontologia' },
+  // Psychology
+  { value: 'session_record', label: 'Registro de Sessão', category: 'Psicologia' },
+  { value: 'therapeutic_goals', label: 'Objetivos Terapêuticos', category: 'Psicologia' },
+  { value: 'therapeutic_plan', label: 'Plano Terapêutico', category: 'Psicologia' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

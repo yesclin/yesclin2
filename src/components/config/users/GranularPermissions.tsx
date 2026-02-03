@@ -68,13 +68,23 @@ export const PERMISSION_MODULES: ModulePermissionConfig[] = [
   {
     module: "financeiro",
     label: "Financeiro",
-    description: "Controle financeiro",
+    description: "Controle financeiro geral",
     category: "management",
     actions: [
       { action: "view", label: "Visualizar" },
       { action: "create", label: "Registrar" },
       { action: "edit", label: "Editar" },
       { action: "delete", label: "Excluir" },
+      { action: "export", label: "Exportar" },
+    ],
+  },
+  {
+    module: "meu_financeiro",
+    label: "Meu Financeiro",
+    description: "Visualizar atendimentos e repasses próprios",
+    category: "clinical",
+    actions: [
+      { action: "view", label: "Visualizar" },
       { action: "export", label: "Exportar" },
     ],
   },
@@ -278,6 +288,8 @@ export function getDefaultPermissions(userType: UserType): Record<string, Module
     perms.prontuario = ["view", "create", "edit"];
     perms.atendimento = ["view", "create", "edit"];
     perms.pacientes = ["view", "create", "edit"];
+    // Professionals get access to their own financial data by default
+    perms.meu_financeiro = ["view"];
   }
 
   if (userType === "administrative" || userType === "hybrid") {

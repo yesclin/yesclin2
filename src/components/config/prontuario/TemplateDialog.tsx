@@ -45,6 +45,14 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'products_used', label: 'Produtos Utilizados', category: 'Estética' },
   { value: 'before_after_photos', label: 'Fotos Antes/Depois', category: 'Estética' },
   { value: 'consent_form', label: 'Termo de Consentimento', category: 'Estética' },
+  // Physiotherapy
+  { value: 'functional_assessment', label: 'Avaliação Funcional', category: 'Fisioterapia' },
+  { value: 'chief_complaint', label: 'Queixa Principal', category: 'Fisioterapia' },
+  { value: 'pain_scale', label: 'Escala de Dor', category: 'Fisioterapia' },
+  { value: 'range_of_motion', label: 'Amplitude de Movimento', category: 'Fisioterapia' },
+  { value: 'physio_therapeutic_plan', label: 'Plano Terapêutico', category: 'Fisioterapia' },
+  { value: 'applied_exercises', label: 'Exercícios Aplicados', category: 'Fisioterapia' },
+  { value: 'session_evolution', label: 'Evolução por Sessão', category: 'Fisioterapia' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

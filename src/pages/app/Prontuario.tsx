@@ -52,6 +52,13 @@ import {
   Package,
   ImageIcon,
   FileCheck,
+  // Physiotherapy icons
+  PersonStanding,
+  MessageSquare,
+  Gauge,
+  Move,
+  Dumbbell,
+  BarChart3,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -121,6 +128,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Package,
   ImageIcon,
   FileCheck,
+  // Physiotherapy icons
+  PersonStanding,
+  MessageSquare,
+  Gauge,
+  Move,
+  Dumbbell,
+  BarChart3,
 };
 
 // Tab key mapping to standard keys
@@ -165,6 +179,14 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   products_used: 'procedimentos',
   before_after_photos: 'documentos',
   consent_form: 'consentimentos',
+  // Physiotherapy tabs - map to appropriate permissions
+  functional_assessment: 'anamnese',
+  chief_complaint: 'anamnese',
+  pain_scale: 'anamnese',
+  range_of_motion: 'anamnese',
+  physio_therapeutic_plan: 'evolucao',
+  applied_exercises: 'procedimentos',
+  session_evolution: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -203,6 +225,14 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'products_used', label: 'Produtos Utilizados', icon: Package },
   { id: 'before_after_photos', label: 'Fotos Antes/Depois', icon: ImageIcon },
   { id: 'consent_form', label: 'Termo de Consentimento', icon: FileCheck },
+  // Physiotherapy tabs
+  { id: 'functional_assessment', label: 'Avaliação Funcional', icon: PersonStanding },
+  { id: 'chief_complaint', label: 'Queixa Principal', icon: MessageSquare },
+  { id: 'pain_scale', label: 'Escala de Dor', icon: Gauge },
+  { id: 'range_of_motion', label: 'Amplitude de Movimento', icon: Move },
+  { id: 'physio_therapeutic_plan', label: 'Plano Terapêutico', icon: ClipboardList },
+  { id: 'applied_exercises', label: 'Exercícios Aplicados', icon: Dumbbell },
+  { id: 'session_evolution', label: 'Evolução por Sessão', icon: BarChart3 },
 ];
 
 export default function Prontuario() {

@@ -34,7 +34,15 @@ export type TemplateType =
   | 'aesthetic_procedure'
   | 'products_used'
   | 'before_after_photos'
-  | 'consent_form';
+  | 'consent_form'
+  // Physiotherapy
+  | 'functional_assessment'
+  | 'chief_complaint'
+  | 'pain_scale'
+  | 'range_of_motion'
+  | 'physio_therapeutic_plan'
+  | 'applied_exercises'
+  | 'session_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

@@ -32,6 +32,10 @@ import {
   Smile,
   Crosshair,
   Camera,
+  // Psychology icons
+  NotebookPen,
+  Goal,
+  Route,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -81,6 +85,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Smile,
   Crosshair,
   Camera,
+  // Psychology icons
+  NotebookPen,
+  Goal,
+  Route,
 };
 
 // Tab key mapping to standard keys
@@ -105,6 +113,10 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   historico: 'auditoria', // Map historico to auditoria
   imagens: 'documentos', // Map imagens to documentos
   timeline: 'auditoria', // Map timeline to auditoria for permission check
+  // Psychology tabs - map to evolucao for permissions
+  session_record: 'evolucao',
+  therapeutic_goals: 'evolucao',
+  therapeutic_plan: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -123,6 +135,10 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },
   { id: 'alertas', label: 'Alertas', icon: AlertTriangle },
   { id: 'historico', label: 'Histórico', icon: History },
+  // Psychology tabs
+  { id: 'session_record', label: 'Registro de Sessão', icon: NotebookPen },
+  { id: 'therapeutic_goals', label: 'Objetivos Terapêuticos', icon: Goal },
+  { id: 'therapeutic_plan', label: 'Plano Terapêutico', icon: Route },
 ];
 
 export default function Prontuario() {

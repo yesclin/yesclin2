@@ -33,6 +33,10 @@ const DEFAULT_TABS = [
   { name: 'Fotos Intraorais', key: 'fotos_intraorais', icon: 'Camera', display_order: 11 },
   { name: 'Exames/Documentos', key: 'exames', icon: 'Paperclip', display_order: 12 },
   { name: 'Histórico', key: 'historico', icon: 'History', display_order: 13 },
+  // Psychology tabs
+  { name: 'Registro de Sessão', key: 'session_record', icon: 'NotebookPen', display_order: 14 },
+  { name: 'Objetivos Terapêuticos', key: 'therapeutic_goals', icon: 'Goal', display_order: 15 },
+  { name: 'Plano Terapêutico', key: 'therapeutic_plan', icon: 'Route', display_order: 16 },
 ];
 
 export function useTabs() {

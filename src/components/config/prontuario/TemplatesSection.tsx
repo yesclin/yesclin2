@@ -10,18 +10,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useTemplates, type Template, type TemplateType } from '@/hooks/prontuario';
 import { TemplateDialog } from './TemplateDialog';
 
-const TYPES: { value: TemplateType; label: string }[] = [
-  { value: 'anamnese', label: 'Anamnese' },
-  { value: 'vital_signs', label: 'Sinais Vitais' },
-  { value: 'evolution', label: 'Evolução' },
-  { value: 'diagnosis', label: 'Diagnóstico (CID)' },
-  { value: 'exam_request', label: 'Solicitação de Exames' },
-  { value: 'conduct', label: 'Plano/Conduta' },
-  { value: 'procedure', label: 'Procedimento' },
-  { value: 'prescription', label: 'Prescrição' },
-  { value: 'odontogram', label: 'Odontograma' },
-  { value: 'tooth_procedure', label: 'Procedimento por Dente' },
-  { value: 'dental_session', label: 'Sessão Odontológica' },
+const TYPES: { value: TemplateType; label: string; category?: string }[] = [
+  // General
+  { value: 'anamnese', label: 'Anamnese', category: 'Geral' },
+  { value: 'vital_signs', label: 'Sinais Vitais', category: 'Geral' },
+  { value: 'evolution', label: 'Evolução', category: 'Geral' },
+  { value: 'diagnosis', label: 'Diagnóstico (CID)', category: 'Geral' },
+  { value: 'exam_request', label: 'Solicitação de Exames', category: 'Geral' },
+  { value: 'conduct', label: 'Plano/Conduta', category: 'Geral' },
+  { value: 'procedure', label: 'Procedimento', category: 'Geral' },
+  { value: 'prescription', label: 'Prescrição', category: 'Geral' },
+  // Dentistry
+  { value: 'odontogram', label: 'Odontograma', category: 'Odontologia' },
+  { value: 'tooth_procedure', label: 'Procedimento por Dente', category: 'Odontologia' },
+  { value: 'dental_session', label: 'Sessão Odontológica', category: 'Odontologia' },
+  // Psychology
+  { value: 'session_record', label: 'Registro de Sessão', category: 'Psicologia' },
+  { value: 'therapeutic_goals', label: 'Objetivos Terapêuticos', category: 'Psicologia' },
+  { value: 'therapeutic_plan', label: 'Plano Terapêutico', category: 'Psicologia' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -36,6 +42,10 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   odontogram: 'bg-teal-100 text-teal-800',
   tooth_procedure: 'bg-indigo-100 text-indigo-800',
   dental_session: 'bg-emerald-100 text-emerald-800',
+  // Psychology
+  session_record: 'bg-violet-100 text-violet-800',
+  therapeutic_goals: 'bg-fuchsia-100 text-fuchsia-800',
+  therapeutic_plan: 'bg-rose-100 text-rose-800',
 };
 
 export function TemplatesSection() {

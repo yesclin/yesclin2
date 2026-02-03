@@ -21,20 +21,17 @@ interface InvitationInfo {
   expiresAt: string;
 }
 
-// Password strength calculation
+// Password strength calculation - minimum 8 characters only
 function calculatePasswordStrength(password: string): { score: number; label: string; color: string } {
-  let score = 0;
+  // Simple validation: just check minimum length
+  if (password.length < 8) {
+    // Proportional progress towards 8 characters
+    const progress = Math.min((password.length / 8) * 100, 99);
+    return { score: progress, label: "Mínimo 8 caracteres", color: "bg-destructive" };
+  }
   
-  if (password.length >= 8) score += 25;
-  if (password.length >= 12) score += 10;
-  if (/[a-z]/.test(password)) score += 15;
-  if (/[A-Z]/.test(password)) score += 20;
-  if (/[0-9]/.test(password)) score += 15;
-  if (/[^a-zA-Z0-9]/.test(password)) score += 15;
-  
-  if (score < 40) return { score, label: "Fraca", color: "bg-destructive" };
-  if (score < 70) return { score, label: "Média", color: "bg-amber-500" };
-  return { score, label: "Forte", color: "bg-emerald-500" };
+  // Once 8+ characters are met, show as valid
+  return { score: 100, label: "Válida", color: "bg-emerald-500" };
 }
 
 export default function AceitarConvite() {
@@ -111,7 +108,7 @@ export default function AceitarConvite() {
     e.preventDefault();
 
     if (!isPasswordValid) {
-      toast.error("A senha deve ter pelo menos 8 caracteres");
+      toast.error("A senha deve conter no mínimo 8 caracteres.");
       return;
     }
 
@@ -380,15 +377,11 @@ export default function AceitarConvite() {
                 <div className="flex items-center gap-2">
                     <Progress value={passwordStrength.score} className="h-1.5 flex-1" />
                     <span className={`text-xs font-medium ${
-                      passwordStrength.score < 40 ? 'text-destructive' : 
-                      passwordStrength.score < 70 ? 'text-warning' : 'text-success'
+                      passwordStrength.score < 100 ? 'text-destructive' : 'text-success'
                     }`}>
                       {passwordStrength.label}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use letras maiúsculas, minúsculas, números e símbolos para uma senha forte.
-                  </p>
                 </div>
               )}
             </div>

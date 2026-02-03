@@ -354,6 +354,107 @@ const AESTHETICS_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Pediatria
+const PEDIATRICS_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Anamnese Pediátrica',
+    type: 'pediatric_anamnesis',
+    description: 'Anamnese completa para atendimento pediátrico',
+    fields: [
+      { label: 'Queixa Principal (Responsável)', field_type: 'textarea', placeholder: 'O que o responsável relata', is_required: true },
+      { label: 'História da Doença Atual', field_type: 'textarea', placeholder: 'Evolução dos sintomas', is_required: true },
+      { label: 'Antecedentes Patológicos', field_type: 'textarea', placeholder: 'Internações, cirurgias, doenças prévias', is_required: false },
+      { label: 'Antecedentes Familiares', field_type: 'textarea', placeholder: 'Doenças na família', is_required: false },
+      { label: 'Alergias', field_type: 'textarea', placeholder: 'Alergias alimentares, medicamentosas, etc.', is_required: false },
+      { label: 'Medicamentos em Uso', field_type: 'textarea', placeholder: 'Medicamentos atuais', is_required: false },
+      { label: 'Alimentação', field_type: 'textarea', placeholder: 'Tipo de alimentação (aleitamento, fórmula, alimentação complementar)', is_required: false },
+    ],
+  },
+  {
+    name: 'História Gestacional',
+    type: 'gestational_history',
+    description: 'Registro de dados da gestação e parto',
+    fields: [
+      { label: 'Idade Gestacional ao Nascer', field_type: 'text', placeholder: 'Ex: 38 semanas', is_required: true },
+      { label: 'Tipo de Parto', field_type: 'select', options: ['Normal', 'Cesárea eletiva', 'Cesárea de urgência', 'Fórceps', 'Vácuo'], is_required: true },
+      { label: 'Peso ao Nascer (g)', field_type: 'number', placeholder: 'Ex: 3250', is_required: true },
+      { label: 'Comprimento ao Nascer (cm)', field_type: 'number', placeholder: 'Ex: 49', is_required: false },
+      { label: 'Perímetro Cefálico ao Nascer (cm)', field_type: 'number', placeholder: 'Ex: 34', is_required: false },
+      { label: 'Apgar 1º/5º Minuto', field_type: 'text', placeholder: 'Ex: 8/9', is_required: false },
+      { label: 'Intercorrências no Parto', field_type: 'textarea', placeholder: 'Complicações durante o parto', is_required: false },
+      { label: 'Intercorrências Neonatais', field_type: 'textarea', placeholder: 'Icterícia, internação UTI, etc.', is_required: false },
+      { label: 'Pré-Natal', field_type: 'select', options: ['Adequado (≥6 consultas)', 'Inadequado (<6 consultas)', 'Não realizou', 'Não sabe informar'], is_required: false },
+    ],
+  },
+  {
+    name: 'Dados de Crescimento',
+    type: 'growth_data',
+    description: 'Registro de peso, altura e perímetros',
+    fields: [
+      { label: 'Peso (kg)', field_type: 'number', placeholder: 'Ex: 12.5', is_required: true },
+      { label: 'Altura/Comprimento (cm)', field_type: 'number', placeholder: 'Ex: 85', is_required: true },
+      { label: 'Perímetro Cefálico (cm)', field_type: 'number', placeholder: 'Ex: 47', is_required: false },
+      { label: 'Perímetro Torácico (cm)', field_type: 'number', placeholder: 'Ex: 50', is_required: false },
+      { label: 'IMC (calculado)', field_type: 'text', placeholder: 'Será calculado automaticamente', is_required: false },
+      { label: 'Classificação Nutricional', field_type: 'select', options: ['Magreza acentuada', 'Magreza', 'Eutrofia', 'Risco de sobrepeso', 'Sobrepeso', 'Obesidade'], is_required: false },
+    ],
+  },
+  {
+    name: 'Curva de Crescimento',
+    type: 'growth_curve',
+    description: 'Acompanhamento em percentis/z-score',
+    fields: [
+      { label: 'Idade na Avaliação', field_type: 'text', placeholder: 'Ex: 2 anos e 3 meses', is_required: true },
+      { label: 'Peso/Idade (Percentil)', field_type: 'select', options: ['< P3', 'P3-P10', 'P10-P25', 'P25-P50', 'P50-P75', 'P75-P90', 'P90-P97', '> P97'], is_required: false },
+      { label: 'Altura/Idade (Percentil)', field_type: 'select', options: ['< P3', 'P3-P10', 'P10-P25', 'P25-P50', 'P50-P75', 'P75-P90', 'P90-P97', '> P97'], is_required: false },
+      { label: 'IMC/Idade (Percentil)', field_type: 'select', options: ['< P3', 'P3-P10', 'P10-P25', 'P25-P50', 'P50-P75', 'P75-P85', 'P85-P97', '> P97'], is_required: false },
+      { label: 'PC/Idade (Percentil)', field_type: 'select', options: ['< P3', 'P3-P10', 'P10-P50', 'P50-P90', 'P90-P97', '> P97'], is_required: false },
+      { label: 'Interpretação', field_type: 'textarea', placeholder: 'Análise da curva de crescimento', is_required: false },
+    ],
+  },
+  {
+    name: 'Desenvolvimento Neuropsicomotor',
+    type: 'neuropsychomotor_development',
+    description: 'Avaliação do DNPM por faixa etária',
+    fields: [
+      { label: 'Idade na Avaliação', field_type: 'text', placeholder: 'Ex: 6 meses', is_required: true },
+      { label: 'Motor Grosso', field_type: 'textarea', placeholder: 'Sustenta cabeça, senta, anda...', is_required: true },
+      { label: 'Motor Fino', field_type: 'textarea', placeholder: 'Preensão, pinça, manipulação...', is_required: false },
+      { label: 'Linguagem', field_type: 'textarea', placeholder: 'Balbucios, palavras, frases...', is_required: true },
+      { label: 'Social/Adaptativo', field_type: 'textarea', placeholder: 'Sorriso social, interação, brincadeiras...', is_required: false },
+      { label: 'Classificação do DNPM', field_type: 'select', options: ['Adequado para idade', 'Alerta para atraso', 'Provável atraso', 'Atraso confirmado'], is_required: true },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Notas adicionais sobre o desenvolvimento', is_required: false },
+    ],
+  },
+  {
+    name: 'Controle de Vacinas',
+    type: 'vaccines',
+    description: 'Registro e acompanhamento vacinal',
+    fields: [
+      { label: 'Vacina Aplicada', field_type: 'text', placeholder: 'Nome da vacina', is_required: true },
+      { label: 'Dose', field_type: 'select', options: ['1ª dose', '2ª dose', '3ª dose', 'Reforço', 'Dose única', 'Dose anual'], is_required: true },
+      { label: 'Data de Aplicação', field_type: 'date', placeholder: 'Data da vacinação', is_required: true },
+      { label: 'Lote', field_type: 'text', placeholder: 'Número do lote', is_required: false },
+      { label: 'Local de Aplicação', field_type: 'text', placeholder: 'Ex: UBS, clínica particular', is_required: false },
+      { label: 'Reações Adversas', field_type: 'textarea', placeholder: 'Febre, dor local, etc.', is_required: false },
+      { label: 'Calendário Vacinal', field_type: 'select', options: ['Em dia', 'Atrasado', 'Incompleto', 'Não vacinado'], is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução Pediátrica',
+    type: 'pediatric_evolution',
+    description: 'Registro de evolução e orientações',
+    fields: [
+      { label: 'Queixa dos Responsáveis', field_type: 'textarea', placeholder: 'O que os pais/responsáveis relatam nesta consulta', is_required: true },
+      { label: 'Exame Físico', field_type: 'textarea', placeholder: 'Achados do exame físico', is_required: true },
+      { label: 'Hipótese Diagnóstica', field_type: 'textarea', placeholder: 'Diagnóstico ou hipótese', is_required: false },
+      { label: 'Conduta', field_type: 'textarea', placeholder: 'Tratamento prescrito', is_required: true },
+      { label: 'Orientações aos Responsáveis', field_type: 'textarea', placeholder: 'Orientações sobre cuidados, alimentação, sinais de alerta', is_required: true },
+      { label: 'Retorno', field_type: 'text', placeholder: 'Prazo para retorno', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -362,6 +463,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...PSYCHIATRY_TEMPLATES,
   ...NUTRITION_TEMPLATES,
   ...AESTHETICS_TEMPLATES,
+  ...PEDIATRICS_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

@@ -64,9 +64,16 @@ const CriarConta = () => {
 
     if (error) {
       let message = error.message;
+      
+      // Translate common Supabase Auth error messages to Portuguese
       if (error.message.includes("already registered")) {
         message = "Este email já está cadastrado. Tente fazer login.";
+      } else if (error.message.toLowerCase().includes("weak") || error.message.toLowerCase().includes("password")) {
+        message = "A senha deve conter no mínimo 8 caracteres.";
+      } else if (error.message.includes("invalid") && error.message.toLowerCase().includes("email")) {
+        message = "Por favor, insira um email válido.";
       }
+      
       toast({
         title: "Erro ao criar conta",
         description: message,

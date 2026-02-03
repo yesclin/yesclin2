@@ -29,7 +29,13 @@ export interface ActiveAppointment {
  * 
  * An appointment is considered "active" if:
  * - It's scheduled for today AND
- * - Its status is "em_atendimento" (in progress) OR "started_at" is not null
+ * - Its status indicates the appointment is in progress:
+ *   - "em_atendimento" (in progress - Portuguese)
+ *   - "in_progress" (in progress - English)
+ *   - "atendendo" (attending - Portuguese alternative)
+ *   - "attending" (English alternative)
+ *   - OR started_at is not null (appointment was explicitly started)
+ * - AND finished_at is null (not finished yet)
  */
 export function useActiveAppointment(patientId: string | null | undefined) {
   return useQuery({
@@ -62,7 +68,7 @@ export function useActiveAppointment(patientId: string | null | undefined) {
         `)
         .eq("patient_id", patientId)
         .eq("scheduled_date", today)
-        .or("status.eq.em_atendimento,status.eq.in_progress,started_at.not.is.null")
+        .or("status.eq.em_atendimento,status.eq.in_progress,status.eq.atendendo,status.eq.attending,started_at.not.is.null")
         .is("finished_at", null) // Not finished yet
         .order("start_time", { ascending: true })
         .limit(1)

@@ -447,9 +447,10 @@ export default function Prontuario() {
   };
 
   // Check if current tab allows editing (respects LGPD blocking + permissions + active appointment)
-  const canEditCurrentTab = canEditTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && hasActiveAppointment;
+  // ADMIN_OWNER can always edit (even without active appointment) as per security requirements
+  const canEditCurrentTab = canEditTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && (hasActiveAppointment || isAdmin);
   const canExportCurrentTab = canExportTab(getStandardTabKey(activeTab)) && !shouldBlockEditing;
-  const canSignCurrentTab = canSignTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && isDigitalSignatureEnabled && hasActiveAppointment;
+  const canSignCurrentTab = canSignTab(getStandardTabKey(activeTab)) && !shouldBlockEditing && isDigitalSignatureEnabled && (hasActiveAppointment || isAdmin);
 
   // Build nav items from configuration or use defaults, filtered by permissions
   const allNavItems = useMemo(() => {
@@ -1235,7 +1236,22 @@ export default function Prontuario() {
                 Atendimento Ativo
               </Badge>
             )}
-            {!hasActiveAppointment && !appointmentLoading && (
+            {/* Admin Override Badge - editing allowed without active appointment */}
+            {!hasActiveAppointment && !appointmentLoading && isAdmin && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="default" className="gap-1 bg-amber-600 hover:bg-amber-700">
+                      <Shield className="h-3 w-3" />
+                      Modo Administrador
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>Edição permitida para administradores mesmo sem atendimento ativo</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {/* Read-Only Badge - only show for non-admins without active appointment */}
+            {!hasActiveAppointment && !appointmentLoading && !isAdmin && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

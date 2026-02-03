@@ -785,6 +785,61 @@ const OPHTHALMOLOGY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Templates Personalizados
+const CUSTOM_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Bloco Personalizado',
+    type: 'custom_block',
+    description: 'Bloco genérico para registros personalizados da clínica',
+    fields: [
+      { label: 'Título', field_type: 'text', placeholder: 'Título do registro', is_required: true },
+      { label: 'Descrição', field_type: 'textarea', placeholder: 'Descrição detalhada', is_required: false },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Observações adicionais', is_required: false },
+      { label: 'Data de Referência', field_type: 'date', placeholder: 'Data relacionada', is_required: false },
+    ],
+  },
+  {
+    name: 'Formulário Personalizado',
+    type: 'custom_form',
+    description: 'Formulário flexível para coleta de dados específicos',
+    fields: [
+      { label: 'Campo 1', field_type: 'text', placeholder: 'Preencha conforme necessário', is_required: false },
+      { label: 'Campo 2', field_type: 'text', placeholder: 'Preencha conforme necessário', is_required: false },
+      { label: 'Campo 3', field_type: 'textarea', placeholder: 'Descrição ou texto longo', is_required: false },
+      { label: 'Opção', field_type: 'select', options: ['Opção 1', 'Opção 2', 'Opção 3', 'Outro'], is_required: false },
+      { label: 'Notas', field_type: 'textarea', placeholder: 'Notas adicionais', is_required: false },
+    ],
+  },
+  {
+    name: 'Checklist Personalizado',
+    type: 'custom_checklist',
+    description: 'Lista de verificação para procedimentos ou rotinas',
+    fields: [
+      { label: 'Nome do Checklist', field_type: 'text', placeholder: 'Identificação da lista', is_required: true },
+      { label: 'Item 1', field_type: 'select', options: ['Não verificado', 'OK', 'Pendente', 'N/A'], is_required: false },
+      { label: 'Item 2', field_type: 'select', options: ['Não verificado', 'OK', 'Pendente', 'N/A'], is_required: false },
+      { label: 'Item 3', field_type: 'select', options: ['Não verificado', 'OK', 'Pendente', 'N/A'], is_required: false },
+      { label: 'Item 4', field_type: 'select', options: ['Não verificado', 'OK', 'Pendente', 'N/A'], is_required: false },
+      { label: 'Item 5', field_type: 'select', options: ['Não verificado', 'OK', 'Pendente', 'N/A'], is_required: false },
+      { label: 'Observações', field_type: 'textarea', placeholder: 'Comentários sobre os itens', is_required: false },
+      { label: 'Responsável', field_type: 'text', placeholder: 'Quem preencheu', is_required: false },
+    ],
+  },
+  {
+    name: 'Anotações Personalizadas',
+    type: 'custom_notes',
+    description: 'Anotações livres para registros diversos',
+    fields: [
+      { label: 'Assunto', field_type: 'text', placeholder: 'Tema da anotação', is_required: true },
+      { label: 'Categoria', field_type: 'select', options: ['Observação clínica', 'Lembrete', 'Acompanhamento', 'Comunicação', 'Administrativo', 'Outro'], is_required: false },
+      { label: 'Prioridade', field_type: 'select', options: ['Baixa', 'Normal', 'Alta', 'Urgente'], is_required: false },
+      { label: 'Conteúdo', field_type: 'textarea', placeholder: 'Escreva sua anotação aqui', is_required: true },
+      { label: 'Ação Necessária', field_type: 'textarea', placeholder: 'O que precisa ser feito', is_required: false },
+      { label: 'Prazo', field_type: 'date', placeholder: 'Data limite, se aplicável', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -797,6 +852,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...CARDIOLOGY_TEMPLATES,
   ...PHYSIOTHERAPY_TEMPLATES,
   ...OPHTHALMOLOGY_TEMPLATES,
+  ...CUSTOM_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

@@ -23,7 +23,6 @@ import { StockValidationDialog } from "@/components/agenda/StockValidationDialog
 import type { AgendaFilters as FiltersType, ViewMode, GroupBy, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
 import { validateProcedureStock, StockValidationResult } from "@/hooks/useProcedureStockValidation";
-import { getDefaultWeekSchedule, WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
 export default function Agenda() {
   const navigate = useNavigate();
@@ -63,7 +62,7 @@ export default function Agenda() {
   const [stockValidationResult, setStockValidationResult] = useState<StockValidationResult | null>(null);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ appointmentId: string; status: AppointmentStatus } | null>(null);
   
-  // Real data from Supabase
+  // Real data from Supabase (now includes real schedules)
   const { 
     specialties, 
     rooms, 
@@ -75,36 +74,13 @@ export default function Agenda() {
     insights,
     isLoading: dataLoading,
     refetchAppointments,
+    clinicSchedule,
+    professionalSchedules,
   } = useAgendaRealData(selectedDate, viewMode === 'timeline' ? 'daily' : viewMode);
   
   // Mutations for real database operations
   const updateStatusMutation = useUpdateAppointmentStatus();
   const createAppointmentMutation = useCreateAppointment();
-
-  // Default clinic schedule for slot suggestions (mock - will be replaced with real data)
-  const clinicSchedule = useMemo<WeekSchedule>(() => {
-    const defaultSchedule = getDefaultWeekSchedule();
-    // Enable weekdays with standard clinic hours
-    return {
-      ...defaultSchedule,
-      seg: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
-      ter: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
-      qua: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
-      qui: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
-      sex: { enabled: true, open: "08:00", close: "18:00", hasLunch: true, lunchStart: "12:00", lunchEnd: "13:00" },
-      sab: { enabled: true, open: "08:00", close: "12:00", hasLunch: false, lunchStart: "", lunchEnd: "" },
-      dom: { enabled: false, open: "", close: "", hasLunch: false, lunchStart: "", lunchEnd: "" },
-    };
-  }, []);
-
-  // Professional schedules map (mock - using clinic default for all)
-  const professionalSchedules = useMemo(() => {
-    const scheduleMap = new Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>();
-    professionals.forEach(prof => {
-      scheduleMap.set(prof.id, { useClinicDefault: true, workingDays: clinicSchedule });
-    });
-    return scheduleMap;
-  }, [professionals, clinicSchedule]);
 
   // RBAC: Profissional vê apenas sua própria aba
   // TODO: Replace with actual user's professional_id when available

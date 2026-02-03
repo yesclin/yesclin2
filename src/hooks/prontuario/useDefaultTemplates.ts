@@ -158,11 +158,68 @@ const PSYCHOLOGY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Psiquiatria
+const PSYCHIATRY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Diagnóstico (CID/DSM)',
+    type: 'diagnosis_dsm',
+    description: 'Registro de diagnóstico psiquiátrico com CID e DSM',
+    fields: [
+      { label: 'Diagnóstico Principal (CID-10)', field_type: 'text', placeholder: 'Ex: F32.1 - Episódio depressivo moderado', is_required: true },
+      { label: 'Diagnóstico (DSM-5)', field_type: 'text', placeholder: 'Ex: Transtorno Depressivo Maior', is_required: false },
+      { label: 'Diagnósticos Secundários', field_type: 'textarea', placeholder: 'Comorbidades e diagnósticos associados', is_required: false },
+      { label: 'Sintomas Atuais', field_type: 'textarea', placeholder: 'Descreva os sintomas apresentados', is_required: true },
+      { label: 'Escalas Psiquiátricas Aplicadas', field_type: 'textarea', placeholder: 'Ex: HAM-D: 18, BAI: 25', is_required: false },
+      { label: 'Gravidade do Quadro', field_type: 'select', options: ['Leve', 'Moderado', 'Grave', 'Grave com sintomas psicóticos', 'Em remissão'], is_required: false },
+    ],
+  },
+  {
+    name: 'Prescrição Medicamentosa',
+    type: 'psychiatric_prescription',
+    description: 'Registro de medicação psiquiátrica prescrita',
+    fields: [
+      { label: 'Medicação Prescrita', field_type: 'text', placeholder: 'Nome do medicamento', is_required: true },
+      { label: 'Dosagem', field_type: 'text', placeholder: 'Ex: 50mg', is_required: true },
+      { label: 'Posologia', field_type: 'text', placeholder: 'Ex: 1x ao dia, pela manhã', is_required: true },
+      { label: 'Classe do Medicamento', field_type: 'select', options: ['Antidepressivo', 'Ansiolítico', 'Antipsicótico', 'Estabilizador de Humor', 'Hipnótico', 'Psicoestimulante', 'Outro'], is_required: false },
+      { label: 'Duração do Tratamento', field_type: 'text', placeholder: 'Ex: 30 dias, uso contínuo', is_required: false },
+      { label: 'Orientações ao Paciente', field_type: 'textarea', placeholder: 'Instruções especiais sobre o uso', is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução de Sintomas',
+    type: 'symptom_evolution',
+    description: 'Acompanhamento da evolução dos sintomas psiquiátricos',
+    fields: [
+      { label: 'Sintomas Relatados', field_type: 'textarea', placeholder: 'Sintomas referidos pelo paciente', is_required: true },
+      { label: 'Sintomas Observados', field_type: 'textarea', placeholder: 'Sintomas observados durante a consulta', is_required: false },
+      { label: 'Comparação com Consulta Anterior', field_type: 'select', options: ['Melhora significativa', 'Melhora parcial', 'Estável', 'Piora parcial', 'Piora significativa'], is_required: false },
+      { label: 'Efeitos Colaterais', field_type: 'textarea', placeholder: 'Efeitos adversos relatados', is_required: false },
+      { label: 'Adesão ao Tratamento', field_type: 'select', options: ['Boa', 'Regular', 'Irregular', 'Abandonou'], is_required: false },
+      { label: 'Evolução do Quadro', field_type: 'textarea', placeholder: 'Resumo da evolução clínica', is_required: true },
+    ],
+  },
+  {
+    name: 'Histórico de Medicamentos',
+    type: 'medication_history',
+    description: 'Registro do histórico de medicações utilizadas',
+    fields: [
+      { label: 'Medicamento', field_type: 'text', placeholder: 'Nome do medicamento', is_required: true },
+      { label: 'Período de Uso', field_type: 'text', placeholder: 'Ex: Jan/2023 a Jun/2023', is_required: false },
+      { label: 'Dose Máxima Utilizada', field_type: 'text', placeholder: 'Ex: 100mg/dia', is_required: false },
+      { label: 'Motivo da Suspensão', field_type: 'select', options: ['Melhora clínica', 'Ineficácia', 'Efeitos colaterais', 'Decisão do paciente', 'Troca de medicação', 'Outro'], is_required: false },
+      { label: 'Efeitos Colaterais Apresentados', field_type: 'textarea', placeholder: 'Descreva os efeitos adversos', is_required: false },
+      { label: 'Resposta ao Tratamento', field_type: 'select', options: ['Excelente', 'Boa', 'Parcial', 'Sem resposta', 'Piora'], is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
   ...DENTISTRY_TEMPLATES,
   ...PSYCHOLOGY_TEMPLATES,
+  ...PSYCHIATRY_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

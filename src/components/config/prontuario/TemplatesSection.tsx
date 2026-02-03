@@ -80,6 +80,14 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'ophthalmo_complementary_exams', label: 'Exames Complementares', category: 'Oftalmologia' },
   { value: 'ophthalmo_conduct', label: 'Conduta/Prescrição', category: 'Oftalmologia' },
   { value: 'ophthalmo_evolution', label: 'Evolução Clínica', category: 'Oftalmologia' },
+  // Cardiology
+  { value: 'cardio_anamnesis', label: 'Anamnese Cardiológica', category: 'Cardiologia' },
+  { value: 'cardio_vital_signs', label: 'Sinais Vitais Cardiológicos', category: 'Cardiologia' },
+  { value: 'cardio_risk_factors', label: 'Fatores de Risco CV', category: 'Cardiologia' },
+  { value: 'cardio_exams', label: 'Exames Cardiológicos', category: 'Cardiologia' },
+  { value: 'cardio_diagnosis', label: 'Diagnóstico Cardiológico', category: 'Cardiologia' },
+  { value: 'cardio_conduct', label: 'Conduta Cardiológica', category: 'Cardiologia' },
+  { value: 'cardio_evolution', label: 'Evolução Cardiológica', category: 'Cardiologia' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -150,6 +158,14 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   ophthalmo_complementary_exams: 'bg-teal-100 text-teal-800',
   ophthalmo_conduct: 'bg-amber-100 text-amber-800',
   ophthalmo_evolution: 'bg-green-100 text-green-800',
+  // Cardiology
+  cardio_anamnesis: 'bg-red-100 text-red-800',
+  cardio_vital_signs: 'bg-rose-100 text-rose-800',
+  cardio_risk_factors: 'bg-orange-100 text-orange-800',
+  cardio_exams: 'bg-amber-100 text-amber-800',
+  cardio_diagnosis: 'bg-purple-100 text-purple-800',
+  cardio_conduct: 'bg-indigo-100 text-indigo-800',
+  cardio_evolution: 'bg-teal-100 text-teal-800',
 };
 
 export function TemplatesSection() {

@@ -1,4 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+
+// NOTE: When adding new specialty tabs, also update:
+// - src/pages/app/Prontuario.tsx (ICON_MAP, TAB_KEY_MAP, DEFAULT_NAV_ITEMS)
+// - src/components/config/prontuario/TemplatesSection.tsx (TYPES, TYPE_COLORS)
+// - src/components/config/prontuario/TemplateDialog.tsx (TEMPLATE_TYPES)
+// - src/hooks/prontuario/useTemplates.ts (TemplateType)
 import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';

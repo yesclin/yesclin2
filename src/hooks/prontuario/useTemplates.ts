@@ -18,7 +18,12 @@ export type TemplateType =
   // Psychology
   | 'session_record'
   | 'therapeutic_goals'
-  | 'therapeutic_plan';
+  | 'therapeutic_plan'
+  // Psychiatry
+  | 'diagnosis_dsm'
+  | 'psychiatric_prescription'
+  | 'symptom_evolution'
+  | 'medication_history';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

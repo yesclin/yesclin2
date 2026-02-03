@@ -170,6 +170,11 @@ export default function Agenda() {
     setAppointmentDialogOpen(true);
   };
 
+  // Navigate to prontuário when starting an appointment
+  const navigateToProntuario = useCallback((patientId: string) => {
+    navigate(`/app/prontuario?paciente=${patientId}`);
+  }, [navigate]);
+
   // Handle status change with stock validation and material consumption
   const handleStatusChange = useCallback(async (appointmentId: string, newStatus: AppointmentStatus) => {
     const apt = appointments.find(a => a.id === appointmentId);
@@ -199,10 +204,16 @@ export default function Agenda() {
     if (newStatus === 'finalizado') {
       setFinalizingAppointment(apt);
       setMaterialsDialogOpen(true);
+    } else if (newStatus === 'em_atendimento') {
+      // When starting an appointment, navigate directly to prontuário
+      toast.success("Atendimento iniciado! Abrindo prontuário...");
+      if (apt.patient_id) {
+        navigateToProntuario(apt.patient_id);
+      }
     } else {
       toast.success(`Status atualizado para: ${newStatus}`);
     }
-  }, [appointments]);
+  }, [appointments, navigateToProntuario]);
 
   // Handle stock validation confirmation (allow negative stock)
   const handleStockValidationConfirm = useCallback(() => {
@@ -210,13 +221,21 @@ export default function Agenda() {
     
     if (pendingStatusChange) {
       // Proceed with status change even with insufficient stock
-      toast.success(`Status atualizado para: ${pendingStatusChange.status}`);
+      toast.success("Atendimento iniciado! Abrindo prontuário...");
       toast.warning("Atenção: Estoque ficará negativo após consumo dos materiais");
+      
+      // Find the appointment and navigate to prontuário
+      if (pendingStatusChange.status === 'em_atendimento') {
+        const apt = appointments.find(a => a.id === pendingStatusChange.appointmentId);
+        if (apt?.patient_id) {
+          navigateToProntuario(apt.patient_id);
+        }
+      }
     }
     
     setStockValidationResult(null);
     setPendingStatusChange(null);
-  }, [pendingStatusChange]);
+  }, [pendingStatusChange, appointments, navigateToProntuario]);
 
   // Handle stock validation cancel
   const handleStockValidationCancel = useCallback(() => {

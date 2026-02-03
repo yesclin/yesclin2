@@ -28,6 +28,8 @@ export interface PermissionsState {
   isLoading: boolean;
   isAdmin: boolean;
   isOwner: boolean;
+  /** The professional_id linked to the current user (null if not a professional) */
+  professionalId: string | null;
 }
 
 interface PermissionsContextType extends PermissionsState {
@@ -49,13 +51,14 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     isLoading: true,
     isAdmin: false,
     isOwner: false,
+    professionalId: null,
   });
 
   const fetchPermissions = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
+        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false, professionalId: null });
         return;
       }
 
@@ -67,9 +70,19 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (!roleData) {
-        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
+        setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false, professionalId: null });
         return;
       }
+      
+      // Get linked professional_id (if user is linked to a professional)
+      const { data: professionalData } = await supabase
+        .from("professionals")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      const professionalId = professionalData?.id || null;
 
       const role = roleData.role;
       // Owner has TOTAL BYPASS - highest privilege level
@@ -95,7 +108,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
           restrictions: (t.restrictions || {}) as Record<string, boolean>,
         }));
 
-        setState({ permissions, role, isLoading: false, isAdmin, isOwner });
+        setState({ permissions, role, isLoading: false, isAdmin, isOwner, professionalId });
         return;
       }
 
@@ -105,10 +118,10 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         restrictions: (p.restrictions || {}) as Record<string, boolean>,
       }));
 
-      setState({ permissions, role, isLoading: false, isAdmin, isOwner });
+      setState({ permissions, role, isLoading: false, isAdmin, isOwner, professionalId });
     } catch (error) {
       console.error("Error in fetchPermissions:", error);
-      setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false });
+      setState({ permissions: [], role: null, isLoading: false, isAdmin: false, isOwner: false, professionalId: null });
     }
   }, []);
 

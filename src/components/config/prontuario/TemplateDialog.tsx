@@ -53,6 +53,16 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'physio_therapeutic_plan', label: 'Plano Terapêutico', category: 'Fisioterapia' },
   { value: 'applied_exercises', label: 'Exercícios Aplicados', category: 'Fisioterapia' },
   { value: 'session_evolution', label: 'Evolução por Sessão', category: 'Fisioterapia' },
+  // Pediatrics
+  { value: 'pediatric_anamnesis', label: 'Anamnese Pediátrica', category: 'Pediatria' },
+  { value: 'gestational_history', label: 'Histórico Gestacional', category: 'Pediatria' },
+  { value: 'growth_data', label: 'Dados de Crescimento', category: 'Pediatria' },
+  { value: 'growth_curve', label: 'Curva de Crescimento', category: 'Pediatria' },
+  { value: 'neuropsychomotor_development', label: 'Desenvolvimento DNPM', category: 'Pediatria' },
+  { value: 'vaccines', label: 'Vacinas', category: 'Pediatria' },
+  { value: 'pediatric_diagnosis', label: 'Diagnóstico', category: 'Pediatria' },
+  { value: 'pediatric_conduct', label: 'Conduta/Orientações', category: 'Pediatria' },
+  { value: 'pediatric_evolution', label: 'Evolução Clínica', category: 'Pediatria' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

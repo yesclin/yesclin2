@@ -52,6 +52,16 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'physio_therapeutic_plan', label: 'Plano Terapêutico', category: 'Fisioterapia' },
   { value: 'applied_exercises', label: 'Exercícios Aplicados', category: 'Fisioterapia' },
   { value: 'session_evolution', label: 'Evolução por Sessão', category: 'Fisioterapia' },
+  // Pediatrics
+  { value: 'pediatric_anamnesis', label: 'Anamnese Pediátrica', category: 'Pediatria' },
+  { value: 'gestational_history', label: 'Histórico Gestacional', category: 'Pediatria' },
+  { value: 'growth_data', label: 'Dados de Crescimento', category: 'Pediatria' },
+  { value: 'growth_curve', label: 'Curva de Crescimento', category: 'Pediatria' },
+  { value: 'neuropsychomotor_development', label: 'Desenvolvimento DNPM', category: 'Pediatria' },
+  { value: 'vaccines', label: 'Vacinas', category: 'Pediatria' },
+  { value: 'pediatric_diagnosis', label: 'Diagnóstico', category: 'Pediatria' },
+  { value: 'pediatric_conduct', label: 'Conduta/Orientações', category: 'Pediatria' },
+  { value: 'pediatric_evolution', label: 'Evolução Clínica', category: 'Pediatria' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -94,6 +104,16 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   physio_therapeutic_plan: 'bg-indigo-100 text-indigo-800',
   applied_exercises: 'bg-green-100 text-green-800',
   session_evolution: 'bg-teal-100 text-teal-800',
+  // Pediatrics
+  pediatric_anamnesis: 'bg-sky-100 text-sky-800',
+  gestational_history: 'bg-pink-100 text-pink-800',
+  growth_data: 'bg-emerald-100 text-emerald-800',
+  growth_curve: 'bg-lime-100 text-lime-800',
+  neuropsychomotor_development: 'bg-violet-100 text-violet-800',
+  vaccines: 'bg-amber-100 text-amber-800',
+  pediatric_diagnosis: 'bg-purple-100 text-purple-800',
+  pediatric_conduct: 'bg-orange-100 text-orange-800',
+  pediatric_evolution: 'bg-teal-100 text-teal-800',
 };
 
 export function TemplatesSection() {

@@ -43,6 +43,16 @@ const DEFAULT_TABS = [
   { name: 'Registro de Sessão', key: 'session_record', icon: 'NotebookPen', display_order: 14 },
   { name: 'Objetivos Terapêuticos', key: 'therapeutic_goals', icon: 'Goal', display_order: 15 },
   { name: 'Plano Terapêutico', key: 'therapeutic_plan', icon: 'Route', display_order: 16 },
+  // Pediatrics tabs
+  { name: 'Anamnese Pediátrica', key: 'pediatric_anamnesis', icon: 'Baby', display_order: 17 },
+  { name: 'Histórico Gestacional', key: 'gestational_history', icon: 'Heart', display_order: 18 },
+  { name: 'Dados de Crescimento', key: 'growth_data', icon: 'Ruler', display_order: 19 },
+  { name: 'Curva de Crescimento', key: 'growth_curve', icon: 'GrowthChart', display_order: 20 },
+  { name: 'Desenvolvimento DNPM', key: 'neuropsychomotor_development', icon: 'BrainDevelopment', display_order: 21 },
+  { name: 'Vacinas', key: 'vaccines', icon: 'ShieldCheck', display_order: 22 },
+  { name: 'Diagnóstico', key: 'pediatric_diagnosis', icon: 'Stethoscope', display_order: 23 },
+  { name: 'Conduta/Orientações', key: 'pediatric_conduct', icon: 'Target', display_order: 24 },
+  { name: 'Evolução Clínica', key: 'pediatric_evolution', icon: 'Activity', display_order: 25 },
 ];
 
 export function useTabs() {

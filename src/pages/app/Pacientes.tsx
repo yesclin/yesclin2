@@ -130,8 +130,8 @@ export default function Pacientes() {
   };
 
   const handleOpenProntuario = (patient: Patient) => {
-    // Navigate to prontuário with patient
-    navigate('/app/prontuario', { state: { patientId: patient.id } });
+    // Navigate to prontuário with patient via URL param
+    navigate(`/app/prontuario?paciente=${patient.id}`);
   };
 
   const handleSavePatient = (data: any) => {

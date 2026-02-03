@@ -11,6 +11,7 @@ import type {
   AgendaStats,
   AgendaInsight,
 } from "@/types/agenda";
+import { WeekSchedule, getDefaultWeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
 // ============= PROFESSIONALS =============
 export function useProfessionals() {
@@ -292,27 +293,182 @@ export function useAppointmentsForPeriod(
   });
 }
 
-// ============= AGENDA STATS =============
-export function useAgendaStats(selectedDate: Date, appointments: Appointment[], professionals: Professional[]) {
+// ============= CLINIC SCHEDULE =============
+export function useClinicSchedule() {
+  return useQuery({
+    queryKey: ["clinic-schedule"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("clinic_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile?.clinic_id) return null;
+
+      const { data, error } = await supabase
+        .from("clinics")
+        .select("opening_hours")
+        .eq("id", profile.clinic_id)
+        .single();
+      
+      if (error || !data?.opening_hours) return getDefaultWeekSchedule();
+      
+      return data.opening_hours as unknown as WeekSchedule;
+    },
+  });
+}
+
+// ============= PROFESSIONAL SCHEDULES =============
+export interface ProfessionalScheduleConfig {
+  professional_id: string;
+  use_clinic_default: boolean;
+  working_days: WeekSchedule;
+  default_duration_minutes: number;
+}
+
+export function useProfessionalSchedulesMap() {
+  return useQuery({
+    queryKey: ["professional-schedules-map"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return new Map<string, ProfessionalScheduleConfig>();
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("clinic_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile?.clinic_id) return new Map<string, ProfessionalScheduleConfig>();
+
+      const { data, error } = await supabase
+        .from("professional_schedule_config")
+        .select("*")
+        .eq("clinic_id", profile.clinic_id);
+      
+      if (error) {
+        console.error("Error fetching professional schedules:", error);
+        return new Map<string, ProfessionalScheduleConfig>();
+      }
+      
+      const scheduleMap = new Map<string, ProfessionalScheduleConfig>();
+      (data || []).forEach(config => {
+        const workingDays = config.working_days as unknown as WeekSchedule;
+        scheduleMap.set(config.professional_id, {
+          professional_id: config.professional_id,
+          use_clinic_default: config.use_clinic_default,
+          working_days: workingDays || getDefaultWeekSchedule(),
+          default_duration_minutes: config.default_duration_minutes || 30,
+        });
+      });
+      
+      return scheduleMap;
+    },
+  });
+}
+
+// ============= HELPER: Get effective schedule for a professional =============
+const dayKeyMap: Record<number, keyof WeekSchedule> = {
+  0: 'dom',
+  1: 'seg',
+  2: 'ter',
+  3: 'qua',
+  4: 'qui',
+  5: 'sex',
+  6: 'sab',
+};
+
+function timeToMinutes(time: string): number {
+  if (!time) return 0;
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function getEffectiveSchedule(
+  professionalId: string,
+  scheduleMap: Map<string, ProfessionalScheduleConfig>,
+  clinicSchedule: WeekSchedule | null
+): { schedule: WeekSchedule; useClinicDefault: boolean } {
+  const profConfig = scheduleMap.get(professionalId);
+  
+  if (!profConfig || profConfig.use_clinic_default) {
+    return { 
+      schedule: clinicSchedule || getDefaultWeekSchedule(), 
+      useClinicDefault: true 
+    };
+  }
+  
+  return { 
+    schedule: profConfig.working_days, 
+    useClinicDefault: false 
+  };
+}
+
+// ============= AGENDA STATS (with real schedules) =============
+export function useAgendaStats(
+  selectedDate: Date, 
+  appointments: Appointment[], 
+  professionals: Professional[],
+  clinicSchedule: WeekSchedule | null,
+  scheduleMap: Map<string, ProfessionalScheduleConfig>
+) {
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const todayAppointments = appointments.filter(a => a.scheduled_date === dateStr);
+  const dayOfWeek = selectedDate.getDay();
+  const dayKey = dayKeyMap[dayOfWeek];
   
-  // Calculate total available slots based on professionals and clinic hours (8h-18h, 30min slots)
-  const slotsPerProfessional = 20; // (10 hours * 60 min) / 30 min = 20 slots
-  const totalSlots = professionals.length > 0 ? professionals.length * slotsPerProfessional : slotsPerProfessional;
+  // Calculate total available minutes based on each professional's actual schedule
+  let totalAvailableMinutes = 0;
+  const defaultDuration = 30;
+  
+  professionals.forEach(prof => {
+    const { schedule } = getEffectiveSchedule(prof.id, scheduleMap, clinicSchedule);
+    const daySchedule = schedule[dayKey];
+    
+    if (daySchedule?.enabled) {
+      let availableMinutes = timeToMinutes(daySchedule.close) - timeToMinutes(daySchedule.open);
+      
+      // Subtract lunch break if enabled
+      if (daySchedule.hasLunch && daySchedule.lunchStart && daySchedule.lunchEnd) {
+        const lunchDuration = timeToMinutes(daySchedule.lunchEnd) - timeToMinutes(daySchedule.lunchStart);
+        availableMinutes -= lunchDuration;
+      }
+      
+      totalAvailableMinutes += Math.max(0, availableMinutes);
+    }
+  });
+  
+  // If no schedules configured, use a reasonable default
+  if (totalAvailableMinutes === 0 && professionals.length > 0) {
+    totalAvailableMinutes = professionals.length * 8 * 60; // 8 hours per professional
+  }
+  
+  const totalSlots = Math.floor(totalAvailableMinutes / defaultDuration);
   
   const total = todayAppointments.length;
   const absences = todayAppointments.filter(a => a.status === "faltou").length;
   const fitIns = todayAppointments.filter(a => a.is_fit_in).length;
   const canceled = todayAppointments.filter(a => a.status === "cancelado").length;
-  const occupied = total - canceled;
+  
+  // Calculate occupied time based on actual appointment durations
+  const occupiedMinutes = todayAppointments
+    .filter(a => a.status !== "cancelado")
+    .reduce((sum, a) => sum + (a.duration_minutes || defaultDuration), 0);
+  
+  const occupiedSlots = Math.ceil(occupiedMinutes / defaultDuration);
   
   return {
     totalAppointments: total,
     absences,
     fitIns,
-    freeSlots: Math.max(0, totalSlots - occupied),
-    occupancyRate: totalSlots > 0 ? Math.round((occupied / totalSlots) * 100) : 0,
+    freeSlots: Math.max(0, totalSlots - occupiedSlots),
+    occupancyRate: totalAvailableMinutes > 0 
+      ? Math.round((occupiedMinutes / totalAvailableMinutes) * 100) 
+      : 0,
   } as AgendaStats;
 }
 
@@ -419,6 +575,10 @@ export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekl
   const { data: specialties = [], isLoading: specialtiesLoading } = useSpecialtiesList();
   const { data: insurances = [], isLoading: insurancesLoading } = useInsurancesList();
   
+  // Fetch schedules
+  const { data: clinicSchedule = null, isLoading: clinicScheduleLoading } = useClinicSchedule();
+  const { data: professionalSchedulesMap = new Map(), isLoading: profSchedulesLoading } = useProfessionalSchedulesMap();
+  
   // Calculate date range
   let rangeStart = selectedDate;
   let rangeEnd = selectedDate;
@@ -434,12 +594,30 @@ export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekl
   const { data: appointments = [], isLoading: appointmentsLoading, refetch: refetchAppointments } = 
     useAppointmentsForPeriod(rangeStart, rangeEnd, viewMode);
   
-  // Calculate stats and insights from real data
-  const stats = useAgendaStats(selectedDate, appointments, professionals);
+  // Calculate stats and insights from real data (now with schedules)
+  const stats = useAgendaStats(selectedDate, appointments, professionals, clinicSchedule, professionalSchedulesMap);
   const insights = useAgendaInsights(appointments, professionals, selectedDate);
   
   const isLoading = profLoading || patientsLoading || roomsLoading || 
-                    specialtiesLoading || insurancesLoading || appointmentsLoading;
+                    specialtiesLoading || insurancesLoading || appointmentsLoading ||
+                    clinicScheduleLoading || profSchedulesLoading;
+  
+  // Build professional schedules map for AppointmentDialog
+  const professionalSchedules = new Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>();
+  professionals.forEach(prof => {
+    const config = professionalSchedulesMap.get(prof.id);
+    if (config) {
+      professionalSchedules.set(prof.id, {
+        useClinicDefault: config.use_clinic_default,
+        workingDays: config.working_days,
+      });
+    } else {
+      professionalSchedules.set(prof.id, {
+        useClinicDefault: true,
+        workingDays: clinicSchedule || getDefaultWeekSchedule(),
+      });
+    }
+  });
   
   return {
     professionals,
@@ -452,5 +630,8 @@ export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekl
     insights,
     isLoading,
     refetchAppointments,
+    // New: schedule data for conflict detection
+    clinicSchedule,
+    professionalSchedules,
   };
 }

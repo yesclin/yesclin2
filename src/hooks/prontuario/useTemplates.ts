@@ -23,7 +23,12 @@ export type TemplateType =
   | 'diagnosis_dsm'
   | 'psychiatric_prescription'
   | 'symptom_evolution'
-  | 'medication_history';
+  | 'medication_history'
+  // Nutrition
+  | 'nutritional_assessment'
+  | 'body_measurements'
+  | 'meal_plan'
+  | 'nutritional_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

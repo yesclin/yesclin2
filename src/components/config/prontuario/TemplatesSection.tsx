@@ -33,6 +33,11 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', category: 'Psiquiatria' },
   { value: 'symptom_evolution', label: 'Evolução de Sintomas', category: 'Psiquiatria' },
   { value: 'medication_history', label: 'Histórico de Medicamentos', category: 'Psiquiatria' },
+  // Nutrition
+  { value: 'nutritional_assessment', label: 'Avaliação Nutricional', category: 'Nutrição' },
+  { value: 'body_measurements', label: 'Medidas Corporais', category: 'Nutrição' },
+  { value: 'meal_plan', label: 'Plano Alimentar', category: 'Nutrição' },
+  { value: 'nutritional_evolution', label: 'Evolução Nutricional', category: 'Nutrição' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -56,6 +61,11 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   psychiatric_prescription: 'bg-pink-100 text-pink-800',
   symptom_evolution: 'bg-sky-100 text-sky-800',
   medication_history: 'bg-slate-100 text-slate-800',
+  // Nutrition
+  nutritional_assessment: 'bg-lime-100 text-lime-800',
+  body_measurements: 'bg-orange-100 text-orange-800',
+  meal_plan: 'bg-green-100 text-green-800',
+  nutritional_evolution: 'bg-emerald-100 text-emerald-800',
 };
 
 export function TemplatesSection() {

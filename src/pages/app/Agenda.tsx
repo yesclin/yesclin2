@@ -26,7 +26,7 @@ import { validateProcedureStock, StockValidationResult } from "@/hooks/useProced
 
 export default function Agenda() {
   const navigate = useNavigate();
-  const { role } = usePermissions();
+  const { role, professionalId: userProfessionalId } = usePermissions();
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -82,16 +82,13 @@ export default function Agenda() {
   const updateStatusMutation = useUpdateAppointmentStatus();
   const createAppointmentMutation = useCreateAppointment();
 
-  // RBAC: Profissional vê apenas sua própria aba
-  // TODO: Replace with actual user's professional_id when available
-  const userProfessionalId = role === 'profissional' ? professionals[0]?.id : null;
-  
+  // RBAC: Profissional vê apenas sua própria aba (usando professional_id vinculado ao usuário)
   // If user is a professional, force their tab
-  const effectiveSelectedProfessionalId = role === 'profissional' 
+  const effectiveSelectedProfessionalId = role === 'profissional' && userProfessionalId
     ? userProfessionalId 
     : selectedProfessionalId;
 
-  // Filter professionals based on role
+  // Filter professionals based on role and linked professional
   const visibleProfessionals = useMemo(() => {
     if (role === 'profissional' && userProfessionalId) {
       return professionals.filter(p => p.id === userProfessionalId);

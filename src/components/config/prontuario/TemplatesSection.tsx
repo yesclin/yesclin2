@@ -19,6 +19,9 @@ const TYPES: { value: TemplateType; label: string }[] = [
   { value: 'conduct', label: 'Plano/Conduta' },
   { value: 'procedure', label: 'Procedimento' },
   { value: 'prescription', label: 'Prescrição' },
+  { value: 'odontogram', label: 'Odontograma' },
+  { value: 'tooth_procedure', label: 'Procedimento por Dente' },
+  { value: 'dental_session', label: 'Sessão Odontológica' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -30,6 +33,9 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   conduct: 'bg-amber-100 text-amber-800',
   procedure: 'bg-orange-100 text-orange-800',
   prescription: 'bg-pink-100 text-pink-800',
+  odontogram: 'bg-teal-100 text-teal-800',
+  tooth_procedure: 'bg-indigo-100 text-indigo-800',
+  dental_session: 'bg-emerald-100 text-emerald-800',
 };
 
 export function TemplatesSection() {

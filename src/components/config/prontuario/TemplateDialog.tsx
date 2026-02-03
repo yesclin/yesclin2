@@ -20,6 +20,9 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string }[] = [
   { value: 'conduct', label: 'Plano/Conduta' },
   { value: 'procedure', label: 'Procedimento' },
   { value: 'prescription', label: 'Prescrição' },
+  { value: 'odontogram', label: 'Odontograma' },
+  { value: 'tooth_procedure', label: 'Procedimento por Dente' },
+  { value: 'dental_session', label: 'Sessão Odontológica' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -31,6 +34,8 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'multiselect', label: 'Múltipla escolha' },
   { value: 'date', label: 'Data' },
   { value: 'file', label: 'Arquivo' },
+  { value: 'odontogram', label: 'Odontograma' },
+  { value: 'tooth_select', label: 'Seleção de Dente' },
 ];
 
 interface Props {

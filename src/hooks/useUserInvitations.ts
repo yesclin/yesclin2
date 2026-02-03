@@ -17,6 +17,11 @@ export interface SendInviteData {
   fullName: string;
   role: string;
   permissions?: string[];
+  // Professional data
+  isProfessional?: boolean;
+  professionalType?: string;
+  registrationNumber?: string;
+  specialtyIds?: string[];
 }
 
 export function useUserInvitations(clinicId: string | null) {

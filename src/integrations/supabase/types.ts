@@ -4196,6 +4196,45 @@ export type Database = {
           },
         ]
       }
+      professional_specialties: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          professional_id: string
+          specialty_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          professional_id: string
+          specialty_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          professional_id?: string
+          specialty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_specialties_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_specialties_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professionals: {
         Row: {
           avatar_url: string | null
@@ -5790,8 +5829,12 @@ export type Database = {
           full_name: string
           id: string
           invited_by: string
+          is_professional: boolean
           permissions: Database["public"]["Enums"]["app_module"][] | null
+          professional_type: string | null
+          registration_number: string | null
           role: Database["public"]["Enums"]["app_role"]
+          specialty_ids: string[] | null
           status: string
           token: string
           updated_at: string
@@ -5805,8 +5848,12 @@ export type Database = {
           full_name: string
           id?: string
           invited_by: string
+          is_professional?: boolean
           permissions?: Database["public"]["Enums"]["app_module"][] | null
+          professional_type?: string | null
+          registration_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          specialty_ids?: string[] | null
           status?: string
           token?: string
           updated_at?: string
@@ -5820,8 +5867,12 @@ export type Database = {
           full_name?: string
           id?: string
           invited_by?: string
+          is_professional?: boolean
           permissions?: Database["public"]["Enums"]["app_module"][] | null
+          professional_type?: string | null
+          registration_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          specialty_ids?: string[] | null
           status?: string
           token?: string
           updated_at?: string
@@ -5964,6 +6015,18 @@ export type Database = {
       check_medical_record_tab_permission: {
         Args: { _permission: string; _tab_key: string; _user_id: string }
         Returns: boolean
+      }
+      create_professional_from_invitation: {
+        Args: {
+          p_clinic_id: string
+          p_email: string
+          p_full_name: string
+          p_professional_type: string
+          p_registration_number: string
+          p_specialty_ids: string[]
+          p_user_id: string
+        }
+        Returns: string
       }
       get_user_all_permissions: {
         Args: { _user_id: string }

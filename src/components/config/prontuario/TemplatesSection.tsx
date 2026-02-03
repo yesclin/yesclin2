@@ -38,6 +38,12 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'body_measurements', label: 'Medidas Corporais', category: 'Nutrição' },
   { value: 'meal_plan', label: 'Plano Alimentar', category: 'Nutrição' },
   { value: 'nutritional_evolution', label: 'Evolução Nutricional', category: 'Nutrição' },
+  // Aesthetics
+  { value: 'aesthetic_assessment', label: 'Avaliação Estética', category: 'Estética' },
+  { value: 'aesthetic_procedure', label: 'Procedimento Realizado', category: 'Estética' },
+  { value: 'products_used', label: 'Produtos Utilizados', category: 'Estética' },
+  { value: 'before_after_photos', label: 'Fotos Antes/Depois', category: 'Estética' },
+  { value: 'consent_form', label: 'Termo de Consentimento', category: 'Estética' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -66,6 +72,12 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   body_measurements: 'bg-orange-100 text-orange-800',
   meal_plan: 'bg-green-100 text-green-800',
   nutritional_evolution: 'bg-emerald-100 text-emerald-800',
+  // Aesthetics
+  aesthetic_assessment: 'bg-pink-100 text-pink-800',
+  aesthetic_procedure: 'bg-fuchsia-100 text-fuchsia-800',
+  products_used: 'bg-amber-100 text-amber-800',
+  before_after_photos: 'bg-violet-100 text-violet-800',
+  consent_form: 'bg-slate-100 text-slate-800',
 };
 
 export function TemplatesSection() {

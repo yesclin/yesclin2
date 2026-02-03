@@ -46,6 +46,12 @@ import {
   Scale,
   Utensils,
   LineChart,
+  // Aesthetics icons
+  Sparkles,
+  Syringe,
+  Package,
+  ImageIcon,
+  FileCheck,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -109,6 +115,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Scale,
   Utensils,
   LineChart,
+  // Aesthetics icons
+  Sparkles,
+  Syringe,
+  Package,
+  ImageIcon,
+  FileCheck,
 };
 
 // Tab key mapping to standard keys
@@ -147,6 +159,12 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   body_measurements: 'anamnese',
   meal_plan: 'evolucao',
   nutritional_evolution: 'evolucao',
+  // Aesthetics tabs - map to appropriate permissions
+  aesthetic_assessment: 'anamnese',
+  aesthetic_procedure: 'procedimentos',
+  products_used: 'procedimentos',
+  before_after_photos: 'documentos',
+  consent_form: 'consentimentos',
 };
 
 // Fallback nav items when no config exists
@@ -179,6 +197,12 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'body_measurements', label: 'Medidas Corporais', icon: Scale },
   { id: 'meal_plan', label: 'Plano Alimentar', icon: Utensils },
   { id: 'nutritional_evolution', label: 'Evolução Nutricional', icon: LineChart },
+  // Aesthetics tabs
+  { id: 'aesthetic_assessment', label: 'Avaliação Estética', icon: Sparkles },
+  { id: 'aesthetic_procedure', label: 'Procedimento Realizado', icon: Syringe },
+  { id: 'products_used', label: 'Produtos Utilizados', icon: Package },
+  { id: 'before_after_photos', label: 'Fotos Antes/Depois', icon: ImageIcon },
+  { id: 'consent_form', label: 'Termo de Consentimento', icon: FileCheck },
 ];
 
 export default function Prontuario() {

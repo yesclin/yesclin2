@@ -41,6 +41,11 @@ import {
   PillIcon,
   TrendingUp,
   ClipboardCheck,
+  // Nutrition icons
+  Apple,
+  Scale,
+  Utensils,
+  LineChart,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -99,6 +104,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   PillIcon,
   TrendingUp,
   ClipboardCheck,
+  // Nutrition icons
+  Apple,
+  Scale,
+  Utensils,
+  LineChart,
 };
 
 // Tab key mapping to standard keys
@@ -132,6 +142,11 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   psychiatric_prescription: 'prescricoes',
   symptom_evolution: 'evolucao',
   medication_history: 'prescricoes',
+  // Nutrition tabs - map to appropriate permissions
+  nutritional_assessment: 'anamnese',
+  body_measurements: 'anamnese',
+  meal_plan: 'evolucao',
+  nutritional_evolution: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -159,6 +174,11 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', icon: PillIcon },
   { id: 'symptom_evolution', label: 'Evolução de Sintomas', icon: TrendingUp },
   { id: 'medication_history', label: 'Histórico de Medicamentos', icon: ClipboardCheck },
+  // Nutrition tabs
+  { id: 'nutritional_assessment', label: 'Avaliação Nutricional', icon: Apple },
+  { id: 'body_measurements', label: 'Medidas Corporais', icon: Scale },
+  { id: 'meal_plan', label: 'Plano Alimentar', icon: Utensils },
+  { id: 'nutritional_evolution', label: 'Evolução Nutricional', icon: LineChart },
 ];
 
 export default function Prontuario() {

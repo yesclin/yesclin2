@@ -52,7 +52,16 @@ export type TemplateType =
   | 'vaccines'
   | 'pediatric_diagnosis'
   | 'pediatric_conduct'
-  | 'pediatric_evolution';
+  | 'pediatric_evolution'
+  // Gynecology
+  | 'gyneco_anamnesis'
+  | 'gyneco_data'
+  | 'obstetric_history'
+  | 'gyneco_exam'
+  | 'gyneco_exams_results'
+  | 'gyneco_diagnosis'
+  | 'gyneco_conduct'
+  | 'gyneco_evolution';
 export type TemplateScope = 'system' | 'specialty' | 'professional';
 
 export interface Template {

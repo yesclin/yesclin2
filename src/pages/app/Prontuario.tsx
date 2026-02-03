@@ -65,6 +65,11 @@ import {
   TrendingUp as GrowthChart,
   BrainCircuit as BrainDevelopment,
   ShieldCheck,
+  // Gynecology icons
+  CircleUser,
+  CalendarDays,
+  HeartPulse,
+  Search,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -147,6 +152,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   GrowthChart,
   BrainDevelopment,
   ShieldCheck,
+  // Gynecology icons
+  CircleUser,
+  CalendarDays,
+  HeartPulse,
+  Search,
 };
 
 // Tab key mapping to standard keys
@@ -209,6 +219,15 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   pediatric_diagnosis: 'diagnostico',
   pediatric_conduct: 'evolucao',
   pediatric_evolution: 'evolucao',
+  // Gynecology tabs - map to appropriate permissions
+  gyneco_anamnesis: 'anamnese',
+  gyneco_data: 'anamnese',
+  obstetric_history: 'anamnese',
+  gyneco_exam: 'anamnese',
+  gyneco_exams_results: 'exames',
+  gyneco_diagnosis: 'diagnostico',
+  gyneco_conduct: 'evolucao',
+  gyneco_evolution: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -265,6 +284,15 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'pediatric_diagnosis', label: 'Diagnóstico', icon: Stethoscope },
   { id: 'pediatric_conduct', label: 'Conduta/Orientações', icon: Target },
   { id: 'pediatric_evolution', label: 'Evolução Clínica', icon: Activity },
+  // Gynecology tabs
+  { id: 'gyneco_anamnesis', label: 'Anamnese Ginecológica', icon: CircleUser },
+  { id: 'gyneco_data', label: 'Dados Ginecológicos', icon: CalendarDays },
+  { id: 'obstetric_history', label: 'Histórico Obstétrico (G/P/A)', icon: HeartPulse },
+  { id: 'gyneco_exam', label: 'Exame Ginecológico', icon: Search },
+  { id: 'gyneco_exams_results', label: 'Exames/Resultados', icon: ClipboardList },
+  { id: 'gyneco_diagnosis', label: 'Diagnóstico', icon: Stethoscope },
+  { id: 'gyneco_conduct', label: 'Conduta/Prescrição', icon: Target },
+  { id: 'gyneco_evolution', label: 'Evolução Clínica', icon: Activity },
 ];
 
 export default function Prontuario() {

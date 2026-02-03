@@ -664,6 +664,127 @@ const PHYSIOTHERAPY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Oftalmologia
+const OPHTHALMOLOGY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Anamnese Oftalmológica',
+    type: 'ophthalmo_anamnesis',
+    description: 'Anamnese direcionada para avaliação oftalmológica',
+    fields: [
+      { label: 'Queixa Principal', field_type: 'textarea', placeholder: 'Baixa visão, dor, vermelhidão...', is_required: true },
+      { label: 'História da Doença Atual', field_type: 'textarea', placeholder: 'Evolução dos sintomas', is_required: true },
+      { label: 'Antecedentes Oftalmológicos', field_type: 'textarea', placeholder: 'Cirurgias, trauma, doenças oculares prévias', is_required: false },
+      { label: 'Uso de Óculos/Lentes', field_type: 'select', options: ['Não usa', 'Óculos para longe', 'Óculos para perto', 'Óculos multifocal', 'Lentes de contato', 'Óculos + lentes'], is_required: false },
+      { label: 'Última Refração', field_type: 'text', placeholder: 'Data da última refração', is_required: false },
+      { label: 'Doenças Sistêmicas', field_type: 'textarea', placeholder: 'Diabetes, hipertensão, doenças reumatológicas', is_required: false },
+      { label: 'Medicamentos em Uso', field_type: 'textarea', placeholder: 'Colírios, medicamentos sistêmicos', is_required: false },
+      { label: 'Alergias', field_type: 'textarea', placeholder: 'Alergias a colírios, medicamentos', is_required: false },
+    ],
+  },
+  {
+    name: 'Acuidade Visual',
+    type: 'visual_acuity',
+    description: 'Registro de acuidade visual OD e OE',
+    fields: [
+      { label: 'AV OD (sem correção)', field_type: 'text', placeholder: 'Ex: 20/40', is_required: true },
+      { label: 'AV OE (sem correção)', field_type: 'text', placeholder: 'Ex: 20/30', is_required: true },
+      { label: 'AV OD (com correção)', field_type: 'text', placeholder: 'Ex: 20/20', is_required: false },
+      { label: 'AV OE (com correção)', field_type: 'text', placeholder: 'Ex: 20/20', is_required: false },
+      { label: 'Refração OD', field_type: 'text', placeholder: 'Ex: -2.00 -0.50 x 180', is_required: false },
+      { label: 'Refração OE', field_type: 'text', placeholder: 'Ex: -1.75 -0.75 x 175', is_required: false },
+      { label: 'Adição (Perto)', field_type: 'text', placeholder: 'Ex: +2.00', is_required: false },
+      { label: 'Tabela Utilizada', field_type: 'select', options: ['Snellen', 'LogMAR', 'ETDRS', 'Figuras', 'E de Snellen'], is_required: false },
+    ],
+  },
+  {
+    name: 'Pressão Intraocular',
+    type: 'intraocular_pressure',
+    description: 'Registro de PIO e tonometria',
+    fields: [
+      { label: 'PIO OD (mmHg)', field_type: 'number', placeholder: 'Ex: 14', is_required: true },
+      { label: 'PIO OE (mmHg)', field_type: 'number', placeholder: 'Ex: 15', is_required: true },
+      { label: 'Horário da Medida', field_type: 'text', placeholder: 'Ex: 10:30', is_required: false },
+      { label: 'Método de Tonometria', field_type: 'select', options: ['Aplanação (Goldmann)', 'Tonômetro de sopro', 'Tono-Pen', 'iCare', 'Palpação', 'Outro'], is_required: false },
+      { label: 'Paquimetria OD (µm)', field_type: 'number', placeholder: 'Ex: 545', is_required: false },
+      { label: 'Paquimetria OE (µm)', field_type: 'number', placeholder: 'Ex: 540', is_required: false },
+      { label: 'PIO Corrigida OD', field_type: 'number', placeholder: 'PIO ajustada pela paquimetria', is_required: false },
+      { label: 'PIO Corrigida OE', field_type: 'number', placeholder: 'PIO ajustada pela paquimetria', is_required: false },
+    ],
+  },
+  {
+    name: 'Exame Oftalmológico',
+    type: 'ophthalmo_exam',
+    description: 'Biomicroscopia e fundoscopia',
+    fields: [
+      { label: 'Biomicroscopia OD', field_type: 'textarea', placeholder: 'Córnea, câmara anterior, íris, cristalino', is_required: true },
+      { label: 'Biomicroscopia OE', field_type: 'textarea', placeholder: 'Córnea, câmara anterior, íris, cristalino', is_required: true },
+      { label: 'Gonioscopia OD', field_type: 'text', placeholder: 'Classificação do ângulo', is_required: false },
+      { label: 'Gonioscopia OE', field_type: 'text', placeholder: 'Classificação do ângulo', is_required: false },
+      { label: 'Fundoscopia OD', field_type: 'textarea', placeholder: 'Disco óptico, mácula, vasos, retina', is_required: true },
+      { label: 'Fundoscopia OE', field_type: 'textarea', placeholder: 'Disco óptico, mácula, vasos, retina', is_required: true },
+      { label: 'Relação E/D OD', field_type: 'text', placeholder: 'Ex: 0.3', is_required: false },
+      { label: 'Relação E/D OE', field_type: 'text', placeholder: 'Ex: 0.3', is_required: false },
+      { label: 'Motilidade Ocular', field_type: 'select', options: ['Normal', 'Alterada - estrabismo', 'Alterada - paralisia', 'Alterada - nistagmo'], is_required: false },
+      { label: 'Reflexos Pupilares', field_type: 'select', options: ['Normais', 'DPAR positivo', 'Midríase', 'Miose', 'Anisocoria'], is_required: false },
+    ],
+  },
+  {
+    name: 'Diagnóstico Oftalmológico',
+    type: 'ophthalmo_diagnosis',
+    description: 'Diagnóstico separado por olho',
+    fields: [
+      { label: 'Diagnóstico OD', field_type: 'textarea', placeholder: 'Diagnóstico do olho direito', is_required: true },
+      { label: 'CID-10 OD', field_type: 'text', placeholder: 'Ex: H40.1', is_required: false },
+      { label: 'Diagnóstico OE', field_type: 'textarea', placeholder: 'Diagnóstico do olho esquerdo', is_required: true },
+      { label: 'CID-10 OE', field_type: 'text', placeholder: 'Ex: H26.0', is_required: false },
+      { label: 'Diagnóstico AO (Ambos os olhos)', field_type: 'textarea', placeholder: 'Diagnósticos que afetam ambos os olhos', is_required: false },
+      { label: 'Estadiamento/Gravidade', field_type: 'select', options: ['Inicial/Leve', 'Moderado', 'Avançado/Grave', 'Em acompanhamento'], is_required: false },
+    ],
+  },
+  {
+    name: 'Exames Complementares',
+    type: 'ophthalmo_complementary_exams',
+    description: 'Registro de exames oftalmológicos complementares',
+    fields: [
+      { label: 'Tipo de Exame', field_type: 'select', options: ['OCT Mácula', 'OCT Nervo Óptico', 'Campo Visual', 'Retinografia', 'Angiofluoresceinografia', 'Topografia de Córnea', 'Biometria', 'Microscopia Especular', 'Paquimetria', 'UBM', 'Ecografia ocular', 'Outro'], is_required: true },
+      { label: 'Data do Exame', field_type: 'date', placeholder: 'Data de realização', is_required: true },
+      { label: 'Resultado OD', field_type: 'textarea', placeholder: 'Achados do olho direito', is_required: false },
+      { label: 'Resultado OE', field_type: 'textarea', placeholder: 'Achados do olho esquerdo', is_required: false },
+      { label: 'Conclusão', field_type: 'textarea', placeholder: 'Interpretação clínica', is_required: false },
+    ],
+  },
+  {
+    name: 'Conduta Oftalmológica',
+    type: 'ophthalmo_conduct',
+    description: 'Prescrição e plano terapêutico',
+    fields: [
+      { label: 'Prescrição de Óculos', field_type: 'textarea', placeholder: 'Refração para óculos, se indicado', is_required: false },
+      { label: 'Prescrição de Colírios', field_type: 'textarea', placeholder: 'Colírios prescritos e posologia', is_required: false },
+      { label: 'Medicamentos Sistêmicos', field_type: 'textarea', placeholder: 'Se necessário', is_required: false },
+      { label: 'Indicação Cirúrgica', field_type: 'select', options: ['Não indicada', 'Catarata', 'Glaucoma', 'Retina/Vítreo', 'Córnea', 'Plástica ocular', 'Refrativa', 'Outra'], is_required: false },
+      { label: 'Exames Solicitados', field_type: 'textarea', placeholder: 'Exames complementares solicitados', is_required: false },
+      { label: 'Orientações ao Paciente', field_type: 'textarea', placeholder: 'Cuidados, sinais de alerta', is_required: false },
+      { label: 'Retorno', field_type: 'text', placeholder: 'Prazo para retorno', is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução Oftalmológica',
+    type: 'ophthalmo_evolution',
+    description: 'Acompanhamento da evolução ocular',
+    fields: [
+      { label: 'Sintomas Atuais', field_type: 'textarea', placeholder: 'Queixas visuais atuais', is_required: true },
+      { label: 'AV OD Atual', field_type: 'text', placeholder: 'Ex: 20/25', is_required: false },
+      { label: 'AV OE Atual', field_type: 'text', placeholder: 'Ex: 20/30', is_required: false },
+      { label: 'PIO OD Atual', field_type: 'number', placeholder: 'mmHg', is_required: false },
+      { label: 'PIO OE Atual', field_type: 'number', placeholder: 'mmHg', is_required: false },
+      { label: 'Comparação com Consulta Anterior', field_type: 'select', options: ['Melhora', 'Estável', 'Piora', 'Primeira consulta'], is_required: false },
+      { label: 'Adesão ao Tratamento', field_type: 'select', options: ['Boa', 'Regular', 'Irregular', 'Não aderente'], is_required: false },
+      { label: 'Evolução Clínica', field_type: 'textarea', placeholder: 'Resumo da evolução', is_required: true },
+      { label: 'Ajustes no Tratamento', field_type: 'textarea', placeholder: 'Modificações realizadas', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
@@ -675,6 +796,7 @@ const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...PEDIATRICS_TEMPLATES,
   ...CARDIOLOGY_TEMPLATES,
   ...PHYSIOTHERAPY_TEMPLATES,
+  ...OPHTHALMOLOGY_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

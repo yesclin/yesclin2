@@ -214,12 +214,84 @@ const PSYCHIATRY_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Nutrição
+const NUTRITION_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Avaliação Nutricional',
+    type: 'nutritional_assessment',
+    description: 'Avaliação nutricional completa do paciente',
+    fields: [
+      { label: 'Peso (kg)', field_type: 'number', placeholder: 'Ex: 70.5', is_required: true },
+      { label: 'Altura (cm)', field_type: 'number', placeholder: 'Ex: 170', is_required: true },
+      { label: 'IMC (calculado)', field_type: 'text', placeholder: 'Será calculado automaticamente', is_required: false },
+      { label: 'Classificação do IMC', field_type: 'select', options: ['Baixo peso', 'Eutrófico', 'Sobrepeso', 'Obesidade Grau I', 'Obesidade Grau II', 'Obesidade Grau III'], is_required: false },
+      { label: 'Objetivo Nutricional', field_type: 'select', options: ['Emagrecimento', 'Ganho de massa muscular', 'Manutenção de peso', 'Reeducação alimentar', 'Controle de patologia', 'Performance esportiva', 'Outro'], is_required: true },
+      { label: 'Histórico Alimentar', field_type: 'textarea', placeholder: 'Descreva os hábitos alimentares do paciente', is_required: false },
+      { label: 'Restrições Alimentares', field_type: 'textarea', placeholder: 'Alergias, intolerâncias, preferências', is_required: false },
+      { label: 'Patologias Relacionadas', field_type: 'textarea', placeholder: 'Diabetes, hipertensão, dislipidemia, etc.', is_required: false },
+    ],
+  },
+  {
+    name: 'Medidas Antropométricas',
+    type: 'body_measurements',
+    description: 'Registro de circunferências e composição corporal',
+    fields: [
+      { label: 'Peso (kg)', field_type: 'number', placeholder: 'Ex: 70.5', is_required: true },
+      { label: 'Circunferência do Braço (cm)', field_type: 'number', placeholder: 'Ex: 30', is_required: false },
+      { label: 'Circunferência do Tórax (cm)', field_type: 'number', placeholder: 'Ex: 95', is_required: false },
+      { label: 'Circunferência da Cintura (cm)', field_type: 'number', placeholder: 'Ex: 80', is_required: true },
+      { label: 'Circunferência do Quadril (cm)', field_type: 'number', placeholder: 'Ex: 100', is_required: true },
+      { label: 'Circunferência da Coxa (cm)', field_type: 'number', placeholder: 'Ex: 55', is_required: false },
+      { label: 'Circunferência da Panturrilha (cm)', field_type: 'number', placeholder: 'Ex: 36', is_required: false },
+      { label: 'Percentual de Gordura (%)', field_type: 'number', placeholder: 'Ex: 25', is_required: false },
+      { label: 'Massa Magra (kg)', field_type: 'number', placeholder: 'Ex: 52', is_required: false },
+      { label: 'Método de Avaliação', field_type: 'select', options: ['Bioimpedância', 'Adipômetro', 'DEXA', 'Circunferências', 'Outro'], is_required: false },
+    ],
+  },
+  {
+    name: 'Plano Alimentar',
+    type: 'meal_plan',
+    description: 'Prescrição do plano alimentar e substituições',
+    fields: [
+      { label: 'Valor Energético Total (kcal)', field_type: 'number', placeholder: 'Ex: 1800', is_required: true },
+      { label: 'Distribuição de Macronutrientes', field_type: 'textarea', placeholder: 'Carboidratos: 50%, Proteínas: 25%, Lipídios: 25%', is_required: false },
+      { label: 'Café da Manhã', field_type: 'textarea', placeholder: 'Descreva as opções para o café da manhã', is_required: true },
+      { label: 'Lanche da Manhã', field_type: 'textarea', placeholder: 'Descreva as opções para o lanche', is_required: false },
+      { label: 'Almoço', field_type: 'textarea', placeholder: 'Descreva as opções para o almoço', is_required: true },
+      { label: 'Lanche da Tarde', field_type: 'textarea', placeholder: 'Descreva as opções para o lanche', is_required: false },
+      { label: 'Jantar', field_type: 'textarea', placeholder: 'Descreva as opções para o jantar', is_required: true },
+      { label: 'Ceia', field_type: 'textarea', placeholder: 'Descreva as opções para a ceia', is_required: false },
+      { label: 'Lista de Substituições', field_type: 'textarea', placeholder: 'Equivalências e substituições permitidas', is_required: false },
+      { label: 'Suplementação', field_type: 'textarea', placeholder: 'Suplementos prescritos, se houver', is_required: false },
+      { label: 'Orientações Gerais', field_type: 'textarea', placeholder: 'Recomendações adicionais para o paciente', is_required: false },
+    ],
+  },
+  {
+    name: 'Evolução Nutricional',
+    type: 'nutritional_evolution',
+    description: 'Acompanhamento da evolução do paciente',
+    fields: [
+      { label: 'Peso Atual (kg)', field_type: 'number', placeholder: 'Ex: 68', is_required: true },
+      { label: 'Variação de Peso', field_type: 'text', placeholder: 'Ex: -2.5 kg', is_required: false },
+      { label: 'Adesão ao Plano', field_type: 'select', options: ['Excelente', 'Boa', 'Regular', 'Baixa', 'Não seguiu'], is_required: true },
+      { label: 'Dificuldades Relatadas', field_type: 'textarea', placeholder: 'Obstáculos enfrentados pelo paciente', is_required: false },
+      { label: 'Sintomas Gastrointestinais', field_type: 'multiselect', options: ['Nenhum', 'Constipação', 'Diarreia', 'Distensão', 'Gases', 'Náusea', 'Azia', 'Outro'], is_required: false },
+      { label: 'Nível de Energia', field_type: 'select', options: ['Muito melhor', 'Melhor', 'Igual', 'Pior', 'Muito pior'], is_required: false },
+      { label: 'Qualidade do Sono', field_type: 'select', options: ['Excelente', 'Boa', 'Regular', 'Ruim', 'Muito ruim'], is_required: false },
+      { label: 'Evolução Clínica', field_type: 'textarea', placeholder: 'Resumo da evolução do paciente', is_required: true },
+      { label: 'Ajustes no Plano', field_type: 'textarea', placeholder: 'Modificações realizadas no plano alimentar', is_required: false },
+      { label: 'Próximos Objetivos', field_type: 'textarea', placeholder: 'Metas para o próximo período', is_required: false },
+    ],
+  },
+];
+
 // Combina todos os templates padrão
 const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
   ...GENERAL_MEDICINE_TEMPLATES,
   ...DENTISTRY_TEMPLATES,
   ...PSYCHOLOGY_TEMPLATES,
   ...PSYCHIATRY_TEMPLATES,
+  ...NUTRITION_TEMPLATES,
 ];
 
 export function useDefaultTemplates() {

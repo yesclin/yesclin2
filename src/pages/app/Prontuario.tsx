@@ -70,6 +70,10 @@ import {
   CalendarDays,
   HeartPulse,
   Search,
+  // Ophthalmology icons
+  Eye,
+  Focus,
+  Microscope,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -157,6 +161,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CalendarDays,
   HeartPulse,
   Search,
+  // Ophthalmology icons
+  Eye,
+  Focus,
+  Microscope,
 };
 
 // Tab key mapping to standard keys
@@ -228,6 +236,15 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   gyneco_diagnosis: 'diagnostico',
   gyneco_conduct: 'evolucao',
   gyneco_evolution: 'evolucao',
+  // Ophthalmology tabs - map to appropriate permissions
+  ophthalmo_anamnesis: 'anamnese',
+  visual_acuity: 'anamnese',
+  ophthalmo_exam: 'anamnese',
+  intraocular_pressure: 'anamnese',
+  ophthalmo_diagnosis: 'diagnostico',
+  ophthalmo_complementary_exams: 'exames',
+  ophthalmo_conduct: 'evolucao',
+  ophthalmo_evolution: 'evolucao',
 };
 
 // Fallback nav items when no config exists
@@ -293,6 +310,15 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'gyneco_diagnosis', label: 'Diagnóstico', icon: Stethoscope },
   { id: 'gyneco_conduct', label: 'Conduta/Prescrição', icon: Target },
   { id: 'gyneco_evolution', label: 'Evolução Clínica', icon: Activity },
+  // Ophthalmology tabs
+  { id: 'ophthalmo_anamnesis', label: 'Anamnese Oftalmológica', icon: Eye },
+  { id: 'visual_acuity', label: 'Acuidade Visual (OD/OE)', icon: Focus },
+  { id: 'ophthalmo_exam', label: 'Exame Oftalmológico', icon: Microscope },
+  { id: 'intraocular_pressure', label: 'Pressão Intraocular (OD/OE)', icon: Gauge },
+  { id: 'ophthalmo_diagnosis', label: 'Diagnóstico (OD/OE)', icon: Stethoscope },
+  { id: 'ophthalmo_complementary_exams', label: 'Exames Complementares', icon: ClipboardList },
+  { id: 'ophthalmo_conduct', label: 'Conduta/Prescrição', icon: Target },
+  { id: 'ophthalmo_evolution', label: 'Evolução Clínica', icon: Activity },
 ];
 
 export default function Prontuario() {

@@ -62,6 +62,15 @@ const DEFAULT_TABS = [
   { name: 'Diagnóstico', key: 'gyneco_diagnosis', icon: 'Stethoscope', display_order: 31 },
   { name: 'Conduta/Prescrição', key: 'gyneco_conduct', icon: 'Target', display_order: 32 },
   { name: 'Evolução Clínica', key: 'gyneco_evolution', icon: 'Activity', display_order: 33 },
+  // Ophthalmology tabs
+  { name: 'Anamnese Oftalmológica', key: 'ophthalmo_anamnesis', icon: 'Eye', display_order: 34 },
+  { name: 'Acuidade Visual (OD/OE)', key: 'visual_acuity', icon: 'Focus', display_order: 35 },
+  { name: 'Exame Oftalmológico', key: 'ophthalmo_exam', icon: 'Microscope', display_order: 36 },
+  { name: 'Pressão Intraocular (OD/OE)', key: 'intraocular_pressure', icon: 'Gauge', display_order: 37 },
+  { name: 'Diagnóstico (OD/OE)', key: 'ophthalmo_diagnosis', icon: 'Stethoscope', display_order: 38 },
+  { name: 'Exames Complementares', key: 'ophthalmo_complementary_exams', icon: 'ClipboardList', display_order: 39 },
+  { name: 'Conduta/Prescrição', key: 'ophthalmo_conduct', icon: 'Target', display_order: 40 },
+  { name: 'Evolução Clínica', key: 'ophthalmo_evolution', icon: 'Activity', display_order: 41 },
 ];
 
 export function useTabs() {

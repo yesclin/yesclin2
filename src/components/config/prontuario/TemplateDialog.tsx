@@ -72,6 +72,15 @@ const TEMPLATE_TYPES: { value: TemplateType; label: string; category?: string }[
   { value: 'gyneco_diagnosis', label: 'Diagnóstico', category: 'Ginecologia' },
   { value: 'gyneco_conduct', label: 'Conduta/Prescrição', category: 'Ginecologia' },
   { value: 'gyneco_evolution', label: 'Evolução Clínica', category: 'Ginecologia' },
+  // Ophthalmology
+  { value: 'ophthalmo_anamnesis', label: 'Anamnese Oftalmológica', category: 'Oftalmologia' },
+  { value: 'visual_acuity', label: 'Acuidade Visual (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_exam', label: 'Exame Oftalmológico', category: 'Oftalmologia' },
+  { value: 'intraocular_pressure', label: 'Pressão Intraocular (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_diagnosis', label: 'Diagnóstico (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_complementary_exams', label: 'Exames Complementares', category: 'Oftalmologia' },
+  { value: 'ophthalmo_conduct', label: 'Conduta/Prescrição', category: 'Oftalmologia' },
+  { value: 'ophthalmo_evolution', label: 'Evolução Clínica', category: 'Oftalmologia' },
 ];
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [

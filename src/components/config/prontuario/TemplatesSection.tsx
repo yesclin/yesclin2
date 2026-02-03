@@ -71,6 +71,15 @@ const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   { value: 'gyneco_diagnosis', label: 'Diagnóstico', category: 'Ginecologia' },
   { value: 'gyneco_conduct', label: 'Conduta/Prescrição', category: 'Ginecologia' },
   { value: 'gyneco_evolution', label: 'Evolução Clínica', category: 'Ginecologia' },
+  // Ophthalmology
+  { value: 'ophthalmo_anamnesis', label: 'Anamnese Oftalmológica', category: 'Oftalmologia' },
+  { value: 'visual_acuity', label: 'Acuidade Visual (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_exam', label: 'Exame Oftalmológico', category: 'Oftalmologia' },
+  { value: 'intraocular_pressure', label: 'Pressão Intraocular (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_diagnosis', label: 'Diagnóstico (OD/OE)', category: 'Oftalmologia' },
+  { value: 'ophthalmo_complementary_exams', label: 'Exames Complementares', category: 'Oftalmologia' },
+  { value: 'ophthalmo_conduct', label: 'Conduta/Prescrição', category: 'Oftalmologia' },
+  { value: 'ophthalmo_evolution', label: 'Evolução Clínica', category: 'Oftalmologia' },
 ];
 
 const TYPE_COLORS: Record<TemplateType, string> = {
@@ -132,6 +141,15 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   gyneco_diagnosis: 'bg-violet-100 text-violet-800',
   gyneco_conduct: 'bg-amber-100 text-amber-800',
   gyneco_evolution: 'bg-teal-100 text-teal-800',
+  // Ophthalmology
+  ophthalmo_anamnesis: 'bg-sky-100 text-sky-800',
+  visual_acuity: 'bg-blue-100 text-blue-800',
+  ophthalmo_exam: 'bg-indigo-100 text-indigo-800',
+  intraocular_pressure: 'bg-cyan-100 text-cyan-800',
+  ophthalmo_diagnosis: 'bg-purple-100 text-purple-800',
+  ophthalmo_complementary_exams: 'bg-teal-100 text-teal-800',
+  ophthalmo_conduct: 'bg-amber-100 text-amber-800',
+  ophthalmo_evolution: 'bg-green-100 text-green-800',
 };
 
 export function TemplatesSection() {

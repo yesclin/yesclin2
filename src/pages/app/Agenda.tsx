@@ -2,9 +2,10 @@ import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, CalendarPlus, Ban, Settings } from "lucide-react";
+import { Plus, CalendarPlus, Ban, Settings, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAgendaMockData } from "@/hooks/useAgendaMockData";
+import { useAgendaRealData } from "@/hooks/useAgendaRealData";
+import { useUpdateAppointmentStatus, useCreateAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
 import { useTissGuideGeneration } from "@/hooks/useTissGuideGeneration";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AgendaFilters } from "@/components/agenda/AgendaFilters";
@@ -62,6 +63,7 @@ export default function Agenda() {
   const [stockValidationResult, setStockValidationResult] = useState<StockValidationResult | null>(null);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ appointmentId: string; status: AppointmentStatus } | null>(null);
   
+  // Real data from Supabase
   const { 
     specialties, 
     rooms, 
@@ -70,8 +72,14 @@ export default function Agenda() {
     insurances, 
     appointments, 
     stats, 
-    insights 
-  } = useAgendaMockData(selectedDate);
+    insights,
+    isLoading: dataLoading,
+    refetchAppointments,
+  } = useAgendaRealData(selectedDate, viewMode === 'timeline' ? 'daily' : viewMode);
+  
+  // Mutations for real database operations
+  const updateStatusMutation = useUpdateAppointmentStatus();
+  const createAppointmentMutation = useCreateAppointment();
 
   // Default clinic schedule for slot suggestions (mock - will be replaced with real data)
   const clinicSchedule = useMemo<WeekSchedule>(() => {
@@ -205,37 +213,50 @@ export default function Agenda() {
       setFinalizingAppointment(apt);
       setMaterialsDialogOpen(true);
     } else if (newStatus === 'em_atendimento') {
-      // When starting an appointment, navigate directly to prontuário
-      toast.success("Atendimento iniciado! Abrindo prontuário...");
-      if (apt.patient_id) {
-        navigateToProntuario(apt.patient_id);
+      // Update status in database then navigate to prontuário
+      try {
+        await updateStatusMutation.mutateAsync({ id: appointmentId, status: newStatus });
+        if (apt.patient_id) {
+          navigateToProntuario(apt.patient_id);
+        }
+      } catch (error) {
+        console.error("Error updating status:", error);
       }
     } else {
-      toast.success(`Status atualizado para: ${newStatus}`);
+      // Update status in database for other status changes
+      updateStatusMutation.mutate({ id: appointmentId, status: newStatus });
     }
-  }, [appointments, navigateToProntuario]);
+  }, [appointments, navigateToProntuario, updateStatusMutation]);
 
   // Handle stock validation confirmation (allow negative stock)
-  const handleStockValidationConfirm = useCallback(() => {
+  const handleStockValidationConfirm = useCallback(async () => {
     setStockValidationDialogOpen(false);
     
     if (pendingStatusChange) {
       // Proceed with status change even with insufficient stock
-      toast.success("Atendimento iniciado! Abrindo prontuário...");
       toast.warning("Atenção: Estoque ficará negativo após consumo dos materiais");
       
-      // Find the appointment and navigate to prontuário
-      if (pendingStatusChange.status === 'em_atendimento') {
-        const apt = appointments.find(a => a.id === pendingStatusChange.appointmentId);
-        if (apt?.patient_id) {
-          navigateToProntuario(apt.patient_id);
+      try {
+        await updateStatusMutation.mutateAsync({ 
+          id: pendingStatusChange.appointmentId, 
+          status: pendingStatusChange.status 
+        });
+        
+        // Navigate to prontuário if starting appointment
+        if (pendingStatusChange.status === 'em_atendimento') {
+          const apt = appointments.find(a => a.id === pendingStatusChange.appointmentId);
+          if (apt?.patient_id) {
+            navigateToProntuario(apt.patient_id);
+          }
         }
+      } catch (error) {
+        console.error("Error updating status:", error);
       }
     }
     
     setStockValidationResult(null);
     setPendingStatusChange(null);
-  }, [pendingStatusChange, appointments, navigateToProntuario]);
+  }, [pendingStatusChange, appointments, navigateToProntuario, updateStatusMutation]);
 
   // Handle stock validation cancel
   const handleStockValidationCancel = useCallback(() => {
@@ -246,21 +267,30 @@ export default function Agenda() {
   }, []);
 
   // After materials dialog confirms, proceed with TISS if needed
-  const handleMaterialsConfirm = useCallback(() => {
+  const handleMaterialsConfirm = useCallback(async () => {
     setMaterialsDialogOpen(false);
     
     if (!finalizingAppointment) return;
     
-    // Check if appointment has insurance for TISS guide
-    if (finalizingAppointment.payment_type === 'convenio' && finalizingAppointment.insurance) {
-      const finalizedApt: Appointment = { ...finalizingAppointment, status: 'finalizado' };
-      setPendingAppointment(finalizedApt);
-      setTissDialogOpen(true);
+    // Update status in database
+    try {
+      await updateStatusMutation.mutateAsync({ 
+        id: finalizingAppointment.id, 
+        status: 'finalizado' 
+      });
+      
+      // Check if appointment has insurance for TISS guide
+      if (finalizingAppointment.payment_type === 'convenio' && finalizingAppointment.insurance) {
+        const finalizedApt: Appointment = { ...finalizingAppointment, status: 'finalizado' };
+        setPendingAppointment(finalizedApt);
+        setTissDialogOpen(true);
+      }
+    } catch (error) {
+      console.error("Error finalizing appointment:", error);
     }
     
-    toast.success('Atendimento finalizado com sucesso!');
     setFinalizingAppointment(null);
-  }, [finalizingAppointment, setPendingAppointment]);
+  }, [finalizingAppointment, setPendingAppointment, updateStatusMutation]);
 
   const handleMaterialsCancel = useCallback(() => {
     setMaterialsDialogOpen(false);
@@ -294,6 +324,48 @@ export default function Agenda() {
     setSaleAppointment(apt);
     setSaleDialogOpen(true);
   }, []);
+
+  // Handle appointment creation from dialog
+  const handleAppointmentSubmit = useCallback((data: {
+    patient_id?: string;
+    professional_id?: string;
+    procedure_id?: string;
+    specialty_id?: string;
+    room_id?: string;
+    scheduled_date?: Date;
+    start_time?: string;
+    duration_minutes?: string;
+    appointment_type?: string;
+    payment_type?: string;
+    insurance_id?: string;
+    expected_value?: number;
+    notes?: string;
+    is_fit_in?: boolean;
+  }) => {
+    // Transform to AppointmentFormData
+    const formData: AppointmentFormData = {
+      patient_id: data.patient_id || '',
+      professional_id: data.professional_id || '',
+      scheduled_date: data.scheduled_date || new Date(),
+      start_time: data.start_time || '08:00',
+      duration_minutes: parseInt(data.duration_minutes || '30'),
+      appointment_type: (data.appointment_type || 'consulta') as 'consulta' | 'retorno' | 'procedimento',
+      payment_type: data.payment_type || 'particular',
+      specialty_id: data.specialty_id,
+      room_id: data.room_id,
+      insurance_id: data.insurance_id,
+      procedure_id: data.procedure_id,
+      notes: data.notes,
+      is_fit_in: data.is_fit_in,
+    };
+    
+    createAppointmentMutation.mutate(formData, {
+      onSuccess: () => {
+        setAppointmentDialogOpen(false);
+        refetchAppointments();
+      },
+    });
+  }, [createAppointmentMutation, refetchAppointments]);
 
   // Determine if professional field should be locked in dialog
   const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || undefined;
@@ -335,17 +407,27 @@ export default function Agenda() {
         </TabsList>
 
         <TabsContent value="agenda" className="space-y-4">
-          {/* Professional Tabs - Only show if not a professional user or has multiple professionals */}
-          {(role !== 'profissional' || visibleProfessionals.length > 1) && (
-            <ProfessionalTabs
-              professionals={visibleProfessionals}
-              selectedProfessionalId={effectiveSelectedProfessionalId}
-              onSelectProfessional={handleProfessionalTabChange}
-              maxVisibleTabs={5}
-            />
+          {/* Loading State */}
+          {dataLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-muted-foreground">Carregando agenda...</span>
+            </div>
           )}
           
-          <AgendaStats stats={stats} />
+          {!dataLoading && (
+            <>
+              {/* Professional Tabs - Only show if not a professional user or has multiple professionals */}
+              {(role !== 'profissional' || visibleProfessionals.length > 1) && (
+                <ProfessionalTabs
+                  professionals={visibleProfessionals}
+                  selectedProfessionalId={effectiveSelectedProfessionalId}
+                  onSelectProfessional={handleProfessionalTabChange}
+                  maxVisibleTabs={5}
+                />
+              )}
+              
+              <AgendaStats stats={stats} />
           
           <AgendaFilters
             filters={filters}
@@ -383,6 +465,8 @@ export default function Agenda() {
           )}
 
           <AgendaInsights insights={insights} />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="sala-espera">
@@ -422,6 +506,7 @@ export default function Agenda() {
         existingAppointments={appointments}
         clinicSchedule={clinicSchedule}
         professionalSchedules={professionalSchedules}
+        onSubmit={handleAppointmentSubmit}
       />
 
       <BlockDialog

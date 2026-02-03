@@ -76,6 +76,52 @@ const GENERAL_MEDICINE_TEMPLATES: DefaultTemplate[] = [
   },
 ];
 
+// Campos padrão para Odontologia
+const DENTISTRY_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: 'Odontograma',
+    type: 'odontogram',
+    description: 'Registro visual do estado de cada dente',
+    fields: [
+      { label: 'Odontograma', field_type: 'odontogram', placeholder: 'Clique para editar o odontograma', is_required: true },
+      { label: 'Histórico Odontológico', field_type: 'textarea', placeholder: 'Tratamentos anteriores, extrações, próteses', is_required: false },
+      { label: 'Observações Gerais', field_type: 'textarea', placeholder: 'Notas sobre a arcada dentária', is_required: false },
+    ],
+  },
+  {
+    name: 'Procedimento por Dente',
+    type: 'tooth_procedure',
+    description: 'Registro de procedimentos realizados por dente/região',
+    fields: [
+      { label: 'Dente / Região', field_type: 'tooth_select', placeholder: 'Selecione o dente ou região', is_required: true },
+      { label: 'Procedimento Realizado', field_type: 'textarea', placeholder: 'Descreva o procedimento (ex: restauração, extração)', is_required: true },
+      { label: 'Material Utilizado', field_type: 'text', placeholder: 'Ex: Resina composta, amálgama', is_required: false },
+      { label: 'Dor (0-10)', field_type: 'select', options: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], is_required: false },
+      { label: 'Observações Clínicas', field_type: 'textarea', placeholder: 'Anotações adicionais', is_required: false },
+    ],
+  },
+  {
+    name: 'Sessão Odontológica',
+    type: 'dental_session',
+    description: 'Evolução por sessão de atendimento odontológico',
+    fields: [
+      { label: 'Queixa do Paciente', field_type: 'textarea', placeholder: 'O que o paciente relatou nesta sessão', is_required: false },
+      { label: 'Procedimentos Realizados', field_type: 'textarea', placeholder: 'Liste os procedimentos desta sessão', is_required: true },
+      { label: 'Dentes Tratados', field_type: 'tooth_select', placeholder: 'Selecione os dentes trabalhados', is_required: false },
+      { label: 'Anestesia Utilizada', field_type: 'text', placeholder: 'Tipo e quantidade de anestésico', is_required: false },
+      { label: 'Evolução / Resposta ao Tratamento', field_type: 'textarea', placeholder: 'Como o paciente respondeu ao tratamento', is_required: false },
+      { label: 'Próximos Passos', field_type: 'textarea', placeholder: 'O que será feito na próxima sessão', is_required: false },
+      { label: 'Observações Clínicas', field_type: 'textarea', placeholder: 'Anotações adicionais', is_required: false },
+    ],
+  },
+];
+
+// Combina todos os templates padrão
+const ALL_DEFAULT_TEMPLATES: DefaultTemplate[] = [
+  ...GENERAL_MEDICINE_TEMPLATES,
+  ...DENTISTRY_TEMPLATES,
+];
+
 export function useDefaultTemplates() {
   const { clinic } = useClinicData();
   const [importing, setImporting] = useState(false);
@@ -90,7 +136,7 @@ export function useDefaultTemplates() {
     let successCount = 0;
 
     try {
-      for (const template of GENERAL_MEDICINE_TEMPLATES) {
+      for (const template of ALL_DEFAULT_TEMPLATES) {
         // Check if template with same name and type already exists
         const { data: existing } = await supabase
           .from('medical_record_templates')
@@ -171,7 +217,7 @@ export function useDefaultTemplates() {
     if (!clinic?.id) return 0;
 
     let count = 0;
-    for (const template of GENERAL_MEDICINE_TEMPLATES) {
+    for (const template of ALL_DEFAULT_TEMPLATES) {
       const { data: existing } = await supabase
         .from('medical_record_templates')
         .select('id')
@@ -189,6 +235,6 @@ export function useDefaultTemplates() {
     importing,
     importDefaultTemplates,
     getAvailableTemplateCount,
-    totalDefaultTemplates: GENERAL_MEDICINE_TEMPLATES.length,
+    totalDefaultTemplates: ALL_DEFAULT_TEMPLATES.length,
   };
 }

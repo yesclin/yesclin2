@@ -17,6 +17,16 @@ export interface ModulePermissionConfig {
 }
 
 export const PERMISSION_MODULES: ModulePermissionConfig[] = [
+  // Dashboard
+  {
+    module: "dashboard",
+    label: "Dashboard",
+    description: "Visão geral e estatísticas",
+    category: "shared",
+    actions: [
+      { action: "view", label: "Visualizar" },
+    ],
+  },
   // Clinical modules
   {
     module: "agenda",
@@ -39,6 +49,7 @@ export const PERMISSION_MODULES: ModulePermissionConfig[] = [
       { action: "view", label: "Visualizar" },
       { action: "create", label: "Criar evolução" },
       { action: "edit", label: "Editar" },
+      { action: "export", label: "Exportar" },
     ],
   },
   {
@@ -121,9 +132,20 @@ export const PERMISSION_MODULES: ModulePermissionConfig[] = [
     ],
   },
   {
+    module: "comunicacao",
+    label: "Marketing",
+    description: "Campanhas e comunicação",
+    category: "management",
+    actions: [
+      { action: "view", label: "Visualizar" },
+      { action: "create", label: "Criar campanha" },
+      { action: "edit", label: "Editar" },
+    ],
+  },
+  {
     module: "configuracoes",
     label: "Configurações",
-    description: "Cadastros da clínica",
+    description: "Cadastros e regras da clínica",
     category: "management",
     actions: [
       { action: "view", label: "Visualizar" },
@@ -283,20 +305,38 @@ export function GranularPermissions({
 export function getDefaultPermissions(userType: UserType): Record<string, ModuleAction[]> {
   const perms: Record<string, ModuleAction[]> = {};
 
-  if (userType === "professional" || userType === "hybrid") {
+  // Professional: clinical modules only
+  if (userType === "professional") {
+    perms.dashboard = ["view"];
     perms.agenda = ["view", "create", "edit"];
     perms.prontuario = ["view", "create", "edit"];
     perms.atendimento = ["view", "create", "edit"];
     perms.pacientes = ["view", "create", "edit"];
-    // Professionals get access to their own financial data by default
     perms.meu_financeiro = ["view"];
   }
 
-  if (userType === "administrative" || userType === "hybrid") {
+  // Administrative (receptionist): front-desk operations
+  if (userType === "administrative") {
+    perms.dashboard = ["view"];
+    perms.agenda = ["view", "create", "edit"];
+    perms.atendimento = ["view", "create"];
     perms.pacientes = ["view", "create", "edit"];
+    perms.convenios = ["view"];
+    // Explicitly NO prontuario, financeiro, estoque, relatorios, configuracoes
+  }
+
+  // Hybrid: both clinical and administrative
+  if (userType === "hybrid") {
+    perms.dashboard = ["view"];
+    perms.agenda = ["view", "create", "edit", "delete"];
+    perms.prontuario = ["view", "create", "edit"];
+    perms.atendimento = ["view", "create", "edit"];
+    perms.pacientes = ["view", "create", "edit"];
+    perms.meu_financeiro = ["view", "export"];
     perms.financeiro = ["view"];
     perms.estoque = ["view"];
     perms.relatorios = ["view"];
+    perms.convenios = ["view", "create", "edit"];
   }
 
   return perms;

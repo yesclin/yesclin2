@@ -7097,6 +7097,8 @@ export type Database = {
         | "estoque"
         | "relatorios"
         | "configuracoes"
+        | "atendimento"
+        | "meu_financeiro"
       app_role: "owner" | "admin" | "profissional" | "recepcionista"
       appointment_status:
         | "agendado"
@@ -7281,6 +7283,8 @@ export const Constants = {
         "estoque",
         "relatorios",
         "configuracoes",
+        "atendimento",
+        "meu_financeiro",
       ],
       app_role: ["owner", "admin", "profissional", "recepcionista"],
       appointment_status: [

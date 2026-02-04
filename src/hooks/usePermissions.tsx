@@ -40,7 +40,14 @@ interface PermissionsContextType extends PermissionsState {
   hasRestriction: (module: AppModule, restriction: string) => boolean;
   getModulePermissions: (module: AppModule) => ModulePermission | null;
   refetch: () => Promise<void>;
+  /** Only OWNER can manage users */
   canManageUsers: boolean;
+  /** Owner/Admin can manage clinic settings, procedures, templates, etc. */
+  canManageClinic: boolean;
+  /** Owner/Admin can manage enabled specialties */
+  canManageSpecialties: boolean;
+  /** Owner/Admin cannot perform clinical care */
+  canPerformClinicalCare: boolean;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | null>(null);
@@ -182,6 +189,14 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // Only OWNER can manage users and permissions
   const canManageUsers = state.isOwner;
+  
+  // Owner/Admin can manage clinic settings (procedures, templates, rules, specialties)
+  const canManageClinic = state.isOwner || state.isAdmin;
+  const canManageSpecialties = state.isOwner || state.isAdmin;
+  
+  // Owner/Admin CANNOT perform clinical care (they don't have specialties)
+  // Only 'profissional' role can perform clinical care
+  const canPerformClinicalCare = !state.isOwner && !state.isAdmin && state.role === 'profissional';
 
   const value: PermissionsContextType = {
     ...state,
@@ -191,6 +206,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     getModulePermissions,
     refetch: fetchPermissions,
     canManageUsers,
+    canManageClinic,
+    canManageSpecialties,
+    canPerformClinicalCare,
   };
 
   return (

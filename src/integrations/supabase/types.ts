@@ -7022,6 +7022,8 @@ export type Database = {
         }[]
       }
       can_access_system: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_clinic: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
         Returns: Json
@@ -7082,6 +7084,7 @@ export type Database = {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
       }
+      is_proprietario_admin: { Args: { _user_id: string }; Returns: boolean }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
       process_material_consumption: {
         Args: { p_appointment_id: string; p_materials?: Json }

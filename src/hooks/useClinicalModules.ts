@@ -7,8 +7,19 @@ import type {
   ClinicalModuleKey,
   ClinicalModuleCategory 
 } from "@/types/clinical-modules";
-import { DEFAULT_SPECIALTY_MODULES } from "@/types/clinical-modules";
+import { DEFAULT_SPECIALTY_MODULES, CORE_MODULES } from "@/types/clinical-modules";
 import { toast } from "sonner";
+
+/**
+ * Normalize specialty name to match DEFAULT_SPECIALTY_MODULES keys
+ */
+function normalizeSpecialtyKey(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .trim();
+}
 
 /**
  * Fetch all available clinical modules
@@ -68,12 +79,13 @@ export function useSpecialtyModules(specialtyId: string | null) {
         .eq("id", specialtyId)
         .single();
       
-      const specialtyKey = specialty?.name?.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_") || "";
+      const specialtyKey = normalizeSpecialtyKey(specialty?.name || "");
       
-      const defaultModuleKeys = DEFAULT_SPECIALTY_MODULES[specialtyKey] || [];
+      // Try exact match first, then normalized with underscores
+      const defaultModuleKeys = 
+        DEFAULT_SPECIALTY_MODULES[specialtyKey] || 
+        DEFAULT_SPECIALTY_MODULES[specialtyKey.replace(/\s+/g, "_")] || 
+        CORE_MODULES; // Fallback to core modules
       
       // Build override map
       const overrideMap = new Map(

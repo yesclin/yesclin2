@@ -259,28 +259,67 @@ export interface ClinicalMedia {
 }
 
 // Module key to specialty mapping (defaults)
+// Core modules active for ALL specialties
+export const CORE_MODULES: ClinicalModuleKey[] = [
+  'clinical_scales',
+  'consent_terms',
+];
+
 export const DEFAULT_SPECIALTY_MODULES: Record<string, ClinicalModuleKey[]> = {
-  // Odontologia
-  odontologia: ['odontogram', 'procedures_module', 'before_after', 'consent_terms', 'clinical_scales'],
-  // Estética
-  estetica: ['before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'consent_terms', 'interactive_map'],
-  // Fisioterapia
-  fisioterapia: ['recurring_sessions', 'clinical_scales', 'body_measurements', 'therapeutic_plan', 'interactive_map'],
-  // Psicologia/Psiquiatria
-  psicologia: ['recurring_sessions', 'clinical_scales', 'therapeutic_plan'],
-  psiquiatria: ['recurring_sessions', 'clinical_scales', 'therapeutic_plan'],
-  // Nutrição
-  nutricao: ['body_measurements', 'therapeutic_plan', 'clinical_scales'],
+  // Clínica Geral - base + procedimentos
+  'clinica_geral': [...CORE_MODULES, 'procedures_module'],
+  'clinica geral': [...CORE_MODULES, 'procedures_module'],
+  
+  // Psicologia - sessões recorrentes + plano terapêutico
+  'psicologia': [...CORE_MODULES, 'recurring_sessions', 'therapeutic_plan'],
+  
+  // Nutrição - medidas corporais + plano terapêutico
+  'nutricao': [...CORE_MODULES, 'body_measurements', 'therapeutic_plan'],
+  'nutrição': [...CORE_MODULES, 'body_measurements', 'therapeutic_plan'],
+  
+  // Fisioterapia - sessões + medidas + plano + mapa interativo
+  'fisioterapia': [...CORE_MODULES, 'recurring_sessions', 'body_measurements', 'therapeutic_plan', 'interactive_map'],
+  
+  // Fisioterapia – Pilates (subtipo, mesmos módulos)
+  'fisioterapia_pilates': [...CORE_MODULES, 'recurring_sessions', 'body_measurements', 'therapeutic_plan', 'interactive_map'],
+  'fisioterapia – pilates': [...CORE_MODULES, 'recurring_sessions', 'body_measurements', 'therapeutic_plan', 'interactive_map'],
+  'fisioterapia - pilates': [...CORE_MODULES, 'recurring_sessions', 'body_measurements', 'therapeutic_plan', 'interactive_map'],
+  
+  // Fonoaudiologia - sessões recorrentes + plano terapêutico
+  'fonoaudiologia': [...CORE_MODULES, 'recurring_sessions', 'therapeutic_plan'],
+  
+  // Estética / Harmonização Facial - antes/depois + medidas + uploads + mapa
+  'estetica': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'estética': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'harmonizacao_facial': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'harmonização facial': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'estetica / harmonizacao facial': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'estética / harmonização facial': [...CORE_MODULES, 'before_after', 'body_measurements', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  
+  // Odontologia - odontograma + procedimentos + antes/depois
+  'odontologia': [...CORE_MODULES, 'odontogram', 'procedures_module', 'before_after'],
+  
+  // Dermatologia - antes/depois + uploads + mapa interativo
+  'dermatologia': [...CORE_MODULES, 'before_after', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  
+  // Pediatria - escalas + medidas corporais
+  'pediatria': [...CORE_MODULES, 'body_measurements'],
+  
+  // Psiquiatria - sessões + plano terapêutico
+  'psiquiatria': [...CORE_MODULES, 'recurring_sessions', 'therapeutic_plan'],
+  
   // Cardiologia
-  cardiologia: ['clinical_scales', 'procedures_module'],
-  // Pediatria
-  pediatria: ['clinical_scales', 'body_measurements'],
-  // Clínica Geral
-  clinica_geral: ['clinical_scales', 'procedures_module', 'consent_terms'],
-  // Dermatologia
-  dermatologia: ['before_after', 'procedures_module', 'advanced_uploads', 'interactive_map'],
+  'cardiologia': [...CORE_MODULES, 'procedures_module'],
+  
   // Oftalmologia
-  oftalmologia: ['clinical_scales', 'procedures_module'],
+  'oftalmologia': [...CORE_MODULES, 'procedures_module'],
+  
+  // Especialidade Personalizada - apenas núcleo comum por padrão
+  'especialidade_personalizada': [...CORE_MODULES],
+  'personalizada': [...CORE_MODULES],
+  'outra': [...CORE_MODULES],
+  'outro': [...CORE_MODULES],
+  'outros': [...CORE_MODULES],
 };
 
 // Category labels in Portuguese

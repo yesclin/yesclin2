@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowLeft, Check } from "lucide-react";
+import { Eye, EyeOff, Check, Shield, Users, Calendar, FileText, DollarSign, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { maskPhone } from "@/lib/validators";
+import doctorImage from "@/assets/doctor-signup.jpg";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -31,10 +32,16 @@ const CriarConta = () => {
   const { toast } = useToast();
 
   const benefits = [
-    "Agenda inteligente com confirmações",
-    "Prontuário digital por especialidade",
-    "Controle financeiro completo",
-    "Suporte técnico incluso",
+    { icon: Calendar, text: "Agenda inteligente" },
+    { icon: FileText, text: "Prontuário por especialidade" },
+    { icon: DollarSign, text: "Financeiro e estoque integrados" },
+    { icon: MessageCircle, text: "Comunicação com pacientes" },
+  ];
+
+  const trustElements = [
+    { icon: Shield, text: "100% Seguro" },
+    { icon: Check, text: "Conforme LGPD" },
+    { icon: Users, text: "Suporte humano" },
   ];
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +80,6 @@ const CriarConta = () => {
     if (error) {
       let message = error.message;
       
-      // Translate common Supabase Auth error messages to Portuguese
       if (error.message.includes("already registered")) {
         message = "Este email já está cadastrado. Tente fazer login.";
       } else if (
@@ -98,7 +104,6 @@ const CriarConta = () => {
       return;
     }
 
-    // Auto-login: usuário já está autenticado, redireciona direto para o app
     if (data?.session) {
       toast({
         title: "Conta criada com sucesso! 🎉",
@@ -108,7 +113,6 @@ const CriarConta = () => {
       return;
     }
 
-    // Fallback caso não tenha sessão (não deve ocorrer com auto_confirm ativo)
     toast({
       title: "Conta criada!",
       description: "Faça login para acessar o sistema.",
@@ -117,77 +121,29 @@ const CriarConta = () => {
   };
 
   return (
-    <div className="min-h-screen hero-gradient flex">
-      {/* Left Panel - Visual */}
-      <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 pattern-grid opacity-10" />
-        <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-        
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative z-10 max-w-md"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-8">
-            <span className="text-white font-display font-bold text-3xl">Y</span>
-          </div>
-          
-          <h2 className="font-display text-3xl font-bold text-white mb-4">
-            Comece grátis hoje
-          </h2>
-          <p className="text-white/80 mb-8">
-            Crie sua conta e tenha acesso a todas as funcionalidades para gerenciar sua clínica.
-          </p>
-
-          <div className="space-y-4">
-            {benefits.map((benefit, index) => (
-              <motion.div
-                key={benefit}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className="flex items-center gap-3"
-              >
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                  <Check size={14} className="text-white" />
-                </div>
-                <span className="text-white/90">{benefit}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+    <div className="min-h-screen flex">
+      {/* Left Panel - Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Back Link */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Voltar ao início
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-display font-bold text-xl">Y</span>
+            </div>
+            <span className="font-display font-bold text-2xl text-foreground">
+              Yesclin
+            </span>
           </Link>
 
           {/* Header */}
           <div className="mb-8">
-            <Link to="/" className="flex items-center gap-2 mb-6 lg:hidden">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-xl">Y</span>
-              </div>
-              <span className="font-display font-bold text-2xl text-foreground">
-                Yesclin
-              </span>
-            </Link>
-            <h1 className="font-display text-2xl font-bold text-foreground mb-2">
-              Crie sua conta
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              Crie sua conta gratuita
             </h1>
             <p className="text-muted-foreground">
               Comece a gerenciar sua clínica em minutos
@@ -195,7 +151,7 @@ const CriarConta = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSignup} className="space-y-5">
+          <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome completo</Label>
               <Input
@@ -257,28 +213,93 @@ const CriarConta = () => {
               type="submit"
               variant="hero"
               size="lg"
-              className="w-full"
+              className="w-full mt-6"
               disabled={isLoading}
             >
               {isLoading ? "Criando conta..." : "Criar conta grátis"}
             </Button>
 
-            <p className="text-xs text-muted-foreground text-center">
-              Ao criar uma conta, você concorda com nossos{" "}
-              <a href="#" className="text-primary hover:underline">Termos de Uso</a>
-              {" "}e{" "}
-              <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.
-            </p>
+            {/* Trust indicators below button */}
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
+              <span className="flex items-center gap-1">
+                <Check size={14} className="text-primary" />
+                Sem cartão de crédito
+              </span>
+              <span className="flex items-center gap-1">
+                <Check size={14} className="text-primary" />
+                Cancele quando quiser
+              </span>
+            </div>
           </form>
 
           {/* Login Link */}
-          <p className="mt-6 text-center text-muted-foreground">
+          <p className="mt-8 text-center text-muted-foreground">
             Já tem uma conta?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">
               Entrar
             </Link>
           </p>
         </motion.div>
+      </div>
+
+      {/* Right Panel - Conversion (hidden on mobile) */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden">
+        {/* Background Image */}
+        <img
+          src={doctorImage}
+          alt="Profissional de saúde"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/70 to-primary/40" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-end p-12 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <h2 className="font-display text-3xl font-bold mb-6">
+              Tudo que sua clínica precisa em um só lugar
+            </h2>
+
+            {/* Benefits */}
+            <div className="space-y-4 mb-8">
+              {benefits.map((benefit, index) => (
+                <motion.div
+                  key={benefit.text}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <benefit.icon size={20} className="text-white" />
+                  </div>
+                  <span className="text-lg text-white/95">{benefit.text}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Trust Elements */}
+            <div className="flex items-center gap-6 pt-6 border-t border-white/20">
+              {trustElements.map((item, index) => (
+                <motion.div
+                  key={item.text}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 + index * 0.1 }}
+                  className="flex items-center gap-2"
+                >
+                  <item.icon size={16} className="text-white/80" />
+                  <span className="text-sm text-white/80">{item.text}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

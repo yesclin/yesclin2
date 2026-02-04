@@ -63,6 +63,36 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
 };
 
 /**
+ * User type descriptions for display
+ */
+export const USER_TYPE_DESCRIPTIONS: Record<UserType, string> = {
+  'proprietario_admin': 'Acesso total ao sistema. Gerencia usuários, configurações, procedimentos e relatórios. Não executa atendimento clínico.',
+  'profissional_saude': 'Executa atendimentos, acessa prontuários e agenda própria. Requer especialidade clínica vinculada.',
+  'recepcionista': 'Gerencia agenda e cadastros. Acesso limitado a dados clínicos.',
+};
+
+/**
+ * Check if user type can have clinical specialties
+ */
+export function canHaveSpecialties(type: UserType): boolean {
+  return type === 'profissional_saude';
+}
+
+/**
+ * Check if user type can perform clinical care
+ */
+export function canPerformClinicalCare(type: UserType): boolean {
+  return type === 'profissional_saude';
+}
+
+/**
+ * Check if user type has full system access
+ */
+export function hasFullAccess(type: UserType): boolean {
+  return type === 'proprietario_admin';
+}
+
+/**
  * Hook to fetch all users for the current clinic
  * Only active admins/owners should use this
  */

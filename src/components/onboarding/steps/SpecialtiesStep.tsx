@@ -106,11 +106,18 @@ interface SpecialtiesStepProps {
   clinicId: string;
   onNext: () => void;
   onBack: () => void;
+  onUpdatePreferences?: (prefs: { primary_specialty_id?: string; primary_specialty_name?: string; primary_specialty_curated_id?: string }) => void;
+  initialSpecialtyId?: string | null;
 }
 
-export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepProps) {
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export function SpecialtiesStep({ 
+  clinicId, 
+  onNext, 
+  onBack, 
+  onUpdatePreferences,
+  initialSpecialtyId 
+}: SpecialtiesStepProps) {
+  const [selectedId, setSelectedId] = useState<string | null>(initialSpecialtyId || null);
   const [customSpecialties, setCustomSpecialties] = useState<Array<{ id: string; name: string }>>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -166,7 +173,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     setIsCreating(true);
 
     try {
-      // Create custom specialty in database
+      // Create custom specialty in database (we need the ID for later)
       const { data: newSpecialty, error } = await supabase
         .from("specialties")
         .insert({
@@ -175,7 +182,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           area: "Personalizada",
           clinic_id: clinicId,
           specialty_type: "personalizada",
-          is_active: true,
+          is_active: false, // Will be activated on final save
         })
         .select("id, name")
         .single();
@@ -186,9 +193,6 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
         // Add to local state and auto-select
         setCustomSpecialties((prev) => [...prev, newSpecialty]);
         setSelectedId(`custom-${newSpecialty.id}`);
-
-        // Enable core modules for this specialty
-        await enableCoreModules(newSpecialty.id);
       }
 
       toast({
@@ -211,151 +215,40 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     }
   };
 
-  const enableCoreModules = async (specialtyId: string) => {
-    try {
-      const { data: coreModules } = await supabase
-        .from("clinical_modules")
-        .select("id")
-        .in("key", ["evolucao", "anamnese", "alertas", "files"]);
-
-      if (coreModules && coreModules.length > 0) {
-        const moduleInserts = coreModules.map((m) => ({
-          clinic_id: clinicId,
-          specialty_id: specialtyId,
-          module_id: m.id,
-          is_enabled: true,
-        }));
-
-        await supabase
-          .from("clinic_specialty_modules")
-          .upsert(moduleInserts, { onConflict: "clinic_id,specialty_id,module_id" });
-      }
-    } catch (err) {
-      console.error("Error enabling core modules:", err);
-    }
-  };
-
-  const handleSaveAndContinue = async () => {
+  const handleContinue = () => {
     // STEP A: Validate selection
     if (!selectedId) {
       toast({
         title: "Selecione uma especialidade",
-        description: "Selecione uma especialidade para continuar.",
+        description: "Escolha uma especialidade principal para continuar.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsSaving(true);
-
-    try {
-      let persistedSpecialtyId: string | null = null;
-
-      // Determine the specialty to persist
-      const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
-      
-      if (curatedSpecialty) {
-        // Check if curated specialty already exists for this clinic
-        const { data: existing } = await supabase
-          .from("specialties")
-          .select("id")
-          .eq("clinic_id", clinicId)
-          .eq("name", curatedSpecialty.name)
-          .maybeSingle();
-
-        if (existing) {
-          persistedSpecialtyId = existing.id;
-          // Make sure it's active
-          await supabase
-            .from("specialties")
-            .update({ is_active: true })
-            .eq("id", existing.id);
-        } else {
-          // Create the specialty record
-          const { data: created, error } = await supabase
-            .from("specialties")
-            .insert({
-              name: curatedSpecialty.name,
-              description: curatedSpecialty.description,
-              area: "Padrão",
-              clinic_id: clinicId,
-              specialty_type: "padrao",
-              is_active: true,
-            })
-            .select("id")
-            .single();
-
-          if (error) throw error;
-          
-          if (created) {
-            persistedSpecialtyId = created.id;
-            await enableCoreModules(created.id);
-          }
-        }
-      } else if (selectedId.startsWith("custom-")) {
-        // Custom specialty - extract the real UUID
-        persistedSpecialtyId = selectedId.replace("custom-", "");
-        // Ensure it's active
-        await supabase
-          .from("specialties")
-          .update({ is_active: true })
-          .eq("id", persistedSpecialtyId);
-      }
-
-      // Validate we have a specialty ID
-      if (!persistedSpecialtyId) {
-        throw new Error("Não foi possível obter o ID da especialidade.");
-      }
-
-      // STEP B: Save primary_specialty_id on clinic (CANONICAL FIELD)
-      const { error: updateError } = await supabase
-        .from("clinics")
-        .update({ primary_specialty_id: persistedSpecialtyId })
-        .eq("id", clinicId);
-
-      if (updateError) {
-        throw new Error("Erro ao salvar especialidade. Tente novamente.");
-      }
-
-      // STEP C: Confirm persistence by re-reading
-      const { data: verifyClinic, error: verifyError } = await supabase
-        .from("clinics")
-        .select("primary_specialty_id")
-        .eq("id", clinicId)
-        .single();
-
-      if (verifyError || verifyClinic?.primary_specialty_id !== persistedSpecialtyId) {
-        throw new Error("Erro ao confirmar salvamento. Tente novamente.");
-      }
-
-      toast({
-        title: "Especialidade configurada!",
-        description: "Especialidade principal definida com sucesso.",
+    // STEP B: Save to temporary onboarding state (NOT to database)
+    const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
+    
+    if (curatedSpecialty) {
+      // Curated specialty - store the curated ID and name for later creation
+      onUpdatePreferences?.({
+        primary_specialty_curated_id: curatedSpecialty.id,
+        primary_specialty_name: curatedSpecialty.name,
+        primary_specialty_id: undefined, // Will be created on final save
       });
-
-      // STEP D: Navigate to next step (with fallback)
-      try {
-        onNext();
-      } catch (navError) {
-        console.error("Navigation error, applying fallback:", navError);
-        toast({
-          title: "Onboarding pendente",
-          description: "Finalize a configuração em Configurações → Clínica.",
-          variant: "default",
-          duration: 10000,
-        });
-      }
-    } catch (err) {
-      console.error("Error saving specialty:", err);
-      const errorMessage = err instanceof Error ? err.message : "Tente novamente.";
-      toast({
-        title: "Erro ao salvar especialidade",
-        description: errorMessage,
-        variant: "destructive",
+    } else if (selectedId.startsWith("custom-")) {
+      // Custom specialty - already created, store the real UUID
+      const realId = selectedId.replace("custom-", "");
+      const customSpec = customSpecialties.find(s => `custom-${s.id}` === selectedId);
+      onUpdatePreferences?.({
+        primary_specialty_id: realId,
+        primary_specialty_name: customSpec?.name || "",
+        primary_specialty_curated_id: undefined,
       });
-    } finally {
-      setIsSaving(false);
     }
+
+    // STEP C: Navigate to next step (no database persistence here)
+    onNext();
   };
 
   const handleSkip = () => {
@@ -575,18 +468,9 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           <Button variant="ghost" onClick={handleSkip}>
             Pular etapa
           </Button>
-          <Button onClick={handleSaveAndContinue} disabled={isSaving || !hasSelection}>
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                Continuar
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
+          <Button onClick={handleContinue} disabled={!hasSelection}>
+            Continuar
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>

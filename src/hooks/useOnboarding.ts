@@ -16,6 +16,10 @@ export interface OnboardingProgress {
     wants_reminders?: boolean;
     payment_methods?: string[];
     allows_return?: boolean;
+    // Specialty selection (temporary state)
+    primary_specialty_id?: string;
+    primary_specialty_name?: string;
+    primary_specialty_curated_id?: string;
   };
   created_at: string;
   updated_at: string;
@@ -24,7 +28,7 @@ export interface OnboardingProgress {
 export const ONBOARDING_STEPS = [
   { id: 0, key: "welcome", title: "Boas-vindas", required: false },
   { id: 1, key: "clinic", title: "Dados da Clínica", required: true },
-  { id: 2, key: "specialties", title: "Especialidades", required: true }, // NEW: Required step
+  { id: 2, key: "specialties", title: "Especialidades", required: true },
   { id: 3, key: "professionals", title: "Profissionais", required: false },
   { id: 4, key: "schedule", title: "Agenda", required: false },
   { id: 5, key: "procedures", title: "Procedimentos", required: false },
@@ -33,6 +37,44 @@ export const ONBOARDING_STEPS = [
   { id: 8, key: "communication", title: "Comunicação", required: false },
   { id: 9, key: "completion", title: "Conclusão", required: false },
 ];
+
+// Map of curated specialty IDs to their descriptions
+const CURATED_SPECIALTIES_MAP: Record<string, { description: string }> = {
+  "clinica-geral": { description: "Atendimento médico generalista" },
+  "psicologia": { description: "Saúde mental e terapia" },
+  "nutricao": { description: "Alimentação e dieta" },
+  "fisioterapia": { description: "Reabilitação e movimento" },
+  "pilates": { description: "Exercícios terapêuticos" },
+  "estetica": { description: "Procedimentos estéticos" },
+  "odontologia": { description: "Saúde bucal com odontograma digital" },
+  "dermatologia": { description: "Cuidados com a pele" },
+  "pediatria": { description: "Atendimento infantil" },
+};
+
+// Helper function to enable core clinical modules for a specialty
+async function enableCoreModulesForSpecialty(clinicId: string, specialtyId: string) {
+  try {
+    const { data: coreModules } = await supabase
+      .from("clinical_modules")
+      .select("id")
+      .in("key", ["evolucao", "anamnese", "alertas", "files"]);
+
+    if (coreModules && coreModules.length > 0) {
+      const moduleInserts = coreModules.map((m) => ({
+        clinic_id: clinicId,
+        specialty_id: specialtyId,
+        module_id: m.id,
+        is_enabled: true,
+      }));
+
+      await supabase
+        .from("clinic_specialty_modules")
+        .upsert(moduleInserts, { onConflict: "clinic_id,specialty_id,module_id" });
+    }
+  } catch (err) {
+    console.error("Error enabling core modules:", err);
+  }
+}
 
 export function useOnboarding() {
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
@@ -195,37 +237,100 @@ export function useOnboarding() {
   }, [progress, toast]);
 
   const completeOnboarding = useCallback(async () => {
-    if (!progress) return;
+    if (!progress || !clinicId) return;
 
-    const { error } = await supabase
-      .from("onboarding_progress")
-      .update({
+    try {
+      // FINAL PERSISTENCE: Save specialty data collected during onboarding
+      const prefs = progress.preferences;
+      let finalSpecialtyId: string | null = null;
+
+      if (prefs.primary_specialty_id) {
+        // Custom specialty already created - just activate it
+        finalSpecialtyId = prefs.primary_specialty_id;
+        await supabase
+          .from("specialties")
+          .update({ is_active: true })
+          .eq("id", finalSpecialtyId);
+      } else if (prefs.primary_specialty_curated_id && prefs.primary_specialty_name) {
+        // Curated specialty - check if exists or create
+        const curatedInfo = CURATED_SPECIALTIES_MAP[prefs.primary_specialty_curated_id];
+        
+        const { data: existing } = await supabase
+          .from("specialties")
+          .select("id")
+          .eq("clinic_id", clinicId)
+          .eq("name", prefs.primary_specialty_name)
+          .maybeSingle();
+
+        if (existing) {
+          finalSpecialtyId = existing.id;
+          await supabase
+            .from("specialties")
+            .update({ is_active: true })
+            .eq("id", existing.id);
+        } else {
+          const { data: created, error: createErr } = await supabase
+            .from("specialties")
+            .insert({
+              name: prefs.primary_specialty_name,
+              description: curatedInfo?.description || null,
+              area: "Padrão",
+              clinic_id: clinicId,
+              specialty_type: "padrao",
+              is_active: true,
+            })
+            .select("id")
+            .single();
+
+          if (createErr) throw createErr;
+          if (created) {
+            finalSpecialtyId = created.id;
+            // Enable core modules
+            await enableCoreModulesForSpecialty(clinicId, created.id);
+          }
+        }
+      }
+
+      // Save primary_specialty_id on clinic if we have one
+      if (finalSpecialtyId) {
+        await supabase
+          .from("clinics")
+          .update({ primary_specialty_id: finalSpecialtyId })
+          .eq("id", clinicId);
+      }
+
+      // Mark onboarding as completed
+      const { error } = await supabase
+        .from("onboarding_progress")
+        .update({
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+          completed_steps: ONBOARDING_STEPS.map((s) => s.id),
+        })
+        .eq("id", progress.id);
+
+      if (error) throw error;
+
+      setProgress({
+        ...progress,
         is_completed: true,
         completed_at: new Date().toISOString(),
-        completed_steps: ONBOARDING_STEPS.map((s) => s.id),
-      })
-      .eq("id", progress.id);
+      });
+      setShouldShowOnboarding(false);
 
-    if (error) {
+      toast({
+        title: "Configuração concluída! 🎉",
+        description: "Seu sistema está pronto para uso.",
+      });
+    } catch (err) {
+      console.error("Error completing onboarding:", err);
       toast({
         title: "Erro ao completar onboarding",
+        description: "Tente novamente.",
         variant: "destructive",
       });
-      return;
     }
-
-    setProgress({
-      ...progress,
-      is_completed: true,
-      completed_at: new Date().toISOString(),
-    });
-    setShouldShowOnboarding(false);
-
-    toast({
-      title: "Configuração concluída! 🎉",
-      description: "Seu sistema está pronto para uso.",
-    });
-  }, [progress, toast]);
+  }, [progress, clinicId, toast]);
 
   const restartOnboarding = useCallback(async () => {
     if (!progress) return;

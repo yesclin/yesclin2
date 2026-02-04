@@ -14,9 +14,9 @@ import doctorImage from "@/assets/doctor-signup.jpg";
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
-  phone: z.string().min(10, "Telefone deve ter no mínimo 10 dígitos").refine(
+  whatsapp: z.string().min(10, "WhatsApp deve ter no mínimo 10 dígitos").refine(
     (val) => val.replace(/\D/g, "").length >= 10,
-    "Telefone inválido"
+    "WhatsApp inválido"
   ),
   password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres."),
 });
@@ -24,7 +24,7 @@ const signupSchema = z.object({
 const CriarConta = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,14 +44,14 @@ const CriarConta = () => {
     { icon: Users, text: "Suporte humano" },
   ];
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(maskPhone(e.target.value));
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWhatsapp(maskPhone(e.target.value));
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ name, email, phone, password });
+    const validation = signupSchema.safeParse({ name, email, whatsapp, password });
     
     if (!validation.success) {
       toast({
@@ -70,7 +70,7 @@ const CriarConta = () => {
       options: {
         data: {
           full_name: name,
-          phone: phone.replace(/\D/g, ""),
+          whatsapp: whatsapp.replace(/\D/g, ""),
         },
       },
     });
@@ -177,13 +177,13 @@ const CriarConta = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="whatsapp">WhatsApp</Label>
               <Input
-                id="phone"
+                id="whatsapp"
                 type="tel"
                 placeholder="(00) 00000-0000"
-                value={phone}
-                onChange={handlePhoneChange}
+                value={whatsapp}
+                onChange={handleWhatsappChange}
                 className="h-12"
               />
             </div>

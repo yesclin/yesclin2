@@ -48,6 +48,7 @@ export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
   const navigate = useNavigate();
   const [status, setStatus] = useState<CompletionStatus>("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasAttempted, setHasAttempted] = useState(false);
 
   // Auto-complete onboarding when step loads
   const finalizeOnboarding = useCallback(async () => {
@@ -59,12 +60,23 @@ export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
 
     setStatus("completing");
     setErrorMessage(null);
+    setHasAttempted(true);
 
     try {
       await onComplete();
       setStatus("completed");
     } catch (err) {
       console.error("Error completing onboarding:", err);
+      
+      // Check if the error message indicates the onboarding might already be complete
+      const errorMsg = err instanceof Error ? err.message : "";
+      
+      // If already completed or just missing specialty link, treat as success
+      if (errorMsg.includes("já concluído") || errorMsg.includes("already completed")) {
+        setStatus("completed");
+        return;
+      }
+      
       setStatus("error");
       setErrorMessage(
         err instanceof Error 
@@ -75,9 +87,11 @@ export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
   }, [onComplete, clinicId]);
 
   useEffect(() => {
-    // Auto-trigger finalization when component mounts
-    finalizeOnboarding();
-  }, [finalizeOnboarding]);
+    // Only auto-trigger on first mount
+    if (!hasAttempted) {
+      finalizeOnboarding();
+    }
+  }, [finalizeOnboarding, hasAttempted]);
 
   const handleNavigate = (path: string) => {
     if (status !== "completed") {

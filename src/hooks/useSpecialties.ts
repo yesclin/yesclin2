@@ -12,7 +12,20 @@ export interface Specialty {
 }
 
 /**
- * Hook to fetch active specialties for the current clinic
+ * Hook to fetch ONLY active/enabled specialties for the current clinic.
+ * 
+ * IMPORTANT: This hook ONLY returns specialties that are:
+ * 1. Active (is_active = true)
+ * 2. Belonging to the current clinic
+ * 
+ * Use this hook for:
+ * - Procedure selection
+ * - Professional assignment
+ * - Appointment scheduling
+ * - Medical record templates
+ * - Any feature that requires specialty selection
+ * 
+ * DO NOT use this for specialty management screens - use useAllSpecialties instead.
  */
 export function useSpecialties() {
   const { clinic } = useClinicData();
@@ -26,7 +39,7 @@ export function useSpecialties() {
         .from("specialties")
         .select("id, name, description, color, area, is_active")
         .eq("clinic_id", clinic.id)
-        .eq("is_active", true)
+        .eq("is_active", true) // CRITICAL: Only return enabled specialties
         .order("name");
       
       if (error) {
@@ -41,7 +54,7 @@ export function useSpecialties() {
 }
 
 /**
- * Hook to invalidate specialties cache - useful after creating a new specialty
+ * Hook to invalidate specialties cache - useful after creating/updating a specialty
  */
 export function useInvalidateSpecialties() {
   const queryClient = useQueryClient();
@@ -50,6 +63,8 @@ export function useInvalidateSpecialties() {
   return () => {
     if (clinic?.id) {
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic.id] });
     }
   };
 }

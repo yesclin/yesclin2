@@ -47,7 +47,7 @@ export function ProfessionalFields({
   loadingSpecialties,
 }: ProfessionalFieldsProps) {
   return (
-    <div className="space-y-4 p-4 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/10">
+    <div className="space-y-4 p-4 rounded-lg border bg-primary/5">
       <div className="grid gap-2">
         <Label htmlFor="professionalType">Tipo de Profissional</Label>
         <Select value={professionalType} onValueChange={onProfessionalTypeChange}>
@@ -77,20 +77,24 @@ export function ProfessionalFields({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-2">
-            Especialidade(s) *
+            Especialidade(s) Habilitadas *
             {loadingSpecialties && <Loader2 className="h-3 w-3 animate-spin" />}
           </Label>
         </div>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Apenas especialidades habilitadas na clínica estão disponíveis
+        </p>
 
         {specialties.length === 0 && !loadingSpecialties ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-col gap-2">
-              <span>Nenhuma especialidade cadastrada.</span>
+              <span>Nenhuma especialidade habilitada na clínica.</span>
+              <span className="text-xs">Um administrador deve habilitar especialidades em Configurações da Clínica.</span>
               <Button variant="outline" size="sm" asChild className="w-fit">
                 <Link to="/app/config/clinica">
                   <Settings className="h-4 w-4 mr-2" />
-                  Cadastrar em Configurações da Clínica
+                  Ir para Configurações
                 </Link>
               </Button>
             </AlertDescription>
@@ -103,7 +107,7 @@ export function ProfessionalFields({
                   key={specialty.id}
                   className={`flex items-center space-x-2 p-2 rounded-md border cursor-pointer transition-colors ${
                     selectedSpecialtyIds.includes(specialty.id)
-                      ? "bg-emerald-100 border-emerald-300 dark:bg-emerald-900/30 dark:border-emerald-700"
+                      ? "bg-primary/10 border-primary/30"
                       : "bg-background hover:bg-muted/50"
                   }`}
                   onClick={() => onToggleSpecialty(specialty.id)}

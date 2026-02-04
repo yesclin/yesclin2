@@ -262,9 +262,10 @@ export function SpecialtyFormDialog({
               {isEditing && (
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
                   <div>
-                    <Label htmlFor="specialty-active">Status</Label>
+                    <Label htmlFor="specialty-active">Habilitada</Label>
                     <p className="text-xs text-muted-foreground">
-                      Especialidades inativas não aparecem nas seleções
+                      Apenas especialidades habilitadas podem ser usadas em procedimentos, 
+                      profissionais e prontuários
                     </p>
                   </div>
                   <Switch

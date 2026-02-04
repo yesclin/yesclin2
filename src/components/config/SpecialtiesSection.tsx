@@ -197,9 +197,10 @@ export function SpecialtiesSection() {
                 <Stethoscope className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Especialidades</CardTitle>
+                <CardTitle>Especialidades Habilitadas</CardTitle>
                 <CardDescription>
-                  Gerencie as especialidades disponíveis na clínica
+                  Gerencie as especialidades disponíveis na clínica. 
+                  Apenas especialidades ativas podem ser usadas em procedimentos, prontuários e agendamentos.
                 </CardDescription>
               </div>
             </div>
@@ -226,6 +227,7 @@ export function SpecialtiesSection() {
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
                 Adicione especialidades para organizar os atendimentos e prontuários por área de atuação.
+                Profissionais só podem ser vinculados a especialidades habilitadas.
               </p>
               {canEdit && (
                 <Button onClick={handleOpenCreate} className="mt-4">
@@ -236,10 +238,15 @@ export function SpecialtiesSection() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Active specialties */}
+              {/* Active (enabled) specialties */}
               {activeSpecialties.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Ativas ({activeSpecialties.length})</h4>
+                  <h4 className="text-sm font-medium text-primary">
+                    Habilitadas ({activeSpecialties.length})
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Disponíveis para uso em procedimentos, profissionais e prontuários
+                  </p>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {activeSpecialties.map((specialty) => (
                       <div
@@ -277,20 +284,25 @@ export function SpecialtiesSection() {
                 </div>
               )}
 
-              {/* Inactive specialties */}
+              {/* Inactive (disabled) specialties */}
               {inactiveSpecialties.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Inativas ({inactiveSpecialties.length})</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Desabilitadas ({inactiveSpecialties.length})
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Não disponíveis para uso. Ative para permitir novos vínculos.
+                  </p>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {inactiveSpecialties.map((specialty) => (
                       <div
                         key={specialty.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 opacity-60"
+                        className="flex items-center justify-between p-3 rounded-lg border border-dashed bg-muted/30 opacity-70"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">{specialty.name}</span>
-                            <Badge variant="secondary" className="text-[10px]">Inativa</Badge>
+                            <span className="font-medium truncate text-muted-foreground">{specialty.name}</span>
+                            <Badge variant="secondary" className="text-[10px]">Desabilitada</Badge>
                           </div>
                           {specialty.area && (
                             <span className="text-xs text-muted-foreground">{specialty.area}</span>
@@ -338,11 +350,21 @@ export function SpecialtiesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-warning" />
-              Desativar especialidade?
+              Desabilitar especialidade?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              A especialidade <strong>"{confirmDeactivate?.name}"</strong> não aparecerá mais nas seleções.
-              Os registros existentes serão mantidos.
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                A especialidade <strong>"{confirmDeactivate?.name}"</strong> será desabilitada.
+              </p>
+              <p className="text-sm">
+                <strong>Isso significa que:</strong>
+              </p>
+              <ul className="text-sm list-disc list-inside space-y-1">
+                <li>Novos profissionais não poderão ser vinculados a ela</li>
+                <li>Novos procedimentos não poderão usá-la</li>
+                <li>Novos agendamentos não poderão selecioná-la</li>
+                <li>Registros existentes serão mantidos</li>
+              </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -352,8 +374,9 @@ export function SpecialtiesSection() {
                 id: confirmDeactivate.id, 
                 is_active: false 
               })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Desativar
+              Desabilitar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

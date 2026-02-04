@@ -13,11 +13,14 @@ export interface ProfessionalSpecialty {
     id: string;
     name: string;
     area: string | null;
+    is_active: boolean;
   };
 }
 
 /**
- * Fetch specialties for a specific professional
+ * Fetch specialties for a specific professional.
+ * Only returns specialties that are still ENABLED in the clinic.
+ * This ensures professionals cannot use disabled specialties.
  */
 export function useProfessionalSpecialties(professionalId: string | null) {
   return useQuery({
@@ -33,17 +36,21 @@ export function useProfessionalSpecialties(professionalId: string | null) {
           specialty_id,
           is_primary,
           created_at,
-          specialty:specialties(id, name, area)
+          specialty:specialties(id, name, area, is_active)
         `)
         .eq("professional_id", professionalId)
         .order("is_primary", { ascending: false });
       
       if (error) throw error;
       
-      return (data || []).map(item => ({
-        ...item,
-        specialty: item.specialty as ProfessionalSpecialty['specialty'],
-      })) as ProfessionalSpecialty[];
+      // Filter to only include ENABLED specialties
+      // This ensures that if a specialty is disabled, it won't be available
+      return (data || [])
+        .map(item => ({
+          ...item,
+          specialty: item.specialty as ProfessionalSpecialty['specialty'],
+        }))
+        .filter(item => item.specialty?.is_active !== false) as ProfessionalSpecialty[];
     },
     enabled: !!professionalId,
   });
@@ -86,10 +93,12 @@ export function useProfessionalsBySpecialty(specialtyId: string | null) {
 }
 
 /**
- * Add specialty to professional
+ * Add specialty to professional.
+ * Only allows adding ENABLED specialties.
  */
 export function useAddProfessionalSpecialty() {
   const queryClient = useQueryClient();
+  const { clinic } = useClinicData();
   
   return useMutation({
     mutationFn: async ({ 
@@ -101,6 +110,22 @@ export function useAddProfessionalSpecialty() {
       specialtyId: string; 
       isPrimary?: boolean;
     }) => {
+      // First verify the specialty is enabled
+      const { data: specialty, error: checkError } = await supabase
+        .from("specialties")
+        .select("id, is_active")
+        .eq("id", specialtyId)
+        .eq("clinic_id", clinic?.id)
+        .single();
+      
+      if (checkError || !specialty) {
+        throw new Error("Especialidade não encontrada");
+      }
+      
+      if (!specialty.is_active) {
+        throw new Error("Esta especialidade não está habilitada na clínica");
+      }
+      
       const { data, error } = await supabase
         .from("professional_specialties")
         .insert({
@@ -127,6 +152,8 @@ export function useAddProfessionalSpecialty() {
       console.error("Error adding specialty:", error);
       if (error.message.includes("duplicate")) {
         toast.error("Profissional já possui esta especialidade");
+      } else if (error.message.includes("habilitada")) {
+        toast.error(error.message);
       } else {
         toast.error("Erro ao adicionar especialidade");
       }

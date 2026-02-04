@@ -86,11 +86,29 @@ export function canPerformClinicalCare(type: UserType): boolean {
 }
 
 /**
+ * Check if user type can access clinical content
+ * Receptionists CANNOT access clinical content
+ */
+export function canAccessClinicalContent(type: UserType): boolean {
+  return type !== 'recepcionista';
+}
+
+/**
  * Check if user type has full system access
  */
 export function hasFullAccess(type: UserType): boolean {
   return type === 'proprietario_admin';
 }
+
+/**
+ * Get allowed modules for receptionist
+ */
+export const RECEPTIONIST_ALLOWED_MODULES = ['agenda', 'pacientes', 'atendimento', 'convenios'] as const;
+
+/**
+ * Get blocked modules for receptionist
+ */
+export const RECEPTIONIST_BLOCKED_MODULES = ['prontuario', 'configuracoes', 'relatorios', 'financeiro', 'estoque', 'comunicacao'] as const;
 
 /**
  * Hook to fetch all users for the current clinic

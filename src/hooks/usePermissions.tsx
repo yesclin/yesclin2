@@ -46,8 +46,14 @@ interface PermissionsContextType extends PermissionsState {
   canManageClinic: boolean;
   /** Owner/Admin can manage enabled specialties */
   canManageSpecialties: boolean;
-  /** Owner/Admin cannot perform clinical care */
+  /** Owner/Admin/Profissional can perform clinical care - Receptionist CANNOT */
   canPerformClinicalCare: boolean;
+  /** Owner/Admin/Profissional can access clinical content - Receptionist CANNOT */
+  canAccessClinicalContent: boolean;
+  /** Owner/Admin can access system configurations - Receptionist CANNOT */
+  canAccessConfigurations: boolean;
+  /** Check if user is a receptionist */
+  isRecepcionista: boolean;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | null>(null);
@@ -194,9 +200,17 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const canManageClinic = state.isOwner || state.isAdmin;
   const canManageSpecialties = state.isOwner || state.isAdmin;
   
-  // Owner/Admin CANNOT perform clinical care (they don't have specialties)
-  // Only 'profissional' role can perform clinical care
-  const canPerformClinicalCare = !state.isOwner && !state.isAdmin && state.role === 'profissional';
+  // Check if user is a receptionist
+  const isRecepcionista = state.role === 'recepcionista';
+  
+  // Owner/Admin/Profissional can access clinical content - Receptionist CANNOT
+  const canAccessClinicalContent = !isRecepcionista && (state.isOwner || state.isAdmin || state.role === 'profissional');
+  
+  // Owner/Admin can access system configurations - Receptionist CANNOT
+  const canAccessConfigurations = state.isOwner || state.isAdmin;
+  
+  // Only 'profissional' role can perform clinical care (admins and receptionists cannot)
+  const canPerformClinicalCare = state.role === 'profissional';
 
   const value: PermissionsContextType = {
     ...state,
@@ -209,6 +223,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     canManageClinic,
     canManageSpecialties,
     canPerformClinicalCare,
+    canAccessClinicalContent,
+    canAccessConfigurations,
+    isRecepcionista,
   };
 
   return (

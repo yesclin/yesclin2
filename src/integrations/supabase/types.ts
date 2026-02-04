@@ -7242,6 +7242,18 @@ export type Database = {
           projected_stock: number
         }[]
       }
+      can_access_clinical_content: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      can_access_configurations: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      can_access_patient_clinical_data: {
+        Args: { _patient_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_system: { Args: { _user_id: string }; Returns: boolean }
       can_manage_clinic: { Args: { _user_id: string }; Returns: boolean }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
@@ -7255,6 +7267,10 @@ export type Database = {
       }
       can_professional_use_room: {
         Args: { _professional_id: string; _room_id: string }
+        Returns: boolean
+      }
+      can_view_patient_clinical_history: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       cancel_sale_transaction: {
@@ -7293,6 +7309,8 @@ export type Database = {
           specialty_name: string
         }[]
       }
+      get_receptionist_allowed_modules: { Args: never; Returns: string[] }
+      get_receptionist_blocked_modules: { Args: never; Returns: string[] }
       get_user_all_permissions: {
         Args: { _user_id: string }
         Returns: {
@@ -7330,6 +7348,7 @@ export type Database = {
         Returns: boolean
       }
       is_proprietario_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_recepcionista: { Args: { _user_id: string }; Returns: boolean }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
       process_material_consumption: {
         Args: { p_appointment_id: string; p_materials?: Json }

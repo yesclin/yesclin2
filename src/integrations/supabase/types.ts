@@ -5013,6 +5013,7 @@ export type Database = {
           avatar_url: string | null
           clinic_id: string
           created_at: string
+          email: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -5024,6 +5025,7 @@ export type Database = {
           avatar_url?: string | null
           clinic_id: string
           created_at?: string
+          email?: string | null
           full_name: string
           id?: string
           is_active?: boolean
@@ -5035,6 +5037,7 @@ export type Database = {
           avatar_url?: string | null
           clinic_id?: string
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -7018,6 +7021,7 @@ export type Database = {
           projected_stock: number
         }[]
       }
+      can_access_system: { Args: { _user_id: string }; Returns: boolean }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
         Returns: Json
@@ -7050,6 +7054,15 @@ export type Database = {
           restrictions: Json
         }[]
       }
+      get_user_clinic: { Args: { _user_id: string }; Returns: string }
+      get_user_email_for_admin: {
+        Args: { _target_user_id: string }
+        Returns: string
+      }
+      get_user_type: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_type"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -7057,10 +7070,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_user_type: {
+        Args: {
+          _type: Database["public"]["Enums"]["user_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
       is_clinic_admin: {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
       }
+      is_user_active: { Args: { _user_id: string }; Returns: boolean }
       process_material_consumption: {
         Args: { p_appointment_id: string; p_materials?: Json }
         Returns: Json
@@ -7148,6 +7170,7 @@ export type Database = {
         | "bridge"
         | "veneer"
         | "other"
+      user_type: "proprietario_admin" | "profissional_saude" | "recepcionista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7341,6 +7364,7 @@ export const Constants = {
         "veneer",
         "other",
       ],
+      user_type: ["proprietario_admin", "profissional_saude", "recepcionista"],
     },
   },
 } as const

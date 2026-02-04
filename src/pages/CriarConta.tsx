@@ -49,7 +49,7 @@ const CriarConta = () => {
 
     const redirectUrl = `${window.location.origin}/`;
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -68,7 +68,15 @@ const CriarConta = () => {
       // Translate common Supabase Auth error messages to Portuguese
       if (error.message.includes("already registered")) {
         message = "Este email já está cadastrado. Tente fazer login.";
-      } else if (error.message.toLowerCase().includes("weak") || error.message.toLowerCase().includes("password")) {
+      } else if (
+        error.message.toLowerCase().includes("weak") ||
+        error.message.toLowerCase().includes("known to be weak") ||
+        error.message.toLowerCase().includes("compromised") ||
+        error.message.toLowerCase().includes("pwn")
+      ) {
+        message =
+          "Essa senha é considerada fraca ou muito comum. Use uma senha mais forte e única (mínimo 8 caracteres).";
+      } else if (error.message.toLowerCase().includes("minimum") && error.message.toLowerCase().includes("8")) {
         message = "A senha deve conter no mínimo 8 caracteres.";
       } else if (error.message.includes("invalid") && error.message.toLowerCase().includes("email")) {
         message = "Por favor, insira um email válido.";
@@ -82,11 +90,22 @@ const CriarConta = () => {
       return;
     }
 
+    // Quando a confirmação por e-mail está ativa, o backend não retorna sessão.
+    // Nesse caso, mandamos para uma tela dedicada de confirmação.
+    if (data?.session) {
+      toast({
+        title: "Conta criada!",
+        description: "Cadastro concluído. Redirecionando…",
+      });
+      navigate("/app");
+      return;
+    }
+
     toast({
       title: "Conta criada!",
-      description: "Verifique seu email para confirmar o cadastro.",
+      description: "Agora confirme seu e-mail para liberar o acesso.",
     });
-    navigate("/login");
+    navigate(`/confirmar-email?email=${encodeURIComponent(email)}`);
   };
 
   return (

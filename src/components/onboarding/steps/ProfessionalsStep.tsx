@@ -1,243 +1,14 @@
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, ArrowRight, ArrowLeft, Plus, Trash2, AlertCircle, Stethoscope, Info } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { OnboardingProgress } from "@/hooks/useOnboarding";
-
-// Official Yesclin-supported specialties (curated list)
-const YESCLIN_SUPPORTED_SPECIALTIES = [
-  "clinica-geral",
-  "psicologia",
-  "nutricao",
-  "fisioterapia",
-  "pilates",
-  "fonoaudiologia",
-  "estetica",
-  "odontologia",
-  "dermatologia",
-  "pediatria",
-];
-
-interface ClinicSpecialty {
-  id: string;
-  name: string;
-  area: string | null;
-  specialty_type: 'padrao' | 'personalizada';
-}
+import { Users, ArrowRight, ArrowLeft, Info, Settings, UserPlus } from "lucide-react";
 
 interface ProfessionalsStepProps {
-  clinicId: string;
-  preferences: OnboardingProgress["preferences"];
   onNext: () => void;
   onBack: () => void;
 }
 
-interface Professional {
-  id?: string;
-  name: string;
-  specialty: string;
-  isNew?: boolean;
-}
-
-export function ProfessionalsStep({ clinicId, preferences, onNext, onBack }: ProfessionalsStepProps) {
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [clinicSpecialties, setClinicSpecialties] = useState<ClinicSpecialty[]>([]);
-  const { toast } = useToast();
-
-  const loadClinicSpecialties = async () => {
-    const specialties: ClinicSpecialty[] = [];
-
-    // 1. Load the primary specialty from onboarding preferences
-    if (preferences.primary_specialty_id) {
-      // Custom specialty created during onboarding
-      const { data: primarySpec } = await supabase
-        .from("specialties")
-        .select("id, name, area, specialty_type")
-        .eq("id", preferences.primary_specialty_id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (primarySpec) {
-        specialties.push(primarySpec as ClinicSpecialty);
-      }
-    } else if (preferences.primary_specialty_curated_id && preferences.primary_specialty_name) {
-      // Curated specialty selected during onboarding - check if it exists for the clinic
-      const { data: curatedSpec } = await supabase
-        .from("specialties")
-        .select("id, name, area, specialty_type")
-        .eq("clinic_id", clinicId)
-        .eq("name", preferences.primary_specialty_name)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (curatedSpec) {
-        specialties.push(curatedSpec as ClinicSpecialty);
-      } else {
-        // If not yet created, we'll create a temporary entry for display
-        // (it will be persisted on onboarding completion)
-        specialties.push({
-          id: `pending-${preferences.primary_specialty_curated_id}`,
-          name: preferences.primary_specialty_name,
-          area: "Padrão",
-          specialty_type: "padrao",
-        });
-      }
-    }
-
-    // 2. Load any custom specialties created by the clinic (excluding the primary if already added)
-    const { data: customSpecialties } = await supabase
-      .from("specialties")
-      .select("id, name, area, specialty_type")
-      .eq("clinic_id", clinicId)
-      .eq("specialty_type", "personalizada")
-      .eq("is_active", true)
-      .order("name");
-
-    if (customSpecialties) {
-      for (const spec of customSpecialties) {
-        // Avoid duplicates
-        if (!specialties.find(s => s.id === spec.id)) {
-          specialties.push(spec as ClinicSpecialty);
-        }
-      }
-    }
-
-    setClinicSpecialties(specialties);
-  };
-
-  useEffect(() => {
-    async function loadProfessionals() {
-      setIsLoading(true);
-      const { data } = await supabase
-        .from("professionals")
-        .select("id, full_name, specialty_id")
-        .eq("clinic_id", clinicId)
-        .eq("is_active", true);
-
-      if (data && data.length > 0) {
-        setProfessionals(data.map(p => ({ 
-          id: p.id,
-          name: p.full_name, 
-          specialty: p.specialty_id || "",
-          isNew: false 
-        })));
-      }
-      setIsLoading(false);
-    }
-
-    if (clinicId) {
-      loadProfessionals();
-      loadClinicSpecialties();
-    }
-  }, [clinicId, preferences]);
-
-  const addProfessional = () => {
-    setProfessionals([
-      ...professionals,
-      { name: "", specialty: "", isNew: true },
-    ]);
-  };
-
-  const updateProfessional = (index: number, field: keyof Professional, value: string) => {
-    const updated = [...professionals];
-    updated[index] = { ...updated[index], [field]: value };
-    setProfessionals(updated);
-  };
-
-  const removeProfessional = (index: number) => {
-    setProfessionals(professionals.filter((_, i) => i !== index));
-  };
-
-  const handleSave = async () => {
-    const newProfessionals = professionals.filter(p => p.isNew && p.name.trim());
-
-    // Validate that all new professionals have a specialty
-    const missingSpecialty = newProfessionals.find(p => !p.specialty);
-    if (missingSpecialty) {
-      toast({
-        title: "Especialidade obrigatória",
-        description: `Selecione uma especialidade para "${missingSpecialty.name}".`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate specialty is from allowed list
-    const invalidSpecialty = newProfessionals.find(p => {
-      const spec = clinicSpecialties.find(s => s.id === p.specialty);
-      return !spec;
-    });
-    if (invalidSpecialty) {
-      toast({
-        title: "Especialidade inválida",
-        description: "A especialidade selecionada não é suportada pelo Yesclin.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newProfessionals.length === 0) {
-      onNext();
-      return;
-    }
-
-    setIsSaving(true);
-
-    for (const prof of newProfessionals) {
-      // Handle pending specialties (not yet persisted)
-      let specialtyId = prof.specialty;
-      if (specialtyId.startsWith("pending-")) {
-        // The specialty will be created on onboarding completion
-        // For now, we skip the insert or show a warning
-        toast({
-          title: "Aguarde",
-          description: "A especialidade será criada ao finalizar o onboarding.",
-        });
-        setIsSaving(false);
-        return;
-      }
-
-      const { error } = await supabase.from("professionals").insert({
-        clinic_id: clinicId,
-        full_name: prof.name,
-        specialty_id: specialtyId || null,
-      });
-
-      if (error) {
-        toast({
-          title: "Erro ao cadastrar",
-          description: `Não foi possível cadastrar ${prof.name}.`,
-          variant: "destructive",
-        });
-      }
-    }
-
-    setIsSaving(false);
-
-    toast({
-      title: "Profissionais cadastrados!",
-      description: `${newProfessionals.length} profissional(is) adicionado(s).`,
-    });
-
-    onNext();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
+export function ProfessionalsStep({ onNext, onBack }: ProfessionalsStepProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -257,108 +28,53 @@ export function ProfessionalsStep({ clinicId, preferences, onNext, onBack }: Pro
         </div>
       </div>
 
-      {/* Informative alert about specialty limitations */}
-      <Alert className="border-info/30 bg-info/5">
-        <Info className="h-4 w-4 text-info" />
-        <AlertDescription className="text-info text-sm">
-          As especialidades disponíveis aqui são limitadas às especialidades suportadas pelo Yesclin 
-          e definidas na configuração da clínica. Caso precise de outra área de atuação, 
-          utilize a opção <strong>Especialidade Personalizada</strong> na etapa anterior.
+      {/* Informative alert - always visible */}
+      <Alert className="border-primary/30 bg-primary/5">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-foreground text-sm">
+          O cadastro de profissionais <strong>não é obrigatório</strong> neste momento.
+          <br />
+          Você poderá adicionar profissionais e usuários posteriormente em{" "}
+          <strong>Configurações → Usuários & Permissões</strong>.
         </AlertDescription>
       </Alert>
 
-      {/* No specialties warning */}
-      {clinicSpecialties.length === 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex flex-col gap-2">
-            <span className="font-medium">Nenhuma especialidade habilitada!</span>
-            <p className="text-xs">
-              Você precisa configurar uma especialidade na etapa anterior antes de cadastrar profissionais.
-              Cada profissional deve estar vinculado a uma especialidade habilitada da clínica.
-            </p>
-            <Button variant="outline" size="sm" className="w-fit mt-1" onClick={onBack}>
-              <Stethoscope className="h-4 w-4 mr-2" />
-              Voltar para Especialidades
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Has specialties - show info */}
-      {clinicSpecialties.length > 0 && (
-        <Alert>
-          <Stethoscope className="h-4 w-4" />
-          <AlertDescription>
-            {clinicSpecialties.length} especialidade(s) disponível(is) para vincular profissionais:
-            <span className="font-medium ml-1">
-              {clinicSpecialties.map(s => s.name).join(", ")}
-            </span>
-          </AlertDescription>
-        </Alert>
-      )}
-
+      {/* Informational content */}
       <div className="space-y-4">
-        {professionals.map((prof, index) => (
-          <motion.div
-            key={prof.id || index}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 items-end p-3 border rounded-lg bg-muted/30"
-          >
-            <div className="flex-1 grid gap-2">
-              <Label>Nome</Label>
-              <Input
-                value={prof.name}
-                onChange={(e) => updateProfessional(index, "name", e.target.value)}
-                placeholder="Nome do profissional"
-                disabled={!prof.isNew}
-              />
+        <div className="rounded-lg border bg-muted/30 p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <UserPlus className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex-1 grid gap-2">
-              <Label>Especialidade <span className="text-destructive">*</span></Label>
-              <Select
-                value={prof.specialty}
-                onValueChange={(value) => updateProfessional(index, "specialty", value)}
-                disabled={!prof.isNew || clinicSpecialties.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={clinicSpecialties.length === 0 ? "Configure especialidades primeiro" : "Selecione a especialidade"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  {clinicSpecialties.map((spec) => (
-                    <SelectItem key={spec.id} value={spec.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{spec.name}</span>
-                        {spec.specialty_type === 'personalizada' && (
-                          <span className="text-[10px] text-muted-foreground">(Personalizada)</span>
-                        )}
-                        {spec.id.startsWith("pending-") && (
-                          <span className="text-[10px] text-warning">(Pendente)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1">
+              <h3 className="font-medium text-foreground">Cadastro de Profissionais</h3>
+              <p className="text-sm text-muted-foreground">
+                Profissionais de saúde podem ser cadastrados a qualquer momento após a 
+                configuração inicial da clínica. Cada profissional terá sua própria agenda 
+                e poderá realizar atendimentos.
+              </p>
             </div>
-            {prof.isNew && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeProfessional(index)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </motion.div>
-        ))}
+          </div>
 
-        <Button variant="outline" onClick={addProfessional} className="w-full">
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar Profissional
-        </Button>
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center flex-shrink-0">
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-medium text-foreground">Onde cadastrar?</h3>
+              <p className="text-sm text-muted-foreground">
+                Acesse <strong>Configurações → Usuários & Permissões</strong> para adicionar 
+                novos profissionais, definir especialidades, horários de atendimento e 
+                permissões de acesso ao sistema.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Você pode pular esta etapa e continuar configurando sua clínica. 
+          Os profissionais podem ser adicionados depois.
+        </p>
       </div>
 
       <div className="flex justify-between pt-4">
@@ -370,8 +86,8 @@ export function ProfessionalsStep({ clinicId, preferences, onNext, onBack }: Pro
           <Button variant="ghost" onClick={onNext}>
             Pular etapa
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Salvando..." : "Continuar"}
+          <Button onClick={onNext}>
+            Continuar
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>

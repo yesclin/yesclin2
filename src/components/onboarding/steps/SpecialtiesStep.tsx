@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Dialog,
   DialogContent,
@@ -110,7 +110,7 @@ interface SpecialtiesStepProps {
 
 export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [customSpecialties, setCustomSpecialties] = useState<Array<{ id: string; name: string }>>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -131,16 +131,8 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleToggleSpecialty = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const handleSelectSpecialty = (id: string) => {
+    setSelectedId(id);
   };
 
   const handleCreateCustomSpecialty = async () => {
@@ -193,7 +185,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
       if (newSpecialty) {
         // Add to local state and auto-select
         setCustomSpecialties((prev) => [...prev, newSpecialty]);
-        setSelectedIds((prev) => new Set([...prev, `custom-${newSpecialty.id}`]));
+        setSelectedId(`custom-${newSpecialty.id}`);
 
         // Enable core modules for this specialty
         await enableCoreModules(newSpecialty.id);
@@ -244,10 +236,10 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
   };
 
   const handleSaveAndContinue = async () => {
-    if (selectedIds.size === 0) {
+    if (!selectedId) {
       toast({
-        title: "Selecione ao menos uma especialidade",
-        description: "A clínica precisa de pelo menos uma especialidade para operar.",
+        title: "Selecione uma especialidade",
+        description: "A clínica precisa de uma especialidade principal para operar.",
         variant: "destructive",
       });
       return;
@@ -256,24 +248,24 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     setIsSaving(true);
 
     try {
-      // Create clinic-specific records for selected curated specialties
-      const curatedToCreate = CURATED_SPECIALTIES.filter((s) => selectedIds.has(s.id));
-
-      for (const specialty of curatedToCreate) {
+      // Check if it's a curated specialty or custom
+      const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
+      
+      if (curatedSpecialty) {
         // Check if already exists for this clinic
         const { data: existing } = await supabase
           .from("specialties")
           .select("id")
           .eq("clinic_id", clinicId)
-          .eq("name", specialty.name)
+          .eq("name", curatedSpecialty.name)
           .maybeSingle();
 
         if (!existing) {
           const { data: created, error } = await supabase
             .from("specialties")
             .insert({
-              name: specialty.name,
-              description: specialty.description,
+              name: curatedSpecialty.name,
+              description: curatedSpecialty.description,
               area: "Padrão",
               clinic_id: clinicId,
               specialty_type: "padrao",
@@ -289,15 +281,16 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           }
         }
       }
+      // Custom specialties are already saved when created
 
       toast({
-        title: "Especialidades configuradas!",
-        description: `${selectedIds.size} especialidade(s) habilitada(s).`,
+        title: "Especialidade configurada!",
+        description: `Especialidade principal definida com sucesso.`,
       });
 
       onNext();
     } catch (err) {
-      console.error("Error saving specialties:", err);
+      console.error("Error saving specialty:", err);
       toast({
         title: "Erro ao salvar",
         description: "Tente novamente.",
@@ -316,7 +309,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     onNext();
   };
 
-  const totalSelected = selectedIds.size;
+  const hasSelection = selectedId !== null;
 
   return (
     <motion.div
@@ -347,12 +340,12 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
         </AlertDescription>
       </Alert>
 
-      {/* Selected count */}
-      {totalSelected > 0 && (
+      {/* Selected indicator */}
+      {hasSelection && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
           <Check className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">
-            {totalSelected} especialidade(s) selecionada(s)
+            1 especialidade selecionada
           </span>
         </div>
       )}
@@ -372,7 +365,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredSpecialties.map((specialty) => {
-            const isSelected = selectedIds.has(specialty.id);
+            const isSelected = selectedId === specialty.id;
             const Icon = specialty.icon;
 
             return (
@@ -386,20 +379,21 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
                     ? "bg-primary/10 border-primary shadow-md ring-2 ring-primary/30"
                     : "bg-card border-border hover:border-primary/40 hover:bg-muted/50 hover:shadow-sm"
                 }`}
-                onClick={() => handleToggleSpecialty(specialty.id)}
+                onClick={() => handleSelectSpecialty(specialty.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    handleToggleSpecialty(specialty.id);
+                    handleSelectSpecialty(specialty.id);
                   }
                 }}
               >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => {}}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`mt-0.5 pointer-events-none ${isSelected ? "data-[state=checked]:bg-primary data-[state=checked]:border-primary" : ""}`}
-                />
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                    isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                  }`}
+                >
+                  {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                </div>
                 <div
                   className={`w-9 h-9 rounded-lg ${specialty.color} flex items-center justify-center shrink-0 transition-transform ${isSelected ? "scale-110" : ""}`}
                 >
@@ -426,7 +420,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCustom.map((specialty) => {
                 const customId = `custom-${specialty.id}`;
-                const isSelected = selectedIds.has(customId);
+                const isSelected = selectedId === customId;
 
                 return (
                     <div
@@ -439,20 +433,21 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
                           ? "bg-primary/10 border-primary shadow-md ring-2 ring-primary/30"
                           : "bg-card border-border hover:border-primary/40 hover:bg-muted/50 hover:shadow-sm"
                       }`}
-                      onClick={() => handleToggleSpecialty(customId)}
+                      onClick={() => handleSelectSpecialty(customId)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          handleToggleSpecialty(customId);
+                          handleSelectSpecialty(customId);
                         }
                       }}
                     >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => {}}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`mt-0.5 pointer-events-none ${isSelected ? "data-[state=checked]:bg-primary data-[state=checked]:border-primary" : ""}`}
-                      />
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                        }`}
+                      >
+                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </div>
                       <div className={`w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 transition-transform ${isSelected ? "scale-110 bg-primary/20" : ""}`}>
                         <Sparkles className={`h-5 w-5 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
@@ -490,11 +485,11 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
       </div>
 
       {/* Validation Warning */}
-      {totalSelected === 0 && (
+      {!hasSelection && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Selecione ao menos uma especialidade para continuar.
+            Selecione uma especialidade para continuar.
           </AlertDescription>
         </Alert>
       )}
@@ -509,7 +504,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           <Button variant="ghost" onClick={handleSkip}>
             Pular etapa
           </Button>
-          <Button onClick={handleSaveAndContinue} disabled={isSaving || totalSelected === 0}>
+          <Button onClick={handleSaveAndContinue} disabled={isSaving || !hasSelection}>
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
 
+export type SpecialtyType = 'padrao' | 'personalizada';
+
 export interface Specialty {
   id: string;
   name: string;
@@ -9,14 +11,18 @@ export interface Specialty {
   color: string | null;
   area: string | null;
   is_active: boolean;
+  specialty_type: SpecialtyType;
+  clinic_id: string | null;
 }
 
 /**
- * Hook to fetch ONLY active/enabled specialties for the current clinic.
+ * Hook to fetch ONLY active/enabled specialties available to the current clinic.
  * 
- * IMPORTANT: This hook ONLY returns specialties that are:
- * 1. Active (is_active = true)
- * 2. Belonging to the current clinic
+ * IMPORTANT: This hook returns:
+ * 1. Global standard specialties (specialty_type = 'padrao', clinic_id = null)
+ * 2. Custom specialties created by this clinic (specialty_type = 'personalizada')
+ * 
+ * All returned specialties are active (is_active = true).
  * 
  * Use this hook for:
  * - Procedure selection
@@ -33,13 +39,13 @@ export function useSpecialties() {
   return useQuery({
     queryKey: ["specialties", clinic?.id],
     queryFn: async () => {
-      if (!clinic?.id) return [];
-      
+      // Fetch both global standard and clinic custom specialties
       const { data, error } = await supabase
         .from("specialties")
-        .select("id, name, description, color, area, is_active")
-        .eq("clinic_id", clinic.id)
+        .select("id, name, description, color, area, is_active, specialty_type, clinic_id")
         .eq("is_active", true) // CRITICAL: Only return enabled specialties
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
+        .order("area")
         .order("name");
       
       if (error) {
@@ -65,6 +71,8 @@ export function useInvalidateSpecialties() {
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["standard-specialties"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic.id] });
     }
   };
 }

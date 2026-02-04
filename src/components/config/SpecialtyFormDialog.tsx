@@ -194,12 +194,12 @@ export function SpecialtyFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
-            {isEditing ? "Editar Especialidade" : "Nova Especialidade"}
+            {isEditing ? "Editar Especialidade Personalizada" : "Nova Especialidade Personalizada"}
           </DialogTitle>
           <DialogDescription>
             {isEditing 
-              ? "Atualize as informações e módulos da especialidade" 
-              : "Configure uma nova especialidade personalizada"}
+              ? "Atualize as informações e módulos desta especialidade exclusiva da sua clínica" 
+              : "Crie uma especialidade exclusiva para sua clínica. Especialidades padrão do sistema não podem ser editadas."}
           </DialogDescription>
         </DialogHeader>
 

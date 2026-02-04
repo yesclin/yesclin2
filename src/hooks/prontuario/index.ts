@@ -44,6 +44,13 @@ export {
   type MedicalRecordContext,
 } from './useIntelligentMedicalRecordContext';
 
+// Clinical Data Access Control (patient-level security + logging)
+export {
+  useClinicalDataAccess as usePatientClinicalDataAccess,
+  useLogMedicalRecordView,
+  type ClinicalAccessAction,
+} from './useClinicalDataAccess';
+
 // Permission hooks (for granular access control)
 export {
   useMedicalRecordPermissions,

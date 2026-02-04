@@ -223,9 +223,10 @@ export function useProntuarioAccess() {
 }
 
 /**
- * Returns clinical access flags (for hiding/showing clinical fields)
+ * Returns clinical field visibility flags (for hiding/showing clinical fields in UI)
+ * Different from patient-level access control in useClinicalDataAccess hook
  */
-export function useClinicalDataAccess() {
+export function useClinicalFieldVisibility() {
   const { role, isOwner, isAdmin } = usePermissions();
 
   return useMemo(() => {
@@ -252,3 +253,8 @@ export function useClinicalDataAccess() {
     };
   }, [role, isOwner, isAdmin]);
 }
+
+/**
+ * @deprecated Use useClinicalFieldVisibility instead
+ */
+export const useClinicalDataAccess = useClinicalFieldVisibility;

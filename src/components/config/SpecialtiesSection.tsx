@@ -5,19 +5,8 @@ import { useClinicData } from "@/hooks/useClinicData";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Stethoscope, Plus, Pencil, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { SpecialtyFormDialog } from "./SpecialtyFormDialog";
 
 interface Specialty {
   id: string;
@@ -47,13 +37,6 @@ interface SpecialtyFormData {
   is_active: boolean;
 }
 
-const emptyFormData: SpecialtyFormData = {
-  name: "",
-  area: "",
-  description: "",
-  is_active: true,
-};
-
 export function SpecialtiesSection() {
   const { clinic } = useClinicData();
   const { can } = usePermissions();
@@ -61,7 +44,6 @@ export function SpecialtiesSection() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialty, setEditingSpecialty] = useState<Specialty | null>(null);
-  const [formData, setFormData] = useState<SpecialtyFormData>(emptyFormData);
   const [confirmDeactivate, setConfirmDeactivate] = useState<Specialty | null>(null);
 
   const canEdit = can("configuracoes", "edit");
@@ -166,30 +148,20 @@ export function SpecialtiesSection() {
 
   const handleOpenCreate = () => {
     setEditingSpecialty(null);
-    setFormData(emptyFormData);
     setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (specialty: Specialty) => {
     setEditingSpecialty(specialty);
-    setFormData({
-      name: specialty.name,
-      area: specialty.area || "",
-      description: specialty.description || "",
-      is_active: specialty.is_active,
-    });
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingSpecialty(null);
-    setFormData(emptyFormData);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = (formData: SpecialtyFormData) => {
     if (!formData.name.trim()) {
       toast.error("O nome da especialidade é obrigatório");
       return;
@@ -204,7 +176,6 @@ export function SpecialtiesSection() {
 
   const handleToggleActive = (specialty: Specialty) => {
     if (specialty.is_active) {
-      // Show confirmation before deactivating
       setConfirmDeactivate(specialty);
     } else {
       toggleActiveMutation.mutate({ id: specialty.id, is_active: true });
@@ -353,93 +324,20 @@ export function SpecialtiesSection() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 text-primary" />
-              {editingSpecialty ? "Editar Especialidade" : "Nova Especialidade"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingSpecialty 
-                ? "Atualize as informações da especialidade" 
-                : "Adicione uma nova especialidade à clínica"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="specialty-name">
-                Nome da Especialidade <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="specialty-name"
-                placeholder="Ex: Dermatologia, Pediatria, Fisioterapia..."
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                autoFocus
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="specialty-area">Área (opcional)</Label>
-              <Input
-                id="specialty-area"
-                placeholder="Ex: Saúde Mental, Estética, Reabilitação..."
-                value={formData.area}
-                onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Agrupe especialidades por área para melhor organização
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="specialty-description">Observação Interna (opcional)</Label>
-              <Textarea
-                id="specialty-description"
-                placeholder="Notas internas sobre esta especialidade..."
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-              />
-            </div>
-
-            {editingSpecialty && (
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
-                <div>
-                  <Label htmlFor="specialty-active">Status</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Especialidades inativas não aparecem nas seleções
-                  </p>
-                </div>
-                <Switch
-                  id="specialty-active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                />
-              </div>
-            )}
-
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !formData.name.trim()}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? "Salvando..." : editingSpecialty ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <SpecialtyFormDialog
+        open={isDialogOpen}
+        onOpenChange={handleCloseDialog}
+        specialty={editingSpecialty}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+      />
 
       {/* Deactivation confirmation */}
       <AlertDialog open={!!confirmDeactivate} onOpenChange={(open) => !open && setConfirmDeactivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <AlertCircle className="h-5 w-5 text-warning" />
               Desativar especialidade?
             </AlertDialogTitle>
             <AlertDialogDescription>

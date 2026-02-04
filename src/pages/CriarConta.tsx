@@ -90,20 +90,16 @@ const CriarConta = () => {
       return;
     }
 
-    // Quando a confirmação por e-mail está ativa, o backend não retorna sessão.
-    // Nesse caso, mandamos para uma tela dedicada de confirmação.
+    // CRITICAL: Always sign out after signup to ensure user must confirm email first
+    // Even if Supabase returns a session (e.g., if auto-confirm was briefly enabled),
+    // we force the user to verify their email before accessing the app.
     if (data?.session) {
-      toast({
-        title: "Conta criada!",
-        description: "Cadastro concluído. Redirecionando…",
-      });
-      navigate("/app");
-      return;
+      await supabase.auth.signOut();
     }
 
     toast({
-      title: "Conta criada!",
-      description: "Agora confirme seu e-mail para liberar o acesso.",
+      title: "Conta criada com sucesso! ✉️",
+      description: "Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.",
     });
     navigate(`/confirmar-email?email=${encodeURIComponent(email)}`);
   };

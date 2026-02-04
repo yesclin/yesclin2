@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { useOnboarding, ONBOARDING_STEPS } from "@/hooks/useOnboarding";
+import { useOnboarding, ONBOARDING_STEPS, OnboardingProgress } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 
 import { WelcomeStep } from "./steps/WelcomeStep";
@@ -22,6 +22,7 @@ export function OnboardingWizard() {
     currentStep,
     progressPercentage,
     clinicId,
+    preferences,
     updateStep,
     updatePreferences,
     skipOnboarding,
@@ -122,6 +123,7 @@ export function OnboardingWizard() {
           {currentStep === 3 && (
             <ProfessionalsStep
               clinicId={clinicId}
+              preferences={preferences}
               onNext={() => updateStep(4)}
               onBack={() => updateStep(2)}
             />

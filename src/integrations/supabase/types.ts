@@ -7242,16 +7242,13 @@ export type Database = {
           projected_stock: number
         }[]
       }
-      can_access_clinical_content: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      can_access_clinical_content: { Args: never; Returns: boolean }
       can_access_configurations: {
         Args: { _user_id: string }
         Returns: boolean
       }
       can_access_patient_clinical_data: {
-        Args: { _patient_id: string; _user_id: string }
+        Args: { _clinic_id: string; _patient_id: string; _user_id: string }
         Returns: boolean
       }
       can_access_system: { Args: { _user_id: string }; Returns: boolean }
@@ -7353,13 +7350,22 @@ export type Database = {
         }[]
       }
       get_user_clinic: { Args: { _user_id: string }; Returns: string }
+      get_user_clinic_id: { Args: never; Returns: string }
       get_user_email_for_admin: {
         Args: { _target_user_id: string }
+        Returns: string
+      }
+      get_user_role: {
+        Args: { _clinic_id: string; _user_id: string }
         Returns: string
       }
       get_user_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_type"]
+      }
+      has_attended_patient: {
+        Args: { _patient_id: string; _professional_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -7380,13 +7386,18 @@ export type Database = {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
       }
+      is_own_patient_data: { Args: { _patient_id: string }; Returns: boolean }
       is_procedure_specialty_enabled: {
         Args: { _clinic_id: string; _procedure_id: string }
         Returns: boolean
       }
       is_proprietario_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_recepcionista: { Args: { _user_id: string }; Returns: boolean }
+      is_recepcionista: { Args: never; Returns: boolean }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
+      log_clinical_access: {
+        Args: { _action: string; _patient_id: string; _resource?: string }
+        Returns: undefined
+      }
       process_material_consumption: {
         Args: { p_appointment_id: string; p_materials?: Json }
         Returns: Json

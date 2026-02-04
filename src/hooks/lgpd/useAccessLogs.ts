@@ -33,6 +33,18 @@ const ACTION_LABELS: Record<string, { label: string; color: 'default' | 'seconda
   CREATE: { label: 'Criação', color: 'default' },
   UPDATE: { label: 'Atualização', color: 'default' },
   DELETE: { label: 'Exclusão', color: 'destructive' },
+  // Clinical evolution actions
+  VIEW_EVOLUTION: { label: 'Visualização de Evolução', color: 'outline' },
+  CREATE_EVOLUTION: { label: 'Criação de Evolução', color: 'default' },
+  EDIT_EVOLUTION: { label: 'Edição de Evolução', color: 'default' },
+  EVOLUTION_CREATED: { label: 'Evolução Criada', color: 'default' },
+  EVOLUTION_UPDATED: { label: 'Evolução Atualizada', color: 'default' },
+  // Clinical alert actions
+  VIEW_ALERT: { label: 'Visualização de Alerta', color: 'outline' },
+  CREATE_ALERT: { label: 'Criação de Alerta', color: 'default' },
+  // Media actions
+  VIEW_MEDIA: { label: 'Visualização de Mídia', color: 'outline' },
+  UPLOAD_MEDIA: { label: 'Upload de Mídia', color: 'default' },
   // Sales actions
   SALE_CREATED: { label: 'Venda Realizada', color: 'default' },
   SALE_STATUS_UPDATED: { label: 'Status de Venda Atualizado', color: 'secondary' },

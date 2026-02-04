@@ -20,7 +20,7 @@ import {
 import type { PatientFilters, PatientSortField, PatientSortOrder } from '@/types/pacientes';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { usePatientFilter, useClinicalDataAccess } from '@/hooks/useRoleBasedData';
+import { usePatientFilter, useClinicalFieldVisibility } from '@/hooks/useRoleBasedData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -30,7 +30,7 @@ export default function Pacientes() {
   
   // Role-based data access
   const { filterByAttendedProfessional, professionalIdFilter, canViewClinicalData } = usePatientFilter();
-  const clinicalAccess = useClinicalDataAccess();
+  const clinicalAccess = useClinicalFieldVisibility();
   const { role, professionalId } = usePermissions();
   
   // Data hooks

@@ -4858,6 +4858,176 @@ export type Database = {
           },
         ]
       }
+      professional_authorized_flows: {
+        Row: {
+          clinic_id: string
+          created_at: string | null
+          flow_id: string
+          id: string
+          professional_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string | null
+          flow_id: string
+          id?: string
+          professional_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string | null
+          flow_id?: string
+          id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_authorized_flows_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_flows_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_authorized_procedures: {
+        Row: {
+          clinic_id: string
+          created_at: string | null
+          id: string
+          procedure_id: string
+          professional_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string | null
+          id?: string
+          procedure_id: string
+          professional_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string | null
+          id?: string
+          procedure_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_authorized_procedures_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_procedures_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_procedures_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_authorized_rooms: {
+        Row: {
+          clinic_id: string
+          created_at: string | null
+          id: string
+          professional_id: string
+          room_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string | null
+          id?: string
+          professional_id: string
+          room_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string | null
+          id?: string
+          professional_id?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_authorized_rooms_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_rooms_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_authorized_templates: {
+        Row: {
+          clinic_id: string
+          created_at: string | null
+          id: string
+          professional_id: string
+          template_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string | null
+          id?: string
+          professional_id: string
+          template_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string | null
+          id?: string
+          professional_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_authorized_templates_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_authorized_templates_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_schedule_config: {
         Row: {
           clinic_id: string
@@ -4901,6 +5071,57 @@ export type Database = {
             foreignKeyName: "professional_schedule_config_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: true
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_schedules: {
+        Row: {
+          clinic_id: string
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          professional_id: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          professional_id: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          professional_id?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_schedules_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_schedules_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
             referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
@@ -7024,6 +7245,18 @@ export type Database = {
       can_access_system: { Args: { _user_id: string }; Returns: boolean }
       can_manage_clinic: { Args: { _user_id: string }; Returns: boolean }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      can_professional_access_template: {
+        Args: { _professional_id: string; _template_specialty_id: string }
+        Returns: boolean
+      }
+      can_professional_perform_procedure: {
+        Args: { _procedure_id: string; _professional_id: string }
+        Returns: boolean
+      }
+      can_professional_use_room: {
+        Args: { _professional_id: string; _room_id: string }
+        Returns: boolean
+      }
       cancel_sale_transaction: {
         Args: { p_reason?: string; p_sale_id: string; p_user_id: string }
         Returns: Json
@@ -7047,6 +7280,18 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      get_professional_primary_specialty: {
+        Args: { _professional_id: string }
+        Returns: string
+      }
+      get_professional_specialties: {
+        Args: { _professional_id: string }
+        Returns: {
+          is_primary: boolean
+          specialty_id: string
+          specialty_name: string
+        }[]
       }
       get_user_all_permissions: {
         Args: { _user_id: string }

@@ -38,39 +38,14 @@ const Login = () => {
     setIsLoading(false);
 
     if (error) {
-      const lower = error.message.toLowerCase();
-
       toast({
         title: "Erro ao entrar",
         description:
           error.message === "Invalid login credentials"
             ? "Email ou senha incorretos."
-            : lower.includes("not confirmed")
-              ? "Seu e-mail ainda não foi confirmado. Confira sua caixa de entrada (e o spam) ou reenvie a confirmação."
-              : error.message,
+            : error.message,
         variant: "destructive",
       });
-
-      if (lower.includes("not confirmed")) {
-        navigate(`/confirmar-email?email=${encodeURIComponent(email)}`);
-      }
-      return;
-    }
-
-    // Camada extra: se por alguma configuração o login ocorrer sem confirmação,
-    // bloqueia o acesso até o e-mail ser confirmado.
-    const confirmedAt =
-      (data?.user as any)?.email_confirmed_at ?? (data?.user as any)?.confirmed_at;
-
-    if (!confirmedAt) {
-      await supabase.auth.signOut();
-      toast({
-        title: "Confirmação pendente",
-        description:
-          "Confirme seu e-mail para acessar o sistema. Se precisar, você pode reenviar a confirmação.",
-        variant: "destructive",
-      });
-      navigate(`/confirmar-email?email=${encodeURIComponent(email)}`);
       return;
     }
 

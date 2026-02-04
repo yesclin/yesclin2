@@ -236,10 +236,11 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
   };
 
   const handleSaveAndContinue = async () => {
+    // STEP A: Validate selection
     if (!selectedId) {
       toast({
         title: "Selecione uma especialidade",
-        description: "A clínica precisa de uma especialidade principal para operar.",
+        description: "Selecione uma especialidade para continuar.",
         variant: "destructive",
       });
       return;
@@ -248,7 +249,9 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     setIsSaving(true);
 
     try {
-      // Check if it's a curated specialty or custom
+      let persistedSpecialtyId: string | null = null;
+
+      // STEP B: Persist specialty
       const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
       
       if (curatedSpecialty) {
@@ -260,7 +263,14 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           .eq("name", curatedSpecialty.name)
           .maybeSingle();
 
-        if (!existing) {
+        if (existing) {
+          persistedSpecialtyId = existing.id;
+          // Make sure it's active
+          await supabase
+            .from("specialties")
+            .update({ is_active: true })
+            .eq("id", existing.id);
+        } else {
           const { data: created, error } = await supabase
             .from("specialties")
             .insert({
@@ -275,24 +285,61 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
             .single();
 
           if (error) throw error;
-
+          
           if (created) {
+            persistedSpecialtyId = created.id;
             await enableCoreModules(created.id);
           }
         }
+      } else if (selectedId.startsWith("custom-")) {
+        // Custom specialty - extract the real ID
+        persistedSpecialtyId = selectedId.replace("custom-", "");
+        // Ensure it's active
+        await supabase
+          .from("specialties")
+          .update({ is_active: true })
+          .eq("id", persistedSpecialtyId);
       }
-      // Custom specialties are already saved when created
+
+      // STEP C: Confirm persistence
+      if (!persistedSpecialtyId) {
+        throw new Error("Specialty ID not obtained after save");
+      }
+
+      const { data: verifySpecialty, error: verifyError } = await supabase
+        .from("specialties")
+        .select("id, is_active")
+        .eq("id", persistedSpecialtyId)
+        .eq("clinic_id", clinicId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (verifyError || !verifySpecialty) {
+        throw new Error("Persistence verification failed");
+      }
 
       toast({
         title: "Especialidade configurada!",
-        description: `Especialidade principal definida com sucesso.`,
+        description: "Especialidade principal definida com sucesso.",
       });
 
-      onNext();
+      // STEP D: Navigate to next step (with fallback)
+      try {
+        onNext();
+      } catch (navError) {
+        console.error("Navigation error, applying fallback:", navError);
+        // Fallback: show persistent warning
+        toast({
+          title: "Onboarding pendente",
+          description: "Finalize a configuração em Configurações → Clínica.",
+          variant: "default",
+          duration: 10000,
+        });
+      }
     } catch (err) {
       console.error("Error saving specialty:", err);
       toast({
-        title: "Erro ao salvar",
+        title: "Não foi possível salvar sua especialidade",
         description: "Tente novamente.",
         variant: "destructive",
       });
@@ -302,11 +349,25 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
   };
 
   const handleSkip = () => {
+    // Skipping should still show a warning but allow navigation
     toast({
       title: "Etapa pulada",
-      description: "Você poderá configurar especialidades depois em Configurações.",
+      description: "Configure especialidades em Configurações → Clínica para habilitar todos os recursos.",
+      variant: "default",
+      duration: 8000,
     });
-    onNext();
+    
+    try {
+      onNext();
+    } catch (navError) {
+      console.error("Navigation error on skip:", navError);
+      toast({
+        title: "Onboarding pendente",
+        description: "Finalize a configuração em Configurações → Clínica.",
+        variant: "default",
+        duration: 10000,
+      });
+    }
   };
 
   const hasSelection = selectedId !== null;

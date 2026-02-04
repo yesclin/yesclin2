@@ -10,6 +10,7 @@ import { FiscalIdentificationCard } from "@/components/config/FiscalIdentificati
 import { LocationHoursSection } from "@/components/config/LocationHoursSection";
 import { WeekSchedule, getDefaultWeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 import { SpecialtiesSection } from "@/components/config/SpecialtiesSection";
+import { ClinicalModulesSection } from "@/components/config/ClinicalModulesSection";
 import { validateCPF, validateCNPJ } from "@/lib/validators";
 
 interface ClinicFormData {
@@ -463,6 +464,8 @@ export default function ConfigClinica() {
       />
 
       <SpecialtiesSection />
+
+      <ClinicalModulesSection />
 
       <div className="flex justify-end">
         <Button 

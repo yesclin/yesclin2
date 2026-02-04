@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  resolveSpecialtyBySlug, 
+  enableCoreModulesForSpecialty,
+  STANDARD_SPECIALTY_CATALOG,
+  normalizeSlug
+} from "./onboarding/specialtyResolver";
 
 export interface OnboardingProgress {
   id: string;
@@ -16,10 +22,11 @@ export interface OnboardingProgress {
     wants_reminders?: boolean;
     payment_methods?: string[];
     allows_return?: boolean;
-    // Specialty selection (temporary state)
+    // Specialty selection - using SLUG as primary reference
+    primary_specialty_slug?: string;
     primary_specialty_id?: string;
     primary_specialty_name?: string;
-    primary_specialty_curated_id?: string;
+    primary_specialty_curated_id?: string; // Legacy, kept for backwards compat
   };
   created_at: string;
   updated_at: string;
@@ -38,43 +45,8 @@ export const ONBOARDING_STEPS = [
   { id: 9, key: "completion", title: "Conclusão", required: false },
 ];
 
-// Map of curated specialty IDs to their descriptions
-const CURATED_SPECIALTIES_MAP: Record<string, { description: string }> = {
-  "clinica-geral": { description: "Atendimento médico generalista" },
-  "psicologia": { description: "Saúde mental e terapia" },
-  "nutricao": { description: "Alimentação e dieta" },
-  "fisioterapia": { description: "Reabilitação e movimento" },
-  "pilates": { description: "Exercícios terapêuticos" },
-  "estetica": { description: "Procedimentos estéticos" },
-  "odontologia": { description: "Saúde bucal com odontograma digital" },
-  "dermatologia": { description: "Cuidados com a pele" },
-  "pediatria": { description: "Atendimento infantil" },
-};
-
-// Helper function to enable core clinical modules for a specialty
-async function enableCoreModulesForSpecialty(clinicId: string, specialtyId: string) {
-  try {
-    const { data: coreModules } = await supabase
-      .from("clinical_modules")
-      .select("id")
-      .in("key", ["evolucao", "anamnese", "alertas", "files"]);
-
-    if (coreModules && coreModules.length > 0) {
-      const moduleInserts = coreModules.map((m) => ({
-        clinic_id: clinicId,
-        specialty_id: specialtyId,
-        module_id: m.id,
-        is_enabled: true,
-      }));
-
-      await supabase
-        .from("clinic_specialty_modules")
-        .upsert(moduleInserts, { onConflict: "clinic_id,specialty_id,module_id" });
-    }
-  } catch (err) {
-    console.error("Error enabling core modules:", err);
-  }
-}
+// Re-export for backwards compatibility
+export { STANDARD_SPECIALTY_CATALOG as CURATED_SPECIALTIES_MAP };
 
 export function useOnboarding() {
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
@@ -244,86 +216,34 @@ export function useOnboarding() {
     const prefs = progress.preferences;
     let finalSpecialtyId: string | null = null;
 
-    // CASE 1: Specialty ID already exists (custom specialty created during selection)
-    if (prefs.primary_specialty_id) {
-      finalSpecialtyId = prefs.primary_specialty_id;
-      
-      // Activate the specialty
-      const { error: activateErr } = await supabase
-        .from("specialties")
-        .update({ is_active: true })
-        .eq("id", finalSpecialtyId);
-      
-      if (activateErr) {
-        console.error("Error activating specialty:", activateErr);
-        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
-      }
-    } 
-    // CASE 2: Curated specialty selected (need to find or create)
-    else if (prefs.primary_specialty_curated_id && prefs.primary_specialty_name) {
-      const curatedId = prefs.primary_specialty_curated_id;
-      const specialtyName = prefs.primary_specialty_name;
-      const curatedInfo = CURATED_SPECIALTIES_MAP[curatedId];
-      
-      // First, check if this specialty already exists for this clinic
-      const { data: existing, error: findErr } = await supabase
-        .from("specialties")
-        .select("id")
-        .eq("clinic_id", clinicId)
-        .eq("name", specialtyName)
-        .maybeSingle();
+    // Determine the slug or ID to resolve
+    // Priority: slug > curated_id > existing id
+    const slugToResolve = prefs.primary_specialty_slug 
+      || prefs.primary_specialty_curated_id 
+      || prefs.primary_specialty_id;
 
-      if (findErr) {
-        console.error("Error finding specialty:", findErr);
-        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
-      }
+    if (slugToResolve) {
+      try {
+        // Use the idempotent resolver - handles both standard and custom specialties
+        const resolved = await resolveSpecialtyBySlug(
+          clinicId, 
+          slugToResolve, 
+          prefs.primary_specialty_name
+        );
+        
+        finalSpecialtyId = resolved.id;
 
-      if (existing) {
-        // Specialty already exists - just use it and activate
-        finalSpecialtyId = existing.id;
-        
-        const { error: activateErr } = await supabase
-          .from("specialties")
-          .update({ is_active: true })
-          .eq("id", existing.id);
-        
-        if (activateErr) {
-          console.error("Error activating existing specialty:", activateErr);
-          // Non-fatal - continue with linking
-        }
-      } else {
-        // Specialty doesn't exist - create it
-        // This handles both standard (padrão) and custom specialties that weren't pre-created
-        const isStandardSpecialty = !!CURATED_SPECIALTIES_MAP[curatedId];
-        
-        const { data: created, error: createErr } = await supabase
-          .from("specialties")
-          .insert({
-            name: specialtyName,
-            description: curatedInfo?.description || null,
-            area: "Padrão",
-            clinic_id: clinicId,
-            specialty_type: isStandardSpecialty ? "padrao" : "personalizada",
-            is_active: true,
-          })
-          .select("id")
-          .single();
-
-        if (createErr) {
-          console.error("Error creating specialty:", createErr);
-          throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
-        }
-        
-        if (created) {
-          finalSpecialtyId = created.id;
-          // Enable core modules for the new specialty
+        // Enable core modules if this is a new specialty
+        if (resolved.isNew) {
           try {
-            await enableCoreModulesForSpecialty(clinicId, created.id);
+            await enableCoreModulesForSpecialty(clinicId, resolved.id);
           } catch (moduleErr) {
             console.error("Error enabling modules (non-fatal):", moduleErr);
-            // Continue - this is not critical
           }
         }
+      } catch (resolveErr) {
+        console.error("Error resolving specialty:", resolveErr);
+        throw resolveErr; // Re-throw - has user-friendly message
       }
     }
 
@@ -336,11 +256,11 @@ export function useOnboarding() {
       
       if (clinicErr) {
         console.error("Error updating clinic specialty:", clinicErr);
-        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
+        throw new Error("Não foi possível concluir a configuração. Tente novamente.");
       }
     }
 
-    // Step 3: Mark onboarding as completed
+    // Mark onboarding as completed
     const { error: completeErr } = await supabase
       .from("onboarding_progress")
       .update({
@@ -352,10 +272,10 @@ export function useOnboarding() {
 
     if (completeErr) {
       console.error("Error marking onboarding complete:", completeErr);
-      throw new Error("Erro ao marcar onboarding como concluído.");
+      throw new Error("Não foi possível concluir a configuração. Tente novamente.");
     }
 
-    // Step 4: Update local state
+    // Update local state
     setProgress({
       ...progress,
       is_completed: true,
@@ -368,6 +288,8 @@ export function useOnboarding() {
       description: "Seu sistema está pronto para uso.",
     });
   }, [progress, clinicId, toast]);
+
+
 
   const restartOnboarding = useCallback(async () => {
     if (!progress) return;

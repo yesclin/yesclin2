@@ -106,7 +106,12 @@ interface SpecialtiesStepProps {
   clinicId: string;
   onNext: () => void;
   onBack: () => void;
-  onUpdatePreferences?: (prefs: { primary_specialty_id?: string; primary_specialty_name?: string; primary_specialty_curated_id?: string }) => void;
+  onUpdatePreferences?: (prefs: { 
+    primary_specialty_slug?: string;
+    primary_specialty_id?: string; 
+    primary_specialty_name?: string; 
+    primary_specialty_curated_id?: string;
+  }) => void;
   initialSpecialtyId?: string | null;
 }
 
@@ -226,21 +231,27 @@ export function SpecialtiesStep({
       return;
     }
 
-    // STEP B: Save to temporary onboarding state (NOT to database)
+    // STEP B: Save to temporary onboarding state using SLUG as primary reference
     const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
     
     if (curatedSpecialty) {
-      // Curated specialty - store the curated ID and name for later creation
+      // Standard specialty - use slug as primary reference
       onUpdatePreferences?.({
-        primary_specialty_curated_id: curatedSpecialty.id,
+        primary_specialty_slug: curatedSpecialty.id, // This IS the slug (e.g., "clinica-geral")
+        primary_specialty_curated_id: curatedSpecialty.id, // Legacy compat
         primary_specialty_name: curatedSpecialty.name,
-        primary_specialty_id: undefined, // Will be created on final save
+        primary_specialty_id: undefined, // Will be resolved on final save
       });
     } else if (selectedId.startsWith("custom-")) {
-      // Custom specialty - already created, store the real UUID
+      // Custom specialty - already created, store the real UUID and generate slug
       const realId = selectedId.replace("custom-", "");
       const customSpec = customSpecialties.find(s => `custom-${s.id}` === selectedId);
+      const customSlug = customSpec 
+        ? `personalizada:${customSpec.name.toLowerCase().replace(/\s+/g, "-")}` 
+        : `personalizada:${realId}`;
+      
       onUpdatePreferences?.({
+        primary_specialty_slug: customSlug,
         primary_specialty_id: realId,
         primary_specialty_name: customSpec?.name || "",
         primary_specialty_curated_id: undefined,

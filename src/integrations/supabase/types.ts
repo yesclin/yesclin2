@@ -7257,6 +7257,10 @@ export type Database = {
       can_access_system: { Args: { _user_id: string }; Returns: boolean }
       can_manage_clinic: { Args: { _user_id: string }; Returns: boolean }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      can_professional_access_specialty: {
+        Args: { _professional_id: string; _specialty_id: string }
+        Returns: boolean
+      }
       can_professional_access_template: {
         Args: { _professional_id: string; _template_specialty_id: string }
         Returns: boolean
@@ -7295,6 +7299,35 @@ export type Database = {
           p_specialty_ids: string[]
           p_user_id: string
         }
+        Returns: string
+      }
+      get_appointment_enabled_modules: {
+        Args: { _appointment_id: string }
+        Returns: {
+          is_enabled: boolean
+          module_category: string
+          module_key: string
+          module_name: string
+        }[]
+      }
+      get_appointment_medical_record_context: {
+        Args: { _appointment_id: string }
+        Returns: {
+          appointment_id: string
+          can_professional_access: boolean
+          is_specialty_enabled: boolean
+          patient_id: string
+          procedure_id: string
+          procedure_name: string
+          professional_id: string
+          professional_name: string
+          specialty_id: string
+          specialty_key: string
+          specialty_name: string
+        }[]
+      }
+      get_appointment_specialty: {
+        Args: { _appointment_id: string }
         Returns: string
       }
       get_professional_primary_specialty: {
@@ -7347,6 +7380,10 @@ export type Database = {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
       }
+      is_procedure_specialty_enabled: {
+        Args: { _clinic_id: string; _procedure_id: string }
+        Returns: boolean
+      }
       is_proprietario_admin: { Args: { _user_id: string }; Returns: boolean }
       is_recepcionista: { Args: { _user_id: string }; Returns: boolean }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
@@ -7374,6 +7411,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_appointment_start: {
+        Args: { _appointment_id: string; _user_id: string }
+        Returns: string
       }
     }
     Enums: {

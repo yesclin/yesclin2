@@ -36,6 +36,14 @@ export {
   useIsModuleAvailable 
 } from './useActiveMedicalRecordModules';
 
+// Intelligent Medical Record Context (appointment-based context with validations)
+export {
+  useIntelligentMedicalRecordContext,
+  useCanSelectSpecialty,
+  useSpecialtySelectionBlockedReason,
+  type MedicalRecordContext,
+} from './useIntelligentMedicalRecordContext';
+
 // Permission hooks (for granular access control)
 export {
   useMedicalRecordPermissions,

@@ -116,6 +116,7 @@ export function OnboardingWizard() {
               clinicId={clinicId}
               onNext={() => updateStep(3)}
               onBack={() => updateStep(1)}
+              onUpdatePreferences={(prefs) => updatePreferences(prefs)}
             />
           )}
           {currentStep === 3 && (

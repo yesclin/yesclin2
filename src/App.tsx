@@ -12,7 +12,7 @@ import Login from "./pages/Login";
 import CriarConta from "./pages/CriarConta";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import AceitarConvite from "./pages/AceitarConvite";
-import ConfirmarEmail from "./pages/ConfirmarEmail";
+
 import NotFound from "./pages/NotFound";
 
 // Layout do App
@@ -57,7 +57,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/criar-conta" element={<CriarConta />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-          <Route path="/confirmar-email" element={<ConfirmarEmail />} />
+          
           <Route path="/aceitar-convite" element={<AceitarConvite />} />
           
           {/* Área do App (protegida) */}

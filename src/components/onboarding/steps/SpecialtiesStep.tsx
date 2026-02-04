@@ -378,34 +378,41 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
             return (
               <div
                 key={specialty.id}
-                className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
                   isSelected
-                    ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20"
-                    : "bg-card hover:bg-muted/50"
+                    ? "bg-primary/10 border-primary shadow-md ring-2 ring-primary/30"
+                    : "bg-card border-border hover:border-primary/40 hover:bg-muted/50 hover:shadow-sm"
                 }`}
                 onClick={() => handleToggleSpecialty(specialty.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleToggleSpecialty(specialty.id);
+                  }
+                }}
               >
                 <Checkbox
                   checked={isSelected}
-                  onCheckedChange={() => handleToggleSpecialty(specialty.id)}
-                  className="mt-0.5"
+                  onCheckedChange={() => {}}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`mt-0.5 pointer-events-none ${isSelected ? "data-[state=checked]:bg-primary data-[state=checked]:border-primary" : ""}`}
                 />
                 <div
-                  className={`w-9 h-9 rounded-lg ${specialty.color} flex items-center justify-center shrink-0`}
+                  className={`w-9 h-9 rounded-lg ${specialty.color} flex items-center justify-center shrink-0 transition-transform ${isSelected ? "scale-110" : ""}`}
                 >
                   <Icon className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm block">{specialty.name}</span>
+                  <span className={`font-medium text-sm block ${isSelected ? "text-primary" : ""}`}>{specialty.name}</span>
                   <p className="text-xs text-muted-foreground mt-0.5">{specialty.description}</p>
                 </div>
                 {isSelected && (
-                  <Badge
-                    variant="outline"
-                    className="absolute top-2 right-2 text-[10px] bg-primary/10 text-primary border-primary/30"
-                  >
-                    ✓
-                  </Badge>
+                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-4 w-4 text-primary-foreground" />
+                  </div>
                 )}
               </div>
             );
@@ -422,36 +429,43 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
                 const isSelected = selectedIds.has(customId);
 
                 return (
-                  <div
-                    key={customId}
-                    className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
-                      isSelected
-                        ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20"
-                        : "bg-card hover:bg-muted/50"
-                    }`}
-                    onClick={() => handleToggleSpecialty(customId)}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => handleToggleSpecialty(customId)}
-                      className="mt-0.5"
-                    />
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Plus className="h-5 w-5 text-muted-foreground" />
+                    <div
+                      key={customId}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                      className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
+                        isSelected
+                          ? "bg-primary/10 border-primary shadow-md ring-2 ring-primary/30"
+                          : "bg-card border-border hover:border-primary/40 hover:bg-muted/50 hover:shadow-sm"
+                      }`}
+                      onClick={() => handleToggleSpecialty(customId)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleToggleSpecialty(customId);
+                        }
+                      }}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => {}}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`mt-0.5 pointer-events-none ${isSelected ? "data-[state=checked]:bg-primary data-[state=checked]:border-primary" : ""}`}
+                      />
+                      <div className={`w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 transition-transform ${isSelected ? "scale-110 bg-primary/20" : ""}`}>
+                        <Sparkles className={`h-5 w-5 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`font-medium text-sm block ${isSelected ? "text-primary" : ""}`}>{specialty.name}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">Personalizada</p>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium text-sm block">{specialty.name}</span>
-                      <p className="text-xs text-muted-foreground mt-0.5">Personalizada</p>
-                    </div>
-                    {isSelected && (
-                      <Badge
-                        variant="outline"
-                        className="absolute top-2 right-2 text-[10px] bg-primary/10 text-primary border-primary/30"
-                      >
-                        ✓
-                      </Badge>
-                    )}
-                  </div>
                 );
               })}
             </div>

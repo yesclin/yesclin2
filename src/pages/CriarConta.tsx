@@ -8,16 +8,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { z } from "zod";
+import { maskPhone } from "@/lib/validators";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone deve ter no mínimo 10 dígitos").refine(
+    (val) => val.replace(/\D/g, "").length >= 10,
+    "Telefone inválido"
+  ),
   password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres."),
 });
 
 const CriarConta = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +37,14 @@ const CriarConta = () => {
     "Suporte técnico incluso",
   ];
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(maskPhone(e.target.value));
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ name, email, password });
+    const validation = signupSchema.safeParse({ name, email, phone, password });
     
     if (!validation.success) {
       toast({
@@ -47,15 +57,13 @@ const CriarConta = () => {
 
     setIsLoading(true);
 
-    const redirectUrl = `${window.location.origin}/`;
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           full_name: name,
+          phone: phone.replace(/\D/g, ""),
         },
       },
     });
@@ -90,18 +98,22 @@ const CriarConta = () => {
       return;
     }
 
-    // CRITICAL: Always sign out after signup to ensure user must confirm email first
-    // Even if Supabase returns a session (e.g., if auto-confirm was briefly enabled),
-    // we force the user to verify their email before accessing the app.
+    // Auto-login: usuário já está autenticado, redireciona direto para o app
     if (data?.session) {
-      await supabase.auth.signOut();
+      toast({
+        title: "Conta criada com sucesso! 🎉",
+        description: "Bem-vindo ao Yesclin!",
+      });
+      navigate("/app");
+      return;
     }
 
+    // Fallback caso não tenha sessão (não deve ocorrer com auto_confirm ativo)
     toast({
-      title: "Conta criada com sucesso! ✉️",
-      description: "Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.",
+      title: "Conta criada!",
+      description: "Faça login para acessar o sistema.",
     });
-    navigate(`/confirmar-email?email=${encodeURIComponent(email)}`);
+    navigate("/login");
   };
 
   return (
@@ -204,6 +216,18 @@ const CriarConta = () => {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={handlePhoneChange}
                 className="h-12"
               />
             </div>

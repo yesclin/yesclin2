@@ -2,16 +2,16 @@ import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, CalendarPlus, Ban, Settings, Loader2 } from "lucide-react";
+import { Plus, CalendarPlus, Ban, Settings, Loader2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAgendaRealData } from "@/hooks/useAgendaRealData";
 import { useUpdateAppointmentStatus, useCreateAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
 import { useTissGuideGeneration } from "@/hooks/useTissGuideGeneration";
 import { usePermissions } from "@/hooks/usePermissions";
-import { AgendaFilters } from "@/components/agenda/AgendaFilters";
-import { AgendaStats } from "@/components/agenda/AgendaStats";
+import { AgendaDateNavigation } from "@/components/agenda/AgendaDateNavigation";
+import { AgendaSummarySheet } from "@/components/agenda/AgendaSummarySheet";
+import { AgendaFiltersSheet } from "@/components/agenda/AgendaFiltersSheet";
 import { AgendaGrid } from "@/components/agenda/AgendaGrid";
-import { AgendaInsights } from "@/components/agenda/AgendaInsights";
 import { AgendaEmptyState } from "@/components/agenda/AgendaEmptyState";
 import { ProfessionalTabs } from "@/components/agenda/ProfessionalTabs";
 import { AppointmentDialog } from "@/components/agenda/AppointmentDialog";
@@ -20,7 +20,7 @@ import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agen
 import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
 import { ProductSaleDialog } from "@/components/agenda/ProductSaleDialog";
 import { StockValidationDialog } from "@/components/agenda/StockValidationDialog";
-import type { AgendaFilters as FiltersType, ViewMode, GroupBy, Appointment, AppointmentStatus } from "@/types/agenda";
+import type { AgendaFilters as FiltersType, ViewMode, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
 import { validateProcedureStock, StockValidationResult } from "@/hooks/useProcedureStockValidation";
 
@@ -30,11 +30,14 @@ export default function Agenda() {
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
-  const [groupBy, setGroupBy] = useState<GroupBy>('professional');
   const [filters, setFilters] = useState<FiltersType>({
     startDate: new Date(),
     endDate: new Date(),
   });
+  
+  // Sheet states
+  const [summarySheetOpen, setSummarySheetOpen] = useState(false);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   
   // Professional tabs state - null means "Todos"
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
@@ -62,7 +65,7 @@ export default function Agenda() {
   const [stockValidationResult, setStockValidationResult] = useState<StockValidationResult | null>(null);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ appointmentId: string; status: AppointmentStatus } | null>(null);
   
-  // Real data from Supabase (now includes real schedules)
+  // Real data from Supabase
   const { 
     specialties, 
     rooms, 
@@ -71,24 +74,22 @@ export default function Agenda() {
     insurances, 
     appointments, 
     stats, 
-    insights,
     isLoading: dataLoading,
     refetchAppointments,
     clinicSchedule,
     professionalSchedules,
   } = useAgendaRealData(selectedDate, viewMode === 'timeline' ? 'daily' : viewMode);
   
-  // Mutations for real database operations
+  // Mutations
   const updateStatusMutation = useUpdateAppointmentStatus();
   const createAppointmentMutation = useCreateAppointment();
 
-  // RBAC: Profissional vê apenas sua própria aba (usando professional_id vinculado ao usuário)
-  // If user is a professional, force their tab
+  // RBAC: Profissional vê apenas sua própria aba
   const effectiveSelectedProfessionalId = role === 'profissional' && userProfessionalId
     ? userProfessionalId 
     : selectedProfessionalId;
 
-  // Filter professionals based on role and linked professional
+  // Filter professionals based on role
   const visibleProfessionals = useMemo(() => {
     if (role === 'profissional' && userProfessionalId) {
       return professionals.filter(p => p.id === userProfessionalId);
@@ -96,16 +97,14 @@ export default function Agenda() {
     return professionals;
   }, [professionals, role, userProfessionalId]);
 
-  // Filter appointments by selected professional tab and other filters
+  // Filter appointments
   const filteredAppointments = useMemo(() => {
     let result = appointments;
     
-    // Filter by professional tab
     if (effectiveSelectedProfessionalId) {
       result = result.filter(apt => apt.professional_id === effectiveSelectedProfessionalId);
     }
     
-    // Apply other filters (only professionalId if not using tabs)
     if (filters.professionalId && !effectiveSelectedProfessionalId) {
       result = result.filter(apt => apt.professional_id === filters.professionalId);
     }
@@ -117,9 +116,6 @@ export default function Agenda() {
     }
     if (filters.appointmentType) {
       result = result.filter(apt => apt.appointment_type === filters.appointmentType);
-    }
-    if (filters.paymentType) {
-      result = result.filter(apt => apt.payment_type === filters.paymentType);
     }
     if (filters.status) {
       result = result.filter(apt => apt.status === filters.status);
@@ -159,20 +155,16 @@ export default function Agenda() {
   // Handle status change with stock validation and material consumption
   const handleStatusChange = useCallback(async (appointmentId: string, newStatus: AppointmentStatus) => {
     const apt = appointments.find(a => a.id === appointmentId);
-    
     if (!apt) return;
     
-    // Check if starting service ("em_atendimento") - validate stock first
     if (newStatus === 'em_atendimento' && apt.procedure_id) {
       try {
         const validation = await validateProcedureStock(apt.procedure_id);
-        
         if (!validation.isValid) {
-          // Stock is insufficient
           setStockValidationResult(validation);
           setPendingStatusChange({ appointmentId, status: newStatus });
           setStockValidationDialogOpen(true);
-          return; // Don't proceed until user decides
+          return;
         }
       } catch (error) {
         console.error("Error validating stock:", error);
@@ -181,12 +173,10 @@ export default function Agenda() {
       }
     }
     
-    // Check if finalizing an appointment - show materials dialog first
     if (newStatus === 'finalizado') {
       setFinalizingAppointment(apt);
       setMaterialsDialogOpen(true);
     } else if (newStatus === 'em_atendimento') {
-      // Update status in database then navigate to prontuário
       try {
         await updateStatusMutation.mutateAsync({ id: appointmentId, status: newStatus });
         if (apt.patient_id) {
@@ -196,17 +186,15 @@ export default function Agenda() {
         console.error("Error updating status:", error);
       }
     } else {
-      // Update status in database for other status changes
       updateStatusMutation.mutate({ id: appointmentId, status: newStatus });
     }
   }, [appointments, navigateToProntuario, updateStatusMutation]);
 
-  // Handle stock validation confirmation (allow negative stock)
+  // Stock validation handlers
   const handleStockValidationConfirm = useCallback(async () => {
     setStockValidationDialogOpen(false);
     
     if (pendingStatusChange) {
-      // Proceed with status change even with insufficient stock
       toast.warning("Atenção: Estoque ficará negativo após consumo dos materiais");
       
       try {
@@ -215,7 +203,6 @@ export default function Agenda() {
           status: pendingStatusChange.status 
         });
         
-        // Navigate to prontuário if starting appointment
         if (pendingStatusChange.status === 'em_atendimento') {
           const apt = appointments.find(a => a.id === pendingStatusChange.appointmentId);
           if (apt?.patient_id) {
@@ -231,7 +218,6 @@ export default function Agenda() {
     setPendingStatusChange(null);
   }, [pendingStatusChange, appointments, navigateToProntuario, updateStatusMutation]);
 
-  // Handle stock validation cancel
   const handleStockValidationCancel = useCallback(() => {
     setStockValidationDialogOpen(false);
     setStockValidationResult(null);
@@ -239,20 +225,18 @@ export default function Agenda() {
     toast.info("Atendimento não iniciado. Reponha o estoque antes de continuar.");
   }, []);
 
-  // After materials dialog confirms, proceed with TISS if needed
+  // Materials handlers
   const handleMaterialsConfirm = useCallback(async () => {
     setMaterialsDialogOpen(false);
     
     if (!finalizingAppointment) return;
     
-    // Update status in database
     try {
       await updateStatusMutation.mutateAsync({ 
         id: finalizingAppointment.id, 
         status: 'finalizado' 
       });
       
-      // Check if appointment has insurance for TISS guide
       if (finalizingAppointment.payment_type === 'convenio' && finalizingAppointment.insurance) {
         const finalizedApt: Appointment = { ...finalizingAppointment, status: 'finalizado' };
         setPendingAppointment(finalizedApt);
@@ -279,16 +263,13 @@ export default function Agenda() {
     setPendingAppointment(null);
   }, [setPendingAppointment]);
 
-  // Handle professional tab change
   const handleProfessionalTabChange = useCallback((professionalId: string | null) => {
     setSelectedProfessionalId(professionalId);
-    // Clear professional filter when using tabs
     if (filters.professionalId) {
       setFilters(prev => ({ ...prev, professionalId: undefined }));
     }
   }, [filters.professionalId]);
 
-  // Handle launch sale
   const handleLaunchSale = useCallback((apt: Appointment) => {
     if (!apt.patient) {
       toast.error("Agendamento sem paciente vinculado");
@@ -298,7 +279,6 @@ export default function Agenda() {
     setSaleDialogOpen(true);
   }, []);
 
-  // Handle appointment creation from dialog
   const handleAppointmentSubmit = useCallback((data: {
     patient_id?: string;
     professional_id?: string;
@@ -315,7 +295,6 @@ export default function Agenda() {
     notes?: string;
     is_fit_in?: boolean;
   }) => {
-    // Transform to AppointmentFormData
     const formData: AppointmentFormData = {
       patient_id: data.patient_id || '',
       professional_id: data.professional_id || '',
@@ -340,47 +319,63 @@ export default function Agenda() {
     });
   }, [createAppointmentMutation, refetchAppointments]);
 
-  // Determine if professional field should be locked in dialog
   const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || undefined;
 
+  // Count active filters
+  const activeFiltersCount = [
+    filters.professionalId,
+    filters.specialtyId,
+    filters.roomId,
+    filters.appointmentType,
+    filters.status,
+  ].filter(Boolean).length;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4">
+      {/* Simplified Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Agenda</h1>
-          <p className="text-muted-foreground">Gerencie os atendimentos da clínica</p>
+          <h1 className="text-2xl font-bold">Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={openFitInDialog}>
+          <Button variant="outline" size="sm" onClick={openFitInDialog}>
             <CalendarPlus className="mr-2 h-4 w-4" />
-            Encaixe
+            <span className="hidden sm:inline">Encaixe</span>
           </Button>
-          <Button variant="outline" onClick={() => setBlockDialogOpen(true)}>
-            <Ban className="mr-2 h-4 w-4" />
-            Bloquear
-          </Button>
-          <Button onClick={openCreateDialog}>
+          <Button size="sm" onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
+            <span className="hidden sm:inline">Novo</span>
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Main Tabs - Simplified */}
       <Tabs defaultValue="agenda" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="agenda">Agenda</TabsTrigger>
-          <TabsTrigger value="sala-espera">Sala de Espera</TabsTrigger>
-          <TabsTrigger value="bloqueios">Bloqueios</TabsTrigger>
-          <TabsTrigger value="config" onClick={() => navigate('/app/config/agenda')}>
-            <Settings className="h-4 w-4 mr-1" />
-            Configurações
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="sala-espera">
+              <Users className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Sala de Espera</span>
+            </TabsTrigger>
+            <TabsTrigger value="bloqueios">
+              <Ban className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Bloqueios</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Settings Icon - Separate */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/app/config/agenda')}
+            className="h-9 w-9"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
 
         <TabsContent value="agenda" className="space-y-4">
-          {/* Loading State */}
           {dataLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -390,7 +385,52 @@ export default function Agenda() {
           
           {!dataLoading && (
             <>
-              {/* Professional Tabs - Only show if not a professional user or has multiple professionals */}
+              {/* Date Navigation + On-Demand Controls */}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <AgendaDateNavigation
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                  />
+                  
+                  {/* On-Demand Buttons */}
+                  <div className="flex items-center gap-2">
+                    <AgendaSummarySheet 
+                      stats={stats} 
+                      open={summarySheetOpen} 
+                      onOpenChange={setSummarySheetOpen} 
+                    />
+                    <AgendaFiltersSheet
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      professionals={visibleProfessionals}
+                      specialties={specialties}
+                      rooms={rooms}
+                      open={filtersSheetOpen}
+                      onOpenChange={setFiltersSheetOpen}
+                    />
+                  </div>
+                </div>
+
+                {/* Active Filters Indicator */}
+                {activeFiltersCount > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="text-primary font-medium">{activeFiltersCount} filtro(s) ativo(s)</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFilters({ startDate: new Date(), endDate: new Date() })}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Professional Tabs */}
               {(role !== 'profissional' || visibleProfessionals.length > 1) && (
                 <ProfessionalTabs
                   professionals={visibleProfessionals}
@@ -399,45 +439,27 @@ export default function Agenda() {
                   maxVisibleTabs={5}
                 />
               )}
-              
-              <AgendaStats stats={stats} />
-          
-          <AgendaFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            groupBy={groupBy}
-            onGroupByChange={setGroupBy}
-            professionals={visibleProfessionals}
-            specialties={specialties}
-            rooms={rooms}
-            insurances={insurances}
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-          />
 
-          {filteredAppointments.length > 0 ? (
-            <AgendaGrid
-              appointments={filteredAppointments}
-              viewMode={viewMode}
-              groupBy={effectiveSelectedProfessionalId ? 'general' : groupBy}
-              selectedDate={selectedDate}
-              professionals={visibleProfessionals}
-              rooms={rooms}
-              specialties={specialties}
-              onReschedule={handleReschedule}
-              onStatusChange={handleStatusChange}
-              onLaunchSale={handleLaunchSale}
-            />
-          ) : (
-            <AgendaEmptyState
-              professionalName={selectedProfessionalName}
-              onCreateAppointment={openCreateDialog}
-            />
-          )}
-
-          <AgendaInsights insights={insights} />
+              {/* Agenda Grid */}
+              {filteredAppointments.length > 0 ? (
+                <AgendaGrid
+                  appointments={filteredAppointments}
+                  viewMode={viewMode}
+                  groupBy={effectiveSelectedProfessionalId ? 'general' : 'professional'}
+                  selectedDate={selectedDate}
+                  professionals={visibleProfessionals}
+                  rooms={rooms}
+                  specialties={specialties}
+                  onReschedule={handleReschedule}
+                  onStatusChange={handleStatusChange}
+                  onLaunchSale={handleLaunchSale}
+                />
+              ) : (
+                <AgendaEmptyState
+                  professionalName={selectedProfessionalName}
+                  onCreateAppointment={openCreateDialog}
+                />
+              )}
             </>
           )}
         </TabsContent>
@@ -487,7 +509,6 @@ export default function Agenda() {
         onOpenChange={setBlockDialogOpen}
       />
 
-      {/* TISS Guide Generation Dialog */}
       <TissGuideGenerationDialog
         open={tissDialogOpen}
         onOpenChange={setTissDialogOpen}
@@ -496,7 +517,6 @@ export default function Agenda() {
         onSkip={handleTissGuideSkip}
       />
 
-      {/* Material Consumption Dialog */}
       <AppointmentMaterialsDialog
         open={materialsDialogOpen}
         onOpenChange={setMaterialsDialogOpen}
@@ -506,7 +526,6 @@ export default function Agenda() {
         onCancel={handleMaterialsCancel}
       />
 
-      {/* Stock Validation Dialog */}
       <StockValidationDialog
         open={stockValidationDialogOpen}
         onOpenChange={setStockValidationDialogOpen}
@@ -515,7 +534,6 @@ export default function Agenda() {
         onCancel={handleStockValidationCancel}
       />
 
-      {/* Product Sale Dialog */}
       {saleAppointment && saleAppointment.patient && (
         <ProductSaleDialog
           open={saleDialogOpen}
@@ -558,9 +576,6 @@ function WaitingRoomContent({ appointments, onStatusChange }: WaitingRoomContent
                   <p className="text-sm text-muted-foreground">
                     {apt.start_time.slice(0, 5)} • {apt.professional?.full_name}
                   </p>
-                  {apt.insurance && (
-                    <p className="text-xs text-primary mt-1">{apt.insurance.name}</p>
-                  )}
                 </div>
                 <Button 
                   size="sm"
@@ -590,9 +605,6 @@ function WaitingRoomContent({ appointments, onStatusChange }: WaitingRoomContent
                   <p className="text-sm text-muted-foreground">
                     {apt.professional?.full_name}
                   </p>
-                  {apt.insurance && (
-                    <p className="text-xs text-primary mt-1">{apt.insurance.name}</p>
-                  )}
                 </div>
                 <Button 
                   size="sm" 

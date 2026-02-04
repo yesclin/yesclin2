@@ -30,11 +30,6 @@ export function WelcomeStep({ userName, clinicName, onNext, onSkip }: WelcomeSte
         <h2 className="text-2xl font-bold text-foreground">
           Bem-vindo ao Yesclin, {userName}! 👋
         </h2>
-        <p className="text-muted-foreground">
-          {clinicName && (
-            <span className="font-medium text-foreground">{clinicName}</span>
-          )}
-        </p>
       </div>
 
       <p className="text-muted-foreground max-w-md mx-auto">

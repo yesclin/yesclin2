@@ -57,6 +57,7 @@ const mainMenuItems: MenuItem[] = [
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda", requiredModule: "agenda" },
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients", requiredModule: "pacientes" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record", requiredModule: "prontuario" },
+  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance", requiredModule: "agenda" },
   { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication", requiredModule: "comunicacao" },
   { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet, requiredModule: "meu_financeiro" },
 ];
@@ -69,15 +70,15 @@ const gestaoItems: MenuItem[] = [
   { title: "Relatórios", url: "/app/gestao/relatorios", icon: BarChart3, requiredModule: "relatorios" },
 ];
 
-// Settings section - always visible for those with configuracoes permission
+// Settings section - clearly named as rules/templates, not operational modules
 const configItems: MenuItem[] = [
   { title: "Procedimentos", url: "/app/config/procedimentos", icon: ListChecks, requiredModule: "configuracoes" },
   { title: "Clínica", url: "/app/config/clinica", icon: Building, requiredModule: "configuracoes" },
   { title: "Usuários & Permissões", url: "/app/config/usuarios", icon: UserCog, requiredModule: "configuracoes" },
   { title: "Cadastros Clínicos", url: "/app/config/materiais", icon: Package, requiredModule: "configuracoes" },
-  { title: "Agenda", url: "/app/config/agenda", icon: CalendarCog, requiredModule: "configuracoes" },
-  { title: "Atendimento", url: "/app/config/atendimento", icon: Stethoscope, requiredModule: "configuracoes" },
-  { title: "Prontuário", url: "/app/config/prontuario", icon: FileText, requiredModule: "configuracoes" },
+  { title: "Regras de Agenda", url: "/app/config/agenda", icon: CalendarCog, requiredModule: "configuracoes" },
+  { title: "Fluxos de Atendimento", url: "/app/config/atendimento", icon: Stethoscope, requiredModule: "configuracoes" },
+  { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText, requiredModule: "configuracoes" },
   { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield, requiredModule: "configuracoes" },
 ];
 

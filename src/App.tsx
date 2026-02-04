@@ -26,6 +26,7 @@ import Pacientes from "./pages/app/Pacientes";
 import Convenios from "./pages/app/gestao/Convenios";
 import Marketing from "./pages/app/Comunicacao";
 import MeuFinanceiro from "./pages/app/MeuFinanceiro";
+import Atendimento from "./pages/app/Atendimento";
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="gestao/convenios" element={<Convenios />} />
             <Route path="marketing" element={<Marketing />} />
             <Route path="meu-financeiro" element={<MeuFinanceiro />} />
+            <Route path="atendimento" element={<Atendimento />} />
             
             {/* Gestão */}
             <Route path="gestao/financas" element={<Financas />} />

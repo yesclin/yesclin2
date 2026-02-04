@@ -21,10 +21,10 @@ export default function ConfigProntuario() {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Settings className="h-6 w-6 text-primary" />
-          Configurações do Prontuário
+          Modelos de Prontuário
         </h1>
         <p className="text-muted-foreground mt-1">
-          Personalize a estrutura, modelos e comportamento do prontuário eletrônico
+          Configure abas, modelos de documentos, campos personalizados e permissões por especialidade
         </p>
       </div>
 

@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/collapsible";
 import { UserProfileFooter } from "./UserProfileFooter";
 import { cn } from "@/lib/utils";
-import { usePermissions, AppModule } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useMemo } from "react";
 
 interface MenuItem {
@@ -47,39 +47,59 @@ interface MenuItem {
   url: string;
   icon: LucideIcon;
   tourId?: string;
-  /** Permission module required to see this item. If undefined, always visible. */
-  requiredModule?: AppModule;
 }
 
-// Main menu - clinical and shared
-const mainMenuItems: MenuItem[] = [
-  { title: "Dashboard", url: "/app", icon: LayoutDashboard, tourId: "dashboard", requiredModule: "dashboard" },
-  { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda", requiredModule: "agenda" },
-  { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients", requiredModule: "pacientes" },
-  { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record", requiredModule: "prontuario" },
-  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance", requiredModule: "atendimento" },
-  { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication", requiredModule: "comunicacao" },
-  { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet, requiredModule: "meu_financeiro" },
+// =====================================================
+// MENU DEFINITIONS BY USER TYPE
+// =====================================================
+
+// Proprietário/Administrador - ALL MENUS
+const ownerAdminMainMenu: MenuItem[] = [
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard, tourId: "dashboard" },
+  { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" },
+  { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" },
+  { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record" },
+  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" },
+  { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication" },
 ];
 
-// Management section
-const gestaoItems: MenuItem[] = [
-  { title: "Controle de Estoque", url: "/app/gestao/estoque", icon: Package, requiredModule: "estoque" },
-  { title: "Finanças", url: "/app/gestao/financas", icon: DollarSign, requiredModule: "financeiro" },
-  { title: "Convênios", url: "/app/gestao/convenios", icon: Building2, requiredModule: "convenios" },
-  { title: "Relatórios", url: "/app/gestao/relatorios", icon: BarChart3, requiredModule: "relatorios" },
+const ownerAdminGestaoMenu: MenuItem[] = [
+  { title: "Controle de Estoque", url: "/app/gestao/estoque", icon: Package },
+  { title: "Finanças", url: "/app/gestao/financas", icon: DollarSign },
+  { title: "Convênios", url: "/app/gestao/convenios", icon: Building2 },
+  { title: "Relatórios", url: "/app/gestao/relatorios", icon: BarChart3 },
 ];
 
-// Settings section - clearly named as rules/templates, not operational modules
-const configItems: MenuItem[] = [
-  { title: "Procedimentos", url: "/app/config/procedimentos", icon: ListChecks, requiredModule: "configuracoes" },
-  { title: "Clínica", url: "/app/config/clinica", icon: Building, requiredModule: "configuracoes" },
-  { title: "Usuários & Permissões", url: "/app/config/usuarios", icon: UserCog, requiredModule: "configuracoes" },
-  { title: "Cadastros Clínicos", url: "/app/config/materiais", icon: Package, requiredModule: "configuracoes" },
-  { title: "Regras de Agenda", url: "/app/config/agenda", icon: CalendarCog, requiredModule: "configuracoes" },
-  { title: "Fluxos de Atendimento", url: "/app/config/atendimento", icon: Stethoscope, requiredModule: "configuracoes" },
-  { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText, requiredModule: "configuracoes" },
-  { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield, requiredModule: "configuracoes" },
+const ownerAdminConfigMenu: MenuItem[] = [
+  { title: "Procedimentos", url: "/app/config/procedimentos", icon: ListChecks },
+  { title: "Clínica", url: "/app/config/clinica", icon: Building },
+  { title: "Usuários & Permissões", url: "/app/config/usuarios", icon: UserCog },
+  { title: "Cadastros Clínicos", url: "/app/config/materiais", icon: Package },
+  { title: "Regras de Agenda", url: "/app/config/agenda", icon: CalendarCog },
+  { title: "Fluxos de Atendimento", url: "/app/config/atendimento", icon: Stethoscope },
+  { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText },
+  { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield },
+];
+
+// Profissional de Saúde - Limited menus (own data only)
+const professionalMainMenu: MenuItem[] = [
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard, tourId: "dashboard" }, // Own data
+  { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" }, // Own schedule
+  { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" }, // Own patients
+  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" },
+  { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record" },
+  { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet }, // Own financial
+];
+
+// Recepcionista - No clinical content, no configurations
+const receptionistMainMenu: MenuItem[] = [
+  { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" }, // All professionals
+  { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" }, // Registration data only
+  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" }, // Check-in, status
+];
+
+const receptionistGestaoMenu: MenuItem[] = [
+  { title: "Convênios", url: "/app/gestao/convenios", icon: Building2 },
 ];
 
 export function AppSidebar() {
@@ -87,32 +107,52 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const { can, isAdmin, isOwner, isLoading: permissionsLoading } = usePermissions();
+  const { isAdmin, isOwner, isRecepcionista, role, isLoading: permissionsLoading } = usePermissions();
 
   const isActive = (path: string) => {
     if (path === "/app") return currentPath === path;
     return currentPath.startsWith(path);
   };
 
-  // Filter menu items based on permissions
-  const filterByPermission = useMemo(() => {
-    return (items: MenuItem[]) => {
-      // Admin/Owner sees everything
-      if (isAdmin || isOwner) return items;
-      // Filter based on permissions
-      return items.filter((item) => {
-        if (!item.requiredModule) return true;
-        return can(item.requiredModule, "view");
-      });
+  // Determine menus based on user type
+  const { mainItems, gestaoItems, configItems } = useMemo(() => {
+    // Owner/Admin - full access
+    if (isOwner || isAdmin) {
+      return {
+        mainItems: ownerAdminMainMenu,
+        gestaoItems: ownerAdminGestaoMenu,
+        configItems: ownerAdminConfigMenu,
+      };
+    }
+    
+    // Receptionist - limited access, no clinical, no config
+    if (isRecepcionista) {
+      return {
+        mainItems: receptionistMainMenu,
+        gestaoItems: receptionistGestaoMenu,
+        configItems: [], // NO ACCESS to configurations
+      };
+    }
+    
+    // Professional - clinical access, own data, no config
+    if (role === 'profissional') {
+      return {
+        mainItems: professionalMainMenu,
+        gestaoItems: [], // No management access
+        configItems: [], // NO ACCESS to configurations
+      };
+    }
+    
+    // Default fallback (no permissions loaded yet)
+    return {
+      mainItems: [],
+      gestaoItems: [],
+      configItems: [],
     };
-  }, [can, isAdmin, isOwner]);
+  }, [isOwner, isAdmin, isRecepcionista, role]);
 
-  const visibleMainItems = useMemo(() => filterByPermission(mainMenuItems), [filterByPermission]);
-  const visibleGestaoItems = useMemo(() => filterByPermission(gestaoItems), [filterByPermission]);
-  const visibleConfigItems = useMemo(() => filterByPermission(configItems), [filterByPermission]);
-
-  const isGestaoActive = visibleGestaoItems.some((item) => isActive(item.url));
-  const isConfigActive = visibleConfigItems.some((item) => isActive(item.url));
+  const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
+  const isConfigActive = configItems.some((item) => isActive(item.url));
 
   return (
     <Sidebar className="border-r border-sidebar-border" collapsible="icon">
@@ -138,14 +178,14 @@ export function AppSidebar() {
         </div>
 
         {/* Menu Principal */}
-        {visibleMainItems.length > 0 && (
+        {mainItems.length > 0 && (
           <SidebarGroup>
             {!isCollapsed && (
               <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {visibleMainItems.map((item) => (
+                {mainItems.map((item) => (
                   <SidebarMenuItem key={item.title} data-tour={item.tourId}>
                     <SidebarMenuButton 
                       asChild 
@@ -170,14 +210,14 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Gestão */}
-        {visibleGestaoItems.length > 0 && (
+        {/* Gestão - Only rendered if user has access */}
+        {gestaoItems.length > 0 && (
           <SidebarGroup data-tour="management">
             {isCollapsed ? (
               // Collapsed: show only icons without grouping
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {visibleGestaoItems.map((item) => (
+                  {gestaoItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
@@ -204,7 +244,7 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {visibleGestaoItems.map((item) => (
+                      {gestaoItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                           <SidebarMenuButton 
                             asChild 
@@ -225,14 +265,14 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Configurações */}
-        {visibleConfigItems.length > 0 && (
+        {/* Configurações - Only rendered for Owner/Admin */}
+        {configItems.length > 0 && (
           <SidebarGroup data-tour="settings">
             {isCollapsed ? (
               // Collapsed: show only icons without grouping
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {visibleConfigItems.map((item) => (
+                  {configItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
@@ -262,7 +302,7 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {visibleConfigItems.map((item) => (
+                      {configItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                           <SidebarMenuButton 
                             asChild 

@@ -5,7 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
+import { ClinicalAccessGuard } from "@/components/permissions/ClinicalAccessGuard";
+import {
   FileText, 
   ArrowLeft,
   Printer,
@@ -502,8 +503,9 @@ export default function Prontuario() {
     setActiveTab(tabKey);
   }, []);
 
-  // Render tab content dynamically
+  // Render tab content dynamically (wrapped in clinical access guard)
   const renderTabContent = () => {
+    // Clinical access is already guarded at component level
     if (loading) {
       return (
         <div className="space-y-4">
@@ -1143,6 +1145,7 @@ export default function Prontuario() {
   };
 
   return (
+    <ClinicalAccessGuard>
     <div className="flex flex-col h-full relative">
       {/* LGPD Blocking Overlay - shown when consent is required but not granted */}
       {!lgpdLoading && isEnforcementEnabled && !hasValidConsent && patient && (
@@ -1405,5 +1408,6 @@ export default function Prontuario() {
         </main>
       </div>
     </div>
+    </ClinicalAccessGuard>
   );
 }

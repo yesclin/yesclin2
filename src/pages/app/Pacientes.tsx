@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PatientFiltersComponent } from '@/components/pacientes/PatientFilters';
@@ -20,9 +20,18 @@ import {
 import type { PatientFilters, PatientSortField, PatientSortOrder } from '@/types/pacientes';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { usePatientFilter, useClinicalDataAccess } from '@/hooks/useRoleBasedData';
+import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Pacientes() {
   const navigate = useNavigate();
+  
+  // Role-based data access
+  const { filterByAttendedProfessional, professionalIdFilter, canViewClinicalData } = usePatientFilter();
+  const clinicalAccess = useClinicalDataAccess();
+  const { role, professionalId } = usePermissions();
   
   // Data hooks
   const { data: patients = [], isLoading, error } = useAllPatients();
@@ -30,6 +39,27 @@ export default function Pacientes() {
   const { data: professionals = [] } = useProfessionals();
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient();
+
+  // Fetch attended patient IDs for professional users
+  const { data: attendedPatientIds = [] } = useQuery({
+    queryKey: ['attended-patients', professionalIdFilter],
+    queryFn: async () => {
+      if (!professionalIdFilter) return [];
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('patient_id')
+        .eq('professional_id', professionalIdFilter)
+        .not('patient_id', 'is', null);
+      
+      if (error) throw error;
+      
+      // Get unique patient IDs
+      const uniqueIds = [...new Set(data.map(d => d.patient_id))];
+      return uniqueIds as string[];
+    },
+    enabled: filterByAttendedProfessional && !!professionalIdFilter,
+  });
 
   // State
   const [filters, setFilters] = useState<PatientFilters>({
@@ -49,9 +79,17 @@ export default function Pacientes() {
   const { data: selectedPatient } = usePatient(selectedPatientId);
   const { data: patientHistory = [] } = usePatientAppointments(selectedPatientId);
 
+  // Filter patients based on role and then apply filters
+
+  const accessiblePatients = useMemo(() => {
+    if (!filterByAttendedProfessional) {
+      return patients;
+    }
+    return patients.filter(p => attendedPatientIds.includes(p.id));
+  }, [patients, filterByAttendedProfessional, attendedPatientIds]);
+
   // Filter and sort patients
-  const filteredPatients = patients.filter((patient) => {
-    // Search filter
+  const filteredPatients = accessiblePatients.filter((patient) => {
     if (filters.search) {
       const search = filters.search.toLowerCase();
       const matchesSearch = 

@@ -11,10 +11,10 @@ export default function ConfigAtendimento() {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Stethoscope className="h-6 w-6 text-primary" />
-          Configurações de Atendimento
+          Fluxos de Atendimento
         </h1>
         <p className="text-muted-foreground mt-1">
-          Configure tipos, status e alertas de atendimento
+          Configure tipos, status, regras e alertas para os fluxos de atendimento
         </p>
       </div>
 

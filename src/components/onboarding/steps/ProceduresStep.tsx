@@ -1,21 +1,27 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FileText, ArrowRight, ArrowLeft, Plus, Trash2, AlertCircle } from "lucide-react";
+  FileText,
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  Settings,
+  Check,
+  Loader2,
+  Stethoscope,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProceduresStepProps {
   clinicId: string;
@@ -23,144 +29,245 @@ interface ProceduresStepProps {
   onBack: () => void;
 }
 
-interface SpecialtyOption {
+interface EnabledSpecialty {
   id: string;
   name: string;
+  area: string | null;
+  specialty_type: "padrao" | "personalizada";
+  hasProcedures: boolean;
+  procedureCount: number;
 }
 
-interface Procedure {
-  id?: string;
+interface BasicProcedure {
   name: string;
+  type: "consulta" | "retorno" | "atendimento";
   duration_minutes: number;
   price: number;
-  allow_return: boolean;
+  allows_return: boolean;
   return_days: number;
-  specialty_id?: string;
-  isNew?: boolean;
 }
 
+// Default basic procedures for each specialty
+const BASIC_PROCEDURES: BasicProcedure[] = [
+  {
+    name: "Consulta Inicial",
+    type: "consulta",
+    duration_minutes: 50,
+    price: 0,
+    allows_return: false,
+    return_days: 0,
+  },
+  {
+    name: "Retorno",
+    type: "retorno",
+    duration_minutes: 30,
+    price: 0,
+    allows_return: false,
+    return_days: 0,
+  },
+  {
+    name: "Sessão / Atendimento",
+    type: "atendimento",
+    duration_minutes: 50,
+    price: 0,
+    allows_return: false,
+    return_days: 0,
+  },
+];
+
 export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps) {
-  const [procedures, setProcedures] = useState<Procedure[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [specialties, setSpecialties] = useState<EnabledSpecialty[]>([]);
+  const [selectedForAutoCreate, setSelectedForAutoCreate] = useState<Set<string>>(new Set());
+  const [isCreating, setIsCreating] = useState(false);
+  const [creationProgress, setCreationProgress] = useState<Record<string, "pending" | "creating" | "done" | "error">>({});
   const { toast } = useToast();
 
-  // Fetch specialties for the clinic
-  const { data: specialties = [], isLoading: specialtiesLoading } = useQuery({
-    queryKey: ["specialties-onboarding", clinicId],
-    queryFn: async () => {
-      if (!clinicId) return [];
-      const { data, error } = await supabase
+  // Load specialties and check existing procedures
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+
+      // Load standard specialties
+      const { data: standardSpecs } = await supabase
         .from("specialties")
-        .select("id, name")
+        .select("id, name, area, specialty_type")
+        .eq("specialty_type", "padrao")
+        .eq("is_active", true)
+        .is("clinic_id", null)
+        .order("area")
+        .order("name");
+
+      // Load custom specialties for this clinic
+      const { data: customSpecs } = await supabase
+        .from("specialties")
+        .select("id, name, area, specialty_type")
         .eq("clinic_id", clinicId)
         .eq("is_active", true)
         .order("name");
-      
-      if (error) throw error;
-      return data as SpecialtyOption[];
-    },
-    enabled: !!clinicId,
-  });
 
-  useEffect(() => {
-    async function loadProcedures() {
-      setIsLoading(true);
-      const { data } = await supabase
+      const allSpecs = [...(customSpecs || []), ...(standardSpecs || [])];
+
+      // Check existing procedures for each specialty
+      const { data: existingProcedures } = await supabase
         .from("procedures")
-        .select("id, name, duration_minutes, price, return_days, specialty_id")
+        .select("specialty_id")
         .eq("clinic_id", clinicId)
         .eq("is_active", true);
 
-      if (data && data.length > 0) {
-        setProcedures(data.map(p => ({ 
-          id: p.id,
-          name: p.name,
-          duration_minutes: p.duration_minutes || 30,
-          price: Number(p.price) || 0,
-          allow_return: true,
-          return_days: p.return_days || 30,
-          specialty_id: p.specialty_id || undefined,
-          isNew: false 
-        })));
-      }
+      const procedureCountBySpecialty: Record<string, number> = {};
+      existingProcedures?.forEach(p => {
+        if (p.specialty_id) {
+          procedureCountBySpecialty[p.specialty_id] = (procedureCountBySpecialty[p.specialty_id] || 0) + 1;
+        }
+      });
+
+      const specialtiesWithStatus: EnabledSpecialty[] = allSpecs.map(spec => ({
+        ...spec,
+        specialty_type: spec.specialty_type as "padrao" | "personalizada",
+        hasProcedures: (procedureCountBySpecialty[spec.id] || 0) > 0,
+        procedureCount: procedureCountBySpecialty[spec.id] || 0,
+      }));
+
+      setSpecialties(specialtiesWithStatus);
+
+      // Pre-select specialties that don't have procedures yet
+      const toSelect = new Set<string>();
+      specialtiesWithStatus.forEach(spec => {
+        if (!spec.hasProcedures) {
+          toSelect.add(spec.id);
+        }
+      });
+      setSelectedForAutoCreate(toSelect);
+
       setIsLoading(false);
     }
 
     if (clinicId) {
-      loadProcedures();
+      loadData();
     }
   }, [clinicId]);
 
-  const addProcedure = () => {
-    setProcedures([
-      ...procedures,
-      {
-        name: "",
-        duration_minutes: 30,
-        price: 0,
-        allow_return: true,
-        return_days: 30,
-        specialty_id: specialties.length > 0 ? specialties[0].id : undefined,
-        isNew: true,
-      },
-    ]);
+  const toggleSpecialtySelection = (specialtyId: string) => {
+    setSelectedForAutoCreate(prev => {
+      const next = new Set(prev);
+      if (next.has(specialtyId)) {
+        next.delete(specialtyId);
+      } else {
+        next.add(specialtyId);
+      }
+      return next;
+    });
   };
 
-  const updateProcedure = (index: number, field: keyof Procedure, value: any) => {
-    const updated = [...procedures];
-    updated[index] = { ...updated[index], [field]: value };
-    setProcedures(updated);
-  };
-
-  const removeProcedure = (index: number) => {
-    setProcedures(procedures.filter((_, i) => i !== index));
-  };
-
-  const handleSave = async () => {
-    const newProcedures = procedures.filter(p => p.isNew && p.name.trim());
-
-    if (newProcedures.length === 0) {
-      onNext();
+  const handleCreateProcedures = async () => {
+    if (selectedForAutoCreate.size === 0) {
+      toast({
+        title: "Nenhuma especialidade selecionada",
+        description: "Selecione ao menos uma especialidade para criar procedimentos.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsSaving(true);
+    setIsCreating(true);
 
-    for (const proc of newProcedures) {
-      const { error } = await supabase.from("procedures").insert({
-        clinic_id: clinicId,
-        name: proc.name,
-        duration_minutes: proc.duration_minutes,
-        price: proc.price,
-        allows_return: proc.allow_return,
-        return_days: proc.return_days,
-        specialty_id: proc.specialty_id || null,
-      });
+    // Initialize progress
+    const initialProgress: Record<string, "pending" | "creating" | "done" | "error"> = {};
+    selectedForAutoCreate.forEach(id => {
+      initialProgress[id] = "pending";
+    });
+    setCreationProgress(initialProgress);
 
-      if (error) {
-        toast({
-          title: "Erro ao cadastrar",
-          description: `Não foi possível cadastrar ${proc.name}.`,
-          variant: "destructive",
-        });
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const specialtyId of selectedForAutoCreate) {
+      setCreationProgress(prev => ({ ...prev, [specialtyId]: "creating" }));
+
+      const specialty = specialties.find(s => s.id === specialtyId);
+      if (!specialty) continue;
+
+      try {
+        // Check if procedures already exist for this specialty
+        const { data: existing } = await supabase
+          .from("procedures")
+          .select("name")
+          .eq("clinic_id", clinicId)
+          .eq("specialty_id", specialtyId)
+          .eq("is_active", true);
+
+        const existingNames = new Set(existing?.map(p => p.name.toLowerCase()) || []);
+
+        // Create only procedures that don't exist yet
+        const proceduresToCreate = BASIC_PROCEDURES.filter(
+          p => !existingNames.has(p.name.toLowerCase())
+        );
+
+        if (proceduresToCreate.length > 0) {
+          const { error } = await supabase.from("procedures").insert(
+            proceduresToCreate.map(proc => ({
+              clinic_id: clinicId,
+              specialty_id: specialtyId,
+              name: proc.name,
+              duration_minutes: proc.duration_minutes,
+              price: proc.price,
+              allows_return: proc.allows_return,
+              return_days: proc.return_days,
+              is_active: true,
+            }))
+          );
+
+          if (error) throw error;
+        }
+
+        setCreationProgress(prev => ({ ...prev, [specialtyId]: "done" }));
+        successCount++;
+      } catch (err) {
+        console.error(`Error creating procedures for ${specialty.name}:`, err);
+        setCreationProgress(prev => ({ ...prev, [specialtyId]: "error" }));
+        errorCount++;
       }
     }
 
-    setIsSaving(false);
+    setIsCreating(false);
 
+    if (successCount > 0) {
+      toast({
+        title: "Procedimentos criados!",
+        description: `${successCount * BASIC_PROCEDURES.length} procedimentos criados para ${successCount} especialidade(s).`,
+      });
+    }
+
+    if (errorCount > 0) {
+      toast({
+        title: "Alguns erros ocorreram",
+        description: `${errorCount} especialidade(s) não puderam ser configuradas.`,
+        variant: "destructive",
+      });
+    }
+
+    // Reload data to show updated status
+    setTimeout(() => {
+      onNext();
+    }, 1500);
+  };
+
+  const handleSkip = () => {
     toast({
-      title: "Procedimentos cadastrados!",
-      description: `${newProcedures.length} procedimento(s) adicionado(s).`,
+      title: "Etapa pulada",
+      description: "Você poderá criar procedimentos depois em Configurações → Procedimentos.",
     });
-
     onNext();
   };
+
+  const specialtiesWithoutProcedures = specialties.filter(s => !s.hasProcedures);
+  const specialtiesWithProcedures = specialties.filter(s => s.hasProcedures);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -172,149 +279,230 @@ export function ProceduresStep({ clinicId, onNext, onBack }: ProceduresStepProps
       exit={{ opacity: 0, x: -20 }}
       className="space-y-6"
     >
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Procedimentos</h2>
+          <h2 className="text-xl font-semibold text-foreground">Procedimentos Básicos</h2>
           <p className="text-sm text-muted-foreground">
-            Cadastre os principais procedimentos e valores
+            Configure os procedimentos iniciais para cada especialidade
           </p>
         </div>
       </div>
 
-      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-        {procedures.map((proc, index) => (
-          <motion.div
-            key={proc.id || index}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 border rounded-lg bg-muted/30 space-y-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 grid gap-2">
-                <Label>Nome do Procedimento</Label>
-                <Input
-                  value={proc.name}
-                  onChange={(e) => updateProcedure(index, "name", e.target.value)}
-                  placeholder="Ex: Consulta Geral"
-                  disabled={!proc.isNew}
-                />
-              </div>
-              {proc.isNew && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeProcedure(index)}
-                  className="text-destructive hover:text-destructive mt-6"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+      {/* Info Alert */}
+      <Alert>
+        <Sparkles className="h-4 w-4" />
+        <AlertDescription>
+          Crie procedimentos básicos automaticamente para agilizar a configuração. 
+          Cada especialidade receberá: <strong>Consulta Inicial</strong> (50 min), <strong>Retorno</strong> (30 min) e <strong>Sessão/Atendimento</strong> (50 min).
+        </AlertDescription>
+      </Alert>
 
-            {/* Specialty selection for new procedures */}
-            {proc.isNew && (
-              <div className="grid gap-2">
-                <Label>Especialidade *</Label>
-                <Select
-                  value={proc.specialty_id || ""}
-                  onValueChange={(value) => updateProcedure(index, "specialty_id", value)}
-                  disabled={specialtiesLoading}
-                >
-                  <SelectTrigger className={!proc.specialty_id ? "border-amber-500" : ""}>
-                    <SelectValue placeholder={specialtiesLoading ? "Carregando..." : "Selecione a especialidade"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {specialties.map((spec) => (
-                      <SelectItem key={spec.id} value={spec.id}>
-                        {spec.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {specialties.length === 0 && !specialtiesLoading && (
-                  <Alert variant="default" className="mt-1">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Cadastre especialidades primeiro em Configurações → Clínica.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Duração (min)</Label>
-                <Input
-                  type="number"
-                  min={5}
-                  step={5}
-                  value={proc.duration_minutes}
-                  onChange={(e) => updateProcedure(index, "duration_minutes", parseInt(e.target.value) || 30)}
-                  disabled={!proc.isNew}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Valor (R$)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={proc.price}
-                  onChange={(e) => updateProcedure(index, "price", parseFloat(e.target.value) || 0)}
-                  disabled={!proc.isNew}
-                />
-              </div>
-            </div>
-
-            {proc.isNew && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={proc.allow_return}
-                    onCheckedChange={(checked) => updateProcedure(index, "allow_return", checked)}
-                  />
-                  <Label className="font-normal">Permite retorno gratuito</Label>
+      {specialties.length === 0 ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex flex-col gap-2">
+            <span className="font-medium">Nenhuma especialidade habilitada!</span>
+            <p className="text-xs">
+              Volte à etapa anterior e configure as especialidades da clínica antes de criar procedimentos.
+            </p>
+            <Button variant="outline" size="sm" className="w-fit mt-1" onClick={onBack}>
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Voltar para Especialidades
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <ScrollArea className="h-[320px] pr-4">
+          <div className="space-y-4">
+            {/* Specialties without procedures - can auto-create */}
+            {specialtiesWithoutProcedures.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    Procedimentos não configurados ({specialtiesWithoutProcedures.length})
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const allIds = specialtiesWithoutProcedures.map(s => s.id);
+                      const allSelected = allIds.every(id => selectedForAutoCreate.has(id));
+                      if (allSelected) {
+                        setSelectedForAutoCreate(new Set());
+                      } else {
+                        setSelectedForAutoCreate(new Set(allIds));
+                      }
+                    }}
+                  >
+                    {specialtiesWithoutProcedures.every(s => selectedForAutoCreate.has(s.id))
+                      ? "Desmarcar todos"
+                      : "Selecionar todos"}
+                  </Button>
                 </div>
-                {proc.allow_return && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      className="w-20"
-                      value={proc.return_days}
-                      onChange={(e) => updateProcedure(index, "return_days", parseInt(e.target.value) || 30)}
-                    />
-                    <span className="text-sm text-muted-foreground">dias</span>
-                  </div>
-                )}
+
+                {specialtiesWithoutProcedures.map(specialty => {
+                  const isSelected = selectedForAutoCreate.has(specialty.id);
+                  const progress = creationProgress[specialty.id];
+
+                  return (
+                    <Card
+                      key={specialty.id}
+                      className={`cursor-pointer transition-all ${
+                        isSelected ? "border-primary/50 bg-primary/5" : "hover:bg-muted/50"
+                      } ${progress === "done" ? "border-green-500/50 bg-green-50/50" : ""}`}
+                      onClick={() => !isCreating && toggleSpecialtySelection(specialty.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSpecialtySelection(specialty.id)}
+                              disabled={isCreating}
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{specialty.name}</span>
+                                {specialty.specialty_type === "personalizada" && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    Personalizada
+                                  </Badge>
+                                )}
+                              </div>
+                              {specialty.area && (
+                                <span className="text-xs text-muted-foreground">{specialty.area}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {progress === "creating" && (
+                              <div className="flex items-center gap-1 text-primary">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-xs">Criando...</span>
+                              </div>
+                            )}
+                            {progress === "done" && (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span className="text-xs">Pronto!</span>
+                              </div>
+                            )}
+                            {progress === "error" && (
+                              <div className="flex items-center gap-1 text-destructive">
+                                <XCircle className="h-4 w-4" />
+                                <span className="text-xs">Erro</span>
+                              </div>
+                            )}
+                            {!progress && (
+                              <Badge variant="outline" className="text-amber-600 border-amber-300">
+                                Não configurado
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {isSelected && !progress && (
+                          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                            <div className="flex items-center gap-4">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                3 procedimentos
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                30-50 min cada
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
-          </motion.div>
-        ))}
 
-        <Button variant="outline" onClick={addProcedure} className="w-full">
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar Procedimento
-        </Button>
-      </div>
+            {/* Specialties with procedures - already configured */}
+            {specialtiesWithProcedures.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                  <Check className="h-4 w-4 text-green-500" />
+                  Procedimentos já configurados ({specialtiesWithProcedures.length})
+                </h4>
 
+                {specialtiesWithProcedures.map(specialty => (
+                  <Card key={specialty.id} className="bg-muted/30 opacity-70">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          <div>
+                            <span className="font-medium">{specialty.name}</span>
+                            {specialty.area && (
+                              <span className="text-xs text-muted-foreground ml-2">({specialty.area})</span>
+                            )}
+                          </div>
+                        </div>
+                        <Badge variant="secondary">
+                          {specialty.procedureCount} procedimento(s)
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      )}
+
+      {/* Actions summary */}
+      {selectedForAutoCreate.size > 0 && !isCreating && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-sm">
+            <strong>{selectedForAutoCreate.size}</strong> especialidade(s) selecionada(s) para criação automática
+          </span>
+        </div>
+      )}
+
+      {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} disabled={isCreating}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={onNext}>
-            Pular etapa
+          <Button variant="ghost" onClick={handleSkip} disabled={isCreating}>
+            <Settings className="mr-2 h-4 w-4" />
+            Configurar depois
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Salvando..." : "Continuar"}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          {selectedForAutoCreate.size > 0 ? (
+            <Button onClick={handleCreateProcedures} disabled={isCreating}>
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Criar {selectedForAutoCreate.size * 3} Procedimentos
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button onClick={onNext} disabled={isCreating}>
+              Continuar
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

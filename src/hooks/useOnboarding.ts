@@ -241,14 +241,14 @@ export function useOnboarding() {
       throw new Error("Dados de progresso ou clínica não encontrados.");
     }
 
-    // FINAL PERSISTENCE: Save specialty data collected during onboarding
     const prefs = progress.preferences;
     let finalSpecialtyId: string | null = null;
 
-    // Step 1: Persist specialty data
+    // CASE 1: Specialty ID already exists (custom specialty created during selection)
     if (prefs.primary_specialty_id) {
-      // Custom specialty already created - just activate it
       finalSpecialtyId = prefs.primary_specialty_id;
+      
+      // Activate the specialty
       const { error: activateErr } = await supabase
         .from("specialties")
         .update({ is_active: true })
@@ -256,21 +256,32 @@ export function useOnboarding() {
       
       if (activateErr) {
         console.error("Error activating specialty:", activateErr);
-        throw new Error("Erro ao ativar especialidade principal.");
+        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
       }
-    } else if (prefs.primary_specialty_curated_id && prefs.primary_specialty_name) {
-      // Curated specialty - check if exists or create
-      const curatedInfo = CURATED_SPECIALTIES_MAP[prefs.primary_specialty_curated_id];
+    } 
+    // CASE 2: Curated specialty selected (need to find or create)
+    else if (prefs.primary_specialty_curated_id && prefs.primary_specialty_name) {
+      const curatedId = prefs.primary_specialty_curated_id;
+      const specialtyName = prefs.primary_specialty_name;
+      const curatedInfo = CURATED_SPECIALTIES_MAP[curatedId];
       
-      const { data: existing } = await supabase
+      // First, check if this specialty already exists for this clinic
+      const { data: existing, error: findErr } = await supabase
         .from("specialties")
         .select("id")
         .eq("clinic_id", clinicId)
-        .eq("name", prefs.primary_specialty_name)
+        .eq("name", specialtyName)
         .maybeSingle();
 
+      if (findErr) {
+        console.error("Error finding specialty:", findErr);
+        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
+      }
+
       if (existing) {
+        // Specialty already exists - just use it and activate
         finalSpecialtyId = existing.id;
+        
         const { error: activateErr } = await supabase
           .from("specialties")
           .update({ is_active: true })
@@ -278,17 +289,21 @@ export function useOnboarding() {
         
         if (activateErr) {
           console.error("Error activating existing specialty:", activateErr);
-          throw new Error("Erro ao ativar especialidade existente.");
+          // Non-fatal - continue with linking
         }
       } else {
+        // Specialty doesn't exist - create it
+        // This handles both standard (padrão) and custom specialties that weren't pre-created
+        const isStandardSpecialty = !!CURATED_SPECIALTIES_MAP[curatedId];
+        
         const { data: created, error: createErr } = await supabase
           .from("specialties")
           .insert({
-            name: prefs.primary_specialty_name,
+            name: specialtyName,
             description: curatedInfo?.description || null,
             area: "Padrão",
             clinic_id: clinicId,
-            specialty_type: "padrao",
+            specialty_type: isStandardSpecialty ? "padrao" : "personalizada",
             is_active: true,
           })
           .select("id")
@@ -296,18 +311,23 @@ export function useOnboarding() {
 
         if (createErr) {
           console.error("Error creating specialty:", createErr);
-          throw new Error("Erro ao criar especialidade principal.");
+          throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
         }
         
         if (created) {
           finalSpecialtyId = created.id;
-          // Enable core modules
-          await enableCoreModulesForSpecialty(clinicId, created.id);
+          // Enable core modules for the new specialty
+          try {
+            await enableCoreModulesForSpecialty(clinicId, created.id);
+          } catch (moduleErr) {
+            console.error("Error enabling modules (non-fatal):", moduleErr);
+            // Continue - this is not critical
+          }
         }
       }
     }
 
-    // Step 2: Save primary_specialty_id on clinic if we have one
+    // Link specialty to clinic (if we have one)
     if (finalSpecialtyId) {
       const { error: clinicErr } = await supabase
         .from("clinics")
@@ -316,7 +336,7 @@ export function useOnboarding() {
       
       if (clinicErr) {
         console.error("Error updating clinic specialty:", clinicErr);
-        throw new Error("Erro ao vincular especialidade à clínica.");
+        throw new Error("Erro ao finalizar a configuração da clínica. Tente novamente.");
       }
     }
 

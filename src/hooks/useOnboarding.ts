@@ -24,13 +24,14 @@ export interface OnboardingProgress {
 export const ONBOARDING_STEPS = [
   { id: 0, key: "welcome", title: "Boas-vindas", required: false },
   { id: 1, key: "clinic", title: "Dados da Clínica", required: true },
-  { id: 2, key: "professionals", title: "Profissionais", required: false },
-  { id: 3, key: "schedule", title: "Agenda", required: false },
-  { id: 4, key: "procedures", title: "Procedimentos", required: false },
-  { id: 5, key: "insurance", title: "Convênios", required: false },
-  { id: 6, key: "finance", title: "Financeiro", required: false },
-  { id: 7, key: "communication", title: "Comunicação", required: false },
-  { id: 8, key: "completion", title: "Conclusão", required: false },
+  { id: 2, key: "specialties", title: "Especialidades", required: true }, // NEW: Required step
+  { id: 3, key: "professionals", title: "Profissionais", required: false },
+  { id: 4, key: "schedule", title: "Agenda", required: false },
+  { id: 5, key: "procedures", title: "Procedimentos", required: false },
+  { id: 6, key: "insurance", title: "Convênios", required: false },
+  { id: 7, key: "finance", title: "Financeiro", required: false },
+  { id: 8, key: "communication", title: "Comunicação", required: false },
+  { id: 9, key: "completion", title: "Conclusão", required: false },
 ];
 
 export function useOnboarding() {

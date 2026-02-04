@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { ClinicStep } from "./steps/ClinicStep";
+import { SpecialtiesStep } from "./steps/SpecialtiesStep";
 import { ProfessionalsStep } from "./steps/ProfessionalsStep";
 import { ScheduleStep } from "./steps/ScheduleStep";
 import { ProceduresStep } from "./steps/ProceduresStep";
@@ -111,49 +112,56 @@ export function OnboardingWizard() {
             />
           )}
           {currentStep === 2 && (
-            <ProfessionalsStep
+            <SpecialtiesStep
               clinicId={clinicId}
               onNext={() => updateStep(3)}
               onBack={() => updateStep(1)}
             />
           )}
           {currentStep === 3 && (
-            <ScheduleStep
+            <ProfessionalsStep
               clinicId={clinicId}
               onNext={() => updateStep(4)}
               onBack={() => updateStep(2)}
             />
           )}
           {currentStep === 4 && (
-            <ProceduresStep
+            <ScheduleStep
               clinicId={clinicId}
               onNext={() => updateStep(5)}
               onBack={() => updateStep(3)}
             />
           )}
           {currentStep === 5 && (
-            <InsuranceStep
+            <ProceduresStep
               clinicId={clinicId}
               onNext={() => updateStep(6)}
               onBack={() => updateStep(4)}
-              onUpdatePreferences={(prefs) => updatePreferences(prefs)}
             />
           )}
           {currentStep === 6 && (
-            <FinanceStep
+            <InsuranceStep
+              clinicId={clinicId}
               onNext={() => updateStep(7)}
               onBack={() => updateStep(5)}
               onUpdatePreferences={(prefs) => updatePreferences(prefs)}
             />
           )}
           {currentStep === 7 && (
-            <CommunicationStep
+            <FinanceStep
               onNext={() => updateStep(8)}
               onBack={() => updateStep(6)}
               onUpdatePreferences={(prefs) => updatePreferences(prefs)}
             />
           )}
           {currentStep === 8 && (
+            <CommunicationStep
+              onNext={() => updateStep(9)}
+              onBack={() => updateStep(7)}
+              onUpdatePreferences={(prefs) => updatePreferences(prefs)}
+            />
+          )}
+          {currentStep === 9 && (
             <CompletionStep onComplete={completeOnboarding} />
           )}
         </AnimatePresence>

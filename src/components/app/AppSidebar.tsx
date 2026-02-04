@@ -57,7 +57,7 @@ const mainMenuItems: MenuItem[] = [
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda", requiredModule: "agenda" },
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients", requiredModule: "pacientes" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record", requiredModule: "prontuario" },
-  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance", requiredModule: "agenda" },
+  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance", requiredModule: "atendimento" },
   { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication", requiredModule: "comunicacao" },
   { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet, requiredModule: "meu_financeiro" },
 ];

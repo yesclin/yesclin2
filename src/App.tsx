@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PermissionsProvider } from "@/hooks/usePermissions";
 import { RequireAuth } from "@/components/app/RequireAuth";
+import { ProtectedRoute } from "@/components/app/ProtectedRoute";
 
 // Páginas Públicas
 import Index from "./pages/Index";
@@ -70,29 +71,29 @@ const App = () => (
               </RequireAuth>
             }
           >
-            <Route index element={<Dashboard />} />
-            <Route path="agenda" element={<Agenda />} />
-            <Route path="prontuario" element={<Prontuario />} />
-            <Route path="pacientes" element={<Pacientes />} />
-            <Route path="gestao/convenios" element={<Convenios />} />
-            <Route path="marketing" element={<Marketing />} />
-            <Route path="meu-financeiro" element={<MeuFinanceiro />} />
-            <Route path="atendimento" element={<Atendimento />} />
+            <Route index element={<ProtectedRoute module="dashboard"><Dashboard /></ProtectedRoute>} />
+            <Route path="agenda" element={<ProtectedRoute module="agenda"><Agenda /></ProtectedRoute>} />
+            <Route path="prontuario" element={<ProtectedRoute module="prontuario"><Prontuario /></ProtectedRoute>} />
+            <Route path="pacientes" element={<ProtectedRoute module="pacientes"><Pacientes /></ProtectedRoute>} />
+            <Route path="gestao/convenios" element={<ProtectedRoute module="convenios"><Convenios /></ProtectedRoute>} />
+            <Route path="marketing" element={<ProtectedRoute module="comunicacao"><Marketing /></ProtectedRoute>} />
+            <Route path="meu-financeiro" element={<ProtectedRoute module="meu_financeiro"><MeuFinanceiro /></ProtectedRoute>} />
+            <Route path="atendimento" element={<ProtectedRoute module="atendimento"><Atendimento /></ProtectedRoute>} />
             
             {/* Gestão */}
-            <Route path="gestao/financas" element={<Financas />} />
-            <Route path="gestao/estoque" element={<Estoque />} />
-            <Route path="gestao/relatorios" element={<Relatorios />} />
+            <Route path="gestao/financas" element={<ProtectedRoute module="financeiro"><Financas /></ProtectedRoute>} />
+            <Route path="gestao/estoque" element={<ProtectedRoute module="estoque"><Estoque /></ProtectedRoute>} />
+            <Route path="gestao/relatorios" element={<ProtectedRoute module="relatorios"><Relatorios /></ProtectedRoute>} />
             
             {/* Configurações */}
-            <Route path="config/procedimentos" element={<ConfigProcedimentos />} />
-            <Route path="config/clinica" element={<ConfigClinica />} />
-            <Route path="config/usuarios" element={<ConfigUsuarios />} />
-            <Route path="config/materiais" element={<ConfigMateriais />} />
-            <Route path="config/agenda" element={<ConfigAgenda />} />
-            <Route path="config/atendimento" element={<ConfigAtendimento />} />
-            <Route path="config/prontuario" element={<ConfigProntuario />} />
-            <Route path="config/seguranca" element={<ConfigSeguranca />} />
+            <Route path="config/procedimentos" element={<ProtectedRoute module="configuracoes"><ConfigProcedimentos /></ProtectedRoute>} />
+            <Route path="config/clinica" element={<ProtectedRoute module="configuracoes"><ConfigClinica /></ProtectedRoute>} />
+            <Route path="config/usuarios" element={<ProtectedRoute module="configuracoes"><ConfigUsuarios /></ProtectedRoute>} />
+            <Route path="config/materiais" element={<ProtectedRoute module="configuracoes"><ConfigMateriais /></ProtectedRoute>} />
+            <Route path="config/agenda" element={<ProtectedRoute module="configuracoes"><ConfigAgenda /></ProtectedRoute>} />
+            <Route path="config/atendimento" element={<ProtectedRoute module="configuracoes"><ConfigAtendimento /></ProtectedRoute>} />
+            <Route path="config/prontuario" element={<ProtectedRoute module="configuracoes"><ConfigProntuario /></ProtectedRoute>} />
+            <Route path="config/seguranca" element={<ProtectedRoute module="configuracoes"><ConfigSeguranca /></ProtectedRoute>} />
           </Route>
           
           {/* Catch-all */}

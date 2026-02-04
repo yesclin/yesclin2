@@ -1,12 +1,21 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useMemo } from "react";
 import { useClinicData } from "@/hooks/useClinicData";
 import { usePermissions } from "@/hooks/usePermissions";
+import { 
+  useStandardSpecialties, 
+  useCustomSpecialties, 
+  useCreateSpecialty, 
+  useUpdateSpecialty, 
+  useToggleSpecialty,
+  type EnabledSpecialty 
+} from "@/hooks/useEnabledSpecialties";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Stethoscope, Plus, Pencil, Loader2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { Stethoscope, Plus, Pencil, Loader2, AlertCircle, Globe, Building, Search } from "lucide-react";
 import { SpecialtyFormDialog } from "./SpecialtyFormDialog";
 
 interface Specialty {
@@ -27,7 +35,9 @@ interface Specialty {
   area: string | null;
   description: string | null;
   is_active: boolean;
-  created_at: string;
+  specialty_type?: 'padrao' | 'personalizada';
+  clinic_id?: string | null;
+  created_at?: string;
 }
 
 interface SpecialtyFormData {
@@ -39,112 +49,47 @@ interface SpecialtyFormData {
 
 export function SpecialtiesSection() {
   const { clinic } = useClinicData();
-  const { can } = usePermissions();
-  const queryClient = useQueryClient();
+  const { isOwner } = usePermissions();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialty, setEditingSpecialty] = useState<Specialty | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState<Specialty | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<'padrao' | 'personalizada'>('padrao');
 
-  const canEdit = can("configuracoes", "edit");
+  // Hooks for data
+  const { data: standardSpecialties = [], isLoading: loadingStandard } = useStandardSpecialties();
+  const { data: customSpecialties = [], isLoading: loadingCustom } = useCustomSpecialties();
+  
+  const createMutation = useCreateSpecialty();
+  const updateMutation = useUpdateSpecialty();
+  const toggleMutation = useToggleSpecialty();
 
-  // Fetch all specialties (including inactive)
-  const { data: specialties = [], isLoading } = useQuery({
-    queryKey: ["specialties-management", clinic?.id],
-    queryFn: async () => {
-      if (!clinic?.id) return [];
-      
-      const { data, error } = await supabase
-        .from("specialties")
-        .select("id, name, area, description, is_active, created_at")
-        .eq("clinic_id", clinic.id)
-        .order("name");
-      
-      if (error) {
-        console.error("Error fetching specialties:", error);
-        throw error;
-      }
-      
-      return data as Specialty[];
-    },
-    enabled: !!clinic?.id,
-  });
+  // Group standard specialties by area
+  const groupedStandardSpecialties = useMemo(() => {
+    const filtered = standardSpecialties.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.area?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    return filtered.reduce((acc, specialty) => {
+      const area = specialty.area || 'Outros';
+      if (!acc[area]) acc[area] = [];
+      acc[area].push(specialty);
+      return acc;
+    }, {} as Record<string, EnabledSpecialty[]>);
+  }, [standardSpecialties, searchTerm]);
 
-  // Create specialty mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: SpecialtyFormData) => {
-      if (!clinic?.id) throw new Error("Clínica não encontrada");
-      
-      const { error } = await supabase.from("specialties").insert({
-        clinic_id: clinic.id,
-        name: data.name.trim(),
-        area: data.area.trim() || null,
-        description: data.description.trim() || null,
-        is_active: data.is_active,
-      });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
-      toast.success("Especialidade criada com sucesso!");
-      handleCloseDialog();
-    },
-    onError: (error: Error) => {
-      console.error("Error creating specialty:", error);
-      toast.error("Erro ao criar especialidade");
-    },
-  });
+  // Filter custom specialties
+  const filteredCustomSpecialties = useMemo(() => {
+    return customSpecialties.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.area?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [customSpecialties, searchTerm]);
 
-  // Update specialty mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: SpecialtyFormData }) => {
-      const { error } = await supabase
-        .from("specialties")
-        .update({
-          name: data.name.trim(),
-          area: data.area.trim() || null,
-          description: data.description.trim() || null,
-          is_active: data.is_active,
-        })
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
-      toast.success("Especialidade atualizada com sucesso!");
-      handleCloseDialog();
-    },
-    onError: (error: Error) => {
-      console.error("Error updating specialty:", error);
-      toast.error("Erro ao atualizar especialidade");
-    },
-  });
-
-  // Toggle active status mutation
-  const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from("specialties")
-        .update({ is_active })
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
-      toast.success(variables.is_active ? "Especialidade ativada" : "Especialidade desativada");
-      setConfirmDeactivate(null);
-    },
-    onError: (error: Error) => {
-      console.error("Error toggling specialty:", error);
-      toast.error("Erro ao alterar status");
-    },
-  });
+  const activeCustomSpecialties = filteredCustomSpecialties.filter(s => s.is_active);
+  const inactiveCustomSpecialties = filteredCustomSpecialties.filter(s => !s.is_active);
 
   const handleOpenCreate = () => {
     setEditingSpecialty(null);
@@ -162,15 +107,16 @@ export function SpecialtiesSection() {
   };
 
   const handleSubmit = (formData: SpecialtyFormData) => {
-    if (!formData.name.trim()) {
-      toast.error("O nome da especialidade é obrigatório");
-      return;
-    }
+    if (!formData.name.trim()) return;
 
     if (editingSpecialty) {
-      updateMutation.mutate({ id: editingSpecialty.id, data: formData });
+      updateMutation.mutate({ id: editingSpecialty.id, data: formData }, {
+        onSuccess: handleCloseDialog,
+      });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(formData, {
+        onSuccess: handleCloseDialog,
+      });
     }
   };
 
@@ -178,14 +124,12 @@ export function SpecialtiesSection() {
     if (specialty.is_active) {
       setConfirmDeactivate(specialty);
     } else {
-      toggleActiveMutation.mutate({ id: specialty.id, is_active: true });
+      toggleMutation.mutate({ specialtyId: specialty.id, isActive: true });
     }
   };
 
+  const isLoading = loadingStandard || loadingCustom;
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-
-  const activeSpecialties = specialties.filter(s => s.is_active);
-  const inactiveSpecialties = specialties.filter(s => !s.is_active);
 
   return (
     <>
@@ -197,19 +141,13 @@ export function SpecialtiesSection() {
                 <Stethoscope className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Especialidades Habilitadas</CardTitle>
+                <CardTitle>Especialidades</CardTitle>
                 <CardDescription>
                   Gerencie as especialidades disponíveis na clínica. 
-                  Apenas especialidades ativas podem ser usadas em procedimentos, prontuários e agendamentos.
+                  Escolha entre especialidades padrão ou crie personalizadas.
                 </CardDescription>
               </div>
             </div>
-            {canEdit && (
-              <Button onClick={handleOpenCreate}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Especialidade
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -217,119 +155,202 @@ export function SpecialtiesSection() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : specialties.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                <Stethoscope className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="font-medium text-foreground mb-1">
-                Nenhuma especialidade cadastrada
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Adicione especialidades para organizar os atendimentos e prontuários por área de atuação.
-                Profissionais só podem ser vinculados a especialidades habilitadas.
-              </p>
-              {canEdit && (
-                <Button onClick={handleOpenCreate} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar primeira especialidade
-                </Button>
-              )}
-            </div>
           ) : (
             <div className="space-y-4">
-              {/* Active (enabled) specialties */}
-              {activeSpecialties.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-primary">
-                    Habilitadas ({activeSpecialties.length})
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Disponíveis para uso em procedimentos, profissionais e prontuários
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {activeSpecialties.map((specialty) => (
-                      <div
-                        key={specialty.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">{specialty.name}</span>
-                          </div>
-                          {specialty.area && (
-                            <span className="text-xs text-muted-foreground">{specialty.area}</span>
-                          )}
-                        </div>
-                        {canEdit && (
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleOpenEdit(specialty)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Switch
-                              checked={specialty.is_active}
-                              onCheckedChange={() => handleToggleActive(specialty)}
-                              disabled={toggleActiveMutation.isPending}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar especialidades..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
 
-              {/* Inactive (disabled) specialties */}
-              {inactiveSpecialties.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Desabilitadas ({inactiveSpecialties.length})
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Não disponíveis para uso. Ative para permitir novos vínculos.
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {inactiveSpecialties.map((specialty) => (
-                      <div
-                        key={specialty.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-dashed bg-muted/30 opacity-70"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate text-muted-foreground">{specialty.name}</span>
-                            <Badge variant="secondary" className="text-[10px]">Desabilitada</Badge>
-                          </div>
-                          {specialty.area && (
-                            <span className="text-xs text-muted-foreground">{specialty.area}</span>
-                          )}
-                        </div>
-                        {canEdit && (
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleOpenEdit(specialty)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Switch
-                              checked={specialty.is_active}
-                              onCheckedChange={() => handleToggleActive(specialty)}
-                              disabled={toggleActiveMutation.isPending}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'padrao' | 'personalizada')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="padrao" className="gap-2">
+                    <Globe className="h-4 w-4" />
+                    Padrão ({standardSpecialties.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="personalizada" className="gap-2">
+                    <Building className="h-4 w-4" />
+                    Personalizadas ({customSpecialties.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Standard Specialties Tab */}
+                <TabsContent value="padrao" className="mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3 mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Especialidades Padrão</strong> são disponibilizadas globalmente pelo sistema. 
+                      Estão prontas para uso em procedimentos, profissionais e prontuários.
+                    </p>
                   </div>
-                </div>
-              )}
+
+                  {Object.keys(groupedStandardSpecialties).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nenhuma especialidade encontrada com "{searchTerm}"
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px] pr-4">
+                      <div className="space-y-6">
+                        {Object.entries(groupedStandardSpecialties).sort().map(([area, specialties]) => (
+                          <div key={area} className="space-y-2">
+                            <h4 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-1">
+                              {area} ({specialties.length})
+                            </h4>
+                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {specialties.map((specialty) => (
+                                <div
+                                  key={specialty.id}
+                                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                                    <span className="font-medium text-sm">{specialty.name}</span>
+                                  </div>
+                                  <Badge variant="outline" className="text-[10px]">
+                                    Padrão
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </TabsContent>
+
+                {/* Custom Specialties Tab */}
+                <TabsContent value="personalizada" className="mt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="rounded-lg border bg-muted/30 p-3 flex-1 mr-4">
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Especialidades Personalizadas</strong> são exclusivas desta clínica. 
+                        Apenas proprietários podem criar e gerenciar.
+                      </p>
+                    </div>
+                    {isOwner && (
+                      <Button onClick={handleOpenCreate}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova
+                      </Button>
+                    )}
+                  </div>
+
+                  {customSpecialties.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <Building className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-medium text-foreground mb-1">
+                        Nenhuma especialidade personalizada
+                      </h3>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        Crie especialidades exclusivas para sua clínica quando as padrão não forem suficientes.
+                      </p>
+                      {isOwner && (
+                        <Button onClick={handleOpenCreate} className="mt-4">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Criar especialidade
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Active custom specialties */}
+                      {activeCustomSpecialties.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-primary">
+                            Habilitadas ({activeCustomSpecialties.length})
+                          </h4>
+                          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {activeCustomSpecialties.map((specialty) => (
+                              <div
+                                key={specialty.id}
+                                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate">{specialty.name}</span>
+                                  </div>
+                                  {specialty.area && (
+                                    <span className="text-xs text-muted-foreground">{specialty.area}</span>
+                                  )}
+                                </div>
+                                {isOwner && (
+                                  <div className="flex items-center gap-1 ml-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleOpenEdit(specialty)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Switch
+                                      checked={specialty.is_active}
+                                      onCheckedChange={() => handleToggleActive(specialty)}
+                                      disabled={toggleMutation.isPending}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inactive custom specialties */}
+                      {inactiveCustomSpecialties.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Desabilitadas ({inactiveCustomSpecialties.length})
+                          </h4>
+                          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {inactiveCustomSpecialties.map((specialty) => (
+                              <div
+                                key={specialty.id}
+                                className="flex items-center justify-between p-3 rounded-lg border border-dashed bg-muted/30 opacity-70"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate text-muted-foreground">{specialty.name}</span>
+                                    <Badge variant="secondary" className="text-[10px]">Desabilitada</Badge>
+                                  </div>
+                                  {specialty.area && (
+                                    <span className="text-xs text-muted-foreground">{specialty.area}</span>
+                                  )}
+                                </div>
+                                {isOwner && (
+                                  <div className="flex items-center gap-1 ml-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleOpenEdit(specialty)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Switch
+                                      checked={specialty.is_active}
+                                      onCheckedChange={() => handleToggleActive(specialty)}
+                                      disabled={toggleMutation.isPending}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </CardContent>
@@ -370,9 +391,11 @@ export function SpecialtiesSection() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => confirmDeactivate && toggleActiveMutation.mutate({ 
-                id: confirmDeactivate.id, 
-                is_active: false 
+              onClick={() => confirmDeactivate && toggleMutation.mutate({ 
+                specialtyId: confirmDeactivate.id, 
+                isActive: false 
+              }, {
+                onSuccess: () => setConfirmDeactivate(null),
               })}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

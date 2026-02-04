@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
 import { toast } from "sonner";
 
+export type SpecialtyType = 'padrao' | 'personalizada';
+
 export interface EnabledSpecialty {
   id: string;
   name: string;
@@ -10,17 +12,20 @@ export interface EnabledSpecialty {
   color: string | null;
   area: string | null;
   is_active: boolean;
+  specialty_type: SpecialtyType;
+  clinic_id: string | null;
 }
 
 /**
- * Hook to fetch ONLY enabled (active) specialties for the current clinic.
- * This should be used throughout the system to ensure only enabled specialties
- * can be selected for procedures, appointments, professionals, etc.
+ * Hook to fetch ONLY enabled (active) specialties available to the current clinic.
+ * This includes:
+ * - Global standard specialties (specialty_type = 'padrao', clinic_id = null)
+ * - Custom specialties created by this clinic (specialty_type = 'personalizada')
  * 
  * Rules enforced:
  * - Only specialties with is_active = true are returned
- * - Only specialties belonging to the current clinic are returned
- * - Disabled specialties cannot be used anywhere in the system
+ * - Standard specialties are globally available
+ * - Custom specialties only exist within their clinic
  */
 export function useEnabledSpecialties() {
   const { clinic } = useClinicData();
@@ -28,13 +33,13 @@ export function useEnabledSpecialties() {
   return useQuery({
     queryKey: ["enabled-specialties", clinic?.id],
     queryFn: async () => {
-      if (!clinic?.id) return [];
-      
+      // Fetch both global and clinic-specific specialties
       const { data, error } = await supabase
         .from("specialties")
-        .select("id, name, description, color, area, is_active")
-        .eq("clinic_id", clinic.id)
+        .select("id, name, description, color, area, is_active, specialty_type, clinic_id")
         .eq("is_active", true)
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
+        .order("area")
         .order("name");
       
       if (error) {
@@ -49,8 +54,36 @@ export function useEnabledSpecialties() {
 }
 
 /**
+ * Hook to fetch standard (global) specialties only.
+ * Used for the specialty catalog.
+ */
+export function useStandardSpecialties() {
+  return useQuery({
+    queryKey: ["standard-specialties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("specialties")
+        .select("id, name, description, color, area, is_active, specialty_type, clinic_id")
+        .is("clinic_id", null)
+        .eq("specialty_type", "padrao")
+        .eq("is_active", true)
+        .order("area")
+        .order("name");
+      
+      if (error) {
+        console.error("Error fetching standard specialties:", error);
+        throw error;
+      }
+      
+      return data as EnabledSpecialty[];
+    },
+  });
+}
+
+/**
  * Hook to fetch ALL specialties (including inactive) for management purposes.
  * Only admins/owners should use this for configuration screens.
+ * Returns both standard and custom specialties.
  */
 export function useAllSpecialties() {
   const { clinic } = useClinicData();
@@ -58,13 +91,12 @@ export function useAllSpecialties() {
   return useQuery({
     queryKey: ["all-specialties", clinic?.id],
     queryFn: async () => {
-      if (!clinic?.id) return [];
-      
       const { data, error } = await supabase
         .from("specialties")
-        .select("id, name, description, color, area, is_active, created_at")
-        .eq("clinic_id", clinic.id)
-        .order("is_active", { ascending: false })
+        .select("id, name, description, color, area, is_active, specialty_type, clinic_id, created_at")
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
+        .order("specialty_type", { ascending: true }) // padrao first
+        .order("area")
         .order("name");
       
       if (error) {
@@ -79,8 +111,38 @@ export function useAllSpecialties() {
 }
 
 /**
+ * Hook to fetch only custom (personalized) specialties for a clinic.
+ */
+export function useCustomSpecialties() {
+  const { clinic } = useClinicData();
+  
+  return useQuery({
+    queryKey: ["custom-specialties", clinic?.id],
+    queryFn: async () => {
+      if (!clinic?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("specialties")
+        .select("id, name, description, color, area, is_active, specialty_type, clinic_id, created_at")
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_type", "personalizada")
+        .order("name");
+      
+      if (error) {
+        console.error("Error fetching custom specialties:", error);
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!clinic?.id,
+  });
+}
+
+/**
  * Hook to enable/disable a specialty.
- * Only owner/admin should have access to this.
+ * Only works for custom specialties (personalizadas).
+ * Standard specialties cannot be modified.
  */
 export function useToggleSpecialty() {
   const queryClient = useQueryClient();
@@ -88,6 +150,25 @@ export function useToggleSpecialty() {
   
   return useMutation({
     mutationFn: async ({ specialtyId, isActive }: { specialtyId: string; isActive: boolean }) => {
+      // First check if it's a custom specialty
+      const { data: specialty, error: checkError } = await supabase
+        .from("specialties")
+        .select("specialty_type, clinic_id")
+        .eq("id", specialtyId)
+        .single();
+      
+      if (checkError || !specialty) {
+        throw new Error("Especialidade não encontrada");
+      }
+      
+      if (specialty.specialty_type === 'padrao') {
+        throw new Error("Especialidades padrão não podem ser modificadas");
+      }
+      
+      if (specialty.clinic_id !== clinic?.id) {
+        throw new Error("Você não tem permissão para modificar esta especialidade");
+      }
+      
       const { error } = await supabase
         .from("specialties")
         .update({ is_active: isActive })
@@ -100,6 +181,7 @@ export function useToggleSpecialty() {
       queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
+      queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic?.id] });
       
       toast.success(
         variables.isActive 
@@ -109,14 +191,15 @@ export function useToggleSpecialty() {
     },
     onError: (error: Error) => {
       console.error("Error toggling specialty:", error);
-      toast.error("Erro ao alterar status da especialidade");
+      toast.error(error.message || "Erro ao alterar status da especialidade");
     },
   });
 }
 
 /**
- * Hook to create a new specialty.
+ * Hook to create a new CUSTOM specialty.
  * Only owner/admin should have access to this.
+ * Standard specialties are seeded at the database level.
  */
 export function useCreateSpecialty() {
   const queryClient = useQueryClient();
@@ -141,11 +224,17 @@ export function useCreateSpecialty() {
           description: data.description?.trim() || null,
           color: data.color || null,
           is_active: data.is_active ?? true,
+          specialty_type: 'personalizada', // Always custom when created by user
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error("Já existe uma especialidade com este nome");
+        }
+        throw error;
+      }
       return specialty;
     },
     onSuccess: () => {
@@ -153,19 +242,20 @@ export function useCreateSpecialty() {
       queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
+      queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic?.id] });
       
-      toast.success("Especialidade criada com sucesso");
+      toast.success("Especialidade personalizada criada com sucesso");
     },
     onError: (error: Error) => {
       console.error("Error creating specialty:", error);
-      toast.error("Erro ao criar especialidade");
+      toast.error(error.message || "Erro ao criar especialidade");
     },
   });
 }
 
 /**
- * Hook to update a specialty.
- * Only owner/admin should have access to this.
+ * Hook to update a CUSTOM specialty.
+ * Standard specialties cannot be modified.
  */
 export function useUpdateSpecialty() {
   const queryClient = useQueryClient();
@@ -185,6 +275,25 @@ export function useUpdateSpecialty() {
         is_active?: boolean;
       };
     }) => {
+      // First check if it's a custom specialty
+      const { data: specialty, error: checkError } = await supabase
+        .from("specialties")
+        .select("specialty_type, clinic_id")
+        .eq("id", id)
+        .single();
+      
+      if (checkError || !specialty) {
+        throw new Error("Especialidade não encontrada");
+      }
+      
+      if (specialty.specialty_type === 'padrao') {
+        throw new Error("Especialidades padrão não podem ser editadas");
+      }
+      
+      if (specialty.clinic_id !== clinic?.id) {
+        throw new Error("Você não tem permissão para modificar esta especialidade");
+      }
+      
       const updateData: Record<string, unknown> = {};
       
       if (data.name !== undefined) updateData.name = data.name.trim();
@@ -198,19 +307,25 @@ export function useUpdateSpecialty() {
         .update(updateData)
         .eq("id", id);
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error("Já existe uma especialidade com este nome");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic?.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic?.id] });
+      queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic?.id] });
       
       toast.success("Especialidade atualizada com sucesso");
     },
     onError: (error: Error) => {
       console.error("Error updating specialty:", error);
-      toast.error("Erro ao atualizar especialidade");
+      toast.error(error.message || "Erro ao atualizar especialidade");
     },
   });
 }

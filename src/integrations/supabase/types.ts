@@ -5802,35 +5802,38 @@ export type Database = {
       specialties: {
         Row: {
           area: string | null
-          clinic_id: string
+          clinic_id: string | null
           color: string | null
           created_at: string
           description: string | null
           id: string
           is_active: boolean
           name: string
+          specialty_type: Database["public"]["Enums"]["specialty_type"]
           updated_at: string
         }
         Insert: {
           area?: string | null
-          clinic_id: string
+          clinic_id?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
           name: string
+          specialty_type?: Database["public"]["Enums"]["specialty_type"]
           updated_at?: string
         }
         Update: {
           area?: string | null
-          clinic_id?: string
+          clinic_id?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          specialty_type?: Database["public"]["Enums"]["specialty_type"]
           updated_at?: string
         }
         Relationships: [
@@ -7114,6 +7117,7 @@ export type Database = {
         | "visual"
         | "planning"
       fee_calculation_status: "pendente" | "calculado" | "pago" | "cancelado"
+      specialty_type: "padrao" | "personalizada"
       tiss_guide_status:
         | "rascunho"
         | "aberta"
@@ -7303,6 +7307,7 @@ export const Constants = {
         "planning",
       ],
       fee_calculation_status: ["pendente", "calculado", "pago", "cancelado"],
+      specialty_type: ["padrao", "personalizada"],
       tiss_guide_status: [
         "rascunho",
         "aberta",

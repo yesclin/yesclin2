@@ -3587,6 +3587,158 @@ export type Database = {
           },
         ]
       }
+      odontogram_records: {
+        Row: {
+          appointment_id: string | null
+          clinic_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          odontogram_tooth_id: string
+          procedure_id: string | null
+          professional_id: string
+          status_applied: Database["public"]["Enums"]["tooth_status"]
+          surface: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          odontogram_tooth_id: string
+          procedure_id?: string | null
+          professional_id: string
+          status_applied: Database["public"]["Enums"]["tooth_status"]
+          surface?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          odontogram_tooth_id?: string
+          procedure_id?: string | null
+          professional_id?: string
+          status_applied?: Database["public"]["Enums"]["tooth_status"]
+          surface?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odontogram_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odontogram_records_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odontogram_records_odontogram_tooth_id_fkey"
+            columns: ["odontogram_tooth_id"]
+            isOneToOne: false
+            referencedRelation: "odontogram_teeth"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odontogram_records_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odontogram_records_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      odontogram_teeth: {
+        Row: {
+          id: string
+          notes: string | null
+          odontogram_id: string
+          status: Database["public"]["Enums"]["tooth_status"]
+          tooth_code: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          odontogram_id: string
+          status?: Database["public"]["Enums"]["tooth_status"]
+          tooth_code: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          odontogram_id?: string
+          status?: Database["public"]["Enums"]["tooth_status"]
+          tooth_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odontogram_teeth_odontogram_id_fkey"
+            columns: ["odontogram_id"]
+            isOneToOne: false
+            referencedRelation: "odontograms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      odontograms: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odontograms_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odontograms_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_progress: {
         Row: {
           clinic_id: string
@@ -6974,6 +7126,22 @@ export type Database = {
         | "internacao"
         | "honorarios"
         | "outras_despesas"
+      tooth_status:
+        | "healthy"
+        | "caries"
+        | "restoration"
+        | "extraction"
+        | "missing"
+        | "implant"
+        | "crown"
+        | "endodontic"
+        | "fracture"
+        | "decay"
+        | "sealant"
+        | "prosthesis"
+        | "bridge"
+        | "veneer"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7146,6 +7314,23 @@ export const Constants = {
         "internacao",
         "honorarios",
         "outras_despesas",
+      ],
+      tooth_status: [
+        "healthy",
+        "caries",
+        "restoration",
+        "extraction",
+        "missing",
+        "implant",
+        "crown",
+        "endodontic",
+        "fracture",
+        "decay",
+        "sealant",
+        "prosthesis",
+        "bridge",
+        "veneer",
+        "other",
       ],
     },
   },

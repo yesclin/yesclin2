@@ -98,6 +98,7 @@ import { SignedRecordBadge } from "@/components/prontuario/SignedRecordBadge";
 import { PatientSelector } from "@/components/prontuario/PatientSelector";
 import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
+import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1010,22 +1011,12 @@ export default function Prontuario() {
 
       case 'odontograma':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smile className="h-5 w-5 text-teal-600" />
-                Odontograma
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                Odontograma interativo será exibido aqui durante o atendimento.
-              </p>
-              <p className="text-xs text-center text-muted-foreground">
-                {!hasActiveAppointment && "Inicie um atendimento para editar o odontograma."}
-              </p>
-            </CardContent>
-          </Card>
+          <OdontogramModule
+            patientId={patientId!}
+            appointmentId={activeAppointment?.id}
+            professionalId={activeAppointment?.professional_id || ''}
+            readOnly={!canEditCurrentTab}
+          />
         );
 
       case 'tooth_procedures':

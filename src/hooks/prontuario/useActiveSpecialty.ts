@@ -78,9 +78,12 @@ export function mapSpecialtyNameToKey(name: string): SpecialtyKey {
 
 /**
  * Hook that determines the active specialty based on:
- * 1. Active appointment's specialty (if in progress)
- * 2. Manual selection (stored in session state)
+ * 1. Active appointment's specialty (if in progress) - LOCKED, cannot change
+ * 2. Manual selection (stored in session state) - only when no active appointment
  * 3. Default: 'geral' (Clínica Geral)
+ * 
+ * CRITICAL RULE: During an active appointment, specialty selection is BLOCKED.
+ * The specialty is determined by the procedure/appointment and cannot be changed.
  */
 export function useActiveSpecialty(patientId: string | null | undefined) {
   const { clinic } = useClinicData();
@@ -90,17 +93,18 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
   const [specialties, setSpecialties] = useState<SpecialtyOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch available specialties
+  // Fetch available specialties (only enabled ones)
   useEffect(() => {
     const fetchSpecialties = async () => {
       if (!clinic?.id) return;
       setLoading(true);
       
       try {
+        // Fetch both global and clinic-specific enabled specialties
         const { data, error } = await supabase
           .from('specialties')
           .select('id, name')
-          .eq('clinic_id', clinic.id)
+          .or(`clinic_id.is.null,clinic_id.eq.${clinic.id}`)
           .eq('is_active', true)
           .order('name');
         
@@ -123,17 +127,22 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     fetchSpecialties();
   }, [clinic?.id]);
 
+  // CRITICAL: Check if specialty is locked (from active appointment)
+  const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
+  const isSpecialtyLocked = isFromAppointment; // Cannot change during appointment
+
   // Determine the active specialty ID
-  // Priority: 1) Active appointment's resolved specialty (direct or from procedure)
-  //           2) Manual selection
+  // Priority: 1) Active appointment's resolved specialty (LOCKED - cannot change)
+  //           2) Manual selection (only when no active appointment)
   //           3) null (defaults to 'geral' key)
   const activeSpecialtyId = useMemo(() => {
     // Priority 1: Active appointment's resolved specialty (from procedure or direct)
+    // This is LOCKED and cannot be overridden
     if (activeAppointment?.resolved_specialty_id) {
       return activeAppointment.resolved_specialty_id;
     }
     
-    // Priority 2: Manual selection
+    // Priority 2: Manual selection (only allowed when no active appointment)
     if (manualSpecialtyId) {
       return manualSpecialtyId;
     }
@@ -152,14 +161,31 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     return activeSpecialty?.key || 'geral';
   }, [activeSpecialty]);
 
-  // Set manual specialty
+  // Set manual specialty - BLOCKED during active appointment
   const setActiveSpecialty = useCallback((specialtyId: string | null) => {
+    // CRITICAL: Block manual selection during active appointment
+    if (isSpecialtyLocked) {
+      console.warn('Cannot change specialty during active appointment');
+      return;
+    }
     setManualSpecialtyId(specialtyId);
-  }, []);
+  }, [isSpecialtyLocked]);
 
-  // Check if specialty is from active appointment (read-only)
-  // Now considers resolved specialty from either direct or procedure
-  const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
+  // Get the reason why selection is blocked
+  const selectionBlockedReason = useMemo(() => {
+    if (!isSpecialtyLocked) return null;
+    
+    const procedureName = activeAppointment?.procedure_name;
+    const specialtyName = activeAppointment?.resolved_specialty_name || activeSpecialty?.name;
+    
+    if (procedureName && specialtyName) {
+      return `Especialidade bloqueada: ${specialtyName} (procedimento: ${procedureName})`;
+    }
+    if (specialtyName) {
+      return `Especialidade bloqueada: ${specialtyName} (atendimento em andamento)`;
+    }
+    return 'Especialidade bloqueada durante atendimento';
+  }, [isSpecialtyLocked, activeAppointment, activeSpecialty]);
 
   return {
     activeSpecialtyId,
@@ -167,6 +193,8 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     activeSpecialtyKey,
     specialties,
     isFromAppointment,
+    isSpecialtyLocked, // NEW: Indicates specialty cannot be changed
+    selectionBlockedReason, // NEW: Reason for blocking
     setActiveSpecialty,
     loading: loading || appointmentLoading,
     // Expose appointment info for context

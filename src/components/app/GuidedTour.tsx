@@ -5,6 +5,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useClinicUsers";
 import { usePermissions } from "@/hooks/usePermissions";
 
+// Check if essential onboarding is complete
+async function checkEssentialOnboardingComplete(clinicId: string, userId: string): Promise<boolean> {
+  try {
+    // 1. Check if onboarding is completed or skipped
+    const { data: onboarding } = await supabase
+      .from("onboarding_progress")
+      .select("is_completed, skipped_at")
+      .eq("clinic_id", clinicId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // If onboarding exists and is neither completed nor skipped, essential setup isn't done
+    if (onboarding && !onboarding.is_completed && !onboarding.skipped_at) {
+      return false;
+    }
+
+    // 2. Check if clinic has at least 1 active specialty
+    const { data: specialties } = await supabase
+      .from("specialties")
+      .select("id")
+      .eq("clinic_id", clinicId)
+      .eq("is_active", true)
+      .limit(1);
+
+    if (!specialties || specialties.length === 0) {
+      return false;
+    }
+
+    // 3. Check if clinic has at least 1 active professional
+    const { data: professionals } = await supabase
+      .from("professionals")
+      .select("id")
+      .eq("clinic_id", clinicId)
+      .eq("is_active", true)
+      .limit(1);
+
+    if (!professionals || professionals.length === 0) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error checking essential onboarding:", error);
+    return false;
+  }
+}
+
 // Tour steps by role
 const getStepsForRole = (role: string, isAdmin: boolean): DriveStep[] => {
   const baseSteps: DriveStep[] = [
@@ -157,10 +204,10 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
 
     const checkTourStatus = async () => {
       try {
-        // Get profile with tour status
+        // Get profile with tour status and clinic_id
         const { data: profile, error } = await supabase
           .from("profiles")
-          .select("tour_completed_at")
+          .select("tour_completed_at, clinic_id")
           .eq("user_id", user.id)
           .single();
 
@@ -174,6 +221,20 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
         if (profile?.tour_completed_at) {
           setHasCheckedTour(true);
           return;
+        }
+
+        // CRITICAL: Check if essential onboarding is complete before starting tour
+        if (profile?.clinic_id) {
+          const isEssentialComplete = await checkEssentialOnboardingComplete(
+            profile.clinic_id,
+            user.id
+          );
+
+          if (!isEssentialComplete) {
+            console.log("Essential onboarding not complete, skipping tour");
+            setHasCheckedTour(true);
+            return;
+          }
         }
 
         const effectiveRole = role || "profissional";

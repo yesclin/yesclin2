@@ -37,7 +37,13 @@ export function PermissionGate({
     return <>{children}</>;
   }
 
+  // CRITICAL: Log and block unauthorized access attempts
   if (!can(module, action)) {
+    // Log denied access for security audit
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[PERMISSION_GATE] Access denied - Module: ${module}, Action: ${action}`);
+    }
+    
     if (fallback) {
       return <>{fallback}</>;
     }
@@ -46,6 +52,7 @@ export function PermissionGate({
       return <AccessDeniedMessage module={module} />;
     }
 
+    // RULE: No element rendered without proper permission
     return null;
   }
 

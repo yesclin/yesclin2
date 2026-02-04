@@ -350,3 +350,49 @@ export function useEnabledSpecialtyIds() {
   const { data: enabledSpecialties = [] } = useEnabledSpecialties();
   return enabledSpecialties.map(s => s.id);
 }
+
+/**
+ * Hook to validate specialty alignment for appointments.
+ * Ensures that when creating an appointment:
+ * 1. The specialty is enabled in the clinic
+ * 2. The professional has the specialty
+ * 
+ * CRITICAL RULE: "Clinic specialty always validates professional specialty"
+ */
+export function useSpecialtyAlignmentValidation() {
+  const { clinic } = useClinicData();
+  
+  const validateAlignment = async (
+    professionalId: string,
+    specialtyId: string
+  ): Promise<{ isValid: boolean; error?: string }> => {
+    if (!clinic?.id) {
+      return { isValid: false, error: 'Clínica não encontrada' };
+    }
+    
+    try {
+      const { data, error } = await supabase.rpc('validate_specialty_alignment', {
+        _professional_id: professionalId,
+        _specialty_id: specialtyId,
+        _clinic_id: clinic.id,
+      });
+      
+      if (error) throw error;
+      
+      const result = data?.[0];
+      if (!result?.is_valid) {
+        return { 
+          isValid: false, 
+          error: result?.error_message || 'Especialidade não autorizada' 
+        };
+      }
+      
+      return { isValid: true };
+    } catch (err) {
+      console.error('Error validating specialty alignment:', err);
+      return { isValid: false, error: 'Erro ao validar especialidade' };
+    }
+  };
+  
+  return { validateAlignment };
+}

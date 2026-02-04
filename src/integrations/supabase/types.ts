@@ -7394,6 +7394,14 @@ export type Database = {
       is_proprietario_admin: { Args: { _user_id: string }; Returns: boolean }
       is_recepcionista: { Args: never; Returns: boolean }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
+      log_button_action: {
+        Args: {
+          _action_data?: Json
+          _action_target: string
+          _action_type: string
+        }
+        Returns: undefined
+      }
       log_clinical_access: {
         Args: { _action: string; _patient_id: string; _resource?: string }
         Returns: undefined
@@ -7426,6 +7434,26 @@ export type Database = {
       validate_appointment_start: {
         Args: { _appointment_id: string; _user_id: string }
         Returns: string
+      }
+      validate_clinic_specialty: {
+        Args: { _clinic_id: string; _specialty_id: string }
+        Returns: boolean
+      }
+      validate_professional_specialty: {
+        Args: { _professional_id: string; _specialty_id: string }
+        Returns: boolean
+      }
+      validate_specialty_alignment: {
+        Args: {
+          _clinic_id: string
+          _professional_id: string
+          _specialty_id: string
+        }
+        Returns: {
+          error_code: string
+          error_message: string
+          is_valid: boolean
+        }[]
       }
     }
     Enums: {

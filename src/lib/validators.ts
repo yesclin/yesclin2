@@ -142,3 +142,87 @@ export async function fetchAddressFromCEP(cep: string): Promise<ViaCEPResponse |
     return null;
   }
 }
+
+// =====================================================
+// SECURITY VALIDATION HELPERS
+// =====================================================
+
+/**
+ * Checks if a value looks like a potential SQL injection attempt
+ */
+export function detectSqlInjection(value: string): boolean {
+  const sqlPatterns = [
+    /(\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b|\bUNION\b|\bEXEC\b)/i,
+    /(--)|(;)|(')|(\bOR\b\s+\d+=\d+)/i,
+    /(\/\*|\*\/)/,
+  ];
+  
+  return sqlPatterns.some(pattern => pattern.test(value));
+}
+
+/**
+ * Checks if a value looks like a potential XSS attempt
+ */
+export function detectXss(value: string): boolean {
+  const xssPatterns = [
+    /<script\b[^>]*>/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe\b/i,
+    /<object\b/i,
+    /<embed\b/i,
+  ];
+  
+  return xssPatterns.some(pattern => pattern.test(value));
+}
+
+/**
+ * Sanitizes user input by removing potential dangerous content
+ */
+export function sanitizeInput(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+\s*=/gi, '') // Remove event handlers
+    .trim();
+}
+
+/**
+ * Validates and sanitizes URL parameters to prevent injection
+ */
+export function sanitizeUrlParam(value: string): string {
+  return encodeURIComponent(value.trim());
+}
+
+// =====================================================
+// BUTTON ACTION VALIDATION
+// =====================================================
+
+/**
+ * Type for validated button action
+ */
+export type ValidatedAction = () => void | Promise<void>;
+
+/**
+ * Ensures a function is defined and callable
+ */
+export function validateAction(action: unknown): action is ValidatedAction {
+  return typeof action === 'function';
+}
+
+/**
+ * Creates a safe wrapper around an action that logs execution
+ */
+export function createSafeAction(
+  action: ValidatedAction,
+  onError?: (error: Error) => void
+): ValidatedAction {
+  return async () => {
+    try {
+      await action();
+    } catch (error) {
+      console.error('Action failed:', error);
+      onError?.(error instanceof Error ? error : new Error('Unknown error'));
+    }
+  };
+}

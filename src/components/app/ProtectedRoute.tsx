@@ -79,8 +79,11 @@ export function ProtectedRoute({
     return <>{children}</>;
   }
 
-  // Check permission
+  // Check permission - CRITICAL: No screen without permission validation
   if (!can(module, action)) {
+    // Log denied access attempt for audit
+    console.warn(`[SECURITY] Access denied to module: ${module}, action: ${action}`);
+    
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }

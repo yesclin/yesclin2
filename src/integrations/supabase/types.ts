@@ -1087,6 +1087,7 @@ export type Database = {
           name: string
           opening_hours: Json | null
           phone: string | null
+          primary_specialty_id: string | null
           updated_at: string
           updated_by: string | null
           whatsapp: string | null
@@ -1117,6 +1118,7 @@ export type Database = {
           name: string
           opening_hours?: Json | null
           phone?: string | null
+          primary_specialty_id?: string | null
           updated_at?: string
           updated_by?: string | null
           whatsapp?: string | null
@@ -1147,11 +1149,20 @@ export type Database = {
           name?: string
           opening_hours?: Json | null
           phone?: string | null
+          primary_specialty_id?: string | null
           updated_at?: string
           updated_by?: string | null
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clinics_primary_specialty_id_fkey"
+            columns: ["primary_specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       communication_settings: {
         Row: {

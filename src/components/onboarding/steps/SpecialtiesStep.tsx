@@ -251,11 +251,11 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
     try {
       let persistedSpecialtyId: string | null = null;
 
-      // STEP B: Persist specialty
+      // Determine the specialty to persist
       const curatedSpecialty = CURATED_SPECIALTIES.find((s) => s.id === selectedId);
       
       if (curatedSpecialty) {
-        // Check if already exists for this clinic
+        // Check if curated specialty already exists for this clinic
         const { data: existing } = await supabase
           .from("specialties")
           .select("id")
@@ -271,6 +271,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
             .update({ is_active: true })
             .eq("id", existing.id);
         } else {
+          // Create the specialty record
           const { data: created, error } = await supabase
             .from("specialties")
             .insert({
@@ -292,7 +293,7 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           }
         }
       } else if (selectedId.startsWith("custom-")) {
-        // Custom specialty - extract the real ID
+        // Custom specialty - extract the real UUID
         persistedSpecialtyId = selectedId.replace("custom-", "");
         // Ensure it's active
         await supabase
@@ -301,21 +302,30 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
           .eq("id", persistedSpecialtyId);
       }
 
-      // STEP C: Confirm persistence
+      // Validate we have a specialty ID
       if (!persistedSpecialtyId) {
-        throw new Error("Specialty ID not obtained after save");
+        throw new Error("Não foi possível obter o ID da especialidade.");
       }
 
-      const { data: verifySpecialty, error: verifyError } = await supabase
-        .from("specialties")
-        .select("id, is_active")
-        .eq("id", persistedSpecialtyId)
-        .eq("clinic_id", clinicId)
-        .eq("is_active", true)
-        .maybeSingle();
+      // STEP B: Save primary_specialty_id on clinic (CANONICAL FIELD)
+      const { error: updateError } = await supabase
+        .from("clinics")
+        .update({ primary_specialty_id: persistedSpecialtyId })
+        .eq("id", clinicId);
 
-      if (verifyError || !verifySpecialty) {
-        throw new Error("Persistence verification failed");
+      if (updateError) {
+        throw new Error("Erro ao salvar especialidade. Tente novamente.");
+      }
+
+      // STEP C: Confirm persistence by re-reading
+      const { data: verifyClinic, error: verifyError } = await supabase
+        .from("clinics")
+        .select("primary_specialty_id")
+        .eq("id", clinicId)
+        .single();
+
+      if (verifyError || verifyClinic?.primary_specialty_id !== persistedSpecialtyId) {
+        throw new Error("Erro ao confirmar salvamento. Tente novamente.");
       }
 
       toast({
@@ -328,7 +338,6 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
         onNext();
       } catch (navError) {
         console.error("Navigation error, applying fallback:", navError);
-        // Fallback: show persistent warning
         toast({
           title: "Onboarding pendente",
           description: "Finalize a configuração em Configurações → Clínica.",
@@ -338,9 +347,10 @@ export function SpecialtiesStep({ clinicId, onNext, onBack }: SpecialtiesStepPro
       }
     } catch (err) {
       console.error("Error saving specialty:", err);
+      const errorMessage = err instanceof Error ? err.message : "Tente novamente.";
       toast({
-        title: "Não foi possível salvar sua especialidade",
-        description: "Tente novamente.",
+        title: "Erro ao salvar especialidade",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

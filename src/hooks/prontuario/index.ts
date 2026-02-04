@@ -30,6 +30,12 @@ export {
   isTabVisibleForSpecialty 
 } from './specialtyTabsConfig';
 
+// Active Medical Record Modules (specialty-based module filtering)
+export { 
+  useActiveMedicalRecordModules, 
+  useIsModuleAvailable 
+} from './useActiveMedicalRecordModules';
+
 // Permission hooks (for granular access control)
 export {
   useMedicalRecordPermissions,

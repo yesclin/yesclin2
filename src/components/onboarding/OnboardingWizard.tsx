@@ -164,7 +164,7 @@ export function OnboardingWizard() {
             />
           )}
           {currentStep === 9 && (
-            <CompletionStep onComplete={completeOnboarding} />
+            <CompletionStep onComplete={completeOnboarding} clinicId={clinicId} />
           )}
         </AnimatePresence>
       </DialogContent>

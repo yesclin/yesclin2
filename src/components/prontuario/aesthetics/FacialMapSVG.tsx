@@ -8,13 +8,14 @@
    onPointClick?: (point: FacialMapApplication) => void;
    onMapClick?: (x: number, y: number) => void;
    isEditing?: boolean;
+   selectedMuscle?: string | null;
    className?: string;
  }
  
  const PROCEDURE_COLORS: Record<ProcedureType, string> = {
-   toxin: '#ef4444', // red
-   filler: '#3b82f6', // blue
-   biostimulator: '#22c55e', // green
+   toxin: '#dc2626',
+   filler: '#2563eb',
+   biostimulator: '#16a34a',
  };
  
  export function FacialMapSVG({
@@ -24,6 +25,7 @@
    onPointClick,
    onMapClick,
    isEditing = false,
+   selectedMuscle,
    className,
  }: FacialMapSVGProps) {
    const filteredApplications = applications.filter(a => a.view_type === viewType);
@@ -41,217 +43,327 @@
  
    return (
      <svg
-       viewBox="0 0 300 400"
+       viewBox="0 0 400 520"
        className={cn(
-         "w-full h-auto max-h-[500px] transition-all",
-         isEditing && "cursor-crosshair",
+         "w-full h-full transition-all",
+         isEditing && selectedMuscle && "cursor-crosshair",
          className
        )}
        onClick={handleSvgClick}
      >
-       {/* Background */}
-       <rect x="0" y="0" width="300" height="400" fill="hsl(var(--muted))" rx="8" />
+       {/* Subtle gradient background */}
+       <defs>
+         <linearGradient id="skinGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+           <stop offset="0%" stopColor="hsl(var(--background))" />
+           <stop offset="100%" stopColor="hsl(var(--muted))" stopOpacity="0.3" />
+         </linearGradient>
+         <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+           <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1"/>
+         </filter>
+       </defs>
        
-       {/* Face outline - Frontal */}
+       {/* Face - Frontal View */}
        {viewType === 'frontal' && (
-         <g className="face-frontal">
-           {/* Head shape */}
-           <ellipse cx="150" cy="180" rx="100" ry="130" 
-             fill="hsl(var(--background))" 
+         <g className="face-frontal" filter="url(#softShadow)">
+           {/* Face oval */}
+           <ellipse 
+             cx="200" cy="250" rx="130" ry="170" 
+             fill="url(#skinGradient)" 
              stroke="hsl(var(--border))" 
-             strokeWidth="2" 
+             strokeWidth="1.5" 
            />
            
-           {/* Hair area */}
+           {/* Hairline */}
            <path 
-             d="M 60 130 Q 80 50 150 40 Q 220 50 240 130" 
+             d="M 85 180 Q 100 80 200 60 Q 300 80 315 180" 
              fill="none" 
              stroke="hsl(var(--muted-foreground))" 
-             strokeWidth="1.5"
+             strokeWidth="1"
+             opacity="0.4"
+           />
+           
+           {/* Forehead region indicator */}
+           <ellipse 
+             cx="200" cy="140" rx="70" ry="35"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
              strokeDasharray="4 2"
+             opacity="0.3"
            />
            
-           {/* Forehead line */}
-           <line x1="80" y1="100" x2="220" y2="100" 
-             stroke="hsl(var(--border))" 
-             strokeWidth="0.5" 
-             strokeDasharray="2 2" 
+           {/* Eyebrows - thicker, more natural */}
+           <path 
+             d="M 120 175 Q 140 165 175 172" 
+             fill="none" 
+             stroke="hsl(var(--foreground))" 
+             strokeWidth="4" 
+             strokeLinecap="round"
+             opacity="0.7"
            />
-           <text x="150" y="85" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
-             Testa
-           </text>
+           <path 
+             d="M 225 172 Q 260 165 280 175" 
+             fill="none" 
+             stroke="hsl(var(--foreground))" 
+             strokeWidth="4" 
+             strokeLinecap="round"
+             opacity="0.7"
+           />
            
-           {/* Eyebrows */}
-           <path d="M 90 130 Q 115 120 140 130" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-           <path d="M 160 130 Q 185 120 210 130" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
+           {/* Glabela region */}
+           <path 
+             d="M 178 175 Q 200 168 222 175"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="3 2"
+             opacity="0.4"
+           />
            
-           {/* Glabela area */}
-           <text x="150" y="125" textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
-             Glabela
-           </text>
+           {/* Eyes - almond shaped */}
+           <ellipse cx="150" cy="200" rx="28" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.8" />
+           <ellipse cx="250" cy="200" rx="28" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.8" />
+           <circle cx="150" cy="200" r="8" fill="hsl(var(--foreground))" opacity="0.6" />
+           <circle cx="250" cy="200" r="8" fill="hsl(var(--foreground))" opacity="0.6" />
            
-           {/* Eyes */}
-           <ellipse cx="115" cy="150" rx="20" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-           <ellipse cx="185" cy="150" rx="20" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-           <circle cx="115" cy="150" r="5" fill="hsl(var(--foreground))" />
-           <circle cx="185" cy="150" r="5" fill="hsl(var(--foreground))" />
-           
-           {/* Crow's feet area */}
-           <text x="60" y="155" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Pés de galinha
-           </text>
-           <text x="240" y="155" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Pés de galinha
-           </text>
+           {/* Crow's feet regions */}
+           <path 
+             d="M 105 195 L 115 200 M 105 200 L 115 200 M 105 205 L 115 200"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             opacity="0.3"
+           />
+           <path 
+             d="M 295 195 L 285 200 M 295 200 L 285 200 M 295 205 L 285 200"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             opacity="0.3"
+           />
            
            {/* Nose */}
-           <path d="M 150 145 L 150 195 M 140 195 Q 150 205 160 195" 
+           <path 
+             d="M 200 185 L 200 260 M 180 265 Q 200 280 220 265" 
              fill="none" 
              stroke="hsl(var(--foreground))" 
              strokeWidth="1.5" 
+             opacity="0.6"
            />
            
-           {/* Nasolabial folds */}
-           <path d="M 130 190 Q 125 215 120 235" 
-             fill="none" 
-             stroke="hsl(var(--muted-foreground))" 
-             strokeWidth="0.5" 
-             strokeDasharray="2 2"
+           {/* Nasolabial fold indicators */}
+           <path 
+             d="M 170 260 Q 160 295 155 320"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="3 2"
+             opacity="0.3"
            />
-           <path d="M 170 190 Q 175 215 180 235" 
-             fill="none" 
-             stroke="hsl(var(--muted-foreground))" 
-             strokeWidth="0.5" 
-             strokeDasharray="2 2"
+           <path 
+             d="M 230 260 Q 240 295 245 320"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="3 2"
+             opacity="0.3"
            />
            
-           {/* Cheeks */}
-           <text x="85" y="200" textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
-             Malar
-           </text>
-           <text x="215" y="200" textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
-             Malar
-           </text>
+           {/* Cheekbone area */}
+           <ellipse 
+             cx="120" cy="265" rx="30" ry="20"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="4 2"
+             opacity="0.2"
+           />
+           <ellipse 
+             cx="280" cy="265" rx="30" ry="20"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="4 2"
+             opacity="0.2"
+           />
            
            {/* Mouth */}
-           <path d="M 120 240 Q 150 255 180 240" 
+           <path 
+             d="M 160 330 Q 200 348 240 330" 
              fill="none" 
              stroke="hsl(var(--foreground))" 
              strokeWidth="2" 
+             opacity="0.7"
            />
-           <line x1="120" y1="240" x2="180" y2="240" 
+           <line 
+             x1="160" y1="330" x2="240" y2="330" 
              stroke="hsl(var(--foreground))" 
-             strokeWidth="1" 
+             strokeWidth="1.5" 
+             opacity="0.6"
            />
            
-           {/* Marionette lines */}
-           <text x="105" y="265" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Marionete
-           </text>
-           <text x="195" y="265" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Marionete
-           </text>
+           {/* Marionette region */}
+           <path 
+             d="M 155 340 Q 150 360 148 380"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="3 2"
+             opacity="0.3"
+           />
+           <path 
+             d="M 245 340 Q 250 360 252 380"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="3 2"
+             opacity="0.3"
+           />
            
            {/* Chin */}
-           <text x="150" y="285" textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
-             Mento
-           </text>
-           
-           {/* Jaw line */}
-           <text x="70" y="250" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Masseter
-           </text>
-           <text x="230" y="250" textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))">
-             Masseter
-           </text>
-           
-           {/* Neck area */}
-           <rect x="120" y="300" width="60" height="50" 
-             fill="none" 
-             stroke="hsl(var(--border))" 
-             strokeWidth="1" 
-             strokeDasharray="3 3"
+           <ellipse 
+             cx="200" cy="385" rx="25" ry="15"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="4 2"
+             opacity="0.2"
            />
-           <text x="150" y="330" textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
-             Pescoço
-           </text>
+           
+           {/* Jawline / Masseter region */}
+           <ellipse 
+             cx="100" cy="330" rx="25" ry="35"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="4 2"
+             opacity="0.2"
+           />
+           <ellipse 
+             cx="300" cy="330" rx="25" ry="35"
+             fill="none"
+             stroke="hsl(var(--muted-foreground))"
+             strokeWidth="0.5"
+             strokeDasharray="4 2"
+             opacity="0.2"
+           />
+           
+           {/* Neck indication */}
+           <path 
+             d="M 160 415 L 160 480 M 240 415 L 240 480"
+             fill="none"
+             stroke="hsl(var(--border))"
+             strokeWidth="1"
+             opacity="0.3"
+           />
          </g>
        )}
        
-       {/* Face outline - Left Lateral */}
+       {/* Face - Left Lateral View */}
        {viewType === 'left_lateral' && (
-         <g className="face-left-lateral">
-           <ellipse cx="170" cy="180" rx="80" ry="130" 
-             fill="hsl(var(--background))" 
+         <g className="face-left-lateral" filter="url(#softShadow)">
+           <ellipse 
+             cx="220" cy="250" rx="100" ry="170" 
+             fill="url(#skinGradient)" 
              stroke="hsl(var(--border))" 
-             strokeWidth="2" 
-           />
-           <path d="M 150 150 Q 100 180 150 200" 
-             fill="none" 
-             stroke="hsl(var(--foreground))" 
              strokeWidth="1.5" 
            />
-           <ellipse cx="130" cy="150" rx="15" ry="8" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-           <text x="150" y="85" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
-             Vista Lateral Esquerda
-           </text>
+           <path 
+             d="M 180 180 Q 120 200 140 280 Q 120 320 180 360" 
+             fill="none" 
+             stroke="hsl(var(--foreground))" 
+             strokeWidth="1.5"
+             opacity="0.6"
+           />
+           <ellipse cx="160" cy="200" rx="18" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.8" />
+           <circle cx="160" cy="200" r="5" fill="hsl(var(--foreground))" opacity="0.6" />
+           <path d="M 150 175 Q 180 165 200 172" fill="none" stroke="hsl(var(--foreground))" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+           <path d="M 130 265 L 145 335" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
          </g>
        )}
        
-       {/* Face outline - Right Lateral */}
+       {/* Face - Right Lateral View */}
        {viewType === 'right_lateral' && (
-         <g className="face-right-lateral">
-           <ellipse cx="130" cy="180" rx="80" ry="130" 
-             fill="hsl(var(--background))" 
+         <g className="face-right-lateral" filter="url(#softShadow)">
+           <ellipse 
+             cx="180" cy="250" rx="100" ry="170" 
+             fill="url(#skinGradient)" 
              stroke="hsl(var(--border))" 
-             strokeWidth="2" 
-           />
-           <path d="M 150 150 Q 200 180 150 200" 
-             fill="none" 
-             stroke="hsl(var(--foreground))" 
              strokeWidth="1.5" 
            />
-           <ellipse cx="170" cy="150" rx="15" ry="8" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-           <text x="150" y="85" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
-             Vista Lateral Direita
-           </text>
+           <path 
+             d="M 220 180 Q 280 200 260 280 Q 280 320 220 360" 
+             fill="none" 
+             stroke="hsl(var(--foreground))" 
+             strokeWidth="1.5"
+             opacity="0.6"
+           />
+           <ellipse cx="240" cy="200" rx="18" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.8" />
+           <circle cx="240" cy="200" r="5" fill="hsl(var(--foreground))" opacity="0.6" />
+           <path d="M 200 172 Q 220 165 250 175" fill="none" stroke="hsl(var(--foreground))" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+           <path d="M 255 335 L 270 265" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
          </g>
+       )}
+       
+       {/* Editing indicator */}
+       {isEditing && selectedMuscle && (
+         <text 
+           x="200" 
+           y="30" 
+           textAnchor="middle" 
+           fontSize="13" 
+           fill="hsl(var(--primary))"
+           fontWeight="500"
+         >
+           Clique no mapa para marcar o ponto
+         </text>
        )}
        
        {/* Application Points */}
        {filteredApplications.map((app) => {
-         const x = (app.position_x / 100) * 300;
-         const y = (app.position_y / 100) * 400;
+         const x = (app.position_x / 100) * 400;
+         const y = (app.position_y / 100) * 520;
          const isSelected = selectedPointId === app.id;
          const color = PROCEDURE_COLORS[app.procedure_type];
          
          return (
            <g
              key={app.id}
-             className="cursor-pointer transition-transform hover:scale-110"
+             className="cursor-pointer transition-transform"
              onClick={(e) => {
                e.stopPropagation();
                onPointClick?.(app);
              }}
            >
+             {/* Outer ring for selection */}
+             {isSelected && (
+               <circle
+                 cx={x}
+                 cy={y}
+                 r={16}
+                 fill="none"
+                 stroke={color}
+                 strokeWidth={2}
+                 opacity={0.4}
+               />
+             )}
              {/* Point circle */}
              <circle
                cx={x}
                cy={y}
-               r={isSelected ? 10 : 8}
+               r={isSelected ? 12 : 10}
                fill={color}
-               stroke={isSelected ? "hsl(var(--foreground))" : "white"}
-               strokeWidth={isSelected ? 3 : 2}
+               stroke="white"
+               strokeWidth={2}
                className="drop-shadow-md"
              />
-             
              {/* Quantity label */}
              <text
                x={x}
                y={y + 4}
                textAnchor="middle"
-               fontSize="8"
-               fontWeight="bold"
+               fontSize="9"
+               fontWeight="600"
                fill="white"
              >
                {app.quantity}
@@ -260,18 +372,16 @@
          );
        })}
        
-       {/* Legend */}
-       <g transform="translate(10, 360)">
-         <rect x="0" y="0" width="280" height="35" rx="4" fill="hsl(var(--card))" fillOpacity="0.9" />
+       {/* Minimal legend at bottom */}
+       <g transform="translate(80, 490)">
+         <circle cx="0" cy="0" r="5" fill={PROCEDURE_COLORS.toxin} />
+         <text x="12" y="4" fontSize="10" fill="hsl(var(--muted-foreground))">Toxina</text>
          
-         <circle cx="20" cy="18" r="6" fill={PROCEDURE_COLORS.toxin} />
-         <text x="32" y="22" fontSize="9" fill="hsl(var(--foreground))">Toxina</text>
+         <circle cx="90" cy="0" r="5" fill={PROCEDURE_COLORS.filler} />
+         <text x="102" y="4" fontSize="10" fill="hsl(var(--muted-foreground))">Preenchimento</text>
          
-         <circle cx="100" cy="18" r="6" fill={PROCEDURE_COLORS.filler} />
-         <text x="112" y="22" fontSize="9" fill="hsl(var(--foreground))">Preenchimento</text>
-         
-         <circle cx="210" cy="18" r="6" fill={PROCEDURE_COLORS.biostimulator} />
-         <text x="222" y="22" fontSize="9" fill="hsl(var(--foreground))">Bioestimulador</text>
+         <circle cx="210" cy="0" r="5" fill={PROCEDURE_COLORS.biostimulator} />
+         <text x="222" y="4" fontSize="10" fill="hsl(var(--muted-foreground))">Bioestimulador</text>
        </g>
      </svg>
    );

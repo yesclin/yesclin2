@@ -141,21 +141,21 @@ export const IMAGE_TYPE_LABELS: Record<ImageType, string> = {
  };
  
  // Músculos faciais para toxina
- export const FACIAL_MUSCLES = [
-   { id: 'frontalis', name: 'Frontal', region: 'Testa' },
-   { id: 'procerus', name: 'Prócero', region: 'Glabela' },
-   { id: 'corrugator', name: 'Corrugador do Supercílio', region: 'Glabela' },
-   { id: 'orbicularis_oculi', name: 'Orbicular dos Olhos', region: 'Periorbital' },
-   { id: 'nasalis', name: 'Nasal', region: 'Nariz' },
-   { id: 'levator_labii', name: 'Elevador do Lábio Superior', region: 'Nariz/Boca' },
-   { id: 'zygomaticus_major', name: 'Zigomático Maior', region: 'Bochecha' },
-   { id: 'zygomaticus_minor', name: 'Zigomático Menor', region: 'Bochecha' },
-   { id: 'orbicularis_oris', name: 'Orbicular da Boca', region: 'Perioral' },
-   { id: 'depressor_anguli_oris', name: 'Depressor do Ângulo da Boca', region: 'Boca' },
-   { id: 'mentalis', name: 'Mentoniano', region: 'Queixo' },
-   { id: 'platysma', name: 'Platisma', region: 'Pescoço' },
-   { id: 'masseter', name: 'Masseter', region: 'Mandíbula' },
- ];
+export const FACIAL_MUSCLES: Array<{ id: string; name: string; region: string; description: string }> = [
+  { id: 'frontalis', name: 'Frontal', region: 'Testa', description: 'Eleva as sobrancelhas e forma rugas horizontais na testa' },
+  { id: 'procerus', name: 'Prócero', region: 'Glabela', description: 'Deprime a pele entre as sobrancelhas' },
+  { id: 'corrugator', name: 'Corrugador do Supercílio', region: 'Glabela', description: 'Forma linhas verticais entre as sobrancelhas' },
+  { id: 'orbicularis_oculi', name: 'Orbicular dos Olhos', region: 'Periorbital', description: 'Fecha as pálpebras e forma pés de galinha' },
+  { id: 'nasalis', name: 'Nasal', region: 'Nariz', description: 'Comprime e dilata as narinas' },
+  { id: 'levator_labii', name: 'Elevador do Lábio Superior', region: 'Nariz/Boca', description: 'Eleva o lábio superior e a asa do nariz' },
+  { id: 'zygomaticus_major', name: 'Zigomático Maior', region: 'Bochecha', description: 'Puxa o canto da boca para cima (sorriso)' },
+  { id: 'zygomaticus_minor', name: 'Zigomático Menor', region: 'Bochecha', description: 'Eleva o lábio superior' },
+  { id: 'orbicularis_oris', name: 'Orbicular da Boca', region: 'Perioral', description: 'Fecha e projeta os lábios' },
+  { id: 'depressor_anguli_oris', name: 'Depressor do Ângulo', region: 'Boca', description: 'Puxa o canto da boca para baixo' },
+  { id: 'mentalis', name: 'Mentoniano', region: 'Queixo', description: 'Eleva e projeta o lábio inferior' },
+  { id: 'platysma', name: 'Platisma', region: 'Pescoço', description: 'Tensiona a pele do pescoço' },
+  { id: 'masseter', name: 'Masseter', region: 'Mandíbula', description: 'Músculo da mastigação' },
+];
  
  // Produtos comuns
  export const COMMON_PRODUCTS = {

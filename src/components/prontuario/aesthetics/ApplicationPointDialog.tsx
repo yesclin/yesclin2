@@ -9,7 +9,6 @@
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
- import { Textarea } from "@/components/ui/textarea";
  import {
    Select,
    SelectContent,
@@ -18,13 +17,8 @@
    SelectValue,
  } from "@/components/ui/select";
  import { Trash2 } from "lucide-react";
- import type { FacialMapApplication, ProcedureType, SideType } from "./types";
- import { 
-   PROCEDURE_TYPE_LABELS, 
-   SIDE_LABELS, 
-   FACIAL_MUSCLES, 
-   COMMON_PRODUCTS 
- } from "./types";
+ import type { FacialMapApplication, ProcedureType } from "./types";
+ import { PROCEDURE_TYPE_LABELS, COMMON_PRODUCTS, FACIAL_MUSCLES } from "./types";
  
  interface ApplicationPointDialogProps {
    open: boolean;
@@ -33,6 +27,9 @@
    onSave: (data: Partial<FacialMapApplication>) => void;
    onDelete?: () => void;
    isNew?: boolean;
+   preselectedMuscle?: string | null;
+   preselectedProduct?: string | null;
+   preselectedType?: ProcedureType;
  }
  
  export function ApplicationPointDialog({
@@ -42,77 +39,94 @@
    onSave,
    onDelete,
    isNew = false,
+   preselectedMuscle,
+   preselectedProduct,
+   preselectedType = 'toxin',
  }: ApplicationPointDialogProps) {
-   const [formData, setFormData] = useState<Partial<FacialMapApplication>>({
-     procedure_type: 'toxin',
-     product_name: '',
-     quantity: 0,
-     unit: 'UI',
-     muscle: '',
-     side: 'bilateral',
-     notes: '',
-   });
+   const [quantity, setQuantity] = useState<number>(0);
+   const [unit, setUnit] = useState<string>('UI');
+   const [procedureType, setProcedureType] = useState<ProcedureType>(preselectedType);
+   const [productName, setProductName] = useState<string>(preselectedProduct || '');
+   const [muscle, setMuscle] = useState<string>(preselectedMuscle || '');
  
    useEffect(() => {
      if (point) {
-       setFormData({
-         procedure_type: point.procedure_type || 'toxin',
-         product_name: point.product_name || '',
-         quantity: point.quantity || 0,
-         unit: point.unit || 'UI',
-         muscle: point.muscle || '',
-         side: point.side || 'bilateral',
-         notes: point.notes || '',
-         position_x: point.position_x,
-         position_y: point.position_y,
-         view_type: point.view_type,
-       });
+       setQuantity(point.quantity || 0);
+       setUnit(point.unit || 'UI');
+       setProcedureType((point.procedure_type as ProcedureType) || preselectedType);
+       setProductName(point.product_name || preselectedProduct || '');
+       setMuscle(point.muscle || preselectedMuscle || '');
+     } else {
+       // Reset for new point
+       setQuantity(0);
+       setUnit(preselectedType === 'toxin' ? 'UI' : 'ml');
+       setProcedureType(preselectedType);
+       setProductName(preselectedProduct || '');
+       setMuscle(preselectedMuscle || '');
      }
-   }, [point]);
+   }, [point, preselectedMuscle, preselectedProduct, preselectedType]);
  
    const handleSave = () => {
-     if (!formData.product_name || formData.quantity === 0) return;
-     onSave(formData);
+     if (quantity <= 0 || !productName) return;
+     onSave({
+       ...point,
+       procedure_type: procedureType,
+       product_name: productName,
+       quantity,
+       unit,
+       muscle: muscle || null,
+     });
      onOpenChange(false);
    };
  
-   const products = COMMON_PRODUCTS[formData.procedure_type as ProcedureType] || [];
+   const muscleName = FACIAL_MUSCLES.find(m => m.id === muscle)?.name || muscle;
+   const products = COMMON_PRODUCTS[procedureType] || [];
  
    return (
      <Dialog open={open} onOpenChange={onOpenChange}>
-       <DialogContent className="max-w-md">
+       <DialogContent className="max-w-sm">
          <DialogHeader>
-           <DialogTitle>
-             {isNew ? 'Novo Ponto de Aplicação' : 'Editar Ponto'}
+           <DialogTitle className="text-base font-medium">
+             {isNew ? 'Registrar Aplicação' : 'Editar Ponto'}
            </DialogTitle>
+           {isNew && muscleName && (
+             <p className="text-sm text-muted-foreground mt-1">
+               Músculo: <span className="font-medium text-foreground">{muscleName}</span>
+             </p>
+           )}
          </DialogHeader>
  
-         <div className="space-y-4">
-           <div className="space-y-2">
-             <Label>Tipo de Procedimento</Label>
-             <Select
-               value={formData.procedure_type}
-               onValueChange={(v) => setFormData({ ...formData, procedure_type: v as ProcedureType, product_name: '' })}
-             >
-               <SelectTrigger>
-                 <SelectValue />
-               </SelectTrigger>
-               <SelectContent>
-                 {Object.entries(PROCEDURE_TYPE_LABELS).map(([key, label]) => (
-                   <SelectItem key={key} value={key}>{label}</SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
-           </div>
+         <div className="space-y-4 py-2">
+           {/* Procedure Type - only show if new and no preselection */}
+           {isNew && !preselectedType && (
+             <div className="space-y-2">
+               <Label className="text-xs text-muted-foreground">Tipo</Label>
+               <Select
+                 value={procedureType}
+                 onValueChange={(v) => {
+                   setProcedureType(v as ProcedureType);
+                   setProductName('');
+                   setUnit(v === 'toxin' ? 'UI' : 'ml');
+                 }}
+               >
+                 <SelectTrigger className="h-9">
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {Object.entries(PROCEDURE_TYPE_LABELS).map(([key, label]) => (
+                     <SelectItem key={key} value={key}>{label}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           )}
  
+           {/* Product */}
            <div className="space-y-2">
-             <Label>Produto</Label>
-             <Select
-               value={formData.product_name}
-               onValueChange={(v) => setFormData({ ...formData, product_name: v })}
-             >
-               <SelectTrigger>
-                 <SelectValue placeholder="Selecione o produto" />
+             <Label className="text-xs text-muted-foreground">Produto</Label>
+             <Select value={productName} onValueChange={setProductName}>
+               <SelectTrigger className="h-9">
+                 <SelectValue placeholder="Selecione" />
                </SelectTrigger>
                <SelectContent>
                  {products.map((product) => (
@@ -122,99 +136,47 @@
              </Select>
            </div>
  
-           {formData.procedure_type === 'toxin' && (
-             <div className="space-y-2">
-               <Label>Músculo</Label>
-               <Select
-                 value={formData.muscle || ''}
-                 onValueChange={(v) => setFormData({ ...formData, muscle: v })}
-               >
-                 <SelectTrigger>
-                   <SelectValue placeholder="Selecione o músculo" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {FACIAL_MUSCLES.map((muscle) => (
-                     <SelectItem key={muscle.id} value={muscle.id}>
-                       {muscle.name} ({muscle.region})
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-           )}
- 
-           <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-2">
-               <Label>Quantidade</Label>
+           {/* Quantity */}
+           <div className="space-y-2">
+             <Label className="text-xs text-muted-foreground">
+               Unidades {procedureType === 'toxin' ? '(UI)' : '(ml)'}
+             </Label>
+             <div className="flex gap-2">
                <Input
                  type="number"
-                 value={formData.quantity}
-                 onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                 value={quantity || ''}
+                 onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
                  min="0"
-                 step="0.5"
+                 step={procedureType === 'toxin' ? '1' : '0.1'}
+                 className="h-10 text-lg font-medium"
+                 placeholder="0"
+                 autoFocus
                />
              </div>
-             <div className="space-y-2">
-               <Label>Unidade</Label>
-               <Select
-                 value={formData.unit}
-                 onValueChange={(v) => setFormData({ ...formData, unit: v })}
-               >
-                 <SelectTrigger>
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="UI">UI</SelectItem>
-                   <SelectItem value="ml">ml</SelectItem>
-                   <SelectItem value="mg">mg</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-           </div>
- 
-           <div className="space-y-2">
-             <Label>Lado</Label>
-             <Select
-               value={formData.side || 'bilateral'}
-               onValueChange={(v) => setFormData({ ...formData, side: v as SideType })}
-             >
-               <SelectTrigger>
-                 <SelectValue />
-               </SelectTrigger>
-               <SelectContent>
-                 {Object.entries(SIDE_LABELS).map(([key, label]) => (
-                   <SelectItem key={key} value={key}>{label}</SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
-           </div>
- 
-           <div className="space-y-2">
-             <Label>Observações</Label>
-             <Textarea
-               value={formData.notes || ''}
-               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-               placeholder="Observações adicionais..."
-               rows={3}
-             />
            </div>
          </div>
  
-         <DialogFooter className="flex justify-between">
+         <DialogFooter className="flex gap-2 sm:gap-2">
            {!isNew && onDelete && (
-             <Button variant="destructive" size="sm" onClick={onDelete}>
-               <Trash2 className="h-4 w-4 mr-1" />
-               Excluir
+             <Button 
+               variant="ghost" 
+               size="sm" 
+               onClick={onDelete}
+               className="text-destructive hover:text-destructive mr-auto"
+             >
+               <Trash2 className="h-4 w-4" />
              </Button>
            )}
-           <div className="flex gap-2 ml-auto">
-             <Button variant="outline" onClick={() => onOpenChange(false)}>
-               Cancelar
-             </Button>
-             <Button onClick={handleSave} disabled={!formData.product_name || formData.quantity === 0}>
-               Salvar
-             </Button>
-           </div>
+           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+             Cancelar
+           </Button>
+           <Button 
+             size="sm" 
+             onClick={handleSave} 
+             disabled={!productName || quantity <= 0}
+           >
+             Salvar
+           </Button>
          </DialogFooter>
        </DialogContent>
      </Dialog>

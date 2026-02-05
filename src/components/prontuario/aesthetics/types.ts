@@ -5,6 +5,22 @@
  export type SideType = 'left' | 'right' | 'center' | 'bilateral';
  export type ViewAngle = 'frontal' | 'left_profile' | 'right_profile' | 'left_45' | 'right_45';
  export type ConsentType = 'toxin' | 'filler' | 'biostimulator' | 'general';
+export type MapType = 'general' | 'toxin';
+export type ImageType = 'before' | 'after';
+
+// Entidade pai: Mapa Facial
+export interface FacialMap {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  appointment_id?: string | null;
+  professional_id?: string | null;
+  map_type: MapType;
+  general_notes?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  updated_at: string;
+}
  
  export interface FacialMapApplication {
    id: string;
@@ -12,6 +28,7 @@
    patient_id: string;
    appointment_id?: string | null;
    professional_id?: string | null;
+  facial_map_id?: string | null;
    procedure_type: ProcedureType;
    view_type: ViewType;
    position_x: number;
@@ -27,6 +44,21 @@
    updated_at: string;
  }
  
+// Imagens vinculadas ao mapa facial
+export interface FacialMapImage {
+  id: string;
+  clinic_id: string;
+  facial_map_id: string;
+  image_type: ImageType;
+  image_url: string;
+  image_date?: string | null;
+  view_angle?: ViewAngle | null;
+  notes?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  updated_at: string;
+}
+
  export interface AestheticBeforeAfter {
    id: string;
    clinic_id: string;
@@ -64,6 +96,16 @@
  }
  
  // Labels
+export const MAP_TYPE_LABELS: Record<MapType, string> = {
+  general: 'Geral',
+  toxin: 'Toxina Botulínica',
+};
+
+export const IMAGE_TYPE_LABELS: Record<ImageType, string> = {
+  before: 'Antes',
+  after: 'Depois',
+};
+
  export const PROCEDURE_TYPE_LABELS: Record<ProcedureType, string> = {
    toxin: 'Toxina Botulínica',
    filler: 'Preenchimento',

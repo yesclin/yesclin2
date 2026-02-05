@@ -151,6 +151,7 @@ export type Database = {
           clinic_id: string
           consent_type: string
           created_by: string | null
+          facial_map_id: string | null
           id: string
           ip_address: string | null
           patient_id: string
@@ -166,6 +167,7 @@ export type Database = {
           clinic_id: string
           consent_type: string
           created_by?: string | null
+          facial_map_id?: string | null
           id?: string
           ip_address?: string | null
           patient_id: string
@@ -181,6 +183,7 @@ export type Database = {
           clinic_id?: string
           consent_type?: string
           created_by?: string | null
+          facial_map_id?: string | null
           id?: string
           ip_address?: string | null
           patient_id?: string
@@ -203,6 +206,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_consent_records_facial_map_id_fkey"
+            columns: ["facial_map_id"]
+            isOneToOne: false
+            referencedRelation: "facial_maps"
             referencedColumns: ["id"]
           },
           {
@@ -1638,6 +1648,7 @@ export type Database = {
           clinic_id: string
           created_at: string
           created_by: string | null
+          facial_map_id: string | null
           id: string
           muscle: string | null
           notes: string | null
@@ -1658,6 +1669,7 @@ export type Database = {
           clinic_id: string
           created_at?: string
           created_by?: string | null
+          facial_map_id?: string | null
           id?: string
           muscle?: string | null
           notes?: string | null
@@ -1678,6 +1690,7 @@ export type Database = {
           clinic_id?: string
           created_at?: string
           created_by?: string | null
+          facial_map_id?: string | null
           id?: string
           muscle?: string | null
           notes?: string | null
@@ -1709,6 +1722,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "facial_map_applications_facial_map_id_fkey"
+            columns: ["facial_map_id"]
+            isOneToOne: false
+            referencedRelation: "facial_maps"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "facial_map_applications_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -1717,6 +1737,131 @@ export type Database = {
           },
           {
             foreignKeyName: "facial_map_applications_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facial_map_images: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          facial_map_id: string
+          id: string
+          image_date: string | null
+          image_type: string
+          image_url: string
+          notes: string | null
+          updated_at: string
+          view_angle: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          facial_map_id: string
+          id?: string
+          image_date?: string | null
+          image_type: string
+          image_url: string
+          notes?: string | null
+          updated_at?: string
+          view_angle?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          facial_map_id?: string
+          id?: string
+          image_date?: string | null
+          image_type?: string
+          image_url?: string
+          notes?: string | null
+          updated_at?: string
+          view_angle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facial_map_images_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_map_images_facial_map_id_fkey"
+            columns: ["facial_map_id"]
+            isOneToOne: false
+            referencedRelation: "facial_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facial_maps: {
+        Row: {
+          appointment_id: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          general_notes: string | null
+          id: string
+          map_type: string
+          patient_id: string
+          professional_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          general_notes?: string | null
+          id?: string
+          map_type?: string
+          patient_id: string
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          general_notes?: string | null
+          id?: string
+          map_type?: string
+          patient_id?: string
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facial_maps_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_maps_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_maps_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_maps_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals"

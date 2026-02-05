@@ -5,6 +5,7 @@
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { ScrollArea } from "@/components/ui/scroll-area";
  import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
  import { 
    MapPin, 
    Plus, 
@@ -13,18 +14,21 @@
    Syringe,
    Eye,
    EyeOff,
+  FileText,
+  Save,
  } from "lucide-react";
  import { format, parseISO } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { FacialMapSVG } from "./FacialMapSVG";
  import { ApplicationPointDialog } from "./ApplicationPointDialog";
  import { useFacialMap } from "@/hooks/aesthetics";
- import type { FacialMapApplication, ViewType } from "./types";
+import type { FacialMapApplication, ViewType, ProcedureType } from "./types";
  import { 
    PROCEDURE_TYPE_LABELS, 
    VIEW_TYPE_LABELS, 
    FACIAL_MUSCLES,
    SIDE_LABELS,
+  MAP_TYPE_LABELS,
  } from "./types";
  
  interface FacialMapModuleProps {
@@ -45,16 +49,19 @@
    const [dialogOpen, setDialogOpen] = useState(false);
    const [showHistory, setShowHistory] = useState(false);
    const [filterType, setFilterType] = useState<string>('all');
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
  
    const { 
+    facialMap,
      applications, 
      allApplications,
      isLoading, 
      addApplication,
      updateApplication,
      deleteApplication,
-     isAdding,
-     isUpdating,
+    updateMapNotes,
+    isCreatingMap,
    } = useFacialMap(patientId, showHistory ? null : appointmentId);
  
    const displayApplications = showHistory ? allApplications : applications;
@@ -63,6 +70,18 @@
    const filteredApplications = filterType === 'all' 
      ? displayApplications 
      : displayApplications.filter(a => a.procedure_type === filterType);
+
+  // Start editing notes
+  const handleEditNotes = () => {
+    setNotesValue(facialMap?.general_notes || '');
+    setEditingNotes(true);
+  };
+
+  // Save notes
+  const handleSaveNotes = async () => {
+    await updateMapNotes(notesValue);
+    setEditingNotes(false);
+  };
  
    const handleMapClick = (x: number, y: number) => {
      if (!isEditing || !canEdit) return;
@@ -107,14 +126,14 @@
    };
  
    // Calculate totals
-   const totals = filteredApplications.reduce((acc, app) => {
+  const totals = filteredApplications.reduce<Record<string, { count: number; quantity: number }>>((acc, app) => {
      if (!acc[app.procedure_type]) {
        acc[app.procedure_type] = { count: 0, quantity: 0 };
      }
      acc[app.procedure_type].count++;
      acc[app.procedure_type].quantity += app.quantity;
      return acc;
-   }, {} as Record<string, { count: number; quantity: number }>);
+  }, {});
  
    if (isLoading) {
      return (
@@ -137,6 +156,11 @@
              <CardTitle className="flex items-center gap-2">
                <MapPin className="h-5 w-5 text-primary" />
                Mapa Facial
+              {facialMap && (
+                <Badge variant="outline" className="ml-2">
+                  {MAP_TYPE_LABELS[facialMap.map_type as keyof typeof MAP_TYPE_LABELS]}
+                </Badge>
+              )}
              </CardTitle>
              <div className="flex items-center gap-2">
                <Button
@@ -183,6 +207,46 @@
            </div>
          </CardHeader>
          <CardContent>
+          {/* General Notes Section */}
+          {facialMap && (
+            <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <FileText className="h-4 w-4" />
+                  Observações Gerais
+                </div>
+                {canEdit && !editingNotes && (
+                  <Button variant="ghost" size="sm" onClick={handleEditNotes}>
+                    Editar
+                  </Button>
+                )}
+              </div>
+              {editingNotes ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={notesValue}
+                    onChange={(e) => setNotesValue(e.target.value)}
+                    placeholder="Adicione observações gerais sobre o mapa facial..."
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSaveNotes}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Salvar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingNotes(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {facialMap.general_notes || 'Nenhuma observação registrada.'}
+                </p>
+              )}
+            </div>
+          )}
+
            {/* View Type Selector */}
            <Tabs value={viewType} onValueChange={(v) => setViewType(v as ViewType)} className="mb-4">
              <TabsList className="grid grid-cols-3 w-full max-w-md">
@@ -242,7 +306,7 @@
                    {Object.entries(totals).map(([type, data]) => (
                      <Card key={type} className="p-3">
                        <div className="text-xs text-muted-foreground">
-                         {PROCEDURE_TYPE_LABELS[type as keyof typeof PROCEDURE_TYPE_LABELS]}
+                          {PROCEDURE_TYPE_LABELS[type as ProcedureType]}
                        </div>
                        <div className="text-lg font-bold">
                          {data.quantity} {type === 'toxin' ? 'UI' : 'ml'}

@@ -79,10 +79,11 @@ export const SPECIALTY_TABS: Record<SpecialtyKey, string[]> = {
   // Estética
   estetica: [
     'aesthetic_assessment',   // Avaliação Estética
+    'facial_map',             // Mapa Facial Interativo
     'aesthetic_procedure',    // Procedimento Realizado
     'products_used',          // Produtos Utilizados
     'before_after_photos',    // Fotos Antes/Depois
-    'consent_form',           // Termo de Consentimento
+    'aesthetic_consent',      // Termo de Consentimento Específico
     'evolucao',
   ],
 

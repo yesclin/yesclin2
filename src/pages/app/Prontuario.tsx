@@ -35,6 +35,7 @@ import {
   Camera,
   // Psychology icons
   NotebookPen,
+  MapPin,
   Goal,
   Route,
   // Psychiatry icons
@@ -100,6 +101,7 @@ import { PatientSelector } from "@/components/prontuario/PatientSelector";
 import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
+import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,6 +216,8 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   products_used: 'procedimentos',
   before_after_photos: 'documentos',
   consent_form: 'consentimentos',
+  facial_map: 'procedimentos', // Map facial map to procedimentos
+  aesthetic_consent: 'consentimentos', // Map aesthetic consent to consentimentos
   // Physiotherapy tabs - map to appropriate permissions
   functional_assessment: 'anamnese',
   chief_complaint: 'anamnese',
@@ -288,6 +292,8 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'products_used', label: 'Produtos Utilizados', icon: Package },
   { id: 'before_after_photos', label: 'Fotos Antes/Depois', icon: ImageIcon },
   { id: 'consent_form', label: 'Termo de Consentimento', icon: FileCheck },
+  { id: 'facial_map', label: 'Mapa Facial', icon: MapPin },
+  { id: 'aesthetic_consent', label: 'Termos Estéticos', icon: FileCheck },
   // Physiotherapy tabs
   { id: 'functional_assessment', label: 'Avaliação Funcional', icon: PersonStanding },
   { id: 'chief_complaint', label: 'Queixa Principal', icon: MessageSquare },
@@ -1089,6 +1095,34 @@ export default function Prontuario() {
               )}
             </CardContent>
           </Card>
+        );
+
+      // ===== AESTHETICS MODULES =====
+      case 'facial_map':
+        return (
+          <FacialMapModule
+            patientId={patientId!}
+            appointmentId={activeAppointment?.id}
+            canEdit={canEditCurrentTab}
+          />
+        );
+
+      case 'before_after_photos':
+        return (
+          <BeforeAfterModule
+            patientId={patientId!}
+            appointmentId={activeAppointment?.id}
+            canEdit={canEditCurrentTab}
+          />
+        );
+
+      case 'aesthetic_consent':
+        return (
+          <ConsentModule
+            patientId={patientId!}
+            appointmentId={activeAppointment?.id}
+            canEdit={canEditCurrentTab}
+          />
         );
 
       default:

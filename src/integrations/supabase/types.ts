@@ -55,6 +55,165 @@ export type Database = {
           },
         ]
       }
+      aesthetic_before_after: {
+        Row: {
+          after_image_date: string | null
+          after_image_url: string | null
+          appointment_id: string | null
+          before_image_date: string | null
+          before_image_url: string | null
+          clinic_id: string
+          consent_for_marketing: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          patient_id: string
+          procedure_id: string | null
+          procedure_type: string | null
+          title: string
+          updated_at: string
+          view_angle: string | null
+        }
+        Insert: {
+          after_image_date?: string | null
+          after_image_url?: string | null
+          appointment_id?: string | null
+          before_image_date?: string | null
+          before_image_url?: string | null
+          clinic_id: string
+          consent_for_marketing?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          patient_id: string
+          procedure_id?: string | null
+          procedure_type?: string | null
+          title: string
+          updated_at?: string
+          view_angle?: string | null
+        }
+        Update: {
+          after_image_date?: string | null
+          after_image_url?: string | null
+          appointment_id?: string | null
+          before_image_date?: string | null
+          before_image_url?: string | null
+          clinic_id?: string
+          consent_for_marketing?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          patient_id?: string
+          procedure_id?: string | null
+          procedure_type?: string | null
+          title?: string
+          updated_at?: string
+          view_angle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aesthetic_before_after_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_before_after_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_before_after_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_before_after_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aesthetic_consent_records: {
+        Row: {
+          accepted_at: string
+          appointment_id: string | null
+          clinic_id: string
+          consent_type: string
+          created_by: string | null
+          id: string
+          ip_address: string | null
+          patient_id: string
+          signature_data: string | null
+          term_content: string
+          term_title: string
+          term_version: string
+          user_agent: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          appointment_id?: string | null
+          clinic_id: string
+          consent_type: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string | null
+          patient_id: string
+          signature_data?: string | null
+          term_content: string
+          term_title: string
+          term_version?: string
+          user_agent?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          appointment_id?: string | null
+          clinic_id?: string
+          consent_type?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string | null
+          patient_id?: string
+          signature_data?: string | null
+          term_content?: string
+          term_title?: string
+          term_version?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aesthetic_consent_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_consent_records_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_consent_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_rules: {
         Row: {
           arrival_tolerance_minutes: number
@@ -1469,6 +1628,98 @@ export type Database = {
             columns: ["specialty_id"]
             isOneToOne: false
             referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facial_map_applications: {
+        Row: {
+          appointment_id: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          muscle: string | null
+          notes: string | null
+          patient_id: string
+          position_x: number
+          position_y: number
+          procedure_type: string
+          product_name: string
+          professional_id: string | null
+          quantity: number
+          side: string | null
+          unit: string
+          updated_at: string
+          view_type: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          muscle?: string | null
+          notes?: string | null
+          patient_id: string
+          position_x: number
+          position_y: number
+          procedure_type: string
+          product_name: string
+          professional_id?: string | null
+          quantity: number
+          side?: string | null
+          unit?: string
+          updated_at?: string
+          view_type?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          muscle?: string | null
+          notes?: string | null
+          patient_id?: string
+          position_x?: number
+          position_y?: number
+          procedure_type?: string
+          product_name?: string
+          professional_id?: string | null
+          quantity?: number
+          side?: string | null
+          unit?: string
+          updated_at?: string
+          view_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facial_map_applications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_map_applications_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_map_applications_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facial_map_applications_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
         ]

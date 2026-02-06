@@ -103,7 +103,9 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
+import { VisaoGeralPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
+import { useVisaoGeralPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -424,6 +426,13 @@ export default function Prontuario() {
     loading: visaoGeralLoading,
   } = useVisaoGeralData(patientId);
 
+  // Visão Geral Data - specific for Psicologia specialty
+  const {
+    patient: psicologiaPatient,
+    summary: psicologiaSummary,
+    loading: psicologiaVisaoGeralLoading,
+  } = useVisaoGeralPsicologiaData(patientId);
+
   // Anamnese Data - specific for Clínica Geral specialty
   const {
     currentAnamnese,
@@ -627,7 +636,17 @@ export default function Prontuario() {
 
     switch (activeTab) {
       case 'resumo':
-        // Clínica Geral - Visão Geral específica
+        // Render specialty-specific Visão Geral
+        if (activeSpecialtyKey === 'psicologia') {
+          return (
+            <VisaoGeralPsicologiaBlock
+              patient={psicologiaPatient}
+              summary={psicologiaSummary}
+              loading={psicologiaVisaoGeralLoading}
+            />
+          );
+        }
+        // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
             patient={visaoGeralPatient}

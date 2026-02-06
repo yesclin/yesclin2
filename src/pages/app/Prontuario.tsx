@@ -836,6 +836,10 @@ export default function Prontuario() {
               alerts={nutricaoAlerts}
               loading={nutricaoVisaoGeralLoading}
               canEdit={canEditCurrentTab}
+              onNavigateToModule={(moduleKey) => {
+                // Navigate to the specified module tab
+                setActiveTab(moduleKey);
+              }}
             />
           );
         }

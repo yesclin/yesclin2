@@ -1,8 +1,9 @@
 /**
- * NUTRIÇÃO - Visão Geral
+ * NUTRIÇÃO - Visão Geral Consolidada
  * 
  * Hook para dados da visão geral do paciente na especialidade Nutrição.
- * Inclui peso atual, IMC, objetivo nutricional, alertas e resumo do acompanhamento.
+ * Conecta todos os módulos clínicos: Avaliação Inicial, Antropometria,
+ * Diagnóstico, Plano Alimentar, Evoluções, Documentos e Alertas.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -31,31 +32,6 @@ export interface NutricaoAlert {
   created_at: string;
 }
 
-export interface NutricaoSummaryData {
-  // Dados atuais
-  peso_atual_kg: number | null;
-  altura_cm: number | null;
-  imc: number | null;
-  classificacao_imc: string | null;
-  
-  // Objetivo
-  objetivo: ObjetivoNutricional | null;
-  objetivo_descricao: string | null;
-  peso_meta_kg: number | null;
-  
-  // Status do acompanhamento
-  status_acompanhamento: StatusAcompanhamento;
-  
-  // Estatísticas
-  total_consultas: number;
-  ultima_consulta: string | null;
-  variacao_peso_kg: number | null; // Desde o início do acompanhamento
-  
-  // Plano alimentar ativo
-  plano_ativo: boolean;
-  data_inicio_plano: string | null;
-}
-
 export interface LastMeasurement {
   id: string;
   measurement_date: string;
@@ -65,6 +41,83 @@ export interface LastMeasurement {
   body_fat_percent: number | null;
   waist_cm: number | null;
   hip_cm: number | null;
+}
+
+export interface DiagnosticoResumo {
+  id: string;
+  diagnostico_principal: string;
+  status: 'ativo' | 'resolvido' | 'em_acompanhamento';
+  data_diagnostico: string;
+  created_at: string;
+}
+
+export interface PlanoAlimentarResumo {
+  id: string;
+  titulo: string;
+  objetivo: string | null;
+  status: 'ativo' | 'inativo' | 'rascunho';
+  data_inicio: string;
+  calorias_totais: number | null;
+  created_at: string;
+}
+
+export interface EvolucaoResumo {
+  id: string;
+  data_atendimento: string;
+  peso_atual_kg: number | null;
+  adesao_plano: string | null;
+  created_at: string;
+}
+
+export interface AvaliacaoInicialResumo {
+  id: string;
+  data_avaliacao: string;
+  objetivo_principal: string | null;
+  historico_alimentar: string | null;
+  created_at: string;
+}
+
+export interface NutricaoSummaryData {
+  // Dados atuais (da Avaliação Antropométrica)
+  peso_atual_kg: number | null;
+  altura_cm: number | null;
+  imc: number | null;
+  classificacao_imc: string | null;
+  data_ultima_medicao: string | null;
+  
+  // Objetivo (da Avaliação Inicial)
+  objetivo: ObjetivoNutricional | null;
+  objetivo_descricao: string | null;
+  peso_meta_kg: number | null;
+  
+  // Variação de peso
+  variacao_peso_kg: number | null;
+  peso_consulta_anterior: number | null;
+  
+  // Status do acompanhamento
+  status_acompanhamento: StatusAcompanhamento;
+  
+  // Estatísticas de consultas
+  total_consultas: number;
+  ultima_consulta: string | null;
+  
+  // Diagnóstico nutricional
+  ultimo_diagnostico: DiagnosticoResumo | null;
+  total_diagnosticos: number;
+  
+  // Plano alimentar
+  plano_ativo: PlanoAlimentarResumo | null;
+  total_planos: number;
+  
+  // Evoluções nutricionais
+  ultima_evolucao: EvolucaoResumo | null;
+  total_evolucoes: number;
+  
+  // Avaliação inicial
+  avaliacao_inicial: AvaliacaoInicialResumo | null;
+  
+  // Documentos
+  total_documentos: number;
 }
 
 // Labels para objetivo nutricional
@@ -121,7 +174,7 @@ function determineStatus(
 }
 
 /**
- * Hook para buscar dados da visão geral nutricional do paciente
+ * Hook para buscar dados consolidados da visão geral nutricional do paciente
  */
 export function useVisaoGeralNutricaoData(patientId: string | null) {
   const { clinic } = useClinicData();
@@ -147,14 +200,14 @@ export function useVisaoGeralNutricaoData(patientId: string | null) {
     enabled: !!patientId,
   });
   
-  // Buscar última medição corporal
+  // Buscar última e penúltima medição corporal (para variação)
   const {
-    data: lastMeasurement,
+    data: measurements,
     isLoading: measurementLoading,
   } = useQuery({
-    queryKey: ['nutricao-last-measurement', patientId, clinic?.id],
+    queryKey: ['nutricao-measurements', patientId, clinic?.id],
     queryFn: async () => {
-      if (!patientId || !clinic?.id) return null;
+      if (!patientId || !clinic?.id) return { last: null, previous: null };
       
       const { data, error } = await supabase
         .from('body_measurements')
@@ -162,35 +215,14 @@ export function useVisaoGeralNutricaoData(patientId: string | null) {
         .eq('patient_id', patientId)
         .eq('clinic_id', clinic.id)
         .order('measurement_date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(2);
       
       if (error) throw error;
-      return data as LastMeasurement | null;
-    },
-    enabled: !!patientId && !!clinic?.id,
-  });
-  
-  // Buscar primeira medição para calcular variação
-  const {
-    data: firstMeasurement,
-    isLoading: firstMeasurementLoading,
-  } = useQuery({
-    queryKey: ['nutricao-first-measurement', patientId, clinic?.id],
-    queryFn: async () => {
-      if (!patientId || !clinic?.id) return null;
       
-      const { data, error } = await supabase
-        .from('body_measurements')
-        .select('weight_kg, measurement_date')
-        .eq('patient_id', patientId)
-        .eq('clinic_id', clinic.id)
-        .order('measurement_date', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
+      return {
+        last: (data?.[0] as LastMeasurement) || null,
+        previous: (data?.[1] as LastMeasurement) || null,
+      };
     },
     enabled: !!patientId && !!clinic?.id,
   });
@@ -204,7 +236,6 @@ export function useVisaoGeralNutricaoData(patientId: string | null) {
     queryFn: async () => {
       if (!patientId || !clinic?.id) return { total: 0, ultima: null };
       
-      // Buscar total de consultas finalizadas
       const { count, error: countError } = await supabase
         .from('appointments')
         .select('id', { count: 'exact', head: true })
@@ -214,7 +245,6 @@ export function useVisaoGeralNutricaoData(patientId: string | null) {
       
       if (countError) throw countError;
       
-      // Buscar última consulta
       const { data: lastAppt, error: lastError } = await supabase
         .from('appointments')
         .select('scheduled_date')
@@ -258,39 +288,255 @@ export function useVisaoGeralNutricaoData(patientId: string | null) {
     enabled: !!patientId && !!clinic?.id,
   });
   
+  // Buscar diagnósticos nutricionais
+  const {
+    data: diagnosticos,
+    isLoading: diagnosticosLoading,
+  } = useQuery({
+    queryKey: ['nutricao-visao-diagnosticos', patientId, clinic?.id],
+    queryFn: async () => {
+      if (!patientId || !clinic?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('clinical_evolutions')
+        .select('id, content, created_at')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .eq('specialty', 'nutricao')
+        .eq('evolution_type', 'followup')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || [])
+        .filter(ev => {
+          const content = ev.content as Record<string, unknown>;
+          return content?.tipo_registro === 'diagnostico_nutricional';
+        })
+        .map(ev => {
+          const content = ev.content as Record<string, unknown>;
+          return {
+            id: ev.id,
+            diagnostico_principal: (content?.diagnostico_principal as string) || '',
+            status: (content?.status as 'ativo' | 'resolvido' | 'em_acompanhamento') || 'ativo',
+            data_diagnostico: (content?.data_diagnostico as string) || ev.created_at.split('T')[0],
+            created_at: ev.created_at,
+          };
+        }) as DiagnosticoResumo[];
+    },
+    enabled: !!patientId && !!clinic?.id,
+  });
+  
+  // Buscar planos alimentares
+  const {
+    data: planos,
+    isLoading: planosLoading,
+  } = useQuery({
+    queryKey: ['nutricao-visao-planos', patientId, clinic?.id],
+    queryFn: async () => {
+      if (!patientId || !clinic?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('clinical_evolutions')
+        .select('id, content, created_at')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .eq('evolution_type', 'plano_alimentar')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map(ev => {
+        const content = ev.content as Record<string, unknown>;
+        const macros = content?.macros as Record<string, unknown>;
+        return {
+          id: ev.id,
+          titulo: (content?.titulo as string) || 'Plano Alimentar',
+          objetivo: (content?.objetivo as string) || null,
+          status: (content?.status as 'ativo' | 'inativo' | 'rascunho') || 'ativo',
+          data_inicio: (content?.data_inicio as string) || ev.created_at.split('T')[0],
+          calorias_totais: (macros?.calorias_totais_kcal as number) || null,
+          created_at: ev.created_at,
+        };
+      }) as PlanoAlimentarResumo[];
+    },
+    enabled: !!patientId && !!clinic?.id,
+  });
+  
+  // Buscar evoluções nutricionais (evolucao_retorno)
+  const {
+    data: evolucoes,
+    isLoading: evolucoesLoading,
+  } = useQuery({
+    queryKey: ['nutricao-visao-evolucoes', patientId, clinic?.id],
+    queryFn: async () => {
+      if (!patientId || !clinic?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('clinical_evolutions')
+        .select('id, content, created_at')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .eq('specialty', 'nutricao')
+        .eq('evolution_type', 'evolucao_retorno')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map(ev => {
+        const content = ev.content as Record<string, unknown>;
+        return {
+          id: ev.id,
+          data_atendimento: (content?.data_atendimento as string) || ev.created_at.split('T')[0],
+          peso_atual_kg: (content?.peso_atual_kg as number) || null,
+          adesao_plano: (content?.adesao_plano as string) || null,
+          created_at: ev.created_at,
+        };
+      }) as EvolucaoResumo[];
+    },
+    enabled: !!patientId && !!clinic?.id,
+  });
+  
+  // Buscar avaliação inicial
+  const {
+    data: avaliacaoInicial,
+    isLoading: avaliacaoInicialLoading,
+  } = useQuery({
+    queryKey: ['nutricao-visao-avaliacao-inicial', patientId, clinic?.id],
+    queryFn: async () => {
+      if (!patientId || !clinic?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('clinical_evolutions')
+        .select('id, content, created_at')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .eq('specialty', 'nutricao')
+        .eq('evolution_type', 'avaliacao_inicial')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) return null;
+      
+      const content = data.content as Record<string, unknown>;
+      return {
+        id: data.id,
+        data_avaliacao: (content?.data_avaliacao as string) || data.created_at.split('T')[0],
+        objetivo_principal: (content?.objetivo_principal as string) || null,
+        historico_alimentar: (content?.historico_alimentar as string) || null,
+        created_at: data.created_at,
+      } as AvaliacaoInicialResumo;
+    },
+    enabled: !!patientId && !!clinic?.id,
+  });
+  
+  // Buscar contagem de documentos
+  const {
+    data: documentCount,
+    isLoading: documentCountLoading,
+  } = useQuery({
+    queryKey: ['nutricao-visao-documentos', patientId, clinic?.id],
+    queryFn: async () => {
+      if (!patientId || !clinic?.id) return 0;
+      
+      const { count, error } = await supabase
+        .from('clinical_media')
+        .select('id', { count: 'exact', head: true })
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!patientId && !!clinic?.id,
+  });
+  
+  // Processar dados
+  const lastMeasurement = measurements?.last || null;
+  const previousMeasurement = measurements?.previous || null;
+  
+  const planoAtivo = planos?.find(p => p.status === 'ativo') || null;
+  const ultimoDiagnostico = diagnosticos?.find(d => d.status === 'ativo') || diagnosticos?.[0] || null;
+  const ultimaEvolucao = evolucoes?.[0] || null;
+  
+  // Calcular variação de peso
+  const variacaoPeso = lastMeasurement?.weight_kg && previousMeasurement?.weight_kg
+    ? Number((lastMeasurement.weight_kg - previousMeasurement.weight_kg).toFixed(1))
+    : null;
+  
   // Determinar status do acompanhamento
-  const planoAtivo = false; // TODO: Implementar quando tivermos tabela de planos
   const statusAcompanhamento = determineStatus(
     appointmentStats?.total || 0,
     appointmentStats?.ultima || null,
-    planoAtivo
+    !!planoAtivo
   );
   
-  // Calcular resumo
+  // Mapear objetivo da avaliação inicial
+  const objetivoMap: Record<string, ObjetivoNutricional> = {
+    'emagrecimento': 'perda_peso',
+    'perda_peso': 'perda_peso',
+    'ganho_massa': 'ganho_massa',
+    'hipertrofia': 'ganho_massa',
+    'manutencao': 'manutencao',
+    'reeducacao': 'reeducacao',
+    'reeducacao_alimentar': 'reeducacao',
+  };
+  
+  const objetivoRaw = avaliacaoInicial?.objetivo_principal?.toLowerCase() || '';
+  const objetivo = objetivoMap[objetivoRaw] || (objetivoRaw ? 'outro' : null);
+  
+  // Calcular resumo consolidado
   const summary: NutricaoSummaryData = {
     peso_atual_kg: lastMeasurement?.weight_kg || null,
     altura_cm: lastMeasurement?.height_cm || null,
     imc: lastMeasurement?.bmi || null,
     classificacao_imc: classifyBMI(lastMeasurement?.bmi || null),
-    objetivo: null, // TODO: Implementar quando tivermos tabela de objetivos
-    objetivo_descricao: null,
+    data_ultima_medicao: lastMeasurement?.measurement_date || null,
+    
+    objetivo,
+    objetivo_descricao: avaliacaoInicial?.objetivo_principal || null,
     peso_meta_kg: null,
+    
+    variacao_peso_kg: variacaoPeso,
+    peso_consulta_anterior: previousMeasurement?.weight_kg || null,
+    
     status_acompanhamento: statusAcompanhamento,
+    
     total_consultas: appointmentStats?.total || 0,
     ultima_consulta: appointmentStats?.ultima || null,
-    variacao_peso_kg: 
-      lastMeasurement?.weight_kg && firstMeasurement?.weight_kg
-        ? Number((lastMeasurement.weight_kg - firstMeasurement.weight_kg).toFixed(1))
-        : null,
+    
+    ultimo_diagnostico: ultimoDiagnostico,
+    total_diagnosticos: diagnosticos?.length || 0,
+    
     plano_ativo: planoAtivo,
-    data_inicio_plano: null,
+    total_planos: planos?.length || 0,
+    
+    ultima_evolucao: ultimaEvolucao,
+    total_evolucoes: evolucoes?.length || 0,
+    
+    avaliacao_inicial: avaliacaoInicial || null,
+    
+    total_documentos: documentCount || 0,
   };
+  
+  const loading = 
+    patientLoading || 
+    measurementLoading || 
+    appointmentStatsLoading || 
+    alertsLoading ||
+    diagnosticosLoading ||
+    planosLoading ||
+    evolucoesLoading ||
+    avaliacaoInicialLoading ||
+    documentCountLoading;
   
   return {
     patient,
     summary,
     lastMeasurement,
     alerts: alerts || [],
-    loading: patientLoading || measurementLoading || firstMeasurementLoading || appointmentStatsLoading || alertsLoading,
+    loading,
   };
 }

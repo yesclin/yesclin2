@@ -92,3 +92,15 @@ export type {
   AnamneseNutricionalFormData,
   FrequenciaConsumo,
 } from './useAnamneseNutricionalData';
+
+// Avaliação Clínica / Bioquímica
+export { 
+  useAvaliacaoClinicaData,
+  SINAIS_SINTOMAS_NUTRICAO,
+  EXAMES_COMUNS_NUTRICAO,
+} from './useAvaliacaoClinicaData';
+export type { 
+  AvaliacaoClinica,
+  AvaliacaoClinicaFormData,
+  ExameLaboratorial,
+} from './useAvaliacaoClinicaData';

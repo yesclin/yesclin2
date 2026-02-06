@@ -106,6 +106,8 @@ import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, Condu
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
+import { EvolucoesNutricaoBlock } from "@/components/prontuario/nutricao";
+import { useEvolucoesNutricaoData } from "@/hooks/prontuario/nutricao";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -472,6 +474,15 @@ export default function Prontuario() {
     signSessao: signSessaoPsico,
   } = useSessoesPsicologiaData(patientId, currentProfessionalId || undefined);
 
+  // Evoluções Nutricionais Data - specific for Nutrição specialty
+  const {
+    evolucoes: evolucoesNutricao,
+    loading: evolucoesNutricaoLoading,
+    saving: evolucoesNutricaoSaving,
+    saveEvolucao: saveEvolucaoNutricao,
+    signEvolucao: signEvolucaoNutricao,
+  } = useEvolucoesNutricaoData(patientId, currentProfessionalId || undefined);
+
   // Plano Terapêutico Data - specific for Psicologia specialty
   const {
     currentPlano: currentPlanoTerapeutico,
@@ -808,6 +819,18 @@ export default function Prontuario() {
               currentProfessionalName={currentProfessionalName || undefined}
               onSave={saveSessaoPsico}
               onSign={signSessaoPsico}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'nutricao') {
+          return (
+            <EvolucoesNutricaoBlock
+              evolucoes={evolucoesNutricao}
+              loading={evolucoesNutricaoLoading}
+              saving={evolucoesNutricaoSaving}
+              canEdit={canEditCurrentTab}
+              onSave={saveEvolucaoNutricao}
+              onSign={signEvolucaoNutricao}
             />
           );
         }

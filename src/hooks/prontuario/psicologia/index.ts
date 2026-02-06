@@ -36,3 +36,5 @@ export type {
   InstrumentoPsicologico,
   InstrumentoFormData,
 } from './useInstrumentosPsicologicosData';
+
+export { useAlertasPsicologiaData } from './useAlertasPsicologiaData';

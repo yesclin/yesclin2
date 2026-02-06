@@ -103,9 +103,9 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
-import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData } from "@/hooks/prontuario/psicologia";
+import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -505,6 +505,19 @@ export default function Prontuario() {
     revokeConsent: revokePatientConsent,
   } = usePatientConsents(patientId || undefined);
 
+  // Alertas Psicologia Data - specific for Psicologia specialty
+  const {
+    alertas: alertasPsico,
+    activeAlertas: activeAlertasPsico,
+    loading: alertasPsicoLoading,
+    saving: alertasPsicoSaving,
+    currentProfessionalId: alertaPsicoProfId,
+    currentProfessionalName: alertaPsicoProfName,
+    saveAlerta: saveAlertaPsico,
+    deactivateAlerta: deactivateAlertaPsico,
+    reactivateAlerta: reactivateAlertaPsico,
+  } = useAlertasPsicologiaData(patientId);
+
   // Exame Físico Data - specific for Clínica Geral specialty
   const {
     exames: examesFisicos,
@@ -858,6 +871,22 @@ export default function Prontuario() {
         );
 
       case 'alertas':
+        // Specialty-specific alerts block
+        if (activeSpecialtyKey === 'psicologia') {
+          return (
+            <AlertasPsicologiaBlock
+              alertas={alertasPsico}
+              loading={alertasPsicoLoading}
+              saving={alertasPsicoSaving}
+              canEdit={canEditCurrentTab}
+              currentProfessionalId={alertaPsicoProfId || undefined}
+              currentProfessionalName={alertaPsicoProfName || undefined}
+              onSave={saveAlertaPsico}
+              onDeactivate={deactivateAlertaPsico}
+              onReactivate={reactivateAlertaPsico}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1533,7 +1562,15 @@ export default function Prontuario() {
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6">
             {/* Alerts Banner - shown at top when there are active alerts */}
-            {activeAlertas.length > 0 && activeTab !== 'alertas' && (
+            {/* Psychology specialty uses specialized banner with risk indicators */}
+            {activeSpecialtyKey === 'psicologia' && activeAlertasPsico.length > 0 && activeTab !== 'alertas' && (
+              <AlertasBannerPsicologia 
+                alertas={alertasPsico} 
+                onViewAlerts={() => setActiveTab('alertas')}
+              />
+            )}
+            {/* Other specialties use standard banner */}
+            {activeSpecialtyKey !== 'psicologia' && activeAlertas.length > 0 && activeTab !== 'alertas' && (
               <AlertasBanner alertas={activeAlertas} />
             )}
             {renderTabContent()}

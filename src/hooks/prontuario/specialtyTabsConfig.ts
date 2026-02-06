@@ -18,6 +18,7 @@ export type { ClinicalBlockKey } from './yesclinSpecialties';
 // Tab keys mapped to their display names
 export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   resumo: 'Visão Geral',
+  anamnese: 'Anamnese',
   evolucao: 'Evoluções',
   conduta: 'Plano / Conduta',
   exames: 'Exames / Documentos',

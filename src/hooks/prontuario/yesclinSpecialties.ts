@@ -34,7 +34,12 @@ export type ClinicalBlockKey =
   | 'termos_consentimentos'
   | 'facial_map'
   | 'odontograma'
-  | 'instrumentos'; // Instrumentos / Testes Psicológicos
+  | 'instrumentos' // Instrumentos / Testes Psicológicos
+  // Nutrition-specific blocks
+  | 'avaliacao_nutricional' // Avaliação Nutricional (antropometria, bioimpedância)
+  | 'recordatorio_alimentar' // Recordatório Alimentar / Inquérito Dietético
+  | 'plano_alimentar' // Plano Alimentar com macros e refeições
+  | 'metas_nutricionais'; // Metas e Acompanhamento Nutricional
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -124,17 +129,38 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Brain',
   },
+  /**
+   * NUTRIÇÃO - Blocos clínicos específicos
+   * 
+   * Prontuário focado em avaliação e acompanhamento nutricional com:
+   * - Visão geral do paciente (peso atual, IMC, objetivo)
+   * - Avaliação nutricional (antropometria, bioimpedância, dobras cutâneas)
+   * - Recordatório alimentar (inquérito dietético 24h/habitual)
+   * - Plano alimentar (macros, refeições, orientações)
+   * - Metas e acompanhamento (objetivos, evolução de peso)
+   * - Evoluções clínicas
+   * - Exames laboratoriais (lipidograma, glicemia, vitaminas)
+   * - Linha do tempo
+   * - Histórico completo
+   * 
+   * NÃO inclui: Odontograma, Mapa Facial, Prescrições Médicas,
+   * Instrumentos Psicológicos, Alertas de Risco
+   */
   {
     key: 'nutricao',
     name: 'Nutrição',
-    description: 'Avaliação nutricional e plano alimentar',
+    description: 'Avaliação nutricional completa, plano alimentar e acompanhamento de metas',
     enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'conduta',
-      'exames',
-      'timeline',
-      'historico',
+      'resumo',                   // Visão Geral (peso, IMC, objetivo)
+      'avaliacao_nutricional',    // Antropometria, bioimpedância, dobras
+      'recordatorio_alimentar',   // Recordatório alimentar / Inquérito dietético
+      'plano_alimentar',          // Plano alimentar com macros e refeições
+      'metas_nutricionais',       // Metas e acompanhamento de peso
+      'evolucao',                 // Evoluções clínicas
+      'conduta',                  // Orientações nutricionais
+      'exames',                   // Exames laboratoriais
+      'timeline',                 // Linha do tempo
+      'historico',                // Histórico de atendimentos
     ],
     icon: 'Apple',
   },

@@ -35,6 +35,11 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   facial_map: 'Mapa Facial',
   odontograma: 'Odontograma Digital',
   instrumentos: 'Instrumentos / Testes',
+  // Nutrition-specific blocks
+  avaliacao_nutricional: 'Avaliação Nutricional',
+  recordatorio_alimentar: 'Recordatório Alimentar',
+  plano_alimentar: 'Plano Alimentar',
+  metas_nutricionais: 'Metas Nutricionais',
 };
 
 // All available clinical block keys

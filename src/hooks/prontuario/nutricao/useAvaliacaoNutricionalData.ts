@@ -56,6 +56,7 @@ export interface AvaliacaoNutricionalFormData {
   // Circunferências
   waist_cm: number | null;
   hip_cm: number | null;
+  abdomen_cm?: number | null; // Circunferência abdominal
   chest_cm: number | null;
   arm_left_cm: number | null;
   arm_right_cm: number | null;
@@ -66,14 +67,17 @@ export interface AvaliacaoNutricionalFormData {
   
   // Composição corporal
   body_fat_percent: number | null;
+  lean_mass_percent?: number | null; // % massa magra
   muscle_mass_kg: number | null;
   
-  // Dobras cutâneas (em custom_measurements)
+  // Dobras cutâneas principais (em custom_measurements)
   dobra_tricipital_mm?: number | null;
   dobra_subescapular_mm?: number | null;
-  dobra_bicipital_mm?: number | null;
   dobra_suprailiaca_mm?: number | null;
   dobra_abdominal_mm?: number | null;
+  
+  // Dobras cutâneas adicionais (em custom_measurements)
+  dobra_bicipital_mm?: number | null;
   dobra_coxa_mm?: number | null;
   dobra_peitoral_mm?: number | null;
   
@@ -151,14 +155,22 @@ export function useAvaliacaoNutricionalData(patientId: string | null, profession
       // Extrair dados de dobras cutâneas e bioimpedância para custom_measurements
       const customMeasurements: Record<string, unknown> = {};
       
+      // Circunferência abdominal (custom)
+      if (formData.abdomen_cm !== undefined && formData.abdomen_cm !== null) {
+        customMeasurements.abdomen_cm = formData.abdomen_cm;
+      }
+      
+      // Massa magra % (custom)
+      if (formData.lean_mass_percent !== undefined && formData.lean_mass_percent !== null) {
+        customMeasurements.lean_mass_percent = formData.lean_mass_percent;
+      }
+      
+      // Dobras cutâneas principais
       if (formData.dobra_tricipital_mm !== undefined && formData.dobra_tricipital_mm !== null) {
         customMeasurements.dobra_tricipital_mm = formData.dobra_tricipital_mm;
       }
       if (formData.dobra_subescapular_mm !== undefined && formData.dobra_subescapular_mm !== null) {
         customMeasurements.dobra_subescapular_mm = formData.dobra_subescapular_mm;
-      }
-      if (formData.dobra_bicipital_mm !== undefined && formData.dobra_bicipital_mm !== null) {
-        customMeasurements.dobra_bicipital_mm = formData.dobra_bicipital_mm;
       }
       if (formData.dobra_suprailiaca_mm !== undefined && formData.dobra_suprailiaca_mm !== null) {
         customMeasurements.dobra_suprailiaca_mm = formData.dobra_suprailiaca_mm;
@@ -166,12 +178,19 @@ export function useAvaliacaoNutricionalData(patientId: string | null, profession
       if (formData.dobra_abdominal_mm !== undefined && formData.dobra_abdominal_mm !== null) {
         customMeasurements.dobra_abdominal_mm = formData.dobra_abdominal_mm;
       }
+      
+      // Dobras cutâneas adicionais
+      if (formData.dobra_bicipital_mm !== undefined && formData.dobra_bicipital_mm !== null) {
+        customMeasurements.dobra_bicipital_mm = formData.dobra_bicipital_mm;
+      }
       if (formData.dobra_coxa_mm !== undefined && formData.dobra_coxa_mm !== null) {
         customMeasurements.dobra_coxa_mm = formData.dobra_coxa_mm;
       }
       if (formData.dobra_peitoral_mm !== undefined && formData.dobra_peitoral_mm !== null) {
         customMeasurements.dobra_peitoral_mm = formData.dobra_peitoral_mm;
       }
+      
+      // Bioimpedância
       if (formData.agua_corporal_percent !== undefined && formData.agua_corporal_percent !== null) {
         customMeasurements.agua_corporal_percent = formData.agua_corporal_percent;
       }

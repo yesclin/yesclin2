@@ -4519,6 +4519,92 @@ export type Database = {
           },
         ]
       }
+      patient_exames_fisicos: {
+        Row: {
+          altura: number | null
+          clinic_id: string
+          created_at: string
+          data_hora: string
+          evolucao_id: string | null
+          frequencia_cardiaca: number | null
+          frequencia_respiratoria: number | null
+          id: string
+          imc: number | null
+          observacoes: string | null
+          patient_id: string
+          peso: number | null
+          pressao_diastolica: number | null
+          pressao_sistolica: number | null
+          profissional_id: string
+          temperatura: number | null
+        }
+        Insert: {
+          altura?: number | null
+          clinic_id: string
+          created_at?: string
+          data_hora?: string
+          evolucao_id?: string | null
+          frequencia_cardiaca?: number | null
+          frequencia_respiratoria?: number | null
+          id?: string
+          imc?: number | null
+          observacoes?: string | null
+          patient_id: string
+          peso?: number | null
+          pressao_diastolica?: number | null
+          pressao_sistolica?: number | null
+          profissional_id: string
+          temperatura?: number | null
+        }
+        Update: {
+          altura?: number | null
+          clinic_id?: string
+          created_at?: string
+          data_hora?: string
+          evolucao_id?: string | null
+          frequencia_cardiaca?: number | null
+          frequencia_respiratoria?: number | null
+          id?: string
+          imc?: number | null
+          observacoes?: string | null
+          patient_id?: string
+          peso?: number | null
+          pressao_diastolica?: number | null
+          pressao_sistolica?: number | null
+          profissional_id?: string
+          temperatura?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_exames_fisicos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_exames_fisicos_evolucao_id_fkey"
+            columns: ["evolucao_id"]
+            isOneToOne: false
+            referencedRelation: "patient_evolucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_exames_fisicos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_exames_fisicos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_guardians: {
         Row: {
           clinic_id: string

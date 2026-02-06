@@ -19,6 +19,7 @@ export type { ClinicalBlockKey } from './yesclinSpecialties';
 export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   resumo: 'Visão Geral',
   anamnese: 'Anamnese',
+  exame_fisico: 'Exame Físico',
   evolucao: 'Evoluções',
   conduta: 'Plano / Conduta',
   exames: 'Exames / Documentos',

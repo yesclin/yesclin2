@@ -23,3 +23,6 @@ export type {
   TipoAtendimento, 
   StatusEvolucao 
 } from './EvolucoesBlock';
+
+export { ExameFisicoBlock } from './ExameFisicoBlock';
+export type { ExameFisico } from './ExameFisicoBlock';

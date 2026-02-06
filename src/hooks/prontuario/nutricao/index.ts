@@ -104,3 +104,15 @@ export type {
   AvaliacaoClinicaFormData,
   ExameLaboratorial,
 } from './useAvaliacaoClinicaData';
+
+// Diagnóstico Nutricional
+export { 
+  useDiagnosticoNutricionalData,
+  DIAGNOSTICOS_NUTRICIONAIS_COMUNS,
+  STATUS_DIAGNOSTICO_LABELS,
+} from './useDiagnosticoNutricionalData';
+export type { 
+  DiagnosticoNutricional,
+  DiagnosticoFormData,
+  StatusDiagnostico,
+} from './useDiagnosticoNutricionalData';

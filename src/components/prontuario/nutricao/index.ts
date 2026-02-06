@@ -11,3 +11,4 @@ export { PlanoAlimentarBlock } from './PlanoAlimentarBlock';
 export { MetasNutricionaisBlock } from './MetasNutricionaisBlock';
 export { EvolucoesNutricaoBlock } from './EvolucoesNutricaoBlock';
 export { AnamneseNutricionalBlock } from './AnamneseNutricionalBlock';
+export { AvaliacaoClinicaBlock } from './AvaliacaoClinicaBlock';

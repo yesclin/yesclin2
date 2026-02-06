@@ -199,12 +199,15 @@ export function ToothDetailDialog({
             {/* Procedure selection */}
             <div className="space-y-2">
               <Label>Procedimento Realizado (opcional)</Label>
-              <Select value={selectedProcedure} onValueChange={setSelectedProcedure}>
+              <Select 
+                value={selectedProcedure || "none"} 
+                onValueChange={(v) => setSelectedProcedure(v === "none" ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um procedimento..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {procedures.map((proc) => (
                     <SelectItem key={proc.id} value={proc.id}>
                       {proc.name}

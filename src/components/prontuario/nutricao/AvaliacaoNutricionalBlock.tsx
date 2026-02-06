@@ -22,11 +22,13 @@ import {
   Calendar,
   Save,
   History,
-  Activity
+  Activity,
+  TrendingUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { AvaliacaoNutricional, AvaliacaoNutricionalFormData } from '@/hooks/prontuario/nutricao';
+import { AvaliacaoEvolutionChart } from './AvaliacaoEvolutionChart';
 
 interface AvaliacaoNutricionalBlockProps {
   avaliacoes: AvaliacaoNutricional[];
@@ -78,6 +80,7 @@ export function AvaliacaoNutricionalBlock({
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<AvaliacaoNutricionalFormData>(initialFormData);
   const [showHistory, setShowHistory] = useState(false);
+  const [showEvolution, setShowEvolution] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     circunferencias: true,
     dobras: false,
@@ -129,9 +132,19 @@ export function AvaliacaoNutricionalBlock({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Scale className="h-5 w-5 text-green-600" />
-          <h2 className="text-lg font-semibold">Avaliação Nutricional</h2>
+          <h2 className="text-lg font-semibold">Avaliação Antropométrica</h2>
         </div>
         <div className="flex gap-2">
+          {avaliacoes.length >= 2 && (
+            <Button 
+              variant={showEvolution ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowEvolution(!showEvolution)}
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Evolução
+            </Button>
+          )}
           {avaliacoes.length > 0 && (
             <Button 
               variant="outline" 
@@ -150,6 +163,11 @@ export function AvaliacaoNutricionalBlock({
           )}
         </div>
       </div>
+
+      {/* Gráficos de Evolução */}
+      {showEvolution && avaliacoes.length >= 2 && (
+        <AvaliacaoEvolutionChart avaliacoes={avaliacoes} />
+      )}
 
       {/* Formulário de Nova Avaliação */}
       {showForm && canEdit && (

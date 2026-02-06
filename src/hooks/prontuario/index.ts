@@ -30,6 +30,16 @@ export {
   isTabVisibleForSpecialty 
 } from './specialtyTabsConfig';
 
+// Yesclin Supported Specialties (controlled system list)
+export {
+  YESCLIN_SUPPORTED_SPECIALTIES,
+  YESCLIN_SPECIALTY_LABELS,
+  getEnabledModulesForSpecialty,
+  isModuleEnabledForSpecialty,
+  resolveSpecialtyKey,
+  type YesclinSpecialty,
+} from './yesclinSpecialties';
+
 // Active Medical Record Modules (specialty-based module filtering)
 export { 
   useActiveMedicalRecordModules, 

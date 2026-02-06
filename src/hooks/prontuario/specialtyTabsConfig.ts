@@ -1,4 +1,5 @@
 import type { SpecialtyKey } from './useActiveSpecialty';
+import { isModuleEnabledForSpecialty } from './yesclinSpecialties';
 
 /**
  * Configuration for which tabs are visible for each specialty.
@@ -172,17 +173,6 @@ export function isTabVisibleForSpecialty(tabKey: string, specialtyKey: Specialty
 
 /**
  * Get a human-readable label for a specialty key.
+ * @deprecated Use YESCLIN_SPECIALTY_LABELS from yesclinSpecialties.ts instead
  */
-export const SPECIALTY_LABELS: Record<SpecialtyKey, string> = {
-  geral: 'Clínica Geral',
-  odontologia: 'Odontologia',
-  psicologia: 'Psicologia',
-  psiquiatria: 'Psiquiatria',
-  nutricao: 'Nutrição',
-  estetica: 'Estética',
-  fisioterapia: 'Fisioterapia',
-  pediatria: 'Pediatria',
-  ginecologia: 'Ginecologia',
-  oftalmologia: 'Oftalmologia',
-  custom: 'Personalizado',
-};
+export { YESCLIN_SPECIALTY_LABELS as SPECIALTY_LABELS } from './yesclinSpecialties';

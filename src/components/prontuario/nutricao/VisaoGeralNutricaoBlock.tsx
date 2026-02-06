@@ -1,9 +1,19 @@
 /**
- * NUTRIÇÃO - Visão Geral
+ * NUTRIÇÃO - Visão Geral (Somente Leitura)
  * 
- * Bloco de visão geral do paciente para a especialidade Nutrição.
- * Exibe dados básicos, objetivo nutricional, status do acompanhamento e alertas ativos.
- * Inclui atalhos rápidos para ações comuns.
+ * Bloco informativo do paciente para a especialidade Nutrição.
+ * NÃO permite edição direta de dados.
+ * 
+ * Exibe:
+ * - Dados básicos do paciente (nome)
+ * - Idade e sexo
+ * - Objetivo nutricional atual
+ * - Data da última consulta nutricional
+ * - Status do acompanhamento
+ * - Alertas nutricionais ativos
+ * 
+ * Ações Rápidas: Apenas atalhos para abrir formulários em outros blocos
+ * (não editam dados neste componente).
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,11 +74,11 @@ function getIMCBadgeVariant(classificacao: string | null): 'default' | 'secondar
 function getAlertIcon(severity: 'critical' | 'warning' | 'info') {
   switch (severity) {
     case 'critical':
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
     case 'warning':
-      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      return <AlertTriangle className="h-4 w-4 text-accent-foreground" />;
     default:
-      return <Info className="h-4 w-4 text-blue-500" />;
+      return <Info className="h-4 w-4 text-primary" />;
   }
 }
 
@@ -144,10 +154,10 @@ export function VisaoGeralNutricaoBlock({
               key={alert.id} 
               className={`border-l-4 ${
                 alert.severity === 'critical' 
-                  ? 'border-l-red-500 bg-red-50/30' 
+                  ? 'border-l-destructive bg-destructive/10' 
                   : alert.severity === 'warning'
-                    ? 'border-l-amber-500 bg-amber-50/30'
-                    : 'border-l-blue-500 bg-blue-50/30'
+                    ? 'border-l-accent bg-accent/10'
+                    : 'border-l-primary bg-primary/10'
               }`}
             >
               <CardContent className="py-3 px-4">
@@ -173,12 +183,12 @@ export function VisaoGeralNutricaoBlock({
       )}
 
       {/* Cabeçalho do Paciente */}
-      <Card className="border-l-4 border-l-green-500">
+      <Card className="border-l-4 border-l-primary">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-full shrink-0">
-                <Apple className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-primary/20 rounded-full shrink-0">
+                <Apple className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <CardTitle className="text-lg">{patient.full_name}</CardTitle>
@@ -199,7 +209,7 @@ export function VisaoGeralNutricaoBlock({
                 {STATUS_ACOMPANHAMENTO_LABELS[summary.status_acompanhamento]}
               </Badge>
               {summary.plano_ativo && (
-                <Badge variant="default" className="bg-green-600">
+                <Badge variant="default">
                   Plano Ativo
                 </Badge>
               )}
@@ -358,7 +368,7 @@ export function VisaoGeralNutricaoBlock({
               <span className="text-muted-foreground">kg</span>
             </div>
             {summary.variacao_peso_kg !== null && summary.variacao_peso_kg !== 0 && (
-              <p className={`text-sm mt-1 ${summary.variacao_peso_kg > 0 ? 'text-red-500' : 'text-green-500'}`}>
+              <p className={`text-sm mt-1 ${summary.variacao_peso_kg > 0 ? 'text-destructive' : 'text-primary'}`}>
                 {summary.variacao_peso_kg > 0 ? '+' : ''}{summary.variacao_peso_kg} kg desde o início
               </p>
             )}

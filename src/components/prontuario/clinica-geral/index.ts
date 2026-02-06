@@ -16,3 +16,10 @@ export type {
 
 export { AnamneseBlock } from './AnamneseBlock';
 export type { AnamneseData } from './AnamneseBlock';
+
+export { EvolucoesBlock } from './EvolucoesBlock';
+export type { 
+  EvolucaoClinica, 
+  TipoAtendimento, 
+  StatusEvolucao 
+} from './EvolucoesBlock';

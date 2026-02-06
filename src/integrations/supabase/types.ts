@@ -4452,6 +4452,73 @@ export type Database = {
           },
         ]
       }
+      patient_evolucoes: {
+        Row: {
+          assinada_em: string | null
+          clinic_id: string
+          conduta: string | null
+          created_at: string
+          data_hora: string
+          descricao_clinica: string
+          hipoteses_diagnosticas: string | null
+          id: string
+          patient_id: string
+          profissional_id: string
+          status: string
+          tipo_atendimento: string
+        }
+        Insert: {
+          assinada_em?: string | null
+          clinic_id: string
+          conduta?: string | null
+          created_at?: string
+          data_hora?: string
+          descricao_clinica: string
+          hipoteses_diagnosticas?: string | null
+          id?: string
+          patient_id: string
+          profissional_id: string
+          status?: string
+          tipo_atendimento?: string
+        }
+        Update: {
+          assinada_em?: string | null
+          clinic_id?: string
+          conduta?: string | null
+          created_at?: string
+          data_hora?: string
+          descricao_clinica?: string
+          hipoteses_diagnosticas?: string | null
+          id?: string
+          patient_id?: string
+          profissional_id?: string
+          status?: string
+          tipo_atendimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_evolucoes_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_evolucoes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_evolucoes_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_guardians: {
         Row: {
           clinic_id: string

@@ -1402,7 +1402,12 @@ export default function Prontuario() {
             </Link>
             <div className="flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Prontuário</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                Prontuário
+                {activeSpecialty && (
+                  <span className="text-muted-foreground font-normal"> — {activeSpecialty.name}</span>
+                )}
+              </h1>
             </div>
             
             {/* Specialty Selector */}

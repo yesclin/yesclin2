@@ -1,0 +1,7 @@
+/**
+ * CLÍNICA GERAL - Hooks do Prontuário
+ * 
+ * Hooks específicos para a especialidade Clínica Geral.
+ */
+
+export { useVisaoGeralData } from './useVisaoGeralData';

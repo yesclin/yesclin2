@@ -102,6 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
+import { VisaoGeralBlock } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -413,6 +415,15 @@ export default function Prontuario() {
     loading: specialtyLoading,
   } = useActiveSpecialty(patientId);
 
+  // Visão Geral Data - specific for Clínica Geral specialty
+  const {
+    patient: visaoGeralPatient,
+    clinicalData: visaoGeralClinicalData,
+    alerts: visaoGeralAlerts,
+    lastAppointment: visaoGeralLastAppointment,
+    loading: visaoGeralLoading,
+  } = useVisaoGeralData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -526,155 +537,15 @@ export default function Prontuario() {
 
     switch (activeTab) {
       case 'resumo':
+        // Clínica Geral - Visão Geral específica
         return (
-          <div className="space-y-6">
-            {/* Quick stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Clock className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{entries.length}</p>
-                      <p className="text-xs text-muted-foreground">Evoluções</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Paperclip className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{files.length}</p>
-                      <p className="text-xs text-muted-foreground">Arquivos</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-2 rounded-lg", criticalAlerts.length > 0 ? "bg-red-100" : "bg-yellow-100")}>
-                      <AlertTriangle className={cn("h-5 w-5", criticalAlerts.length > 0 ? "text-red-600" : "text-yellow-600")} />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{activeAlerts.length}</p>
-                      <p className="text-xs text-muted-foreground">Alertas Ativos</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-100">
-                      <FileText className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{config.templates.length}</p>
-                      <p className="text-xs text-muted-foreground">Modelos</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent entries */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Últimas Evoluções</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {entries.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nenhuma evolução registrada ainda.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {entries.slice(0, 5).map((entry) => {
-                      const sig = getSignatureForRecord(entry.id);
-                      return (
-                        <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg border">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {sig ? (
-                                <SignedRecordBadge signature={sig} compact />
-                              ) : (
-                                <Badge variant={entry.status === 'signed' ? 'default' : 'secondary'}>
-                                  {entry.status === 'signed' ? 'Assinado' : 'Rascunho'}
-                                </Badge>
-                              )}
-                              <span className="font-medium capitalize">{entry.entry_type}</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {format(new Date(entry.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            {!sig && entry.status !== 'signed' && canSignCurrentTab && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleOpenSignature(entry)}
-                                      disabled={!canPerformAction('sign_record')}
-                                    >
-                                      <Shield className="h-3 w-3 mr-1" />
-                                      Assinar
-                                    </Button>
-                                  </TooltipTrigger>
-                                  {!canPerformAction('sign_record') && (
-                                    <TooltipContent>Você não tem permissão para assinar registros</TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            <Button variant="ghost" size="sm">Ver</Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Alerts summary */}
-            {activeAlerts.length > 0 && (
-              <Card className="border-yellow-200 bg-yellow-50/50">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                    Alertas Clínicos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {activeAlerts.map((alert) => (
-                      <div key={alert.id} className={cn(
-                        "p-3 rounded-lg border",
-                        alert.severity === 'critical' ? "bg-red-100 border-red-300" :
-                        alert.severity === 'warning' ? "bg-yellow-100 border-yellow-300" :
-                        "bg-blue-100 border-blue-300"
-                      )}>
-                        <p className="font-medium">{alert.title}</p>
-                        {alert.description && (
-                          <p className="text-sm mt-1">{alert.description}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <VisaoGeralBlock
+            patient={visaoGeralPatient}
+            clinicalData={visaoGeralClinicalData}
+            alerts={visaoGeralAlerts}
+            lastAppointment={visaoGeralLastAppointment}
+            loading={visaoGeralLoading}
+          />
         );
 
       case 'evolucao':

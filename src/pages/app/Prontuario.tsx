@@ -102,8 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock } from "@/components/prontuario/clinica-geral";
-import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData } from "@/hooks/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -495,6 +495,16 @@ export default function Prontuario() {
     loading: timelineLoading,
   } = useLinhaTempoData(patientId);
 
+  // Diagnósticos Data - specific for Clínica Geral specialty
+  const {
+    diagnosticos,
+    loading: diagnosticosLoading,
+    saving: diagnosticosSaving,
+    currentProfessionalId: diagProfId,
+    saveDiagnostico,
+    updateDiagnostico,
+  } = useDiagnosticosData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -719,6 +729,18 @@ export default function Prontuario() {
         );
 
       case 'diagnostico':
+        // Clínica Geral - Hipóteses Diagnósticas (CID-10)
+        return (
+          <DiagnosticosBlock
+            diagnosticos={diagnosticos}
+            loading={diagnosticosLoading}
+            saving={diagnosticosSaving}
+            canEdit={canEditCurrentTab}
+            onSave={saveDiagnostico}
+            onUpdate={updateDiagnostico}
+          />
+        );
+
       case 'prescricoes':
         return (
           <div className="space-y-4">

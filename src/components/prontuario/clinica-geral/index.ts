@@ -38,3 +38,6 @@ export type { AlertaClinico, TipoAlerta, SeveridadeAlerta } from './AlertasBlock
 
 export { LinhaTempoBlock } from './LinhaTempoBlock';
 export type { EventoTimeline, TipoEventoTimeline } from './LinhaTempoBlock';
+
+export { DiagnosticosBlock } from './DiagnosticosBlock';
+export type { Diagnostico, TipoDiagnostico, StatusDiagnostico } from './DiagnosticosBlock';

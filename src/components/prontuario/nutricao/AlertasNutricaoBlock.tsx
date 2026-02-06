@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -453,9 +454,10 @@ export function AlertasNutricaoBlock({
  */
 interface AlertasBannerNutricaoProps {
   alertas: AlertaNutricional[];
+  onViewAlerts?: () => void;
 }
 
-export function AlertasBannerNutricao({ alertas }: AlertasBannerNutricaoProps) {
+export function AlertasBannerNutricao({ alertas, onViewAlerts }: AlertasBannerNutricaoProps) {
   const activeAlertas = alertas.filter(a => a.is_active);
   
   if (activeAlertas.length === 0) return null;
@@ -464,10 +466,19 @@ export function AlertasBannerNutricao({ alertas }: AlertasBannerNutricaoProps) {
   const warningAlertas = activeAlertas.filter(a => a.severity === 'warning');
 
   return (
-    <div className="flex flex-wrap gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+    <div 
+      className={cn(
+        "flex flex-wrap gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg mb-4",
+        onViewAlerts && "cursor-pointer hover:bg-destructive/15 transition-colors"
+      )}
+      onClick={onViewAlerts}
+      role={onViewAlerts ? "button" : undefined}
+      tabIndex={onViewAlerts ? 0 : undefined}
+      onKeyDown={onViewAlerts ? (e) => e.key === 'Enter' && onViewAlerts() : undefined}
+    >
       <div className="flex items-center gap-2 text-destructive font-medium">
         <AlertTriangle className="h-4 w-4" />
-        <span>Alertas:</span>
+        <span>Alertas Nutricionais:</span>
       </div>
       {criticalAlertas.map((alerta) => (
         <Badge key={alerta.id} variant="destructive" className="gap-1">
@@ -487,6 +498,11 @@ export function AlertasBannerNutricao({ alertas }: AlertasBannerNutricaoProps) {
           {alerta.title}
         </Badge>
       ))}
+      {onViewAlerts && (
+        <span className="text-xs text-muted-foreground ml-auto self-center">
+          Clique para ver detalhes
+        </span>
+      )}
     </div>
   );
 }

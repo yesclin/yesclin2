@@ -30,3 +30,9 @@ export type {
   PlanoTerapeuticoData,
   PlanoTerapeuticoFormData,
 } from './usePlanoTerapeuticoData';
+
+export { useInstrumentosPsicologicosData } from './useInstrumentosPsicologicosData';
+export type { 
+  InstrumentoPsicologico,
+  InstrumentoFormData,
+} from './useInstrumentosPsicologicosData';

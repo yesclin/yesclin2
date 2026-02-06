@@ -103,9 +103,9 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
-import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData } from "@/hooks/prontuario/psicologia";
+import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData } from "@/hooks/prontuario/psicologia";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -480,6 +480,15 @@ export default function Prontuario() {
     savePlano: savePlanoTerapeutico,
   } = usePlanoTerapeuticoData(patientId);
 
+  // Instrumentos Psicológicos Data - specific for Psicologia specialty
+  const {
+    instrumentos: instrumentosPsico,
+    loading: instrumentosPsicoLoading,
+    saving: instrumentosPsicoSaving,
+    saveInstrumento: saveInstrumentoPsico,
+    deleteInstrumento: deleteInstrumentoPsico,
+  } = useInstrumentosPsicologicosData(patientId, currentProfessionalId || undefined);
+
   // Exame Físico Data - specific for Clínica Geral specialty
   const {
     exames: examesFisicos,
@@ -796,6 +805,20 @@ export default function Prontuario() {
             onUpload={uploadDocumento}
             onDelete={deleteDocumento}
             onDownload={downloadDocumento}
+          />
+        );
+
+      case 'instrumentos':
+        // Psicologia - Instrumentos / Testes Psicológicos
+        return (
+          <InstrumentosPsicologicosBlock
+            instrumentos={instrumentosPsico}
+            loading={instrumentosPsicoLoading}
+            saving={instrumentosPsicoSaving}
+            canEdit={canEditCurrentTab}
+            currentProfessionalName={currentProfessionalName || undefined}
+            onSave={saveInstrumentoPsico}
+            onDelete={deleteInstrumentoPsico}
           />
         );
 

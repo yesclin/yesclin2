@@ -79,6 +79,18 @@ export type {
   TipoConsulta,
 } from './useEvolucoesNutricaoData';
 
+// Templates de Evolução Nutricional
+export {
+  EVOLUCAO_TEMPLATES,
+  TIPO_EVOLUCAO_LABELS,
+  getTemplateById,
+} from './evolucaoTemplates';
+export type {
+  TipoEvolucaoNutricao,
+  CampoTemplate,
+  EvolucaoTemplate,
+} from './evolucaoTemplates';
+
 // Anamnese Nutricional
 export { 
   useAnamneseNutricionalData,

@@ -152,6 +152,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     description: 'Avaliação nutricional completa, plano alimentar e acompanhamento de metas',
     enabledBlocks: [
       'resumo',                   // Visão Geral (peso, IMC, objetivo)
+      'anamnese',                 // Anamnese Nutricional (versionada)
       'avaliacao_nutricional',    // Antropometria, bioimpedância, dobras
       'recordatorio_alimentar',   // Recordatório alimentar / Inquérito dietético
       'plano_alimentar',          // Plano alimentar com macros e refeições

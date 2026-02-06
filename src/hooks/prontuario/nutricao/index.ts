@@ -8,7 +8,7 @@
 // Visão Geral
 export { useVisaoGeralNutricaoData, OBJETIVO_NUTRICIONAL_LABELS, STATUS_ACOMPANHAMENTO_LABELS } from './useVisaoGeralNutricaoData';
 export type { 
-  NutricaoPatientData, 
+  NutricaoPatientData,
   NutricaoSummaryData,
   NutricaoAlert,
   LastMeasurement,
@@ -78,3 +78,17 @@ export type {
   StatusEvolucao,
   TipoConsulta,
 } from './useEvolucoesNutricaoData';
+
+// Anamnese Nutricional
+export { 
+  useAnamneseNutricionalData,
+  FREQUENCIA_CONSUMO_LABELS,
+  RESTRICOES_ALIMENTARES_OPTIONS,
+  INTOLERANCIAS_OPTIONS,
+  ALERGIAS_ALIMENTARES_OPTIONS,
+} from './useAnamneseNutricionalData';
+export type { 
+  AnamneseNutricional,
+  AnamneseNutricionalFormData,
+  FrequenciaConsumo,
+} from './useAnamneseNutricionalData';

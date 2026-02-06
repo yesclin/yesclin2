@@ -12,13 +12,30 @@
  */
 
 import type { SpecialtyKey } from './useActiveSpecialty';
-import type { ClinicalBlockKey } from './specialtyTabsConfig';
+
+/**
+ * Clinical Block Keys - the ONLY valid block identifiers in Yesclin
+ */
+export type ClinicalBlockKey = 
+  | 'resumo'
+  | 'evolucao'
+  | 'conduta'
+  | 'exames'
+  | 'timeline'
+  | 'alertas'
+  | 'historico'
+  | 'procedimentos_realizados'
+  | 'produtos_utilizados'
+  | 'before_after_photos'
+  | 'termos_consentimentos'
+  | 'facial_map'
+  | 'odontograma';
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
   name: string;
   description: string;
-  /** Clinical blocks enabled for this specialty (from YESCLIN_CLINICAL_BLOCKS) */
+  /** Clinical blocks enabled for this specialty */
   enabledBlocks: ClinicalBlockKey[];
   /** Icon name from lucide-react (optional) */
   icon?: string;

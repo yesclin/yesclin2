@@ -102,8 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock } from "@/components/prontuario/clinica-geral";
-import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData } from "@/hooks/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -476,6 +476,19 @@ export default function Prontuario() {
     downloadDocumento,
   } = useDocumentosData(patientId);
 
+  // Alertas Data - specific for Clínica Geral specialty
+  const {
+    alertas,
+    activeAlertas,
+    loading: alertasLoading,
+    saving: alertasSaving,
+    currentProfessionalId: alertaProfId,
+    currentProfessionalName: alertaProfName,
+    saveAlerta,
+    deactivateAlerta,
+    reactivateAlerta,
+  } = useAlertasData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -671,6 +684,22 @@ export default function Prontuario() {
             onUpload={uploadDocumento}
             onDelete={deleteDocumento}
             onDownload={downloadDocumento}
+          />
+        );
+
+      case 'alertas':
+        // Clínica Geral - Alertas Clínicos
+        return (
+          <AlertasBlock
+            alertas={alertas}
+            loading={alertasLoading}
+            saving={alertasSaving}
+            canEdit={canEditCurrentTab}
+            currentProfessionalId={alertaProfId || undefined}
+            currentProfessionalName={alertaProfName || undefined}
+            onSave={saveAlerta}
+            onDeactivate={deactivateAlerta}
+            onReactivate={reactivateAlerta}
           />
         );
 
@@ -1432,6 +1461,10 @@ export default function Prontuario() {
         {/* Content Area */}
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6">
+            {/* Alerts Banner - shown at top when there are active alerts */}
+            {activeAlertas.length > 0 && activeTab !== 'alertas' && (
+              <AlertasBanner alertas={activeAlertas} />
+            )}
             {renderTabContent()}
           </div>
         </main>

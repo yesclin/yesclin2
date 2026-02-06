@@ -4968,6 +4968,154 @@ export type Database = {
           },
         ]
       }
+      patient_prescricao_itens: {
+        Row: {
+          created_at: string
+          dose: string
+          duracao_dias: number | null
+          frequencia: string | null
+          id: string
+          instrucoes_especiais: string | null
+          medicamento_concentracao: string | null
+          medicamento_forma_farmaceutica: string | null
+          medicamento_nome: string
+          medicamento_principio_ativo: string | null
+          ordem: number | null
+          posologia: string
+          prescricao_id: string
+          unidade_dose: string | null
+          uso_continuo: boolean | null
+          via_administracao: string | null
+        }
+        Insert: {
+          created_at?: string
+          dose: string
+          duracao_dias?: number | null
+          frequencia?: string | null
+          id?: string
+          instrucoes_especiais?: string | null
+          medicamento_concentracao?: string | null
+          medicamento_forma_farmaceutica?: string | null
+          medicamento_nome: string
+          medicamento_principio_ativo?: string | null
+          ordem?: number | null
+          posologia: string
+          prescricao_id: string
+          unidade_dose?: string | null
+          uso_continuo?: boolean | null
+          via_administracao?: string | null
+        }
+        Update: {
+          created_at?: string
+          dose?: string
+          duracao_dias?: number | null
+          frequencia?: string | null
+          id?: string
+          instrucoes_especiais?: string | null
+          medicamento_concentracao?: string | null
+          medicamento_forma_farmaceutica?: string | null
+          medicamento_nome?: string
+          medicamento_principio_ativo?: string | null
+          ordem?: number | null
+          posologia?: string
+          prescricao_id?: string
+          unidade_dose?: string | null
+          uso_continuo?: boolean | null
+          via_administracao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_prescricao_itens_prescricao_id_fkey"
+            columns: ["prescricao_id"]
+            isOneToOne: false
+            referencedRelation: "patient_prescricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_prescricoes: {
+        Row: {
+          appointment_id: string | null
+          assinada_em: string | null
+          clinic_id: string
+          codigo_verificacao: string | null
+          created_at: string
+          data_prescricao: string
+          id: string
+          numero_receita: string | null
+          observacoes: string | null
+          patient_id: string
+          profissional_id: string
+          status: string
+          tipo_receita: string
+          updated_at: string
+          validade_dias: number | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          assinada_em?: string | null
+          clinic_id: string
+          codigo_verificacao?: string | null
+          created_at?: string
+          data_prescricao?: string
+          id?: string
+          numero_receita?: string | null
+          observacoes?: string | null
+          patient_id: string
+          profissional_id: string
+          status?: string
+          tipo_receita?: string
+          updated_at?: string
+          validade_dias?: number | null
+        }
+        Update: {
+          appointment_id?: string | null
+          assinada_em?: string | null
+          clinic_id?: string
+          codigo_verificacao?: string | null
+          created_at?: string
+          data_prescricao?: string
+          id?: string
+          numero_receita?: string | null
+          observacoes?: string | null
+          patient_id?: string
+          profissional_id?: string
+          status?: string
+          tipo_receita?: string
+          updated_at?: string
+          validade_dias?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_prescricoes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_prescricoes_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_prescricoes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_prescricoes_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_scale_readings: {
         Row: {
           appointment_id: string | null

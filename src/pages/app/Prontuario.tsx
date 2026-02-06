@@ -102,8 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock } from "@/components/prontuario/clinica-geral";
-import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData } from "@/hooks/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -505,6 +505,15 @@ export default function Prontuario() {
     updateDiagnostico,
   } = useDiagnosticosData(patientId);
 
+  // Prescrições Data - specific for Clínica Geral specialty
+  const {
+    prescricoes,
+    loading: prescricoesLoading,
+    saving: prescricoesSaving,
+    savePrescricao,
+    signPrescricao,
+  } = usePrescricoesData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -742,137 +751,17 @@ export default function Prontuario() {
         );
 
       case 'prescricoes':
+        // Clínica Geral - Prescrições estruturadas
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold capitalize">{activeTab}</h2>
-              {canEditCurrentTab ? (
-                <Button disabled={!canPerformAction('create_entry')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Entrada
-                </Button>
-              ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" disabled className="opacity-50">
-                        <ShieldX className="h-4 w-4 mr-2" />
-                        Somente Leitura
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {!hasActiveAppointment 
-                        ? appointmentReason 
-                        : 'Você não tem permissão para editar esta aba'}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-            
-            {tabEntries.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum registro encontrado.</p>
-                  {canEditCurrentTab && (
-                    <Button className="mt-4" disabled={!canPerformAction('create_entry')}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Criar Primeiro Registro
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {tabEntries.map((entry) => {
-                  const sig = getSignatureForRecord(entry.id);
-                  const isSigned = !!sig;
-                  
-                  return (
-                    <Card 
-                      key={entry.id} 
-                      className={cn(
-                        "transition-all duration-500",
-                        highlightedId === entry.id && "ring-2 ring-primary bg-primary/5 animate-pulse",
-                        isSigned && "border-green-200"
-                      )}
-                    >
-                      <CardContent className="p-4">
-                        {/* Show signature info if signed */}
-                        {sig && (
-                          <div className="mb-4">
-                            <SignedRecordBadge signature={sig} />
-                          </div>
-                        )}
-                        
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              {sig ? (
-                                <SignedRecordBadge signature={sig} compact />
-                              ) : (
-                                <Badge variant={entry.status === 'signed' ? 'default' : 'secondary'}>
-                                  {entry.status === 'signed' ? 'Assinado' : 'Rascunho'}
-                                </Badge>
-                              )}
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(entry.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                            </div>
-                            {entry.notes && (
-                              <p className="text-sm">{entry.notes}</p>
-                            )}
-                            {Object.keys(entry.content).length > 0 && (
-                              <div className="mt-2 text-sm text-muted-foreground">
-                                {Object.entries(entry.content).slice(0, 2).map(([key, value]) => (
-                                  <p key={key}><strong>{key}:</strong> {String(value).substring(0, 100)}...</p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            {!isSigned && entry.status !== 'signed' && canSignCurrentTab && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleOpenSignature(entry)}
-                                      disabled={!canPerformAction('sign_record')}
-                                    >
-                                      <Shield className="h-3 w-3 mr-1" />
-                                      Assinar
-                                    </Button>
-                                  </TooltipTrigger>
-                                  {!canPerformAction('sign_record') && (
-                                    <TooltipContent>Você não tem permissão para assinar registros</TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            {!isSigned && canEditCurrentTab && (
-                              <Button variant="ghost" size="sm" disabled={!canPerformAction('edit_entry')}>
-                                Editar
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="sm">Ver</Button>
-                            {isSigned && canExportCurrentTab && (
-                              <Button variant="outline" size="sm" disabled={!canPerformAction('export_pdf')}>
-                                <Download className="h-3 w-3 mr-1" />
-                                PDF
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <PrescricoesBlock
+            prescricoes={prescricoes}
+            loading={prescricoesLoading}
+            saving={prescricoesSaving}
+            canEdit={canEditCurrentTab}
+            patientName={patient?.full_name}
+            onSave={savePrescricao}
+            onSign={signPrescricao}
+          />
         );
 
       case 'exames':

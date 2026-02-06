@@ -89,6 +89,7 @@ export function PlanoAlimentarBlock({
   const [newOrientacao, setNewOrientacao] = useState('');
   const [newAlimentoEvitar, setNewAlimentoEvitar] = useState('');
   const [newAlimentoPreferir, setNewAlimentoPreferir] = useState('');
+  const [newSuplemento, setNewSuplemento] = useState({ nome: '', dosagem: '', horario: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,10 +149,33 @@ export function PlanoAlimentarBlock({
       ...prev,
       refeicoes: prev.refeicoes.map(r => 
         r.id === refeicaoId 
-          ? { ...r, opcoes: [{ descricao }] }
+          ? { ...r, opcoes: [{ ...r.opcoes[0], descricao }] }
           : r
       ),
     }));
+  };
+
+  const updateRefeicaoSubstituicao = (refeicaoId: string, substituicao: string) => {
+    setFormData(prev => ({
+      ...prev,
+      refeicoes: prev.refeicoes.map(r => 
+        r.id === refeicaoId 
+          ? { ...r, opcoes: [{ ...r.opcoes[0], observacoes: substituicao }] }
+          : r
+      ),
+    }));
+  };
+
+  const addSuplemento = () => {
+    if (newSuplemento.nome.trim()) {
+      const suplementoStr = `${newSuplemento.nome}${newSuplemento.dosagem ? ` - ${newSuplemento.dosagem}` : ''}${newSuplemento.horario ? ` (${newSuplemento.horario})` : ''}`;
+      updateField('suplementos', [...formData.suplementos, suplementoStr]);
+      setNewSuplemento({ nome: '', dosagem: '', horario: '' });
+    }
+  };
+
+  const removeSuplemento = (index: number) => {
+    updateField('suplementos', formData.suplementos.filter((_, i) => i !== index));
   };
 
   if (loading) {
@@ -300,29 +324,40 @@ export function PlanoAlimentarBlock({
                   <Clock className="h-4 w-4" />
                   Refeições
                 </Label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {formData.refeicoes.map((refeicao) => (
-                    <div key={refeicao.id} className="flex gap-3 items-start">
-                      <div className="w-24 shrink-0">
-                        <Input
-                          type="time"
-                          value={refeicao.horario}
-                          onChange={(e) => {
-                            setFormData(prev => ({
-                              ...prev,
-                              refeicoes: prev.refeicoes.map(r =>
-                                r.id === refeicao.id ? { ...r, horario: e.target.value } : r
-                              ),
-                            }));
-                          }}
-                        />
+                    <div key={refeicao.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
+                      <div className="flex gap-3 items-start">
+                        <div className="w-24 shrink-0">
+                          <Input
+                            type="time"
+                            value={refeicao.horario}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                refeicoes: prev.refeicoes.map(r =>
+                                  r.id === refeicao.id ? { ...r, horario: e.target.value } : r
+                                ),
+                              }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs text-muted-foreground">{TIPO_REFEICAO_LABELS[refeicao.tipo]}</Label>
+                          <Textarea
+                            placeholder="Descreva os alimentos desta refeição..."
+                            value={refeicao.opcoes[0]?.descricao ?? ''}
+                            onChange={(e) => updateRefeicaoDescricao(refeicao.id, e.target.value)}
+                            rows={2}
+                          />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <Textarea
-                          placeholder={`${TIPO_REFEICAO_LABELS[refeicao.tipo]} - Descreva os alimentos...`}
-                          value={refeicao.opcoes[0]?.descricao ?? ''}
-                          onChange={(e) => updateRefeicaoDescricao(refeicao.id, e.target.value)}
-                          rows={2}
+                      <div className="pl-[104px]">
+                        <Input
+                          placeholder="Substituições possíveis (ex: trocar pão por tapioca, banana por maçã...)"
+                          value={refeicao.opcoes[0]?.observacoes ?? ''}
+                          onChange={(e) => updateRefeicaoSubstituicao(refeicao.id, e.target.value)}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -420,15 +455,60 @@ export function PlanoAlimentarBlock({
                 </div>
               </div>
 
+              {/* Suplementação */}
+              <div>
+                <Label className="mb-2 flex items-center gap-2">
+                  <span className="text-primary">💊</span>
+                  Suplementação (se houver)
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
+                  <Input
+                    placeholder="Suplemento"
+                    value={newSuplemento.nome}
+                    onChange={(e) => setNewSuplemento(prev => ({ ...prev, nome: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Dosagem (ex: 1000mg)"
+                    value={newSuplemento.dosagem}
+                    onChange={(e) => setNewSuplemento(prev => ({ ...prev, dosagem: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Horário (ex: após almoço)"
+                    value={newSuplemento.horario}
+                    onChange={(e) => setNewSuplemento(prev => ({ ...prev, horario: e.target.value }))}
+                  />
+                  <Button type="button" variant="outline" onClick={addSuplemento}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+                {formData.suplementos.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.suplementos.map((suplemento, index) => (
+                      <Badge key={index} variant="outline" className="pr-1 bg-primary/10">
+                        {suplemento}
+                        <button
+                          type="button"
+                          onClick={() => removeSuplemento(index)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Observações */}
               <div>
-                <Label htmlFor="observacoes">Observações</Label>
+                <Label htmlFor="observacoes">Observações do Nutricionista</Label>
                 <Textarea
                   id="observacoes"
-                  placeholder="Observações adicionais..."
+                  placeholder="Observações, recomendações e orientações adicionais..."
                   value={formData.observacoes ?? ''}
                   onChange={(e) => updateField('observacoes', e.target.value || null)}
-                  rows={2}
+                  rows={3}
                 />
               </div>
 
@@ -510,13 +590,20 @@ export function PlanoAlimentarBlock({
               <p className="text-sm font-medium mb-2">Refeições</p>
               <div className="space-y-2">
                 {planoAtivo.refeicoes.filter(r => r.opcoes.length > 0 && r.opcoes[0].descricao).map((refeicao) => (
-                  <div key={refeicao.id} className="flex gap-3 p-2 bg-muted/50 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground w-16">
-                      {refeicao.horario}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">{TIPO_REFEICAO_LABELS[refeicao.tipo]}</p>
-                      <p className="text-sm">{refeicao.opcoes[0]?.descricao}</p>
+                  <div key={refeicao.id} className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex gap-3">
+                      <div className="text-sm font-medium text-muted-foreground w-16">
+                        {refeicao.horario}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">{TIPO_REFEICAO_LABELS[refeicao.tipo]}</p>
+                        <p className="text-sm">{refeicao.opcoes[0]?.descricao}</p>
+                        {refeicao.opcoes[0]?.observacoes && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            ↔ Substituições: {refeicao.opcoes[0].observacoes}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -539,7 +626,7 @@ export function PlanoAlimentarBlock({
             <div className="grid grid-cols-2 gap-4">
               {planoAtivo.alimentos_evitar.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-red-600 mb-2">Evitar</p>
+                  <p className="text-sm font-medium text-destructive mb-2">Evitar</p>
                   <div className="flex flex-wrap gap-1">
                     {planoAtivo.alimentos_evitar.map((alimento, index) => (
                       <Badge key={index} variant="destructive" className="text-xs">
@@ -551,10 +638,10 @@ export function PlanoAlimentarBlock({
               )}
               {planoAtivo.alimentos_preferir.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-green-600 mb-2">Preferir</p>
+                  <p className="text-sm font-medium text-primary mb-2">Preferir</p>
                   <div className="flex flex-wrap gap-1">
                     {planoAtivo.alimentos_preferir.map((alimento, index) => (
-                      <Badge key={index} className="bg-green-100 text-green-800 text-xs">
+                      <Badge key={index} variant="outline" className="bg-primary/10 text-primary text-xs">
                         {alimento}
                       </Badge>
                     ))}
@@ -562,6 +649,28 @@ export function PlanoAlimentarBlock({
                 </div>
               )}
             </div>
+
+            {/* Suplementos */}
+            {planoAtivo.suplementos && planoAtivo.suplementos.length > 0 && (
+              <div>
+                <p className="text-sm font-medium mb-2">💊 Suplementação</p>
+                <div className="flex flex-wrap gap-2">
+                  {planoAtivo.suplementos.map((suplemento, index) => (
+                    <Badge key={index} variant="outline" className="bg-secondary">
+                      {suplemento}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Observações */}
+            {planoAtivo.observacoes && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium mb-1">Observações do Nutricionista</p>
+                <p className="text-sm text-muted-foreground">{planoAtivo.observacoes}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

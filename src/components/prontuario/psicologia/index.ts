@@ -9,6 +9,7 @@
 export { VisaoGeralPsicologiaBlock } from './VisaoGeralPsicologiaBlock';
 export { AnamnesePsicologiaBlock } from './AnamnesePsicologiaBlock';
 export { SessoesPsicologiaBlock } from './SessoesPsicologiaBlock';
+export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
 
 export type { 
   PsicologiaPatientData, 
@@ -20,4 +21,6 @@ export type {
   SessaoPsicologia,
   SessaoFormData,
   StatusSessao,
+  PlanoTerapeuticoData,
+  PlanoTerapeuticoFormData,
 } from '@/hooks/prontuario/psicologia';

@@ -24,3 +24,9 @@ export type {
   SessaoFormData,
   StatusSessao,
 } from './useSessoesPsicologiaData';
+
+export { usePlanoTerapeuticoData } from './usePlanoTerapeuticoData';
+export type { 
+  PlanoTerapeuticoData,
+  PlanoTerapeuticoFormData,
+} from './usePlanoTerapeuticoData';

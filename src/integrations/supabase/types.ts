@@ -5470,6 +5470,75 @@ export type Database = {
         }
         Relationships: []
       }
+      plano_terapeutico_psicologia: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          criterios_reavaliacao: string | null
+          estrategias_intervencao: string | null
+          frequencia_recomendada: string | null
+          id: string
+          is_current: boolean
+          metas_curto_prazo: string | null
+          metas_longo_prazo: string | null
+          metas_medio_prazo: string | null
+          objetivos_terapeuticos: string | null
+          observacoes: string | null
+          patient_id: string
+          version: number
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          criterios_reavaliacao?: string | null
+          estrategias_intervencao?: string | null
+          frequencia_recomendada?: string | null
+          id?: string
+          is_current?: boolean
+          metas_curto_prazo?: string | null
+          metas_longo_prazo?: string | null
+          metas_medio_prazo?: string | null
+          objetivos_terapeuticos?: string | null
+          observacoes?: string | null
+          patient_id: string
+          version?: number
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          criterios_reavaliacao?: string | null
+          estrategias_intervencao?: string | null
+          frequencia_recomendada?: string | null
+          id?: string
+          is_current?: boolean
+          metas_curto_prazo?: string | null
+          metas_longo_prazo?: string | null
+          metas_medio_prazo?: string | null
+          objetivos_terapeuticos?: string | null
+          observacoes?: string | null
+          patient_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_terapeutico_psicologia_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_terapeutico_psicologia_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_kits: {
         Row: {
           clinic_id: string

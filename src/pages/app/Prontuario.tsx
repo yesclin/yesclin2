@@ -103,9 +103,9 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
-import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData } from "@/hooks/prontuario/psicologia";
+import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData } from "@/hooks/prontuario/psicologia";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -471,6 +471,15 @@ export default function Prontuario() {
     signSessao: signSessaoPsico,
   } = useSessoesPsicologiaData(patientId, currentProfessionalId || undefined);
 
+  // Plano Terapêutico Data - specific for Psicologia specialty
+  const {
+    currentPlano: currentPlanoTerapeutico,
+    planoHistory: planoTerapeuticoHistory,
+    loading: planoTerapeuticoLoading,
+    saving: planoTerapeuticoSaving,
+    savePlano: savePlanoTerapeutico,
+  } = usePlanoTerapeuticoData(patientId);
+
   // Exame Físico Data - specific for Clínica Geral specialty
   const {
     exames: examesFisicos,
@@ -747,7 +756,20 @@ export default function Prontuario() {
         );
 
       case 'conduta':
-        // Clínica Geral - Plano / Conduta
+        // Render specialty-specific Conduta/Plano
+        if (activeSpecialtyKey === 'psicologia') {
+          return (
+            <PlanoTerapeuticoBlock
+              currentPlano={currentPlanoTerapeutico}
+              planoHistory={planoTerapeuticoHistory}
+              loading={planoTerapeuticoLoading}
+              saving={planoTerapeuticoSaving}
+              canEdit={canEditCurrentTab}
+              onSave={savePlanoTerapeutico}
+            />
+          );
+        }
+        // Default: Clínica Geral - Plano / Conduta
         return (
           <CondutaBlock
             condutas={condutas}

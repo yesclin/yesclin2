@@ -35,11 +35,12 @@ export type ClinicalBlockKey =
   | 'facial_map'
   | 'odontograma'
   | 'instrumentos' // Instrumentos / Testes Psicológicos
-  // Nutrition-specific blocks
-  | 'avaliacao_nutricional' // Avaliação Nutricional (antropometria, bioimpedância)
-  | 'recordatorio_alimentar' // Recordatório Alimentar / Inquérito Dietético
-  | 'plano_alimentar' // Plano Alimentar com macros e refeições
-  | 'metas_nutricionais'; // Metas e Acompanhamento Nutricional
+  // Nutrition-specific blocks (11 blocos)
+  | 'avaliacao_nutricional'    // Avaliação Antropométrica
+  | 'avaliacao_clinica'        // Avaliação Clínica / Bioquímica
+  | 'diagnostico_nutricional'  // Diagnóstico Nutricional
+  | 'plano_alimentar'          // Plano Alimentar
+  | 'evolucao_corporal';       // Evolução Corporal (gráficos)
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -148,22 +149,41 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
    * NÃO inclui: Odontograma, Mapa Facial, Prescrições Médicas,
    * Instrumentos Psicológicos, Alertas de Risco
    */
+  /**
+   * NUTRIÇÃO - Blocos clínicos exclusivos (11 blocos)
+   * 
+   * Prontuário focado em avaliação e acompanhamento nutricional:
+   * 1. Visão Geral - resumo do paciente (peso, IMC, objetivo)
+   * 2. Anamnese Nutricional - histórico alimentar e hábitos
+   * 3. Avaliação Antropométrica - medidas corporais e bioimpedância
+   * 4. Avaliação Clínica / Bioquímica - exames laboratoriais
+   * 5. Diagnóstico Nutricional - classificação do estado nutricional
+   * 6. Plano Alimentar - prescrição dietética com macros
+   * 7. Evoluções Nutricionais - registros de consultas
+   * 8. Evolução Corporal - gráficos de peso e medidas
+   * 9. Exames / Documentos - arquivos e resultados
+   * 10. Alertas Nutricionais - alergias, restrições, intolerâncias
+   * 11. Histórico / Linha do Tempo - cronologia de atendimentos
+   * 
+   * NÃO inclui: Prescrições médicas, Odontograma, Mapa Facial,
+   * Instrumentos Psicológicos
+   */
   {
     key: 'nutricao',
     name: 'Nutrição',
     description: 'Avaliação nutricional completa, plano alimentar e acompanhamento de metas',
     enabledBlocks: [
-      'resumo',                   // Visão Geral (peso, IMC, objetivo)
-      'anamnese',                 // Anamnese Nutricional (versionada)
-      'avaliacao_nutricional',    // Antropometria, bioimpedância, dobras
-      'recordatorio_alimentar',   // Recordatório alimentar / Inquérito dietético
-      'plano_alimentar',          // Plano alimentar com macros e refeições
-      'metas_nutricionais',       // Metas e acompanhamento de peso
-      'evolucao',                 // Evoluções clínicas
-      'conduta',                  // Orientações nutricionais
-      'exames',                   // Exames laboratoriais
-      'timeline',                 // Linha do tempo
-      'historico',                // Histórico de atendimentos
+      'resumo',                   // 1. Visão Geral
+      'anamnese',                 // 2. Anamnese Nutricional
+      'avaliacao_nutricional',    // 3. Avaliação Antropométrica
+      'avaliacao_clinica',        // 4. Avaliação Clínica / Bioquímica
+      'diagnostico_nutricional',  // 5. Diagnóstico Nutricional
+      'plano_alimentar',          // 6. Plano Alimentar
+      'evolucao',                 // 7. Evoluções Nutricionais
+      'evolucao_corporal',        // 8. Evolução Corporal (gráficos)
+      'exames',                   // 9. Exames / Documentos
+      'alertas',                  // 10. Alertas Nutricionais
+      'timeline',                 // 11. Histórico / Linha do Tempo
     ],
     icon: 'Apple',
   },

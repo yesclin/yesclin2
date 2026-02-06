@@ -131,7 +131,7 @@ export function AvaliacaoNutricionalBlock({
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Scale className="h-5 w-5 text-green-600" />
+          <Scale className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Avaliação Antropométrica</h2>
         </div>
         <div className="flex gap-2">
@@ -171,7 +171,7 @@ export function AvaliacaoNutricionalBlock({
 
       {/* Formulário de Nova Avaliação */}
       {showForm && canEdit && (
-        <Card className="border-green-200 bg-green-50/30">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <Plus className="h-4 w-4" />

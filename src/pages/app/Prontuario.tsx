@@ -89,7 +89,7 @@ import {
   type ActionKey,
 } from "@/hooks/prontuario";
 import { useActiveSpecialty } from "@/hooks/prontuario/useActiveSpecialty";
-import { isTabVisibleForSpecialty } from "@/hooks/prontuario/specialtyTabsConfig";
+import { isTabVisibleForSpecialty, getClinicalBlockLabel, type ClinicalBlockKey } from "@/hooks/prontuario/specialtyTabsConfig";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
 import { PatientHeader } from "@/components/prontuario/PatientHeader";
 import { ProntuarioSearchBar, type SearchResult } from "@/components/prontuario/ProntuarioSearchBar";
@@ -649,16 +649,22 @@ export default function Prontuario() {
       : DEFAULT_NAV_ITEMS;
   }, [getActiveTabs]);
 
-  // Filter nav items based on permissions AND active specialty
+  // Filter nav items based on permissions AND active specialty, with specialty-specific labels
   const navItems = useMemo(() => {
-    return allNavItems.filter(item => {
-      // Check permission first
-      const standardKey = getStandardTabKey(item.id);
-      if (!canViewTab(standardKey)) return false;
-      
-      // Check specialty visibility
-      return isTabVisibleForSpecialty(item.id, activeSpecialtyKey);
-    });
+    return allNavItems
+      .filter(item => {
+        // Check permission first
+        const standardKey = getStandardTabKey(item.id);
+        if (!canViewTab(standardKey)) return false;
+        
+        // Check specialty visibility
+        return isTabVisibleForSpecialty(item.id, activeSpecialtyKey);
+      })
+      .map(item => ({
+        ...item,
+        // Apply specialty-specific label override if available
+        label: getClinicalBlockLabel(item.id as ClinicalBlockKey, activeSpecialtyKey),
+      }));
   }, [allNavItems, activeSpecialtyKey]);
 
   // CRITICAL: Reset state completely when specialty changes

@@ -53,15 +53,7 @@ interface StatCardProps {
   invertTrendColors?: boolean;
 }
 
-function StatCard({ title, value, subtitle, trend, icon, invertTrendColors = false }: StatCardProps) {
-  const getTrendColor = () => {
-    if (!trend || trend.direction === 'stable') return 'text-muted-foreground';
-    const isPositive = invertTrendColors 
-      ? trend.direction === 'down' 
-      : trend.direction === 'up';
-    return isPositive ? 'text-green-600' : 'text-red-600';
-  };
-
+function StatCard({ title, value, subtitle, trend, icon }: StatCardProps) {
   const TrendIcon = trend?.direction === 'up' 
     ? TrendingUp 
     : trend?.direction === 'down' 
@@ -69,33 +61,31 @@ function StatCard({ title, value, subtitle, trend, icon, invertTrendColors = fal
       : Minus;
 
   return (
-    <Card className="bg-muted/30">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="p-2 bg-background rounded-lg">
-              {icon}
-            </div>
-            {trend && trend.direction !== 'stable' && (
-              <div className={`flex items-center gap-1 text-xs ${getTrendColor()}`}>
-                <TrendIcon className="h-3 w-3" />
-                <span>
-                  {trend.direction === 'up' ? '+' : '-'}
-                  {trend.value.toFixed(1)} {trend.unit}
-                </span>
-              </div>
-            )}
-          </div>
+    <div className="p-4 rounded-lg border bg-card">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">{title}</p>
+          <p className="text-xl font-semibold">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex flex-col items-end gap-2">
+          <div className="p-1.5 bg-muted/50 rounded">
+            {icon}
+          </div>
+          {trend && trend.direction !== 'stable' && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <TrendIcon className="h-3 w-3" />
+              <span>
+                {trend.direction === 'up' ? '+' : '-'}
+                {trend.value.toFixed(1)} {trend.unit}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -321,37 +311,34 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
       </div>
 
       {/* Resumo em Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           title="Peso Atual"
           value={stats.current.weight_kg ? `${stats.current.weight_kg} kg` : '--'}
           subtitle={stats.current.bmi ? `IMC: ${stats.current.bmi}` : undefined}
           trend={formatTrend(stats.weightDiff, 'kg')}
-          icon={<Scale className="h-4 w-4 text-primary" />}
-          invertTrendColors
+          icon={<Scale className="h-4 w-4 text-muted-foreground" />}
         />
         
         <StatCard
           title="% Gordura"
           value={stats.current.body_fat_percent ? `${stats.current.body_fat_percent}%` : '--'}
           trend={formatTrend(stats.fatDiff, '%')}
-          icon={<Activity className="h-4 w-4 text-destructive" />}
-          invertTrendColors
+          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
         />
         
         <StatCard
           title="Massa Muscular"
           value={stats.current.muscle_mass_kg ? `${stats.current.muscle_mass_kg} kg` : '--'}
           trend={formatTrend(stats.muscleDiff, 'kg')}
-          icon={<Target className="h-4 w-4 text-primary" />}
+          icon={<Target className="h-4 w-4 text-muted-foreground" />}
         />
         
         <StatCard
           title="Cintura"
           value={stats.current.waist_cm ? `${stats.current.waist_cm} cm` : '--'}
           trend={formatTrend(stats.waistDiff, 'cm')}
-          icon={<Activity className="h-4 w-4 text-accent-foreground" />}
-          invertTrendColors
+          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
         />
       </div>
 
@@ -374,7 +361,7 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
             {stats.first.weight_kg && stats.current.weight_kg && (
               <div>
                 <span className="text-muted-foreground">Variação de peso: </span>
-                <span className={`font-medium ${stats.weightDiff && stats.weightDiff < 0 ? 'text-green-600' : stats.weightDiff && stats.weightDiff > 0 ? 'text-red-600' : ''}`}>
+                <span className="font-medium">
                   {stats.first.weight_kg} kg → {stats.current.weight_kg} kg
                 </span>
               </div>
@@ -434,11 +421,9 @@ function WeightEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
     if (active && payload && payload.length) {
       const entry = payload[0] as { value: number };
       return (
-        <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
-          <p className="font-medium text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold text-primary">
-            {entry.value?.toFixed(1)} kg
-          </p>
+        <div className="bg-background border rounded-lg shadow-sm p-2 text-sm">
+          <p className="text-muted-foreground text-xs">{label}</p>
+          <p className="font-semibold">{entry.value?.toFixed(1)} kg</p>
         </div>
       );
     }
@@ -450,19 +435,17 @@ function WeightEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Scale className="h-4 w-4 text-primary" />
+            <Scale className="h-4 w-4 text-muted-foreground" />
             Evolução do Peso
           </CardTitle>
-          <Badge variant="secondary" className="text-xs">
-            {chartData.length} registros
-          </Badge>
+          <span className="text-xs text-muted-foreground">{chartData.length} registros</span>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[280px]">
+        <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" />
               <XAxis 
                 dataKey="dateFormatted" 
                 tick={{ fontSize: 11 }}
@@ -483,41 +466,34 @@ function WeightEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
               <ReferenceLine 
                 y={avgWeight} 
                 stroke="hsl(var(--muted-foreground))" 
-                strokeDasharray="5 5"
-                strokeOpacity={0.5}
+                strokeDasharray="4 4"
+                strokeOpacity={0.3}
               />
               <Line
                 type="monotone"
                 dataKey="weight_kg"
                 name="Peso (kg)"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2.5}
+                stroke="hsl(var(--foreground))"
+                strokeWidth={2}
                 dot={{ 
-                  r: 5, 
-                  fill: "hsl(var(--primary))",
+                  r: 4, 
+                  fill: "hsl(var(--foreground))",
                   strokeWidth: 2,
                   stroke: "hsl(var(--background))"
                 }}
                 activeDot={{ 
-                  r: 7, 
-                  fill: "hsl(var(--primary))",
-                  strokeWidth: 3,
+                  r: 6, 
+                  fill: "hsl(var(--foreground))",
+                  strokeWidth: 2,
                   stroke: "hsl(var(--background))"
                 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
-        {/* Legenda */}
-        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-0.5 bg-primary rounded" />
-            <span>Peso registrado</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-0.5 border-t border-dashed border-muted-foreground" />
-            <span>Média: {avgWeight.toFixed(1)} kg</span>
-          </div>
+        {/* Legenda simplificada */}
+        <div className="text-center mt-2 text-xs text-muted-foreground">
+          Média: {avgWeight.toFixed(1)} kg
         </div>
       </CardContent>
     </Card>
@@ -533,19 +509,19 @@ interface BMIChartData {
   bmi: number | null;
 }
 
-// Classificação do IMC
+// Classificação do IMC (visual simplificado - monocromático)
 const BMI_RANGES = [
-  { max: 18.5, label: 'Abaixo do peso', color: 'hsl(var(--primary))' },
-  { max: 24.9, label: 'Peso normal', color: 'hsl(142, 76%, 36%)' },
-  { max: 29.9, label: 'Sobrepeso', color: 'hsl(45, 93%, 47%)' },
-  { max: 100, label: 'Obesidade', color: 'hsl(var(--destructive))' },
+  { max: 18.5, label: 'Abaixo do peso' },
+  { max: 24.9, label: 'Peso normal' },
+  { max: 29.9, label: 'Sobrepeso' },
+  { max: 100, label: 'Obesidade' },
 ];
 
-function getBMIClassification(bmi: number): { label: string; color: string } {
+function getBMIClassification(bmi: number): string {
   for (const range of BMI_RANGES) {
-    if (bmi < range.max) return range;
+    if (bmi < range.max) return range.label;
   }
-  return BMI_RANGES[BMI_RANGES.length - 1];
+  return BMI_RANGES[BMI_RANGES.length - 1].label;
 }
 
 function BMIEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
@@ -578,16 +554,12 @@ function BMIEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) => {
     if (active && payload && payload.length) {
       const entry = payload[0] as { value: number };
-      const bmiClass = getBMIClassification(entry.value);
+      const bmiLabel = getBMIClassification(entry.value);
       return (
-        <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
-          <p className="font-medium text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold" style={{ color: bmiClass.color }}>
-            {entry.value?.toFixed(1)} kg/m²
-          </p>
-          <p className="text-xs" style={{ color: bmiClass.color }}>
-            {bmiClass.label}
-          </p>
+        <div className="bg-background border rounded-lg shadow-sm p-2 text-sm">
+          <p className="text-muted-foreground text-xs">{label}</p>
+          <p className="font-semibold">{entry.value?.toFixed(1)} kg/m²</p>
+          <p className="text-xs text-muted-foreground">{bmiLabel}</p>
         </div>
       );
     }
@@ -599,23 +571,17 @@ function BMIEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
             Evolução do IMC
           </CardTitle>
-          <Badge 
-            variant="outline" 
-            className="text-xs"
-            style={{ borderColor: classification.color, color: classification.color }}
-          >
-            {classification.label}
-          </Badge>
+          <span className="text-xs text-muted-foreground">{classification}</span>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[280px]">
+        <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" />
               <XAxis 
                 dataKey="dateFormatted" 
                 tick={{ fontSize: 11 }}
@@ -633,65 +599,38 @@ function BMIEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
                 width={35}
               />
               <Tooltip content={<CustomTooltip />} />
-              {/* Faixas de referência */}
-              <ReferenceLine 
-                y={18.5} 
-                stroke="hsl(var(--primary))" 
-                strokeDasharray="3 3"
-                strokeOpacity={0.4}
-              />
+              {/* Linha de referência sutil para faixa normal */}
               <ReferenceLine 
                 y={24.9} 
-                stroke="hsl(142, 76%, 36%)" 
-                strokeDasharray="3 3"
-                strokeOpacity={0.4}
-              />
-              <ReferenceLine 
-                y={29.9} 
-                stroke="hsl(45, 93%, 47%)" 
-                strokeDasharray="3 3"
-                strokeOpacity={0.4}
+                stroke="hsl(var(--muted-foreground))" 
+                strokeDasharray="4 4"
+                strokeOpacity={0.3}
               />
               <Line
                 type="monotone"
                 dataKey="bmi"
                 name="IMC"
-                stroke={classification.color}
-                strokeWidth={2.5}
+                stroke="hsl(var(--foreground))"
+                strokeWidth={2}
                 dot={{ 
-                  r: 5, 
-                  fill: classification.color,
+                  r: 4, 
+                  fill: "hsl(var(--foreground))",
                   strokeWidth: 2,
                   stroke: "hsl(var(--background))"
                 }}
                 activeDot={{ 
-                  r: 7, 
-                  fill: classification.color,
-                  strokeWidth: 3,
+                  r: 6, 
+                  fill: "hsl(var(--foreground))",
+                  strokeWidth: 2,
                   stroke: "hsl(var(--background))"
                 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
-        {/* Legenda de faixas */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(var(--primary))' }} />
-            <span className="text-muted-foreground">{"<18.5"}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(142, 76%, 36%)' }} />
-            <span className="text-muted-foreground">18.5-24.9</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(45, 93%, 47%)' }} />
-            <span className="text-muted-foreground">25-29.9</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(var(--destructive))' }} />
-            <span className="text-muted-foreground">≥30</span>
-          </div>
+        {/* Legenda simplificada */}
+        <div className="text-center mt-2 text-xs text-muted-foreground">
+          Linha tracejada: limite superior da faixa normal (24.9)
         </div>
       </CardContent>
     </Card>

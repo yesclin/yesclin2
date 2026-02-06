@@ -35,3 +35,6 @@ export type { Documento, CategoriaDocumento } from './DocumentosBlock';
 
 export { AlertasBlock, AlertasBanner } from './AlertasBlock';
 export type { AlertaClinico, TipoAlerta, SeveridadeAlerta } from './AlertasBlock';
+
+export { LinhaTempoBlock } from './LinhaTempoBlock';
+export type { EventoTimeline, TipoEventoTimeline } from './LinhaTempoBlock';

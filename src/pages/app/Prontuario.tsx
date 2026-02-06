@@ -102,8 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner } from "@/components/prontuario/clinica-geral";
-import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData } from "@/hooks/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -489,6 +489,12 @@ export default function Prontuario() {
     reactivateAlerta,
   } = useAlertasData(patientId);
 
+  // Linha do Tempo Data - specific for Clínica Geral specialty
+  const {
+    eventos: timelineEventos,
+    loading: timelineLoading,
+  } = useLinhaTempoData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -700,6 +706,15 @@ export default function Prontuario() {
             onSave={saveAlerta}
             onDeactivate={deactivateAlerta}
             onReactivate={reactivateAlerta}
+          />
+        );
+
+      case 'historico':
+        // Clínica Geral - Linha do Tempo / Histórico
+        return (
+          <LinhaTempoBlock
+            eventos={timelineEventos}
+            loading={timelineLoading}
           />
         );
 

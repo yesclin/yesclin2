@@ -561,14 +561,20 @@ const planoAlimentarTemplate: EvolucaoTemplate = {
 };
 
 // =============================================================================
-// TEMPLATE: EVOLUÇÃO NUTRICIONAL DE RETORNO
+// TEMPLATE: EVOLUÇÃO NUTRICIONAL
 // =============================================================================
 const evolucaoRetornoTemplate: EvolucaoTemplate = {
   id: 'evolucao_retorno',
-  nome: 'Evolução Nutricional de Retorno',
-  descricao: 'Acompanhamento de retorno com análise de adesão e ajustes no plano',
+  nome: 'Evolução Nutricional',
+  descricao: 'Registro de acompanhamento nutricional com adesão e ajustes no plano',
   icon: 'RefreshCcw',
   campos: [
+    {
+      id: 'data_evolucao',
+      label: 'Data',
+      type: 'date',
+      required: true,
+    },
     {
       id: 'peso_atual',
       label: 'Peso Atual',
@@ -576,14 +582,6 @@ const evolucaoRetornoTemplate: EvolucaoTemplate = {
       placeholder: 'Ex: 74.5',
       unit: 'kg',
       required: true,
-      step: 0.1,
-    },
-    {
-      id: 'variacao_peso',
-      label: 'Variação de Peso desde última consulta',
-      type: 'number',
-      placeholder: 'Ex: -1.0 (negativo = perda)',
-      unit: 'kg',
       step: 0.1,
     },
     {
@@ -710,5 +708,5 @@ export const TIPO_EVOLUCAO_LABELS: Record<TipoEvolucaoNutricao, string> = {
   avaliacao_antropometrica: 'Avaliação Antropométrica',
   diagnostico_nutricional: 'Diagnóstico Nutricional',
   plano_alimentar: 'Plano Alimentar',
-  evolucao_retorno: 'Evolução Nutricional de Retorno',
+  evolucao_retorno: 'Evolução Nutricional',
 };

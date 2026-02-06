@@ -131,7 +131,7 @@ export function EvolucoesNutricaoBlock({
         {canEdit && !showForm && (
           <Button onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Evolução
+            Nova Evolução Nutricional
           </Button>
         )}
       </div>
@@ -142,7 +142,7 @@ export function EvolucoesNutricaoBlock({
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Nova Evolução
+              Nova Evolução Nutricional
             </CardTitle>
           </CardHeader>
           <CardContent>

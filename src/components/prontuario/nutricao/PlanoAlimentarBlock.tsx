@@ -199,7 +199,7 @@ export function PlanoAlimentarBlock({
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Utensils className="h-5 w-5 text-green-600" />
+          <Utensils className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Plano Alimentar</h2>
         </div>
         <div className="flex gap-2">
@@ -224,7 +224,7 @@ export function PlanoAlimentarBlock({
 
       {/* Formulário */}
       {showForm && canEdit && (
-        <Card className="border-green-200 bg-green-50/30">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -271,7 +271,7 @@ export function PlanoAlimentarBlock({
               {/* Macros */}
               <div>
                 <Label className="flex items-center gap-2 mb-3">
-                  <Flame className="h-4 w-4 text-orange-500" />
+                  <Flame className="h-4 w-4 text-accent-foreground" />
                   Metas de Macronutrientes (diárias)
                 </Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -398,7 +398,7 @@ export function PlanoAlimentarBlock({
               {/* Alimentos */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="mb-2 text-red-600">Alimentos a Evitar</Label>
+                  <Label className="mb-2 text-destructive">Alimentos a Evitar</Label>
                   <div className="flex gap-2 mb-2">
                     <Input
                       placeholder="Adicionar alimento..."
@@ -426,7 +426,7 @@ export function PlanoAlimentarBlock({
                   </div>
                 </div>
                 <div>
-                  <Label className="mb-2 text-green-600">Alimentos a Preferir</Label>
+                  <Label className="mb-2 text-primary">Alimentos a Preferir</Label>
                   <div className="flex gap-2 mb-2">
                     <Input
                       placeholder="Adicionar alimento..."
@@ -440,7 +440,7 @@ export function PlanoAlimentarBlock({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {formData.alimentos_preferir.map((alimento, index) => (
-                      <Badge key={index} className="bg-green-100 text-green-800 pr-1">
+                      <Badge key={index} className="bg-primary/20 text-primary pr-1">
                         {alimento}
                         <button
                           type="button"
@@ -533,11 +533,11 @@ export function PlanoAlimentarBlock({
 
       {/* Plano Ativo */}
       {planoAtivo && !showForm && (
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <Badge variant="default" className="bg-green-600 mb-2">Plano Ativo</Badge>
+                <Badge variant="default" className="mb-2">Plano Ativo</Badge>
                 <CardTitle className="text-base">{planoAtivo.titulo}</CardTitle>
               </div>
               <div className="text-right text-sm text-muted-foreground">
@@ -560,26 +560,26 @@ export function PlanoAlimentarBlock({
             {/* Macros */}
             {planoAtivo.macros.calorias_totais_kcal && (
               <div className="grid grid-cols-4 gap-3">
-                <div className="p-3 bg-orange-50 rounded-lg text-center">
+                <div className="p-3 bg-accent/50 rounded-lg text-center">
                   <p className="text-xs text-muted-foreground">Calorias</p>
-                  <p className="font-semibold text-orange-600">{planoAtivo.macros.calorias_totais_kcal} kcal</p>
+                  <p className="font-semibold text-accent-foreground">{planoAtivo.macros.calorias_totais_kcal} kcal</p>
                 </div>
                 {planoAtivo.macros.proteinas_g && (
-                  <div className="p-3 bg-red-50 rounded-lg text-center">
+                  <div className="p-3 bg-destructive/10 rounded-lg text-center">
                     <p className="text-xs text-muted-foreground">Proteínas</p>
-                    <p className="font-semibold text-red-600">{planoAtivo.macros.proteinas_g}g</p>
+                    <p className="font-semibold text-destructive">{planoAtivo.macros.proteinas_g}g</p>
                   </div>
                 )}
                 {planoAtivo.macros.carboidratos_g && (
-                  <div className="p-3 bg-blue-50 rounded-lg text-center">
+                  <div className="p-3 bg-primary/10 rounded-lg text-center">
                     <p className="text-xs text-muted-foreground">Carboidratos</p>
-                    <p className="font-semibold text-blue-600">{planoAtivo.macros.carboidratos_g}g</p>
+                    <p className="font-semibold text-primary">{planoAtivo.macros.carboidratos_g}g</p>
                   </div>
                 )}
                 {planoAtivo.macros.gorduras_g && (
-                  <div className="p-3 bg-yellow-50 rounded-lg text-center">
+                  <div className="p-3 bg-secondary rounded-lg text-center">
                     <p className="text-xs text-muted-foreground">Gorduras</p>
-                    <p className="font-semibold text-yellow-600">{planoAtivo.macros.gorduras_g}g</p>
+                    <p className="font-semibold text-secondary-foreground">{planoAtivo.macros.gorduras_g}g</p>
                   </div>
                 )}
               </div>

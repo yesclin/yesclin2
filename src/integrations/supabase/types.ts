@@ -4322,6 +4322,83 @@ export type Database = {
           },
         ]
       }
+      patient_condutas: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          data_hora: string
+          encaminhamentos: string | null
+          evolucao_id: string | null
+          id: string
+          orientacoes: string | null
+          patient_id: string
+          prescricoes: string | null
+          profissional_id: string
+          retorno_agendado: string | null
+          retorno_observacoes: string | null
+          solicitacao_exames: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          data_hora?: string
+          encaminhamentos?: string | null
+          evolucao_id?: string | null
+          id?: string
+          orientacoes?: string | null
+          patient_id: string
+          prescricoes?: string | null
+          profissional_id: string
+          retorno_agendado?: string | null
+          retorno_observacoes?: string | null
+          solicitacao_exames?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          data_hora?: string
+          encaminhamentos?: string | null
+          evolucao_id?: string | null
+          id?: string
+          orientacoes?: string | null
+          patient_id?: string
+          prescricoes?: string | null
+          profissional_id?: string
+          retorno_agendado?: string | null
+          retorno_observacoes?: string | null
+          solicitacao_exames?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_condutas_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_condutas_evolucao_id_fkey"
+            columns: ["evolucao_id"]
+            isOneToOne: false
+            referencedRelation: "patient_evolucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_condutas_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_condutas_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_consent_status: {
         Row: {
           clinic_id: string

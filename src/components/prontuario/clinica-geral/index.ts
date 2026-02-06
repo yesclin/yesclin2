@@ -26,3 +26,6 @@ export type {
 
 export { ExameFisicoBlock } from './ExameFisicoBlock';
 export type { ExameFisico } from './ExameFisicoBlock';
+
+export { CondutaBlock } from './CondutaBlock';
+export type { Conduta } from './CondutaBlock';

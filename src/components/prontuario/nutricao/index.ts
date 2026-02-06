@@ -13,6 +13,7 @@ export { EvolucoesNutricaoBlock } from './EvolucoesNutricaoBlock';
 export { AnamneseNutricionalBlock } from './AnamneseNutricionalBlock';
 export { AvaliacaoClinicaBlock } from './AvaliacaoClinicaBlock';
 export { DiagnosticoNutricionalBlock } from './DiagnosticoNutricionalBlock';
+export { AlertasNutricaoBlock, AlertasBannerNutricao } from './AlertasNutricaoBlock';
 
 // Reutiliza o bloco de Documentos da Clínica Geral (mesma estrutura)
 export { DocumentosBlock as DocumentosNutricaoBlock } from '@/components/prontuario/clinica-geral/DocumentosBlock';

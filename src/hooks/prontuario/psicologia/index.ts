@@ -11,3 +11,9 @@ export type {
   PsicologiaSummaryData,
   StatusAcompanhamento,
 } from './useVisaoGeralPsicologiaData';
+
+export { useAnamnesePsicologiaData } from './useAnamnesePsicologiaData';
+export type { 
+  AnamnesePsicologiaData,
+  AnamnesePsicologiaFormData,
+} from './useAnamnesePsicologiaData';

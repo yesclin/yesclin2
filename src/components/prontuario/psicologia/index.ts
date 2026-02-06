@@ -7,9 +7,13 @@
  */
 
 export { VisaoGeralPsicologiaBlock } from './VisaoGeralPsicologiaBlock';
+export { AnamnesePsicologiaBlock } from './AnamnesePsicologiaBlock';
+
 export type { 
   PsicologiaPatientData, 
   PsicologiaClinicalAlert, 
   PsicologiaSummaryData,
   StatusAcompanhamento,
+  AnamnesePsicologiaData,
+  AnamnesePsicologiaFormData,
 } from '@/hooks/prontuario/psicologia';

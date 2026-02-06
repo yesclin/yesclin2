@@ -47,20 +47,37 @@ export interface YesclinSpecialty {
  * IMPORTANT: This list represents the actual functional scope of the system.
  * Do NOT add specialties here unless their clinical modules are fully implemented.
  */
+/**
+ * CLÍNICA GERAL - Blocos clínicos exclusivos
+ * 
+ * Prontuário focado em atendimento médico ambulatorial com:
+ * - Visão geral do paciente
+ * - Registro de evoluções clínicas
+ * - Plano terapêutico e conduta
+ * - Solicitação e resultado de exames
+ * - Linha do tempo clínica
+ * - Alertas médicos (alergias, medicamentos, condições)
+ * - Histórico completo de atendimentos
+ * 
+ * NÃO inclui: Odontograma, Mapa Facial, Fotos Antes/Depois, 
+ * Procedimentos específicos de outras especialidades
+ */
+const CLINICA_GERAL_BLOCKS: ClinicalBlockKey[] = [
+  'resumo',           // Visão Geral do paciente
+  'evolucao',         // Evoluções clínicas
+  'conduta',          // Plano / Conduta
+  'exames',           // Exames / Documentos
+  'timeline',         // Linha do Tempo
+  'alertas',          // Alertas clínicos
+  'historico',        // Histórico de atendimentos
+];
+
 export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
   {
     key: 'geral',
     name: 'Clínica Geral',
-    description: 'Atendimento médico geral com evoluções e conduta',
-    enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'conduta',
-      'exames',
-      'timeline',
-      'alertas',
-      'historico',
-    ],
+    description: 'Atendimento médico ambulatorial com evoluções, conduta e acompanhamento clínico',
+    enabledBlocks: CLINICA_GERAL_BLOCKS,
     icon: 'Stethoscope',
   },
   {

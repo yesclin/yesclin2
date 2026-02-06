@@ -4196,6 +4196,78 @@ export type Database = {
           },
         ]
       }
+      patient_anamnese_psicologia: {
+        Row: {
+          clinic_id: string
+          contexto_familiar: string | null
+          contexto_social: string | null
+          created_at: string
+          created_by: string | null
+          expectativas_terapia: string | null
+          fatores_protecao: string | null
+          fatores_risco: string | null
+          historico_emocional_comportamental: string | null
+          historico_tratamentos: string | null
+          id: string
+          is_current: boolean
+          observacoes: string | null
+          patient_id: string
+          queixa_principal: string | null
+          version: number
+        }
+        Insert: {
+          clinic_id: string
+          contexto_familiar?: string | null
+          contexto_social?: string | null
+          created_at?: string
+          created_by?: string | null
+          expectativas_terapia?: string | null
+          fatores_protecao?: string | null
+          fatores_risco?: string | null
+          historico_emocional_comportamental?: string | null
+          historico_tratamentos?: string | null
+          id?: string
+          is_current?: boolean
+          observacoes?: string | null
+          patient_id: string
+          queixa_principal?: string | null
+          version?: number
+        }
+        Update: {
+          clinic_id?: string
+          contexto_familiar?: string | null
+          contexto_social?: string | null
+          created_at?: string
+          created_by?: string | null
+          expectativas_terapia?: string | null
+          fatores_protecao?: string | null
+          fatores_risco?: string | null
+          historico_emocional_comportamental?: string | null
+          historico_tratamentos?: string | null
+          id?: string
+          is_current?: boolean
+          observacoes?: string | null
+          patient_id?: string
+          queixa_principal?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_anamnese_psicologia_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_anamnese_psicologia_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_anamneses: {
         Row: {
           alergias: string | null

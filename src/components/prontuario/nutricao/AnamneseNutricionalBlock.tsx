@@ -199,7 +199,7 @@ export function AnamneseNutricionalBlock({
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5 text-green-600" />
+          <ClipboardList className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Anamnese Nutricional</h2>
           {currentAnamnese && (
             <Badge variant="outline" className="ml-2">
@@ -229,7 +229,7 @@ export function AnamneseNutricionalBlock({
 
       {/* Formulário */}
       {showForm && canEdit && (
-        <Card className="border-green-200 bg-green-50/30">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
@@ -248,7 +248,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Target className="h-4 w-4 text-green-600" />
+                      <Target className="h-4 w-4 text-primary" />
                       Queixa Principal e Objetivos
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.queixa ? 'rotate-180' : ''}`} />
@@ -307,7 +307,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Utensils className="h-4 w-4 text-orange-500" />
+                      <Utensils className="h-4 w-4 text-accent-foreground" />
                       Histórico Alimentar
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.historico ? 'rotate-180' : ''}`} />
@@ -342,7 +342,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Clock className="h-4 w-4 text-blue-500" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       Rotina Diária
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.rotina ? 'rotate-180' : ''}`} />
@@ -420,7 +420,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Utensils className="h-4 w-4 text-purple-500" />
+                      <Utensils className="h-4 w-4 text-secondary-foreground" />
                       Hábitos Alimentares
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.habitos ? 'rotate-180' : ''}`} />
@@ -530,7 +530,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Droplets className="h-4 w-4 text-cyan-500" />
+                      <Droplets className="h-4 w-4 text-primary" />
                       Consumo de Água
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.agua ? 'rotate-180' : ''}`} />
@@ -577,7 +577,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <Pill className="h-4 w-4 text-indigo-500" />
+                      <Pill className="h-4 w-4 text-secondary-foreground" />
                       Uso de Suplementos
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.suplementos ? 'rotate-180' : ''}`} />
@@ -614,7 +614,7 @@ export function AnamneseNutricionalBlock({
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-2 h-auto">
                     <span className="flex items-center gap-2 font-medium">
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
                       Restrições, Intolerâncias e Alergias
                     </span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.restricoes ? 'rotate-180' : ''}`} />
@@ -807,7 +807,7 @@ export function AnamneseNutricionalBlock({
                 <Badge key={restricao} variant="secondary">{restricao}</Badge>
               ))}
               {currentAnamnese.intolerancias.map((intolerancia) => (
-                <Badge key={intolerancia} variant="outline" className="text-amber-600">{intolerancia}</Badge>
+                <Badge key={intolerancia} variant="outline" className="text-accent-foreground border-accent">{intolerancia}</Badge>
               ))}
               {currentAnamnese.alergias_alimentares.map((alergia) => (
                 <Badge key={alergia} variant="destructive">{alergia}</Badge>
@@ -818,7 +818,7 @@ export function AnamneseNutricionalBlock({
             {currentAnamnese.usa_suplementos && currentAnamnese.suplementos_detalhes && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Suplementos em Uso</p>
-                <p className="text-sm bg-indigo-50 p-2 rounded">{currentAnamnese.suplementos_detalhes}</p>
+                <p className="text-sm bg-secondary/50 p-2 rounded">{currentAnamnese.suplementos_detalhes}</p>
               </div>
             )}
           </CardContent>
@@ -840,7 +840,7 @@ export function AnamneseNutricionalBlock({
                 {anamneseHistory.map((anamnese) => (
                   <div 
                     key={anamnese.id}
-                    className={`p-3 rounded-lg border ${anamnese.is_current ? 'bg-green-50/50 border-green-200' : 'bg-muted/30'}`}
+                    className={`p-3 rounded-lg border ${anamnese.is_current ? 'bg-primary/10 border-primary/30' : 'bg-muted/30'}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">

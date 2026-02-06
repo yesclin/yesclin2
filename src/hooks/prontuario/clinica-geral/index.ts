@@ -9,3 +9,4 @@ export { useAnamneseData } from './useAnamneseData';
 export { useEvolucoesData } from './useEvolucoesData';
 export { useExameFisicoData } from './useExameFisicoData';
 export { useCondutaData } from './useCondutaData';
+export { useDocumentosData } from './useDocumentosData';

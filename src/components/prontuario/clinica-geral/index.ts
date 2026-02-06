@@ -29,3 +29,6 @@ export type { ExameFisico } from './ExameFisicoBlock';
 
 export { CondutaBlock } from './CondutaBlock';
 export type { Conduta } from './CondutaBlock';
+
+export { DocumentosBlock } from './DocumentosBlock';
+export type { Documento, CategoriaDocumento } from './DocumentosBlock';

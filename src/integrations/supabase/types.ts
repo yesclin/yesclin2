@@ -4529,6 +4529,79 @@ export type Database = {
           },
         ]
       }
+      patient_documentos: {
+        Row: {
+          categoria: string
+          clinic_id: string
+          created_at: string
+          data_documento: string | null
+          descricao: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          observacoes: string | null
+          patient_id: string
+          profissional_id: string
+          titulo: string
+        }
+        Insert: {
+          categoria?: string
+          clinic_id: string
+          created_at?: string
+          data_documento?: string | null
+          descricao?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          observacoes?: string | null
+          patient_id: string
+          profissional_id: string
+          titulo: string
+        }
+        Update: {
+          categoria?: string
+          clinic_id?: string
+          created_at?: string
+          data_documento?: string | null
+          descricao?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          observacoes?: string | null
+          patient_id?: string
+          profissional_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_documentos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documentos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documentos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_evolucoes: {
         Row: {
           assinada_em: string | null

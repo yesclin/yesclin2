@@ -108,6 +108,7 @@ import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoDat
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { 
   EvolucoesNutricaoBlock, 
+  EvolucaoRetornoBlock,
   AvaliacaoNutricionalBlock, 
   AvaliacaoNutricionalInicialBlock,
   AvaliacaoClinicaBlock, 
@@ -955,14 +956,13 @@ export default function Prontuario() {
           );
         }
         if (activeSpecialtyKey === 'nutricao') {
+          if (!patientId) return null;
           return (
-            <EvolucoesNutricaoBlock
-              evolucoes={evolucoesNutricao}
-              loading={evolucoesNutricaoLoading}
-              saving={evolucoesNutricaoSaving}
+            <EvolucaoRetornoBlock
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
               canEdit={canEditCurrentTab}
-              onSave={saveEvolucaoNutricao}
-              onSign={signEvolucaoNutricao}
+              professionalId={currentProfessionalId || undefined}
             />
           );
         }

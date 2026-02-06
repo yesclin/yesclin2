@@ -66,7 +66,7 @@ export type {
   PrioridadeMeta,
 } from './useMetasNutricionaisData';
 
-// Evoluções Nutricionais
+// Evoluções Nutricionais (legacy)
 export { 
   useEvolucoesNutricaoData,
   TIPO_CONSULTA_LABELS,
@@ -78,6 +78,20 @@ export type {
   StatusEvolucao,
   TipoConsulta,
 } from './useEvolucoesNutricaoData';
+
+// Evolução / Retorno (novo módulo otimizado para uso diário)
+export {
+  useEvolucaoRetornoData,
+  NIVEL_ADESAO_LABELS,
+  NIVEL_ADESAO_COLORS,
+} from './useEvolucaoRetornoData';
+export type {
+  EvolucaoRetorno,
+  EvolucaoRetornoFormData,
+  MedidasEvolucao,
+  NivelAdesao,
+  ComparativoEvolucao,
+} from './useEvolucaoRetornoData';
 
 // Templates de Evolução Nutricional
 export {

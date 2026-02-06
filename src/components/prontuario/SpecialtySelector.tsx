@@ -1,4 +1,7 @@
-import { Stethoscope, ChevronDown, Lock, Settings } from 'lucide-react';
+import { 
+  Stethoscope, ChevronDown, Lock, Brain, Apple, Activity, 
+  Sparkles, Smile, Scan, Baby, Dumbbell 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,8 +14,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SpecialtyOption, SpecialtyKey } from '@/hooks/prontuario/useActiveSpecialty';
-import { SPECIALTY_LABELS } from '@/hooks/prontuario/specialtyTabsConfig';
-import { Link } from 'react-router-dom';
+import { YESCLIN_SPECIALTY_LABELS } from '@/hooks/prontuario/yesclinSpecialties';
+
+// Icon mapping for specialties
+const SPECIALTY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Stethoscope,
+  Brain,
+  Apple,
+  Activity,
+  Dumbbell,
+  Sparkles,
+  Smile,
+  Scan,
+  Baby,
+};
 
 interface SpecialtySelectorProps {
   activeSpecialty: SpecialtyOption | null;
@@ -33,7 +48,10 @@ export function SpecialtySelector({
   loading,
   disabled,
 }: SpecialtySelectorProps) {
-  const displayLabel = activeSpecialty?.name || SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
+  const displayLabel = activeSpecialty?.name || YESCLIN_SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
+  const IconComponent = activeSpecialty?.icon 
+    ? SPECIALTY_ICONS[activeSpecialty.icon] || Stethoscope 
+    : Stethoscope;
 
   if (isFromAppointment) {
     // Locked to appointment specialty - show as badge
@@ -42,7 +60,7 @@ export function SpecialtySelector({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
-              <Stethoscope className="h-4 w-4 text-primary" />
+              <IconComponent className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-primary">{displayLabel}</span>
               <Lock className="h-3 w-3 text-primary/60" />
             </div>
@@ -55,7 +73,7 @@ export function SpecialtySelector({
     );
   }
 
-  // Manual selection allowed
+  // Manual selection allowed - show dropdown with Yesclin specialties
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -65,58 +83,46 @@ export function SpecialtySelector({
           className="gap-2"
           disabled={loading || disabled}
         >
-          <Stethoscope className="h-4 w-4" />
+          <IconComponent className="h-4 w-4" />
           <span>{displayLabel}</span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="start" className="w-72">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Selecione a especialidade para visualizar os blocos clínicos correspondentes
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {/* Default option */}
-        <DropdownMenuItem
-          onClick={() => onSelect(null)}
-          className="gap-2"
-        >
-          <Stethoscope className="h-4 w-4" />
-          <span>Clínica Geral</span>
-          {!activeSpecialty && (
-            <Badge variant="secondary" className="ml-auto text-[10px]">Ativo</Badge>
-          )}
-        </DropdownMenuItem>
-        
-        {specialties.length > 0 && <DropdownMenuSeparator />}
-        
-        {/* Available specialties */}
-        {specialties.map((specialty) => (
-          <DropdownMenuItem
-            key={specialty.id}
-            onClick={() => onSelect(specialty.id)}
-            className="gap-2"
-          >
-            <Stethoscope className="h-4 w-4" />
-            <span>{specialty.name}</span>
-            {activeSpecialty?.id === specialty.id && (
-              <Badge variant="secondary" className="ml-auto text-[10px]">Ativo</Badge>
-            )}
-          </DropdownMenuItem>
-        ))}
-        
-        {/* Hint to go to settings if few/no specialties */}
-        {specialties.length < 3 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="gap-2 text-muted-foreground">
-              <Link to="/app/config/clinica">
-                <Settings className="h-4 w-4" />
-                <span className="text-xs">Gerenciar especialidades</span>
-              </Link>
+        {/* Yesclin supported specialties */}
+        {specialties.map((specialty) => {
+          const SpecIcon = specialty.icon 
+            ? SPECIALTY_ICONS[specialty.icon] || Stethoscope 
+            : Stethoscope;
+          const isActive = activeSpecialty?.key === specialty.key && 
+                          activeSpecialty?.name === specialty.name;
+          
+          return (
+            <DropdownMenuItem
+              key={specialty.id}
+              onClick={() => onSelect(specialty.key)}
+              className="gap-2 cursor-pointer"
+            >
+              <SpecIcon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1 min-w-0">
+                <span className="block truncate">{specialty.name}</span>
+                {specialty.description && (
+                  <span className="block text-[10px] text-muted-foreground truncate">
+                    {specialty.description}
+                  </span>
+                )}
+              </div>
+              {isActive && (
+                <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Ativo</Badge>
+              )}
             </DropdownMenuItem>
-          </>
-        )}
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );

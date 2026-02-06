@@ -71,7 +71,6 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
       'conduta',
       'exames',
       'timeline',
-      'alertas',
       'historico',
     ],
     icon: 'Apple',

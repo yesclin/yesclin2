@@ -32,3 +32,6 @@ export type { Conduta } from './CondutaBlock';
 
 export { DocumentosBlock } from './DocumentosBlock';
 export type { Documento, CategoriaDocumento } from './DocumentosBlock';
+
+export { AlertasBlock, AlertasBanner } from './AlertasBlock';
+export type { AlertaClinico, TipoAlerta, SeveridadeAlerta } from './AlertasBlock';

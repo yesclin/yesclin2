@@ -1,19 +1,17 @@
 /**
- * NUTRIÇÃO - Visão Geral (Somente Leitura)
+ * NUTRIÇÃO - Visão Geral Consolidada (Somente Leitura)
  * 
- * Bloco informativo do paciente para a especialidade Nutrição.
- * NÃO permite edição direta de dados.
+ * Painel central do paciente conectado a todos os módulos clínicos.
+ * NÃO permite edição direta - apenas visualização e navegação.
  * 
- * Exibe:
- * - Dados básicos do paciente (nome)
- * - Idade e sexo
- * - Objetivo nutricional atual
- * - Data da última consulta nutricional
- * - Status do acompanhamento
- * - Alertas nutricionais ativos
- * 
- * Ações Rápidas: Apenas atalhos para abrir formulários em outros blocos
- * (não editam dados neste componente).
+ * Módulos conectados:
+ * - Avaliação Nutricional Inicial
+ * - Avaliação Antropométrica
+ * - Diagnóstico Nutricional
+ * - Plano Alimentar
+ * - Evoluções Nutricionais
+ * - Exames / Documentos
+ * - Alertas Nutricionais
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +30,15 @@ import {
   Info,
   Clock,
   TrendingUp,
-  Ruler,
+  TrendingDown,
+  Minus,
+  FileText,
   UtensilsCrossed,
-  Plus
+  Stethoscope,
+  ClipboardList,
+  Paperclip,
+  ChevronRight,
+  Ruler
 } from 'lucide-react';
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,7 +49,6 @@ import {
   type NutricaoSummaryData, 
   type NutricaoAlert 
 } from '@/hooks/prontuario/nutricao';
-import type { TipoEvolucaoNutricao } from '@/hooks/prontuario/nutricao/evolucaoTemplates';
 
 interface VisaoGeralNutricaoBlockProps {
   patient: NutricaoPatientData | null;
@@ -53,7 +56,7 @@ interface VisaoGeralNutricaoBlockProps {
   alerts: NutricaoAlert[];
   loading: boolean;
   canEdit?: boolean;
-  onQuickAction?: (action: 'avaliacao_antropometrica' | 'plano_alimentar' | 'nova_evolucao', templateId?: TipoEvolucaoNutricao) => void;
+  onNavigateToModule?: (moduleKey: string) => void;
 }
 
 /**
@@ -98,13 +101,98 @@ function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destr
   }
 }
 
+/**
+ * Componente de indicador de variação
+ */
+function VariacaoIndicador({ 
+  valor, 
+  sufixo = 'kg', 
+  invertido = false 
+}: { 
+  valor: number | null; 
+  sufixo?: string; 
+  invertido?: boolean;
+}) {
+  if (valor === null || valor === 0) {
+    return (
+      <span className="flex items-center gap-1 text-muted-foreground text-sm">
+        <Minus className="h-3 w-3" />
+        Sem variação
+      </span>
+    );
+  }
+  
+  const isPositive = valor > 0;
+  const isGood = invertido ? isPositive : !isPositive;
+  
+  return (
+    <span className={`flex items-center gap-1 text-sm font-medium ${isGood ? 'text-primary' : 'text-destructive'}`}>
+      {isPositive ? (
+        <TrendingUp className="h-3 w-3" />
+      ) : (
+        <TrendingDown className="h-3 w-3" />
+      )}
+      {isPositive ? '+' : ''}{valor} {sufixo}
+    </span>
+  );
+}
+
+/**
+ * Card clicável para navegação a módulos
+ */
+function ModuleCard({ 
+  title, 
+  icon: Icon, 
+  children, 
+  moduleKey,
+  onNavigate,
+  hasData = true,
+}: { 
+  title: string; 
+  icon: React.ElementType;
+  children: React.ReactNode;
+  moduleKey: string;
+  onNavigate?: (key: string) => void;
+  hasData?: boolean;
+}) {
+  const handleClick = () => {
+    if (onNavigate) {
+      onNavigate(moduleKey);
+    }
+  };
+  
+  return (
+    <Card 
+      className={`transition-all ${onNavigate ? 'cursor-pointer hover:shadow-md hover:border-primary/50' : ''}`}
+      onClick={handleClick}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Icon className="h-4 w-4" />
+            {title}
+          </span>
+          {onNavigate && (
+            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasData ? children : (
+          <p className="text-muted-foreground text-sm">Não registrado</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function VisaoGeralNutricaoBlock({
   patient,
   summary,
   alerts,
   loading,
   canEdit = false,
-  onQuickAction,
+  onNavigateToModule,
 }: VisaoGeralNutricaoBlockProps) {
   if (loading) {
     return (
@@ -144,15 +232,22 @@ export function VisaoGeralNutricaoBlock({
     ? differenceInDays(new Date(), new Date(summary.ultima_consulta))
     : null;
 
+  const diasDesdeUltimaEvolucao = summary.ultima_evolucao?.data_atendimento
+    ? differenceInDays(new Date(), new Date(summary.ultima_evolucao.data_atendimento))
+    : null;
+
   return (
     <div className="space-y-4">
       {/* Alertas Nutricionais Ativos */}
       {alerts.length > 0 && (
-        <div className="space-y-2">
-          {alerts.map((alert) => (
+        <div 
+          className="space-y-2 cursor-pointer" 
+          onClick={() => onNavigateToModule?.('alertas')}
+        >
+          {alerts.slice(0, 3).map((alert) => (
             <Card 
               key={alert.id} 
-              className={`border-l-4 ${
+              className={`border-l-4 transition-all hover:shadow-md ${
                 alert.severity === 'critical' 
                   ? 'border-l-destructive bg-destructive/10' 
                   : alert.severity === 'warning'
@@ -169,16 +264,24 @@ export function VisaoGeralNutricaoBlock({
                       <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
                     )}
                   </div>
-                  <Badge 
-                    variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {alert.alert_type}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {alert.alert_type}
+                    </Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+          {alerts.length > 3 && (
+            <p className="text-xs text-muted-foreground text-center">
+              +{alerts.length - 3} alertas adicionais
+            </p>
+          )}
         </div>
       )}
 
@@ -218,208 +321,282 @@ export function VisaoGeralNutricaoBlock({
         </CardHeader>
       </Card>
 
-      {/* Atalhos Rápidos */}
-      {canEdit && onQuickAction && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Ações Rápidas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onQuickAction('avaliacao_antropometrica', 'avaliacao_antropometrica')}
-                className="flex items-center gap-2"
-              >
-                <Ruler className="h-4 w-4" />
-                Nova Avaliação Antropométrica
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onQuickAction('plano_alimentar', 'plano_alimentar')}
-                className="flex items-center gap-2"
-              >
-                <UtensilsCrossed className="h-4 w-4" />
-                Novo Plano Alimentar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onQuickAction('nova_evolucao')}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Nova Evolução Nutricional
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Cards de Informações */}
+      {/* Grid de Módulos Conectados */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Objetivo Nutricional */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Objetivo Nutricional
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {summary.objetivo ? (
-              <>
-                <p className="text-lg font-semibold">
-                  {OBJETIVO_NUTRICIONAL_LABELS[summary.objetivo]}
+        
+        {/* Peso Atual e Variação - Avaliação Antropométrica */}
+        <ModuleCard
+          title="Peso Atual"
+          icon={Scale}
+          moduleKey="avaliacao_clinica"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.peso_atual_kg}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">
+              {summary.peso_atual_kg ? `${summary.peso_atual_kg}` : '--'}
+            </span>
+            <span className="text-muted-foreground">kg</span>
+          </div>
+          {summary.variacao_peso_kg !== null && (
+            <div className="mt-1">
+              <VariacaoIndicador valor={summary.variacao_peso_kg} />
+              {summary.peso_consulta_anterior && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Anterior: {summary.peso_consulta_anterior} kg
                 </p>
-                {summary.objetivo_descricao && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {summary.objetivo_descricao}
-                  </p>
-                )}
-                {summary.peso_meta_kg && (
-                  <Badge variant="outline" className="mt-2">
-                    Meta: {summary.peso_meta_kg} kg
-                  </Badge>
-                )}
-              </>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Objetivo não definido
+              )}
+            </div>
+          )}
+          {summary.data_ultima_medicao && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Medido em {format(new Date(summary.data_ultima_medicao), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+          )}
+        </ModuleCard>
+
+        {/* IMC - Avaliação Antropométrica */}
+        <ModuleCard
+          title="IMC"
+          icon={Activity}
+          moduleKey="avaliacao_clinica"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.imc}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">
+              {summary.imc ? summary.imc.toFixed(1) : '--'}
+            </span>
+            <span className="text-muted-foreground">kg/m²</span>
+          </div>
+          {summary.classificacao_imc && (
+            <Badge variant={getIMCBadgeVariant(summary.classificacao_imc)} className="mt-2">
+              {summary.classificacao_imc}
+            </Badge>
+          )}
+          {summary.altura_cm && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Altura: {(summary.altura_cm / 100).toFixed(2)} m
+            </p>
+          )}
+        </ModuleCard>
+
+        {/* Objetivo Nutricional - Avaliação Inicial */}
+        <ModuleCard
+          title="Objetivo Nutricional"
+          icon={Target}
+          moduleKey="avaliacao_nutricional"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.objetivo || !!summary.avaliacao_inicial}
+        >
+          {summary.objetivo ? (
+            <>
+              <p className="text-lg font-semibold">
+                {OBJETIVO_NUTRICIONAL_LABELS[summary.objetivo]}
               </p>
-            )}
-          </CardContent>
-        </Card>
+              {summary.objetivo_descricao && summary.objetivo !== 'outro' && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {summary.objetivo_descricao}
+                </p>
+              )}
+            </>
+          ) : summary.avaliacao_inicial ? (
+            <p className="text-sm">
+              Avaliação realizada em {format(new Date(summary.avaliacao_inicial.data_avaliacao), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Objetivo não definido
+            </p>
+          )}
+        </ModuleCard>
+
+        {/* Diagnóstico Nutricional */}
+        <ModuleCard
+          title="Diagnóstico Nutricional"
+          icon={Stethoscope}
+          moduleKey="diagnostico_nutricional"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.ultimo_diagnostico}
+        >
+          {summary.ultimo_diagnostico ? (
+            <>
+              <p className="text-lg font-semibold line-clamp-1">
+                {summary.ultimo_diagnostico.diagnostico_principal}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge 
+                  variant={summary.ultimo_diagnostico.status === 'ativo' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {summary.ultimo_diagnostico.status === 'ativo' ? 'Ativo' : 
+                   summary.ultimo_diagnostico.status === 'resolvido' ? 'Resolvido' : 'Em acompanhamento'}
+                </Badge>
+              </div>
+              {summary.total_diagnosticos > 1 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  +{summary.total_diagnosticos - 1} diagnóstico(s) registrado(s)
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Nenhum diagnóstico registrado
+            </p>
+          )}
+        </ModuleCard>
+
+        {/* Plano Alimentar */}
+        <ModuleCard
+          title="Plano Alimentar"
+          icon={UtensilsCrossed}
+          moduleKey="plano_alimentar"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.plano_ativo}
+        >
+          {summary.plano_ativo ? (
+            <>
+              <p className="text-lg font-semibold line-clamp-1">
+                {summary.plano_ativo.titulo}
+              </p>
+              {summary.plano_ativo.calorias_totais && (
+                <p className="text-sm text-muted-foreground">
+                  {summary.plano_ativo.calorias_totais} kcal/dia
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Início: {format(new Date(summary.plano_ativo.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
+              </p>
+              {summary.total_planos > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  +{summary.total_planos - 1} plano(s) no histórico
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground text-sm">
+                Nenhum plano ativo
+              </p>
+              {summary.total_planos > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {summary.total_planos} plano(s) no histórico
+                </p>
+              )}
+            </>
+          )}
+        </ModuleCard>
+
+        {/* Última Evolução Nutricional */}
+        <ModuleCard
+          title="Última Evolução"
+          icon={FileText}
+          moduleKey="evolucao"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.ultima_evolucao}
+        >
+          {summary.ultima_evolucao ? (
+            <>
+              <p className="text-lg font-semibold">
+                {format(new Date(summary.ultima_evolucao.data_atendimento), "dd/MM/yyyy", { locale: ptBR })}
+              </p>
+              {diasDesdeUltimaEvolucao !== null && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {diasDesdeUltimaEvolucao === 0 
+                    ? 'Hoje'
+                    : diasDesdeUltimaEvolucao === 1 
+                      ? 'Ontem' 
+                      : `Há ${diasDesdeUltimaEvolucao} dias`
+                  }
+                </p>
+              )}
+              {summary.ultima_evolucao.adesao_plano && (
+                <Badge variant="outline" className="mt-1 text-xs">
+                  Adesão: {summary.ultima_evolucao.adesao_plano}
+                </Badge>
+              )}
+              {summary.total_evolucoes > 1 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total: {summary.total_evolucoes} evoluções
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Nenhuma evolução registrada
+            </p>
+          )}
+        </ModuleCard>
 
         {/* Última Consulta */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Última Consulta
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {summary.ultima_consulta ? (
-              <>
-                <p className="text-lg font-semibold">
-                  {format(new Date(summary.ultima_consulta), "dd/MM/yyyy", { locale: ptBR })}
-                </p>
-                {diasDesdeUltimaConsulta !== null && (
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {diasDesdeUltimaConsulta === 0 
-                      ? 'Hoje'
-                      : diasDesdeUltimaConsulta === 1 
-                        ? 'Ontem' 
-                        : `Há ${diasDesdeUltimaConsulta} dias`
-                    }
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Nenhuma consulta realizada
+        <ModuleCard
+          title="Última Consulta"
+          icon={Calendar}
+          moduleKey="timeline"
+          onNavigate={onNavigateToModule}
+          hasData={!!summary.ultima_consulta}
+        >
+          {summary.ultima_consulta ? (
+            <>
+              <p className="text-lg font-semibold">
+                {format(new Date(summary.ultima_consulta), "dd/MM/yyyy", { locale: ptBR })}
               </p>
-            )}
-          </CardContent>
-        </Card>
+              {diasDesdeUltimaConsulta !== null && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {diasDesdeUltimaConsulta === 0 
+                    ? 'Hoje'
+                    : diasDesdeUltimaConsulta === 1 
+                      ? 'Ontem' 
+                      : `Há ${diasDesdeUltimaConsulta} dias`
+                  }
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Nenhuma consulta realizada
+            </p>
+          )}
+        </ModuleCard>
 
         {/* Total de Consultas */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Acompanhamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">{summary.total_consultas}</span>
-              <span className="text-muted-foreground">
-                {summary.total_consultas === 1 ? 'consulta' : 'consultas'}
-              </span>
-            </div>
-            {summary.data_inicio_plano && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Início: {format(new Date(summary.data_inicio_plano), "dd/MM/yyyy", { locale: ptBR })}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <ModuleCard
+          title="Acompanhamento"
+          icon={TrendingUp}
+          moduleKey="timeline"
+          onNavigate={onNavigateToModule}
+          hasData={summary.total_consultas > 0}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">{summary.total_consultas}</span>
+            <span className="text-muted-foreground">
+              {summary.total_consultas === 1 ? 'consulta' : 'consultas'}
+            </span>
+          </div>
+        </ModuleCard>
 
-        {/* Peso Atual e IMC */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Scale className="h-4 w-4" />
-              Peso Atual
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">
-                {summary.peso_atual_kg ? `${summary.peso_atual_kg}` : '--'}
-              </span>
-              <span className="text-muted-foreground">kg</span>
-            </div>
-            {summary.variacao_peso_kg !== null && summary.variacao_peso_kg !== 0 && (
-              <p className={`text-sm mt-1 ${summary.variacao_peso_kg > 0 ? 'text-destructive' : 'text-primary'}`}>
-                {summary.variacao_peso_kg > 0 ? '+' : ''}{summary.variacao_peso_kg} kg desde o início
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* IMC */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              IMC
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">
-                {summary.imc ? summary.imc.toFixed(1) : '--'}
-              </span>
-              <span className="text-muted-foreground">kg/m²</span>
-            </div>
-            {summary.classificacao_imc && (
-              <Badge variant={getIMCBadgeVariant(summary.classificacao_imc)} className="mt-2">
-                {summary.classificacao_imc}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Altura */}
-        {summary.altura_cm && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Altura
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">
-                  {(summary.altura_cm / 100).toFixed(2)}
-                </span>
-                <span className="text-muted-foreground">m</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {summary.altura_cm} cm
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Documentos Anexados */}
+        <ModuleCard
+          title="Exames / Documentos"
+          icon={Paperclip}
+          moduleKey="exames"
+          onNavigate={onNavigateToModule}
+          hasData={summary.total_documentos > 0}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">{summary.total_documentos}</span>
+            <span className="text-muted-foreground">
+              {summary.total_documentos === 1 ? 'documento' : 'documentos'}
+            </span>
+          </div>
+          {summary.total_documentos === 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Nenhum exame ou documento anexado
+            </p>
+          )}
+        </ModuleCard>
       </div>
     </div>
   );

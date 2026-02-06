@@ -40,6 +40,9 @@ export interface EvolucaoNutricao {
   // Avaliação geral
   avaliacao: string | null;
   
+  // Ajustes realizados no plano
+  ajustes_realizados: string | null;
+  
   // Orientações e conduta
   orientacoes: string[];
   proximos_passos: string | null;
@@ -61,6 +64,7 @@ export interface EvolucaoNutricaoFormData {
   dificuldades_relatadas: string | null;
   sintomas_gi: string[];
   avaliacao: string | null;
+  ajustes_realizados: string | null;
   orientacoes: string[];
   proximos_passos: string | null;
 }
@@ -123,6 +127,7 @@ export function useEvolucoesNutricaoData(patientId: string | null, professionalI
           dificuldades_relatadas: (content?.dificuldades_relatadas as string) || null,
           sintomas_gi: (content?.sintomas_gi as string[]) || [],
           avaliacao: item.notes,
+          ajustes_realizados: (content?.ajustes_realizados as string) || null,
           orientacoes: (content?.orientacoes as string[]) || [],
           proximos_passos: item.next_steps,
           status: item.status as StatusEvolucao,
@@ -162,6 +167,7 @@ export function useEvolucoesNutricaoData(patientId: string | null, professionalI
         adesao_plano: formData.adesao_plano,
         dificuldades_relatadas: formData.dificuldades_relatadas,
         sintomas_gi: formData.sintomas_gi,
+        ajustes_realizados: formData.ajustes_realizados,
         orientacoes: formData.orientacoes,
       };
       

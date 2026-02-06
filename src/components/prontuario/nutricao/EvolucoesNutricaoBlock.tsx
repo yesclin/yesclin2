@@ -54,6 +54,7 @@ const initialFormData: EvolucaoNutricaoFormData = {
   dificuldades_relatadas: null,
   sintomas_gi: [],
   avaliacao: null,
+  ajustes_realizados: null,
   orientacoes: [],
   proximos_passos: null,
 };
@@ -124,7 +125,7 @@ export function EvolucoesNutricaoBlock({
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-green-600" />
+          <Activity className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Evoluções Nutricionais</h2>
         </div>
         {canEdit && !showForm && (
@@ -137,7 +138,7 @@ export function EvolucoesNutricaoBlock({
 
       {/* Formulário */}
       {showForm && canEdit && (
-        <Card className="border-green-200 bg-green-50/30">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -248,6 +249,18 @@ export function EvolucoesNutricaoBlock({
                 />
               </div>
 
+              {/* Ajustes Realizados */}
+              <div>
+                <Label htmlFor="ajustes_realizados">Ajustes Realizados no Plano</Label>
+                <Textarea
+                  id="ajustes_realizados"
+                  placeholder="Descreva os ajustes feitos no plano alimentar..."
+                  value={formData.ajustes_realizados ?? ''}
+                  onChange={(e) => updateField('ajustes_realizados', e.target.value || null)}
+                  rows={2}
+                />
+              </div>
+
               {/* Orientações */}
               <div>
                 <Label className="mb-2">Orientações</Label>
@@ -318,7 +331,7 @@ export function EvolucoesNutricaoBlock({
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{TIPO_CONSULTA_LABELS[evolucao.tipo_consulta]}</Badge>
                     {evolucao.status === 'signed' ? (
-                      <Badge variant="default" className="bg-green-600">
+                      <Badge variant="default" className="bg-primary">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Assinada
                       </Badge>
@@ -388,10 +401,18 @@ export function EvolucoesNutricaoBlock({
                   </div>
                 )}
 
+                {/* Ajustes Realizados */}
+                {evolucao.ajustes_realizados && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Ajustes Realizados</p>
+                    <p className="text-sm bg-primary/5 p-2 rounded border-l-2 border-primary">{evolucao.ajustes_realizados}</p>
+                  </div>
+                )}
+
                 {/* Orientações */}
                 {evolucao.orientacoes.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Orientações</p>
+                    <p className="text-xs text-muted-foreground mb-1">Orientações Reforçadas</p>
                     <ul className="list-disc list-inside text-sm space-y-1">
                       {evolucao.orientacoes.map((orientacao, index) => (
                         <li key={index}>{orientacao}</li>

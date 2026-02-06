@@ -103,9 +103,9 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
-import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData } from "@/hooks/prontuario/psicologia";
+import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -462,6 +462,15 @@ export default function Prontuario() {
     signEvolucao,
   } = useEvolucoesData(patientId);
 
+  // Sessões Psicológicas Data - specific for Psicologia specialty
+  const {
+    sessoes: sessoesPsico,
+    loading: sessoesPsicoLoading,
+    saving: sessoesPsicoSaving,
+    saveSessao: saveSessaoPsico,
+    signSessao: signSessaoPsico,
+  } = useSessoesPsicologiaData(patientId, currentProfessionalId || undefined);
+
   // Exame Físico Data - specific for Clínica Geral specialty
   const {
     exames: examesFisicos,
@@ -708,7 +717,22 @@ export default function Prontuario() {
         );
 
       case 'evolucao':
-        // Clínica Geral - Evoluções Clínicas
+        // Render specialty-specific Evolutions/Sessions
+        if (activeSpecialtyKey === 'psicologia') {
+          return (
+            <SessoesPsicologiaBlock
+              sessoes={sessoesPsico}
+              loading={sessoesPsicoLoading}
+              saving={sessoesPsicoSaving}
+              canEdit={canEditCurrentTab}
+              currentProfessionalId={currentProfessionalId || undefined}
+              currentProfessionalName={currentProfessionalName || undefined}
+              onSave={saveSessaoPsico}
+              onSign={signSessaoPsico}
+            />
+          );
+        }
+        // Default: Clínica Geral - Evoluções Clínicas
         return (
           <EvolucoesBlock
             evolucoes={evolucoes}

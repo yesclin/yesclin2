@@ -7105,6 +7105,82 @@ export type Database = {
           },
         ]
       }
+      sessoes_psicologia: {
+        Row: {
+          abordagem_terapeutica: string | null
+          assinada_em: string | null
+          clinic_id: string
+          created_at: string
+          data_sessao: string
+          duracao_minutos: number
+          encaminhamentos_tarefas: string | null
+          id: string
+          intervencoes_realizadas: string | null
+          observacoes_terapeuta: string | null
+          patient_id: string
+          profissional_id: string
+          relato_paciente: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          abordagem_terapeutica?: string | null
+          assinada_em?: string | null
+          clinic_id: string
+          created_at?: string
+          data_sessao?: string
+          duracao_minutos?: number
+          encaminhamentos_tarefas?: string | null
+          id?: string
+          intervencoes_realizadas?: string | null
+          observacoes_terapeuta?: string | null
+          patient_id: string
+          profissional_id: string
+          relato_paciente?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          abordagem_terapeutica?: string | null
+          assinada_em?: string | null
+          clinic_id?: string
+          created_at?: string
+          data_sessao?: string
+          duracao_minutos?: number
+          encaminhamentos_tarefas?: string | null
+          id?: string
+          intervencoes_realizadas?: string | null
+          observacoes_terapeuta?: string | null
+          patient_id?: string
+          profissional_id?: string
+          relato_paciente?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_psicologia_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessoes_psicologia_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessoes_psicologia_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialties: {
         Row: {
           area: string | null

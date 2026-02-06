@@ -6,12 +6,14 @@
  */
 
 // Visão Geral
-export { useVisaoGeralNutricaoData } from './useVisaoGeralNutricaoData';
+export { useVisaoGeralNutricaoData, OBJETIVO_NUTRICIONAL_LABELS, STATUS_ACOMPANHAMENTO_LABELS } from './useVisaoGeralNutricaoData';
 export type { 
   NutricaoPatientData, 
   NutricaoSummaryData,
+  NutricaoAlert,
   LastMeasurement,
   ObjetivoNutricional,
+  StatusAcompanhamento,
 } from './useVisaoGeralNutricaoData';
 
 // Avaliação Nutricional

@@ -90,9 +90,22 @@ export function isTabVisibleForSpecialty(tabKey: string, specialtyKey: Specialty
 }
 
 /**
- * Get display label for a clinical block
+ * Specialty-specific label overrides for clinical blocks
  */
-export function getClinicalBlockLabel(key: ClinicalBlockKey): string {
+const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Record<ClinicalBlockKey, string>>>> = {
+  nutricao: {
+    evolucao: 'Evoluções Nutricionais',
+  },
+};
+
+/**
+ * Get display label for a clinical block, with optional specialty-specific override
+ */
+export function getClinicalBlockLabel(key: ClinicalBlockKey, specialtyKey?: SpecialtyKey): string {
+  // Check for specialty-specific override first
+  if (specialtyKey && SPECIALTY_BLOCK_LABEL_OVERRIDES[specialtyKey]?.[key]) {
+    return SPECIALTY_BLOCK_LABEL_OVERRIDES[specialtyKey]![key]!;
+  }
   return YESCLIN_CLINICAL_BLOCKS[key] || key;
 }
 

@@ -11,3 +11,4 @@ export { useExameFisicoData } from './useExameFisicoData';
 export { useCondutaData } from './useCondutaData';
 export { useDocumentosData } from './useDocumentosData';
 export { useAlertasData } from './useAlertasData';
+export { useLinhaTempoData } from './useLinhaTempoData';

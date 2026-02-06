@@ -103,7 +103,7 @@ import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
@@ -903,6 +903,28 @@ export default function Prontuario() {
         );
 
       case 'historico':
+        // Specialty-specific history/timeline block
+        if (activeSpecialtyKey === 'psicologia') {
+          // Map patient consents to the expected format
+          const mappedConsents = patientConsents.map(c => ({
+            id: c.id,
+            term_title: c.term_title || 'Termo',
+            consent_type: c.status,
+            accepted_at: c.granted_at,
+            term_version: c.term_version,
+          }));
+          
+          return (
+            <HistoricoPsicologiaBlock
+              anamneses={anamneseHistoryPsico}
+              sessoes={sessoesPsico}
+              planos={planoTerapeuticoHistory}
+              instrumentos={instrumentosPsico}
+              consents={mappedConsents}
+              loading={anamnesePsicoLoading || sessoesPsicoLoading || planoTerapeuticoLoading || instrumentosPsicoLoading}
+            />
+          );
+        }
         // Clínica Geral - Linha do Tempo / Histórico
         return (
           <LinhaTempoBlock

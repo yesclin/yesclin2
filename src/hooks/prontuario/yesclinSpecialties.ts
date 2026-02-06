@@ -182,8 +182,8 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
       'evolucao',                 // 7. Evoluções Nutricionais
       'evolucao_corporal',        // 8. Evolução Corporal (gráficos)
       'exames',                   // 9. Exames / Documentos
-      'alertas',                  // 10. Alertas Nutricionais
-      'timeline',                 // 11. Histórico / Linha do Tempo
+      'timeline',                 // 10. Linha do Tempo
+      'alertas',                  // 11. Alertas Nutricionais
     ],
     icon: 'Apple',
   },

@@ -106,7 +106,7 @@ import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, Condu
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
-import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock } from "@/components/prontuario/nutricao";
+import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock, AvaliacaoClinicaBlock } from "@/components/prontuario/nutricao";
 import { useEvolucoesNutricaoData, useAvaliacaoNutricionalData } from "@/hooks/prontuario/nutricao";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
@@ -825,6 +825,16 @@ export default function Prontuario() {
             saving={avaliacoesNutricaoSaving}
             canEdit={canEditCurrentTab}
             onSave={saveAvaliacaoNutricao}
+          />
+        );
+
+      case 'avaliacao_clinica':
+        // Nutrição - Avaliação Clínica / Bioquímica
+        if (!patientId) return null;
+        return (
+          <AvaliacaoClinicaBlock
+            patientId={patientId}
+            canEdit={canEditCurrentTab}
           />
         );
 

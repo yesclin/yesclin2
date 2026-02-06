@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useClinicData } from '@/hooks/useClinicData';
 
 export interface ExameLaboratorial {
   nome: string;
@@ -101,8 +102,9 @@ export const EXAMES_COMUNS_NUTRICAO = [
   { nome: 'Sódio', unidade: 'mEq/L', referencia: '136-145' },
 ];
 
-export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
+export function useAvaliacaoClinicaData(patientId: string | null) {
   const { toast } = useToast();
+  const { clinic } = useClinicData();
   const queryClient = useQueryClient();
 
   // Buscar avaliações clínicas do paciente
@@ -111,13 +113,15 @@ export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['avaliacao-clinica-nutricao', patientId, clinicId],
+    queryKey: ['avaliacao-clinica-nutricao', patientId, clinic?.id],
     queryFn: async () => {
+      if (!patientId || !clinic?.id) return [];
+      
       const { data, error } = await supabase
         .from('clinical_evolutions')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('clinic_id', clinicId)
+        .eq('clinic_id', clinic.id)
         .eq('specialty', 'nutricao')
         .eq('evolution_type', 'exam')
         .order('created_at', { ascending: false });
@@ -141,12 +145,16 @@ export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
         } as AvaliacaoClinica;
       });
     },
-    enabled: !!patientId && !!clinicId,
+    enabled: !!patientId && !!clinic?.id,
   });
 
   // Salvar nova avaliação
   const saveAvaliacao = useMutation({
     mutationFn: async (formData: AvaliacaoClinicaFormData) => {
+      if (!patientId || !clinic?.id) {
+        throw new Error('Dados incompletos para salvar avaliação');
+      }
+      
       // Buscar professional_id do usuário logado
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -155,7 +163,7 @@ export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
         .from('professionals')
         .select('id')
         .eq('user_id', user.id)
-        .eq('clinic_id', clinicId)
+        .eq('clinic_id', clinic.id)
         .single();
 
       const professionalId = professional?.id || user.id;
@@ -178,7 +186,7 @@ export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
         .from('clinical_evolutions')
         .insert([{
           patient_id: patientId,
-          clinic_id: clinicId,
+          clinic_id: clinic.id,
           professional_id: professionalId,
           specialty: 'nutricao',
           evolution_type: 'exam',
@@ -192,7 +200,7 @@ export function useAvaliacaoClinicaData(patientId: string, clinicId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['avaliacao-clinica-nutricao', patientId, clinicId] });
+      queryClient.invalidateQueries({ queryKey: ['avaliacao-clinica-nutricao', patientId, clinic?.id] });
       toast({
         title: 'Avaliação registrada',
         description: 'Os dados clínicos foram salvos com sucesso.',

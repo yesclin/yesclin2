@@ -10,7 +10,7 @@
  */
 
 import { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -24,7 +24,16 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AvaliacaoEvolutionChart } from './AvaliacaoEvolutionChart';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 import type { AvaliacaoNutricional, EvolucaoNutricao } from '@/hooks/prontuario/nutricao';
 
 interface EvolucaoCorporalBlockProps {
@@ -339,8 +348,137 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
         </div>
       )}
 
-      {/* Gráficos de Evolução - usa dados mesclados */}
-      <AvaliacaoEvolutionChart avaliacoes={mergedData} />
+      {/* Gráfico de Evolução do Peso - exibe apenas se houver mais de 1 registro */}
+      {mergedData.length > 1 && <WeightEvolutionChart data={mergedData} />}
     </div>
+  );
+}
+
+/**
+ * Gráfico de linha para evolução do peso
+ */
+interface WeightChartData {
+  date: string;
+  dateFormatted: string;
+  weight_kg: number | null;
+}
+
+function WeightEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
+  // Preparar dados para o gráfico (ordem cronológica)
+  const chartData: WeightChartData[] = useMemo(() => {
+    return [...data]
+      .filter(d => d.weight_kg !== null)
+      .reverse() // ordem cronológica ascendente
+      .map(d => ({
+        date: d.measurement_date,
+        dateFormatted: format(parseISO(d.measurement_date), "dd/MM/yy", { locale: ptBR }),
+        weight_kg: d.weight_kg,
+      }));
+  }, [data]);
+
+  // Não renderizar se menos de 2 pontos
+  if (chartData.length < 2) return null;
+
+  // Calcular média para linha de referência
+  const validWeights = chartData.filter(d => d.weight_kg !== null).map(d => d.weight_kg as number);
+  const avgWeight = validWeights.reduce((a, b) => a + b, 0) / validWeights.length;
+
+  // Calcular domínio do eixo Y com margem
+  const minWeight = Math.min(...validWeights);
+  const maxWeight = Math.max(...validWeights);
+  const yDomainMin = Math.floor(minWeight - 2);
+  const yDomainMax = Math.ceil(maxWeight + 2);
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) => {
+    if (active && payload && payload.length) {
+      const entry = payload[0] as { value: number };
+      return (
+        <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
+          <p className="font-medium text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold text-primary">
+            {entry.value?.toFixed(1)} kg
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Scale className="h-4 w-4 text-primary" />
+            Evolução do Peso
+          </CardTitle>
+          <Badge variant="secondary" className="text-xs">
+            {chartData.length} registros
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="dateFormatted" 
+                tick={{ fontSize: 11 }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                domain={[yDomainMin, yDomainMax]}
+                tick={{ fontSize: 11 }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}`}
+                width={40}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <ReferenceLine 
+                y={avgWeight} 
+                stroke="hsl(var(--muted-foreground))" 
+                strokeDasharray="5 5"
+                strokeOpacity={0.5}
+              />
+              <Line
+                type="monotone"
+                dataKey="weight_kg"
+                name="Peso (kg)"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2.5}
+                dot={{ 
+                  r: 5, 
+                  fill: "hsl(var(--primary))",
+                  strokeWidth: 2,
+                  stroke: "hsl(var(--background))"
+                }}
+                activeDot={{ 
+                  r: 7, 
+                  fill: "hsl(var(--primary))",
+                  strokeWidth: 3,
+                  stroke: "hsl(var(--background))"
+                }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        {/* Legenda */}
+        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-0.5 bg-primary rounded" />
+            <span>Peso registrado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-0.5 border-t border-dashed border-muted-foreground" />
+            <span>Média: {avgWeight.toFixed(1)} kg</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,162 +1,95 @@
 import type { SpecialtyKey } from './useActiveSpecialty';
-import { isModuleEnabledForSpecialty } from './yesclinSpecialties';
 
 /**
- * Configuration for which tabs are visible for each specialty.
+ * YESCLIN CLINICAL BLOCKS - Controlled list of available tabs
  * 
- * LAYER 1 - BASE (Always visible for all specialties):
- * - timeline (Linha do Tempo)
- * - historico (Histórico)
- * - exames (Exames / Documentos)
- * - alertas (Alertas)
- * - conduta (Plano/Conduta)
- * - exames_solicitacao (Solicitar Exames)
- * - resumo (Visão Geral)
- * 
- * LAYER 2 - SPECIALTY-SPECIFIC (Dynamic based on active specialty)
+ * These are the ONLY clinical blocks available in the Yesclin prontuário.
+ * No other tabs should be displayed outside this list.
  */
 
+// Tab keys mapped to their display names
+export const YESCLIN_CLINICAL_BLOCKS = {
+  resumo: 'Visão Geral',
+  evolucao: 'Evoluções',
+  conduta: 'Plano / Conduta',
+  exames: 'Exames / Documentos',
+  timeline: 'Linha do Tempo',
+  alertas: 'Alertas',
+  historico: 'Histórico',
+  procedimentos_realizados: 'Procedimentos Realizados',
+  produtos_utilizados: 'Produtos Utilizados',
+  before_after_photos: 'Fotos Antes / Depois',
+  termos_consentimentos: 'Termos / Consentimentos',
+  facial_map: 'Mapa Facial',
+  odontograma: 'Odontograma Digital',
+} as const;
+
+export type ClinicalBlockKey = keyof typeof YESCLIN_CLINICAL_BLOCKS;
+
 // Base tabs that are always visible regardless of specialty
-export const BASE_TABS: string[] = [
+export const BASE_TABS: ClinicalBlockKey[] = [
   'resumo',           // Visão Geral
-  'timeline',         // Linha do Tempo
-  'historico',        // Histórico
+  'evolucao',         // Evoluções
+  'conduta',          // Plano / Conduta
   'exames',           // Exames / Documentos
+  'timeline',         // Linha do Tempo
   'alertas',          // Alertas
-  'conduta',          // Plano/Conduta
-  'exames_solicitacao', // Solicitar Exames
+  'historico',        // Histórico
 ];
 
 // Specialty-specific tabs configuration
-export const SPECIALTY_TABS: Record<SpecialtyKey, string[]> = {
-  // Clínica Geral / Medicina Geral
-  geral: [
-    'anamnese',
-    'sinais_vitais',
-    'evolucao',
-    'diagnostico',
-    'prescricoes',
-  ],
+export const SPECIALTY_TABS: Record<SpecialtyKey, ClinicalBlockKey[]> = {
+  // Clínica Geral / Medicina Geral - base tabs only
+  geral: [],
 
-  // Odontologia
+  // Odontologia - adds odontograma
   odontologia: [
-    'anamnese',
-    'sinais_vitais',
     'odontograma',
-    'tooth_procedures',
-    'fotos_intraorais',
-    'evolucao',
-    'diagnostico',
-    'prescricoes',
+    'procedimentos_realizados',
   ],
 
-  // Psicologia
-  psicologia: [
-    'session_record',       // Registro de Sessão
-    'therapeutic_goals',    // Objetivos Terapêuticos
-    'therapeutic_plan',     // Plano Terapêutico
-    'evolucao',
-  ],
+  // Psicologia - base tabs sufficient
+  psicologia: [],
 
-  // Psiquiatria
-  psiquiatria: [
-    'anamnese',
-    'diagnosis_dsm',           // Diagnóstico (CID/DSM)
-    'psychiatric_prescription', // Prescrição Medicamentosa
-    'symptom_evolution',       // Evolução de Sintomas
-    'medication_history',      // Histórico de Medicamentos
-    'evolucao',
-  ],
+  // Psiquiatria - base tabs sufficient
+  psiquiatria: [],
 
-  // Nutrição
-  nutricao: [
-    'nutritional_assessment', // Avaliação Nutricional
-    'body_measurements',      // Medidas Corporais
-    'meal_plan',              // Plano Alimentar
-    'nutritional_evolution',  // Evolução Nutricional
-    'evolucao',
-  ],
+  // Nutrição - base tabs sufficient
+  nutricao: [],
 
-  // Estética
+  // Estética / Harmonização Facial
   estetica: [
-    'aesthetic_assessment',   // Avaliação Estética
-    'facial_map',             // Mapa Facial Interativo
-    'aesthetic_procedure',    // Procedimento Realizado
-    'products_used',          // Produtos Utilizados
-    'before_after_photos',    // Fotos Antes/Depois
-    'aesthetic_consent',      // Termo de Consentimento Específico
-    'evolucao',
+    'facial_map',
+    'procedimentos_realizados',
+    'produtos_utilizados',
+    'before_after_photos',
+    'termos_consentimentos',
   ],
 
   // Fisioterapia
   fisioterapia: [
-    'functional_assessment',  // Avaliação Funcional
-    'chief_complaint',        // Queixa Principal
-    'pain_scale',             // Escala de Dor
-    'range_of_motion',        // Amplitude de Movimento
-    'physio_therapeutic_plan', // Plano Terapêutico
-    'applied_exercises',      // Exercícios Aplicados
-    'session_evolution',      // Evolução por Sessão
-    'evolucao',
+    'procedimentos_realizados',
   ],
 
   // Pediatria
-  pediatria: [
-    'pediatric_anamnesis',          // Anamnese Pediátrica
-    'gestational_history',          // Histórico Gestacional
-    'growth_data',                  // Dados de Crescimento
-    'growth_curve',                 // Curva de Crescimento
-    'neuropsychomotor_development', // Desenvolvimento DNPM
-    'vaccines',                     // Vacinas
-    'pediatric_diagnosis',          // Diagnóstico
-    'pediatric_conduct',            // Conduta/Orientações
-    'pediatric_evolution',          // Evolução Clínica
-    'sinais_vitais',
-    'prescricoes',
-  ],
+  pediatria: [],
 
-  // Ginecologia
-  ginecologia: [
-    'gyneco_anamnesis',       // Anamnese Ginecológica
-    'gyneco_data',            // Dados Ginecológicos
-    'obstetric_history',      // Histórico Obstétrico (G/P/A)
-    'gyneco_exam',            // Exame Ginecológico
-    'gyneco_exams_results',   // Exames/Resultados
-    'gyneco_diagnosis',       // Diagnóstico
-    'gyneco_conduct',         // Conduta/Prescrição
-    'gyneco_evolution',       // Evolução Clínica
-    'prescricoes',
-  ],
+  // Ginecologia - base tabs sufficient
+  ginecologia: [],
 
-  // Oftalmologia
-  oftalmologia: [
-    'ophthalmo_anamnesis',          // Anamnese Oftalmológica
-    'visual_acuity',                // Acuidade Visual (OD/OE)
-    'ophthalmo_exam',               // Exame Oftalmológico
-    'intraocular_pressure',         // Pressão Intraocular (OD/OE)
-    'ophthalmo_diagnosis',          // Diagnóstico (OD/OE)
-    'ophthalmo_complementary_exams', // Exames Complementares
-    'ophthalmo_conduct',            // Conduta/Prescrição
-    'ophthalmo_evolution',          // Evolução Clínica
-    'prescricoes',
-  ],
+  // Oftalmologia - base tabs sufficient
+  oftalmologia: [],
 
-  // Custom / Other specialties - show general tabs
-  custom: [
-    'anamnese',
-    'sinais_vitais',
-    'evolucao',
-    'diagnostico',
-    'prescricoes',
-  ],
+  // Custom / Other specialties - base tabs only
+  custom: [],
 };
 
 /**
  * Get all visible tabs for a given specialty.
  * Combines base tabs + specialty-specific tabs.
  */
-export function getVisibleTabsForSpecialty(specialtyKey: SpecialtyKey): string[] {
-  const specialtyTabs = SPECIALTY_TABS[specialtyKey] || SPECIALTY_TABS.geral;
+export function getVisibleTabsForSpecialty(specialtyKey: SpecialtyKey): ClinicalBlockKey[] {
+  const specialtyTabs = SPECIALTY_TABS[specialtyKey] || [];
   
   // Combine and deduplicate
   const combined = [...BASE_TABS, ...specialtyTabs];
@@ -168,11 +101,17 @@ export function getVisibleTabsForSpecialty(specialtyKey: SpecialtyKey): string[]
  */
 export function isTabVisibleForSpecialty(tabKey: string, specialtyKey: SpecialtyKey): boolean {
   const visibleTabs = getVisibleTabsForSpecialty(specialtyKey);
-  return visibleTabs.includes(tabKey);
+  return visibleTabs.includes(tabKey as ClinicalBlockKey);
+}
+
+/**
+ * Get display label for a clinical block
+ */
+export function getClinicalBlockLabel(key: ClinicalBlockKey): string {
+  return YESCLIN_CLINICAL_BLOCKS[key] || key;
 }
 
 /**
  * Get a human-readable label for a specialty key.
- * @deprecated Use YESCLIN_SPECIALTY_LABELS from yesclinSpecialties.ts instead
  */
 export { YESCLIN_SPECIALTY_LABELS as SPECIALTY_LABELS } from './yesclinSpecialties';

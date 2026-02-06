@@ -26,16 +26,19 @@ export {
   BASE_TABS, 
   SPECIALTY_TABS, 
   SPECIALTY_LABELS,
+  YESCLIN_CLINICAL_BLOCKS,
   getVisibleTabsForSpecialty, 
-  isTabVisibleForSpecialty 
+  isTabVisibleForSpecialty,
+  getClinicalBlockLabel,
+  type ClinicalBlockKey,
 } from './specialtyTabsConfig';
 
 // Yesclin Supported Specialties (controlled system list)
 export {
   YESCLIN_SUPPORTED_SPECIALTIES,
   YESCLIN_SPECIALTY_LABELS,
-  getEnabledModulesForSpecialty,
-  isModuleEnabledForSpecialty,
+  getEnabledBlocksForSpecialty,
+  isBlockEnabledForSpecialty,
   resolveSpecialtyKey,
   type YesclinSpecialty,
 } from './yesclinSpecialties';

@@ -12,13 +12,14 @@
  */
 
 import type { SpecialtyKey } from './useActiveSpecialty';
+import type { ClinicalBlockKey } from './specialtyTabsConfig';
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
   name: string;
   description: string;
-  /** Clinical modules enabled for this specialty */
-  enabledModules: string[];
+  /** Clinical blocks enabled for this specialty (from YESCLIN_CLINICAL_BLOCKS) */
+  enabledBlocks: ClinicalBlockKey[];
   /** Icon name from lucide-react (optional) */
   icon?: string;
 }
@@ -33,14 +34,15 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
   {
     key: 'geral',
     name: 'Clínica Geral',
-    description: 'Atendimento médico geral com anamnese, evolução e prescrições',
-    enabledModules: [
-      'anamnese',
-      'sinais_vitais',
+    description: 'Atendimento médico geral com evoluções e conduta',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
-      'diagnostico',
-      'prescricoes',
       'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
     ],
     icon: 'Stethoscope',
   },
@@ -48,52 +50,61 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     key: 'psicologia',
     name: 'Psicologia',
     description: 'Atendimento psicológico com registro de sessões e plano terapêutico',
-    enabledModules: [
-      'session_record',
-      'therapeutic_goals',
-      'therapeutic_plan',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
       'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
     ],
     icon: 'Brain',
   },
   {
     key: 'nutricao',
     name: 'Nutrição',
-    description: 'Avaliação nutricional, medidas corporais e plano alimentar',
-    enabledModules: [
-      'nutritional_assessment',
-      'body_measurements',
-      'meal_plan',
-      'nutritional_evolution',
+    description: 'Avaliação nutricional e plano alimentar',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
     ],
     icon: 'Apple',
   },
   {
     key: 'fisioterapia',
     name: 'Fisioterapia',
-    description: 'Avaliação funcional, escala de dor e exercícios aplicados',
-    enabledModules: [
-      'functional_assessment',
-      'chief_complaint',
-      'pain_scale',
-      'range_of_motion',
-      'physio_therapeutic_plan',
-      'applied_exercises',
-      'session_evolution',
+    description: 'Avaliação funcional e exercícios aplicados',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
+      'procedimentos_realizados',
     ],
     icon: 'Activity',
   },
   {
-    key: 'fisioterapia', // Pilates shares fisioterapia key for modules
+    key: 'fisioterapia',
     name: 'Pilates',
     description: 'Avaliação postural e acompanhamento de sessões',
-    enabledModules: [
-      'functional_assessment',
-      'session_evolution',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
+      'procedimentos_realizados',
     ],
     icon: 'Dumbbell',
   },
@@ -101,62 +112,67 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     key: 'estetica',
     name: 'Estética / Harmonização Facial',
     description: 'Mapa facial interativo, procedimentos estéticos e termos de consentimento',
-    enabledModules: [
-      'aesthetic_assessment',
-      'facial_map',
-      'aesthetic_procedure',
-      'products_used',
-      'before_after_photos',
-      'aesthetic_consent',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
+      'facial_map',
+      'procedimentos_realizados',
+      'produtos_utilizados',
+      'before_after_photos',
+      'termos_consentimentos',
     ],
     icon: 'Sparkles',
   },
   {
     key: 'odontologia',
     name: 'Odontologia',
-    description: 'Odontograma digital, procedimentos por dente e fotos intraorais',
-    enabledModules: [
-      'anamnese',
-      'sinais_vitais',
-      'odontograma',
-      'tooth_procedures',
-      'fotos_intraorais',
+    description: 'Odontograma digital e procedimentos por dente',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
-      'diagnostico',
-      'prescricoes',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
+      'odontograma',
+      'procedimentos_realizados',
     ],
     icon: 'Smile',
   },
   {
-    key: 'estetica', // Dermatologia shares estetica key but with different focus
+    key: 'estetica',
     name: 'Dermatologia',
     description: 'Avaliação dermatológica e acompanhamento de tratamentos',
-    enabledModules: [
-      'anamnese',
-      'aesthetic_assessment',
-      'before_after_photos',
+    enabledBlocks: [
+      'resumo',
       'evolucao',
-      'prescricoes',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
+      'before_after_photos',
     ],
     icon: 'Scan',
   },
   {
     key: 'pediatria',
     name: 'Pediatria',
-    description: 'Anamnese pediátrica, curva de crescimento e desenvolvimento',
-    enabledModules: [
-      'pediatric_anamnesis',
-      'gestational_history',
-      'growth_data',
-      'growth_curve',
-      'neuropsychomotor_development',
-      'vaccines',
-      'pediatric_diagnosis',
-      'pediatric_conduct',
-      'pediatric_evolution',
-      'sinais_vitais',
-      'prescricoes',
+    description: 'Acompanhamento pediátrico básico',
+    enabledBlocks: [
+      'resumo',
+      'evolucao',
+      'conduta',
+      'exames',
+      'timeline',
+      'alertas',
+      'historico',
     ],
     icon: 'Baby',
   },
@@ -169,30 +185,30 @@ export const YESCLIN_SPECIALTY_LABELS: Record<SpecialtyKey, string> = {
   geral: 'Clínica Geral',
   odontologia: 'Odontologia',
   psicologia: 'Psicologia',
-  psiquiatria: 'Psiquiatria', // Not in supported list
+  psiquiatria: 'Psiquiatria',
   nutricao: 'Nutrição',
   estetica: 'Estética',
   fisioterapia: 'Fisioterapia',
   pediatria: 'Pediatria',
-  ginecologia: 'Ginecologia', // Not in supported list
-  oftalmologia: 'Oftalmologia', // Not in supported list
+  ginecologia: 'Ginecologia',
+  oftalmologia: 'Oftalmologia',
   custom: 'Personalizado',
 };
 
 /**
- * Get enabled modules for a specialty key
+ * Get enabled clinical blocks for a specialty key
  */
-export function getEnabledModulesForSpecialty(key: SpecialtyKey): string[] {
+export function getEnabledBlocksForSpecialty(key: SpecialtyKey): ClinicalBlockKey[] {
   const specialty = YESCLIN_SUPPORTED_SPECIALTIES.find(s => s.key === key);
-  return specialty?.enabledModules || YESCLIN_SUPPORTED_SPECIALTIES[0].enabledModules;
+  return specialty?.enabledBlocks || YESCLIN_SUPPORTED_SPECIALTIES[0].enabledBlocks;
 }
 
 /**
- * Check if a module is enabled for a given specialty
+ * Check if a clinical block is enabled for a given specialty
  */
-export function isModuleEnabledForSpecialty(moduleKey: string, specialtyKey: SpecialtyKey): boolean {
-  const modules = getEnabledModulesForSpecialty(specialtyKey);
-  return modules.includes(moduleKey);
+export function isBlockEnabledForSpecialty(blockKey: ClinicalBlockKey, specialtyKey: SpecialtyKey): boolean {
+  const blocks = getEnabledBlocksForSpecialty(specialtyKey);
+  return blocks.includes(blockKey);
 }
 
 /**

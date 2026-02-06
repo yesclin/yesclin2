@@ -2051,6 +2051,73 @@ export type Database = {
           },
         ]
       }
+      instrumentos_psicologicos: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          data_aplicacao: string
+          documento_nome: string | null
+          documento_url: string | null
+          finalidade: string | null
+          id: string
+          nome_instrumento: string
+          observacoes: string | null
+          patient_id: string
+          profissional_id: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          data_aplicacao?: string
+          documento_nome?: string | null
+          documento_url?: string | null
+          finalidade?: string | null
+          id?: string
+          nome_instrumento: string
+          observacoes?: string | null
+          patient_id: string
+          profissional_id: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          data_aplicacao?: string
+          documento_nome?: string | null
+          documento_url?: string | null
+          finalidade?: string | null
+          id?: string
+          nome_instrumento?: string
+          observacoes?: string | null
+          patient_id?: string
+          profissional_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrumentos_psicologicos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrumentos_psicologicos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrumentos_psicologicos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_authorizations: {
         Row: {
           appointment_id: string | null

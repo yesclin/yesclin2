@@ -34,6 +34,7 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   termos_consentimentos: 'Termos / Consentimentos',
   facial_map: 'Mapa Facial',
   odontograma: 'Odontograma Digital',
+  instrumentos: 'Instrumentos / Testes',
 };
 
 // All available clinical block keys

@@ -33,7 +33,8 @@ export type ClinicalBlockKey =
   | 'before_after_photos'
   | 'termos_consentimentos'
   | 'facial_map'
-  | 'odontograma';
+  | 'odontograma'
+  | 'instrumentos'; // Instrumentos / Testes Psicológicos
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -115,6 +116,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
       'evolucao',         // Registro de Sessões
       'diagnostico',      // Hipóteses Diagnósticas (CID-10/DSM-5)
       'conduta',          // Plano Terapêutico
+      'instrumentos',     // Instrumentos / Testes Psicológicos
       'timeline',         // Linha do Tempo das sessões
       'alertas',          // Alertas clínicos (medicamentos, condições)
       'historico',        // Histórico de atendimentos

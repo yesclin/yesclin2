@@ -12,3 +12,11 @@ export { useCondutaData } from './useCondutaData';
 export { useDocumentosData } from './useDocumentosData';
 export { useAlertasData } from './useAlertasData';
 export { useLinhaTempoData } from './useLinhaTempoData';
+export { useDiagnosticosData } from './useDiagnosticosData';
+
+// Re-export types for convenience
+export type { 
+  Diagnostico, 
+  TipoDiagnostico, 
+  StatusDiagnostico 
+} from './useDiagnosticosData';

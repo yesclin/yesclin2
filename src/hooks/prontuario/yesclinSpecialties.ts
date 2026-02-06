@@ -21,6 +21,7 @@ export type ClinicalBlockKey =
   | 'anamnese'
   | 'exame_fisico'
   | 'evolucao'
+  | 'diagnostico'
   | 'conduta'
   | 'exames'
   | 'timeline'
@@ -69,6 +70,7 @@ const CLINICA_GERAL_BLOCKS: ClinicalBlockKey[] = [
   'anamnese',         // Anamnese completa (com versionamento)
   'exame_fisico',     // Exame Físico (sinais vitais, medidas)
   'evolucao',         // Evoluções clínicas
+  'diagnostico',      // Hipóteses Diagnósticas (CID-10)
   'conduta',          // Plano / Conduta
   'exames',           // Exames / Documentos
   'timeline',         // Linha do Tempo

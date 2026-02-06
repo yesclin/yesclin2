@@ -4529,6 +4529,89 @@ export type Database = {
           },
         ]
       }
+      patient_diagnosticos: {
+        Row: {
+          appointment_id: string | null
+          clinic_id: string
+          codigo_cid10: string | null
+          created_at: string
+          data_diagnostico: string
+          data_resolucao: string | null
+          descricao_cid10: string | null
+          descricao_personalizada: string | null
+          id: string
+          observacoes: string | null
+          patient_id: string
+          profissional_id: string
+          status: string
+          tipo_diagnostico: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          codigo_cid10?: string | null
+          created_at?: string
+          data_diagnostico?: string
+          data_resolucao?: string | null
+          descricao_cid10?: string | null
+          descricao_personalizada?: string | null
+          id?: string
+          observacoes?: string | null
+          patient_id: string
+          profissional_id: string
+          status?: string
+          tipo_diagnostico?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          codigo_cid10?: string | null
+          created_at?: string
+          data_diagnostico?: string
+          data_resolucao?: string | null
+          descricao_cid10?: string | null
+          descricao_personalizada?: string | null
+          id?: string
+          observacoes?: string | null
+          patient_id?: string
+          profissional_id?: string
+          status?: string
+          tipo_diagnostico?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_diagnosticos_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diagnosticos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diagnosticos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diagnosticos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_documentos: {
         Row: {
           categoria: string

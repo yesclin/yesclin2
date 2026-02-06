@@ -13,6 +13,7 @@ export { useDocumentosData } from './useDocumentosData';
 export { useAlertasData } from './useAlertasData';
 export { useLinhaTempoData } from './useLinhaTempoData';
 export { useDiagnosticosData } from './useDiagnosticosData';
+export { usePrescricoesData } from './usePrescricoesData';
 
 // Re-export types for convenience
 export type { 
@@ -20,3 +21,11 @@ export type {
   TipoDiagnostico, 
   StatusDiagnostico 
 } from './useDiagnosticosData';
+
+export type {
+  Prescricao,
+  PrescricaoItem,
+  TipoReceita,
+  StatusPrescricao,
+  ViaAdministracao,
+} from './usePrescricoesData';

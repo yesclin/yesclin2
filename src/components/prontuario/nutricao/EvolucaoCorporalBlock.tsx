@@ -3,10 +3,14 @@
  * 
  * Bloco de visualização (read-only) que exibe a evolução
  * das medidas corporais do paciente ao longo do tempo.
+ * 
+ * Consome dados de:
+ * - Avaliação Antropométrica (body_measurements)
+ * - Evoluções Nutricionais (clinical_evolutions com peso_atual_kg)
  */
 
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -21,10 +25,13 @@ import {
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AvaliacaoEvolutionChart } from './AvaliacaoEvolutionChart';
-import type { AvaliacaoNutricional } from '@/hooks/prontuario/nutricao';
+import type { AvaliacaoNutricional, EvolucaoNutricao } from '@/hooks/prontuario/nutricao';
 
 interface EvolucaoCorporalBlockProps {
+  /** Avaliações antropométricas (body_measurements) */
   avaliacoes: AvaliacaoNutricional[];
+  /** Evoluções nutricionais (clinical_evolutions) - opcional */
+  evolucoes?: EvolucaoNutricao[];
   loading: boolean;
 }
 
@@ -83,13 +90,81 @@ function StatCard({ title, value, subtitle, trend, icon, invertTrendColors = fal
   );
 }
 
-export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalBlockProps) {
+/**
+ * Mescla dados de avaliações antropométricas com pesos das evoluções
+ * para criar uma visão unificada da evolução corporal
+ */
+function mergeDataSources(
+  avaliacoes: AvaliacaoNutricional[],
+  evolucoes: EvolucaoNutricao[]
+): AvaliacaoNutricional[] {
+  // Criar um mapa de datas para evitar duplicatas
+  const dateMap = new Map<string, AvaliacaoNutricional>();
+
+  // Adicionar avaliações antropométricas (fonte primária - dados completos)
+  avaliacoes.forEach(av => {
+    const dateKey = av.measurement_date.split('T')[0]; // normalizar para YYYY-MM-DD
+    dateMap.set(dateKey, av);
+  });
+
+  // Adicionar pesos das evoluções (se não houver avaliação na mesma data)
+  evolucoes.forEach(ev => {
+    if (ev.peso_atual_kg) {
+      const dateKey = ev.created_at.split('T')[0];
+      
+      // Se já existe uma avaliação completa nesta data, pular
+      if (dateMap.has(dateKey)) return;
+      
+      // Criar entrada sintética apenas com peso
+      const syntheticEntry: AvaliacaoNutricional = {
+        id: `ev-${ev.id}`,
+        patient_id: ev.patient_id,
+        clinic_id: ev.clinic_id,
+        measurement_date: ev.created_at,
+        recorded_by: ev.professional_id,
+        appointment_id: ev.appointment_id,
+        weight_kg: ev.peso_atual_kg,
+        height_cm: null,
+        bmi: null,
+        waist_cm: null,
+        hip_cm: null,
+        chest_cm: null,
+        arm_left_cm: null,
+        arm_right_cm: null,
+        thigh_left_cm: null,
+        thigh_right_cm: null,
+        calf_left_cm: null,
+        calf_right_cm: null,
+        body_fat_percent: null,
+        muscle_mass_kg: null,
+        custom_measurements: null,
+        notes: ev.observacoes_peso,
+        created_at: ev.created_at,
+      };
+      
+      dateMap.set(dateKey, syntheticEntry);
+    }
+  });
+
+  // Converter para array e ordenar por data decrescente
+  return Array.from(dateMap.values()).sort((a, b) => 
+    new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime()
+  );
+}
+
+export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: EvolucaoCorporalBlockProps) {
+  // Mesclar dados de ambas as fontes
+  const mergedData = useMemo(() => 
+    mergeDataSources(avaliacoes, evolucoes),
+    [avaliacoes, evolucoes]
+  );
+
   // Calcular estatísticas resumidas
   const stats = useMemo(() => {
-    if (avaliacoes.length === 0) return null;
+    if (mergedData.length === 0) return null;
 
-    // Ordenar por data (mais recente primeiro já vem do hook)
-    const sorted = [...avaliacoes];
+    // Ordenar por data (mais recente primeiro)
+    const sorted = [...mergedData];
     const current = sorted[0];
     const first = sorted[sorted.length - 1];
     
@@ -98,7 +173,7 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
       ? current.weight_kg - first.weight_kg 
       : null;
     
-    // Diferença de % gordura
+    // Diferença de % gordura (apenas de avaliações completas)
     const fatDiff = current.body_fat_percent && first.body_fat_percent
       ? current.body_fat_percent - first.body_fat_percent
       : null;
@@ -119,17 +194,23 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
       parseISO(first.measurement_date)
     );
 
+    // Contar fontes de dados
+    const fromAvaliacoes = avaliacoes.length;
+    const fromEvolucoes = evolucoes.filter(e => e.peso_atual_kg).length;
+
     return {
       current,
       first,
-      totalAvaliacoes: avaliacoes.length,
+      totalRegistros: mergedData.length,
+      fromAvaliacoes,
+      fromEvolucoes,
       daysDiff,
       weightDiff,
       fatDiff,
       muscleDiff,
       waistDiff,
     };
-  }, [avaliacoes]);
+  }, [mergedData, avaliacoes.length, evolucoes]);
 
   if (loading) {
     return (
@@ -146,16 +227,16 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
     );
   }
 
-  if (!stats || avaliacoes.length === 0) {
+  if (!stats || mergedData.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
           <Scale className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
           <p className="text-muted-foreground">
-            Nenhuma avaliação nutricional registrada
+            Nenhum dado de evolução corporal disponível
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Registre avaliações no bloco "Avaliação Nutricional" para visualizar a evolução
+            Registre avaliações antropométricas ou inclua peso nas evoluções
           </p>
         </CardContent>
       </Card>
@@ -179,14 +260,19 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
           <TrendingUp className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Evolução Corporal</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary">
             <Calendar className="h-3 w-3 mr-1" />
             {stats.daysDiff > 0 ? `${stats.daysDiff} dias` : 'Hoje'}
           </Badge>
           <Badge variant="outline">
-            {stats.totalAvaliacoes} {stats.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
+            {stats.totalRegistros} {stats.totalRegistros === 1 ? 'registro' : 'registros'}
           </Badge>
+          {stats.fromAvaliacoes > 0 && stats.fromEvolucoes > 0 && (
+            <Badge variant="outline" className="text-xs">
+              {stats.fromAvaliacoes} aval. + {stats.fromEvolucoes} evol.
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -230,13 +316,13 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
         <div className="bg-muted/30 rounded-lg p-4">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <div>
-              <span className="text-muted-foreground">Primeira avaliação: </span>
+              <span className="text-muted-foreground">Primeiro registro: </span>
               <span className="font-medium">
                 {format(parseISO(stats.first.measurement_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Última avaliação: </span>
+              <span className="text-muted-foreground">Último registro: </span>
               <span className="font-medium">
                 {format(parseISO(stats.current.measurement_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </span>
@@ -253,8 +339,8 @@ export function EvolucaoCorporalBlock({ avaliacoes, loading }: EvolucaoCorporalB
         </div>
       )}
 
-      {/* Gráficos de Evolução */}
-      <AvaliacaoEvolutionChart avaliacoes={avaliacoes} />
+      {/* Gráficos de Evolução - usa dados mesclados */}
+      <AvaliacaoEvolutionChart avaliacoes={mergedData} />
     </div>
   );
 }

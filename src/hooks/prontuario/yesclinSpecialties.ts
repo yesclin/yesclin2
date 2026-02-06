@@ -165,7 +165,6 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     enabledBlocks: [
       'resumo',
       'evolucao',
-      'conduta',
       'exames',
       'timeline',
       'alertas',

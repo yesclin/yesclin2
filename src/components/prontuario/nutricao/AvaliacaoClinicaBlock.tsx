@@ -43,7 +43,7 @@ import {
 
 interface AvaliacaoClinicaBlockProps {
   patientId: string;
-  clinicId: string;
+  canEdit?: boolean;
 }
 
 const initialFormData: AvaliacaoClinicaFormData = {
@@ -67,8 +67,8 @@ function ExameStatusBadge({ status }: { status?: 'normal' | 'baixo' | 'alto' }) 
   return null;
 }
 
-export function AvaliacaoClinicaBlock({ patientId, clinicId }: AvaliacaoClinicaBlockProps) {
-  const { avaliacoes, isLoading, saveAvaliacao, isSaving } = useAvaliacaoClinicaData(patientId, clinicId);
+export function AvaliacaoClinicaBlock({ patientId, canEdit = true }: AvaliacaoClinicaBlockProps) {
+  const { avaliacoes, isLoading, saveAvaliacao, isSaving } = useAvaliacaoClinicaData(patientId);
   
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<AvaliacaoClinicaFormData>(initialFormData);
@@ -152,13 +152,15 @@ export function AvaliacaoClinicaBlock({ patientId, clinicId }: AvaliacaoClinicaB
               Histórico ({avaliacoes.length})
             </Button>
           )}
-          <Button 
-            size="sm"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Avaliação
-          </Button>
+          {canEdit && (
+            <Button 
+              size="sm"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Avaliação
+            </Button>
+          )}
         </div>
       </div>
 

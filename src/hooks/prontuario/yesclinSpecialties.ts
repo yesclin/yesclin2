@@ -88,18 +88,37 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     enabledBlocks: CLINICA_GERAL_BLOCKS,
     icon: 'Stethoscope',
   },
+  /**
+   * PSICOLOGIA - Blocos clínicos específicos
+   * 
+   * Prontuário focado em acompanhamento terapêutico com:
+   * - Visão geral do paciente
+   * - Anamnese psicológica (história pessoal, familiar, queixa principal)
+   * - Registro de sessões (evoluções)
+   * - Hipóteses diagnósticas (CID-10/DSM-5)
+   * - Plano terapêutico e conduta
+   * - Linha do tempo das sessões
+   * - Alertas clínicos (medicamentos em uso, condições relevantes)
+   * - Histórico completo de atendimentos
+   * - Termos de consentimento (LGPD, sigilo terapêutico)
+   * 
+   * NÃO inclui: Exame físico, Prescrições médicas, Odontograma, 
+   * Mapa Facial, procedimentos estéticos
+   */
   {
     key: 'psicologia',
     name: 'Psicologia',
-    description: 'Atendimento psicológico com registro de sessões e plano terapêutico',
+    description: 'Acompanhamento terapêutico com registro de sessões, plano terapêutico e hipóteses diagnósticas',
     enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'conduta',
-      'timeline',
-      'alertas',
-      'historico',
-      'termos_consentimentos',
+      'resumo',           // Visão Geral do paciente
+      'anamnese',         // Anamnese Psicológica (história, queixa, contexto)
+      'evolucao',         // Registro de Sessões
+      'diagnostico',      // Hipóteses Diagnósticas (CID-10/DSM-5)
+      'conduta',          // Plano Terapêutico
+      'timeline',         // Linha do Tempo das sessões
+      'alertas',          // Alertas clínicos (medicamentos, condições)
+      'historico',        // Histórico de atendimentos
+      'termos_consentimentos', // Termos de consentimento
     ],
     icon: 'Brain',
   },

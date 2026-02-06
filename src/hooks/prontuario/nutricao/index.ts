@@ -111,6 +111,9 @@ export {
   DIAGNOSTICOS_NUTRICIONAIS_COMUNS,
   STATUS_DIAGNOSTICO_LABELS,
 } from './useDiagnosticoNutricionalData';
+
+// Reutiliza o hook de Documentos da Clínica Geral (mesma estrutura e bucket)
+export { useDocumentosData as useDocumentosNutricaoData } from '@/hooks/prontuario/clinica-geral/useDocumentosData';
 export type { 
   DiagnosticoNutricional,
   DiagnosticoFormData,

@@ -106,8 +106,8 @@ import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, Condu
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
-import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock, AvaliacaoClinicaBlock, DiagnosticoNutricionalBlock } from "@/components/prontuario/nutricao";
-import { useEvolucoesNutricaoData, useAvaliacaoNutricionalData } from "@/hooks/prontuario/nutricao";
+import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock, AvaliacaoClinicaBlock, DiagnosticoNutricionalBlock, PlanoAlimentarBlock } from "@/components/prontuario/nutricao";
+import { useEvolucoesNutricaoData, useAvaliacaoNutricionalData, usePlanoAlimentarData } from "@/hooks/prontuario/nutricao";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -491,6 +491,16 @@ export default function Prontuario() {
     saving: avaliacoesNutricaoSaving,
     saveAvaliacao: saveAvaliacaoNutricao,
   } = useAvaliacaoNutricionalData(patientId, currentProfessionalId || undefined);
+
+  // Plano Alimentar Data - specific for Nutrição specialty
+  const {
+    planos: planosAlimentares,
+    planoAtivo: planoAlimentarAtivo,
+    loading: planosAlimentaresLoading,
+    saving: planosAlimentaresSaving,
+    savePlano: savePlanoAlimentar,
+    deactivatePlano: deactivatePlanoAlimentar,
+  } = usePlanoAlimentarData(patientId, currentProfessionalId || undefined);
 
   // Plano Terapêutico Data - specific for Psicologia specialty
   const {
@@ -915,6 +925,20 @@ export default function Prontuario() {
             currentProfessionalId={condutaProfId || undefined}
             currentProfessionalName={condutaProfName || undefined}
             onSave={saveConduta}
+          />
+        );
+
+      case 'plano_alimentar':
+        // Nutrição - Plano Alimentar
+        return (
+          <PlanoAlimentarBlock
+            planos={planosAlimentares}
+            planoAtivo={planoAlimentarAtivo}
+            loading={planosAlimentaresLoading}
+            saving={planosAlimentaresSaving}
+            canEdit={canEditCurrentTab}
+            onSave={savePlanoAlimentar}
+            onDeactivate={deactivatePlanoAlimentar}
           />
         );
 

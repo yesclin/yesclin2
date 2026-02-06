@@ -56,6 +56,7 @@ export interface EvolucaoNutricao {
 }
 
 export interface EvolucaoNutricaoFormData {
+  data_atendimento: string; // Data do atendimento (YYYY-MM-DD)
   tipo_consulta: TipoConsulta;
   queixa_principal: string | null;
   peso_atual_kg: number | null;

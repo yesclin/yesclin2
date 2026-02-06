@@ -12,6 +12,8 @@ export { SessoesPsicologiaBlock } from './SessoesPsicologiaBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
 export { InstrumentosPsicologicosBlock } from './InstrumentosPsicologicosBlock';
 export { TermosConsentimentosPsicologiaBlock } from './TermosConsentimentosPsicologiaBlock';
+export { AlertasPsicologiaBlock } from './AlertasPsicologiaBlock';
+export { AlertasBannerPsicologia } from './AlertasBannerPsicologia';
 
 export type { 
   PsicologiaPatientData, 
@@ -28,3 +30,9 @@ export type {
   InstrumentoPsicologico,
   InstrumentoFormData,
 } from '@/hooks/prontuario/psicologia';
+
+export type {
+  AlertaPsicologia,
+  TipoAlertaPsicologia,
+  SeveridadeAlerta,
+} from './AlertasPsicologiaBlock';

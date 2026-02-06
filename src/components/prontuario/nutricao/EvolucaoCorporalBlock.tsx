@@ -8,9 +8,9 @@
  * - Avaliação Antropométrica (body_measurements)
  * - Evoluções Nutricionais (clinical_evolutions com peso_atual_kg)
  */
-
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -22,7 +22,7 @@ import {
   Target,
   Calendar,
 } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, subDays, subMonths, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   LineChart,
@@ -161,19 +161,37 @@ function mergeDataSources(
   );
 }
 
+type PeriodFilter = '30d' | '3m' | 'all';
+
 export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: EvolucaoCorporalBlockProps) {
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+
   // Mesclar dados de ambas as fontes
   const mergedData = useMemo(() => 
     mergeDataSources(avaliacoes, evolucoes),
     [avaliacoes, evolucoes]
   );
 
-  // Calcular estatísticas resumidas
+  // Filtrar dados pelo período selecionado
+  const filteredData = useMemo(() => {
+    if (periodFilter === 'all') return mergedData;
+    
+    const now = new Date();
+    const cutoffDate = periodFilter === '30d' 
+      ? subDays(now, 30) 
+      : subMonths(now, 3);
+    
+    return mergedData.filter(d => 
+      isAfter(parseISO(d.measurement_date), cutoffDate)
+    );
+  }, [mergedData, periodFilter]);
+
+  // Calcular estatísticas resumidas (baseado nos dados filtrados)
   const stats = useMemo(() => {
-    if (mergedData.length === 0) return null;
+    if (filteredData.length === 0) return null;
 
     // Ordenar por data (mais recente primeiro)
-    const sorted = [...mergedData];
+    const sorted = [...filteredData];
     const current = sorted[0];
     const first = sorted[sorted.length - 1];
     
@@ -203,23 +221,25 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
       parseISO(first.measurement_date)
     );
 
-    // Contar fontes de dados
-    const fromAvaliacoes = avaliacoes.length;
-    const fromEvolucoes = evolucoes.filter(e => e.peso_atual_kg).length;
+    // Contar fontes de dados (do período filtrado)
+    const filteredAvaliacoes = avaliacoes.filter(a => 
+      filteredData.some(f => f.id === a.id)
+    ).length;
+    const filteredEvolucoes = filteredData.filter(f => f.id.startsWith('ev-')).length;
 
     return {
       current,
       first,
-      totalRegistros: mergedData.length,
-      fromAvaliacoes,
-      fromEvolucoes,
+      totalRegistros: filteredData.length,
+      fromAvaliacoes: filteredAvaliacoes,
+      fromEvolucoes: filteredEvolucoes,
       daysDiff,
       weightDiff,
       fatDiff,
       muscleDiff,
       waistDiff,
     };
-  }, [mergedData, avaliacoes.length, evolucoes]);
+  }, [filteredData, avaliacoes]);
 
   if (loading) {
     return (
@@ -236,16 +256,20 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
     );
   }
 
-  if (!stats || mergedData.length === 0) {
+  if (!stats || filteredData.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
           <Scale className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
           <p className="text-muted-foreground">
-            Nenhum dado de evolução corporal disponível
+            {mergedData.length === 0 
+              ? 'Nenhum dado de evolução corporal disponível'
+              : 'Nenhum dado encontrado no período selecionado'}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Registre avaliações antropométricas ou inclua peso nas evoluções
+            {mergedData.length === 0 
+              ? 'Registre avaliações antropométricas ou inclua peso nas evoluções'
+              : 'Tente ampliar o período de busca'}
           </p>
         </CardContent>
       </Card>
@@ -264,12 +288,23 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Evolução Corporal</h2>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Filtro de período */}
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="3m">Últimos 3 meses</SelectItem>
+              <SelectItem value="all">Todo histórico</SelectItem>
+            </SelectContent>
+          </Select>
           <Badge variant="secondary">
             <Calendar className="h-3 w-3 mr-1" />
             {stats.daysDiff > 0 ? `${stats.daysDiff} dias` : 'Hoje'}
@@ -351,10 +386,10 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
       {/* Gráficos de Evolução */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Gráfico de Evolução do Peso - exibe apenas se houver mais de 1 registro */}
-        {mergedData.length > 1 && <WeightEvolutionChart data={mergedData} />}
+        {filteredData.length > 1 && <WeightEvolutionChart data={filteredData} />}
         
         {/* Gráfico de Evolução do IMC - exibe apenas se houver dados suficientes */}
-        {mergedData.length > 1 && <BMIEvolutionChart data={mergedData} />}
+        {filteredData.length > 1 && <BMIEvolutionChart data={filteredData} />}
       </div>
     </div>
   );

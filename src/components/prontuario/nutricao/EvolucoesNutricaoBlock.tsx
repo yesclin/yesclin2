@@ -445,7 +445,8 @@ export function EvolucoesNutricaoBlock({
         <Card>
           <CardContent className="py-12 text-center">
             <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Nenhuma evolução registrada.</p>
+            <p className="text-muted-foreground mb-2">Nenhuma evolução nutricional registrada.</p>
+            <p className="text-muted-foreground text-sm mb-4">Registre a primeira evolução nutricional deste paciente.</p>
             {canEdit && (
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />

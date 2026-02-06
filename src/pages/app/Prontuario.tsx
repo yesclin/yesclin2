@@ -616,6 +616,9 @@ export default function Prontuario() {
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [selectedEntryForSignature, setSelectedEntryForSignature] = useState<MedicalRecordEntry | null>(null);
   const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track previous specialty to detect changes
+  const previousSpecialtyKeyRef = useRef<string | null>(null);
 
   // Load signatures when patient changes
   useEffect(() => {
@@ -658,13 +661,36 @@ export default function Prontuario() {
     });
   }, [allNavItems, activeSpecialtyKey]);
 
-  // Set first tab as active when config loads
-  // Reset active tab when specialty changes or when current tab is no longer visible
+  // CRITICAL: Reset state completely when specialty changes
+  // This ensures no visual artifacts from previous specialty remain
+  useEffect(() => {
+    const specialtyChanged = previousSpecialtyKeyRef.current !== null && 
+                              previousSpecialtyKeyRef.current !== activeSpecialtyKey;
+    
+    if (specialtyChanged) {
+      // Clear any highlighted items from previous specialty
+      setHighlightedId(null);
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
+      
+      // Force reset to first valid tab for new specialty
+      if (navItems.length > 0) {
+        setActiveTab(navItems[0].id);
+      }
+    }
+    
+    // Update reference for next comparison
+    previousSpecialtyKeyRef.current = activeSpecialtyKey;
+  }, [activeSpecialtyKey, navItems]);
+
+  // Fallback: Ensure active tab is always valid for current specialty
   useEffect(() => {
     if (navItems.length > 0 && !navItems.find(n => n.id === activeTab)) {
       setActiveTab(navItems[0].id);
     }
-  }, [navItems, activeTab, activeSpecialtyKey]);
+  }, [navItems, activeTab]);
 
   // Handle search result click
   const handleSearchResultClick = useCallback((result: SearchResult) => {

@@ -109,6 +109,7 @@ import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsico
 import { 
   EvolucoesNutricaoBlock, 
   AvaliacaoNutricionalBlock, 
+  AvaliacaoNutricionalInicialBlock,
   AvaliacaoClinicaBlock, 
   DiagnosticoNutricionalBlock, 
   PlanoAlimentarBlock,
@@ -903,7 +904,19 @@ export default function Prontuario() {
         );
 
       case 'avaliacao_nutricional':
-        // Nutrição - Avaliação Antropométrica
+        // Nutrição - Avaliação Nutricional Inicial
+        if (!patientId) return null;
+        return (
+          <AvaliacaoNutricionalInicialBlock
+            patientId={patientId}
+            appointmentId={activeAppointment?.id}
+            canEdit={canEditCurrentTab}
+            professionalId={currentProfessionalId || undefined}
+          />
+        );
+
+      case 'avaliacao_clinica':
+        // Nutrição - Avaliação Antropométrica (medidas corporais)
         return (
           <AvaliacaoNutricionalBlock
             avaliacoes={avaliacoesNutricao}
@@ -912,16 +925,6 @@ export default function Prontuario() {
             saving={avaliacoesNutricaoSaving}
             canEdit={canEditCurrentTab}
             onSave={saveAvaliacaoNutricao}
-          />
-        );
-
-      case 'avaliacao_clinica':
-        // Nutrição - Avaliação Clínica / Bioquímica
-        if (!patientId) return null;
-        return (
-          <AvaliacaoClinicaBlock
-            patientId={patientId}
-            canEdit={canEditCurrentTab}
           />
         );
 

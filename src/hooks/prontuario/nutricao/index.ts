@@ -105,6 +105,20 @@ export type {
   FrequenciaConsumo,
 } from './useAnamneseNutricionalData';
 
+// Avaliação Nutricional Inicial (novo módulo)
+export {
+  useAvaliacaoNutricionalInicialData,
+  OBJETIVOS_NUTRICIONAIS_OPTIONS,
+  RESTRICOES_OPTIONS,
+  ALERGIAS_OPTIONS,
+  INTOLERANCIAS_OPTIONS as AVALIACAO_INTOLERANCIAS_OPTIONS,
+  SUPLEMENTOS_OPTIONS,
+} from './useAvaliacaoNutricionalInicialData';
+export type {
+  AvaliacaoNutricionalInicial,
+  AvaliacaoNutricionalInicialFormData,
+} from './useAvaliacaoNutricionalInicialData';
+
 // Avaliação Clínica / Bioquímica
 export { 
   useAvaliacaoClinicaData,

@@ -6,6 +6,7 @@
 
 export { VisaoGeralNutricaoBlock } from './VisaoGeralNutricaoBlock';
 export { AvaliacaoNutricionalBlock } from './AvaliacaoNutricionalBlock';
+export { AvaliacaoNutricionalInicialBlock } from './AvaliacaoNutricionalInicialBlock';
 export { AvaliacaoEvolutionChart } from './AvaliacaoEvolutionChart';
 export { EvolucaoCorporalBlock } from './EvolucaoCorporalBlock';
 export { PlanoAlimentarBlock } from './PlanoAlimentarBlock';

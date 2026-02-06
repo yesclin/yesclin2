@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Activity, 
@@ -30,7 +29,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   TIPO_CONSULTA_LABELS,
-  SINTOMAS_GI_OPTIONS,
   type EvolucaoNutricao, 
   type EvolucaoNutricaoFormData,
   type TipoConsulta
@@ -45,7 +43,8 @@ interface EvolucoesNutricaoBlockProps {
   onSign: (evolucaoId: string) => Promise<boolean>;
 }
 
-const initialFormData: EvolucaoNutricaoFormData = {
+const getInitialFormData = (): EvolucaoNutricaoFormData => ({
+  data_atendimento: new Date().toISOString().split('T')[0], // Data atual
   tipo_consulta: 'acompanhamento',
   queixa_principal: null,
   peso_atual_kg: null,
@@ -57,7 +56,7 @@ const initialFormData: EvolucaoNutricaoFormData = {
   ajustes_realizados: null,
   orientacoes: [],
   proximos_passos: null,
-};
+});
 
 export function EvolucoesNutricaoBlock({
   evolucoes,
@@ -68,29 +67,20 @@ export function EvolucoesNutricaoBlock({
   onSign,
 }: EvolucoesNutricaoBlockProps) {
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<EvolucaoNutricaoFormData>(initialFormData);
+  const [formData, setFormData] = useState<EvolucaoNutricaoFormData>(getInitialFormData);
   const [newOrientacao, setNewOrientacao] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await onSave(formData);
     if (result) {
-      setFormData(initialFormData);
+      setFormData(getInitialFormData());
       setShowForm(false);
     }
   };
 
   const updateField = <K extends keyof EvolucaoNutricaoFormData>(field: K, value: EvolucaoNutricaoFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleSintoma = (sintoma: string) => {
-    setFormData(prev => ({
-      ...prev,
-      sintomas_gi: prev.sintomas_gi.includes(sintoma)
-        ? prev.sintomas_gi.filter(s => s !== sintoma)
-        : [...prev.sintomas_gi, sintoma],
-    }));
   };
 
   const addOrientacao = () => {
@@ -147,8 +137,18 @@ export function EvolucoesNutricaoBlock({
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Tipo e Peso */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Data do Atendimento, Peso Atual e Adesão */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="data_atendimento">Data do Atendimento</Label>
+                  <Input
+                    id="data_atendimento"
+                    type="date"
+                    value={formData.data_atendimento}
+                    onChange={(e) => updateField('data_atendimento', e.target.value)}
+                    required
+                  />
+                </div>
                 <div>
                   <Label htmlFor="tipo_consulta">Tipo de Consulta</Label>
                   <Select
@@ -177,7 +177,7 @@ export function EvolucoesNutricaoBlock({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="adesao_plano">Adesão ao Plano</Label>
+                  <Label htmlFor="adesao_plano">Adesão ao Plano Alimentar</Label>
                   <Select
                     value={formData.adesao_plano ?? ''}
                     onValueChange={(value: 'boa' | 'regular' | 'ruim') => updateField('adesao_plano', value || null)}
@@ -194,76 +194,33 @@ export function EvolucoesNutricaoBlock({
                 </div>
               </div>
 
-              {/* Queixa e Dificuldades */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="queixa_principal">Queixa Principal</Label>
-                  <Textarea
-                    id="queixa_principal"
-                    placeholder="Descreva a queixa do paciente..."
-                    value={formData.queixa_principal ?? ''}
-                    onChange={(e) => updateField('queixa_principal', e.target.value || null)}
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dificuldades_relatadas">Dificuldades Relatadas</Label>
-                  <Textarea
-                    id="dificuldades_relatadas"
-                    placeholder="Dificuldades em seguir o plano..."
-                    value={formData.dificuldades_relatadas ?? ''}
-                    onChange={(e) => updateField('dificuldades_relatadas', e.target.value || null)}
-                    rows={2}
-                  />
-                </div>
-              </div>
-
-              {/* Sintomas GI */}
+              {/* Dificuldades Relatadas */}
               <div>
-                <Label className="mb-2">Sintomas Gastrointestinais</Label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {SINTOMAS_GI_OPTIONS.map((sintoma) => (
-                    <div key={sintoma} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={sintoma}
-                        checked={formData.sintomas_gi.includes(sintoma)}
-                        onCheckedChange={() => toggleSintoma(sintoma)}
-                      />
-                      <label htmlFor={sintoma} className="text-sm cursor-pointer">
-                        {sintoma}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Avaliação */}
-              <div>
-                <Label htmlFor="avaliacao">Avaliação / Observações</Label>
+                <Label htmlFor="dificuldades_relatadas">Dificuldades Relatadas</Label>
                 <Textarea
-                  id="avaliacao"
-                  placeholder="Avaliação geral do atendimento..."
-                  value={formData.avaliacao ?? ''}
-                  onChange={(e) => updateField('avaliacao', e.target.value || null)}
+                  id="dificuldades_relatadas"
+                  placeholder="Descreva as dificuldades do paciente em seguir o plano alimentar..."
+                  value={formData.dificuldades_relatadas ?? ''}
+                  onChange={(e) => updateField('dificuldades_relatadas', e.target.value || null)}
                   rows={3}
                 />
               </div>
 
-              {/* Ajustes Realizados */}
+              {/* Ajustes no Plano Alimentar */}
               <div>
-                <Label htmlFor="ajustes_realizados">Ajustes Realizados no Plano</Label>
+                <Label htmlFor="ajustes_realizados">Ajustes no Plano Alimentar</Label>
                 <Textarea
                   id="ajustes_realizados"
                   placeholder="Descreva os ajustes feitos no plano alimentar..."
                   value={formData.ajustes_realizados ?? ''}
                   onChange={(e) => updateField('ajustes_realizados', e.target.value || null)}
-                  rows={2}
+                  rows={3}
                 />
               </div>
 
-              {/* Orientações */}
+              {/* Orientações Reforçadas */}
               <div>
-                <Label className="mb-2">Orientações</Label>
+                <Label className="mb-2">Orientações Reforçadas</Label>
                 <div className="flex gap-2 mb-2">
                   <Input
                     placeholder="Adicionar orientação..."
@@ -291,15 +248,15 @@ export function EvolucoesNutricaoBlock({
                 </div>
               </div>
 
-              {/* Próximos passos */}
+              {/* Observações do Nutricionista */}
               <div>
-                <Label htmlFor="proximos_passos">Próximos Passos</Label>
+                <Label htmlFor="avaliacao">Observações do Nutricionista</Label>
                 <Textarea
-                  id="proximos_passos"
-                  placeholder="O que fazer até a próxima consulta..."
-                  value={formData.proximos_passos ?? ''}
-                  onChange={(e) => updateField('proximos_passos', e.target.value || null)}
-                  rows={2}
+                  id="avaliacao"
+                  placeholder="Observações e avaliação geral do atendimento..."
+                  value={formData.avaliacao ?? ''}
+                  onChange={(e) => updateField('avaliacao', e.target.value || null)}
+                  rows={3}
                 />
               </div>
 

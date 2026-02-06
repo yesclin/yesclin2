@@ -106,8 +106,8 @@ import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, Condu
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
-import { EvolucoesNutricaoBlock } from "@/components/prontuario/nutricao";
-import { useEvolucoesNutricaoData } from "@/hooks/prontuario/nutricao";
+import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock } from "@/components/prontuario/nutricao";
+import { useEvolucoesNutricaoData, useAvaliacaoNutricionalData } from "@/hooks/prontuario/nutricao";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -483,6 +483,15 @@ export default function Prontuario() {
     signEvolucao: signEvolucaoNutricao,
   } = useEvolucoesNutricaoData(patientId, currentProfessionalId || undefined);
 
+  // Avaliação Antropométrica Data - specific for Nutrição specialty
+  const {
+    avaliacoes: avaliacoesNutricao,
+    currentAvaliacao: currentAvaliacaoNutricao,
+    loading: avaliacoesNutricaoLoading,
+    saving: avaliacoesNutricaoSaving,
+    saveAvaliacao: saveAvaliacaoNutricao,
+  } = useAvaliacaoNutricionalData(patientId, currentProfessionalId || undefined);
+
   // Plano Terapêutico Data - specific for Psicologia specialty
   const {
     currentPlano: currentPlanoTerapeutico,
@@ -803,6 +812,19 @@ export default function Prontuario() {
             currentProfessionalId={exameProfId || undefined}
             currentProfessionalName={exameProfName || undefined}
             onSave={saveExameFisico}
+          />
+        );
+
+      case 'avaliacao_nutricional':
+        // Nutrição - Avaliação Antropométrica
+        return (
+          <AvaliacaoNutricionalBlock
+            avaliacoes={avaliacoesNutricao}
+            currentAvaliacao={currentAvaliacaoNutricao}
+            loading={avaliacoesNutricaoLoading}
+            saving={avaliacoesNutricaoSaving}
+            canEdit={canEditCurrentTab}
+            onSave={saveAvaliacaoNutricao}
           />
         );
 

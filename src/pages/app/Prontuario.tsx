@@ -106,8 +106,28 @@ import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, Condu
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
-import { EvolucoesNutricaoBlock, AvaliacaoNutricionalBlock, AvaliacaoClinicaBlock, DiagnosticoNutricionalBlock, PlanoAlimentarBlock, EvolucaoCorporalBlock } from "@/components/prontuario/nutricao";
-import { useEvolucoesNutricaoData, useAvaliacaoNutricionalData, usePlanoAlimentarData } from "@/hooks/prontuario/nutricao";
+import { 
+  EvolucoesNutricaoBlock, 
+  AvaliacaoNutricionalBlock, 
+  AvaliacaoClinicaBlock, 
+  DiagnosticoNutricionalBlock, 
+  PlanoAlimentarBlock, 
+  EvolucaoCorporalBlock,
+  VisaoGeralNutricaoBlock,
+  AnamneseNutricionalBlock,
+  AlertasNutricaoBlock,
+  AlertasBannerNutricao,
+  LinhaTempoNutricaoBlock,
+} from "@/components/prontuario/nutricao";
+import { 
+  useEvolucoesNutricaoData, 
+  useAvaliacaoNutricionalData, 
+  usePlanoAlimentarData,
+  useVisaoGeralNutricaoData,
+  useAnamneseNutricionalData,
+  useAlertasNutricaoData,
+  useLinhaTempoNutricaoData,
+} from "@/hooks/prontuario/nutricao";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -502,6 +522,40 @@ export default function Prontuario() {
     deactivatePlano: deactivatePlanoAlimentar,
   } = usePlanoAlimentarData(patientId, currentProfessionalId || undefined);
 
+  // Visão Geral Nutricional Data - specific for Nutrição specialty
+  const {
+    patient: nutricaoPatient,
+    summary: nutricaoSummary,
+    alerts: nutricaoAlerts,
+    loading: nutricaoVisaoGeralLoading,
+  } = useVisaoGeralNutricaoData(patientId);
+
+  // Anamnese Nutricional Data - specific for Nutrição specialty
+  const {
+    currentAnamnese: currentAnamneseNutricao,
+    anamneseHistory: anamneseHistoryNutricao,
+    loading: anamneseNutricaoLoading,
+    saving: anamneseNutricaoSaving,
+    saveAnamnese: saveAnamneseNutricao,
+  } = useAnamneseNutricionalData(patientId);
+
+  // Alertas Nutrição Data - specific for Nutrição specialty
+  const {
+    alertas: alertasNutricao,
+    activeAlertas: activeAlertasNutricao,
+    loading: alertasNutricaoLoading,
+    saving: alertasNutricaoSaving,
+    saveAlerta: saveAlertaNutricao,
+    deactivateAlerta: deactivateAlertaNutricao,
+    reactivateAlerta: reactivateAlertaNutricao,
+  } = useAlertasNutricaoData(patientId);
+
+  // Linha do Tempo Nutricional Data - specific for Nutrição specialty
+  const {
+    eventos: timelineEventosNutricao,
+    loading: timelineNutricaoLoading,
+  } = useLinhaTempoNutricaoData(patientId);
+
   // Plano Terapêutico Data - specific for Psicologia specialty
   const {
     currentPlano: currentPlanoTerapeutico,
@@ -773,6 +827,17 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'nutricao') {
+          return (
+            <VisaoGeralNutricaoBlock
+              patient={nutricaoPatient}
+              summary={nutricaoSummary}
+              alerts={nutricaoAlerts}
+              loading={nutricaoVisaoGeralLoading}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
@@ -795,6 +860,19 @@ export default function Prontuario() {
               saving={anamnesePsicoSaving}
               canEdit={canEditCurrentTab}
               onSave={saveAnamnesePsico}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'nutricao') {
+          return (
+            <AnamneseNutricionalBlock
+              currentAnamnese={currentAnamneseNutricao}
+              anamneseHistory={anamneseHistoryNutricao}
+              loading={anamneseNutricaoLoading}
+              saving={anamneseNutricaoSaving}
+              canEdit={canEditCurrentTab}
+              onSave={saveAnamneseNutricao}
+              professionalId={currentProfessionalId || undefined}
             />
           );
         }
@@ -1018,6 +1096,20 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'nutricao') {
+          return (
+            <AlertasNutricaoBlock
+              alertas={alertasNutricao}
+              activeAlertas={activeAlertasNutricao}
+              loading={alertasNutricaoLoading}
+              saving={alertasNutricaoSaving}
+              canEdit={canEditCurrentTab}
+              onSave={saveAlertaNutricao}
+              onDeactivate={deactivateAlertaNutricao}
+              onReactivate={reactivateAlertaNutricao}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1034,6 +1126,7 @@ export default function Prontuario() {
         );
 
       case 'historico':
+      case 'timeline':
         // Specialty-specific history/timeline block
         if (activeSpecialtyKey === 'psicologia') {
           // Map patient consents to the expected format
@@ -1053,6 +1146,14 @@ export default function Prontuario() {
               instrumentos={instrumentosPsico}
               consents={mappedConsents}
               loading={anamnesePsicoLoading || sessoesPsicoLoading || planoTerapeuticoLoading || instrumentosPsicoLoading}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'nutricao') {
+          return (
+            <LinhaTempoNutricaoBlock
+              eventos={timelineEventosNutricao}
+              loading={timelineNutricaoLoading}
             />
           );
         }
@@ -1727,8 +1828,15 @@ export default function Prontuario() {
                 onViewAlerts={() => setActiveTab('alertas')}
               />
             )}
+            {/* Nutrition specialty uses specialized banner with dietary alerts */}
+            {activeSpecialtyKey === 'nutricao' && activeAlertasNutricao.length > 0 && activeTab !== 'alertas' && (
+              <AlertasBannerNutricao 
+                alertas={activeAlertasNutricao} 
+                onViewAlerts={() => setActiveTab('alertas')}
+              />
+            )}
             {/* Other specialties use standard banner */}
-            {activeSpecialtyKey !== 'psicologia' && activeAlertas.length > 0 && activeTab !== 'alertas' && (
+            {activeSpecialtyKey !== 'psicologia' && activeSpecialtyKey !== 'nutricao' && activeAlertas.length > 0 && activeTab !== 'alertas' && (
               <AlertasBanner alertas={activeAlertas} />
             )}
             {renderTabContent()}

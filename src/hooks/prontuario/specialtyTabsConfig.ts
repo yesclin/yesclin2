@@ -35,12 +35,11 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   facial_map: 'Mapa Facial',
   odontograma: 'Odontograma Digital',
   instrumentos: 'Instrumentos / Testes',
-  // Nutrition-specific blocks (11 blocos)
-  avaliacao_nutricional: 'Avaliação Antropométrica',
-  avaliacao_clinica: 'Avaliação Clínica / Bioquímica',
+// Nutrition-specific blocks (10 blocos - ordem fixa para menu lateral)
+  avaliacao_nutricional: 'Avaliação Nutricional Inicial',
+  avaliacao_clinica: 'Avaliação Antropométrica',
   diagnostico_nutricional: 'Diagnóstico Nutricional',
   plano_alimentar: 'Plano Alimentar',
-  evolucao_corporal: 'Evolução Corporal',
 };
 
 // All available clinical block keys
@@ -94,7 +93,16 @@ export function isTabVisibleForSpecialty(tabKey: string, specialtyKey: Specialty
  */
 const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Record<ClinicalBlockKey, string>>>> = {
   nutricao: {
+    resumo: 'Visão Geral',
+    anamnese: 'Anamnese Nutricional',
+    avaliacao_nutricional: 'Avaliação Nutricional Inicial',
+    avaliacao_clinica: 'Avaliação Antropométrica',
+    diagnostico_nutricional: 'Diagnóstico Nutricional',
+    plano_alimentar: 'Plano Alimentar',
     evolucao: 'Evoluções Nutricionais',
+    exames: 'Exames / Documentos',
+    timeline: 'Linha do Tempo',
+    alertas: 'Alertas',
   },
 };
 

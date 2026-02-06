@@ -111,8 +111,7 @@ import {
   AvaliacaoNutricionalBlock, 
   AvaliacaoClinicaBlock, 
   DiagnosticoNutricionalBlock, 
-  PlanoAlimentarBlock, 
-  EvolucaoCorporalBlock,
+  PlanoAlimentarBlock,
   VisaoGeralNutricaoBlock,
   AnamneseNutricionalBlock,
   AlertasNutricaoBlock,
@@ -308,11 +307,11 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'psychiatric_prescription', label: 'Prescrição Medicamentosa', icon: PillIcon },
   { id: 'symptom_evolution', label: 'Evolução de Sintomas', icon: TrendingUp },
   { id: 'medication_history', label: 'Histórico de Medicamentos', icon: ClipboardCheck },
-  // Nutrition tabs
-  { id: 'nutritional_assessment', label: 'Avaliação Nutricional', icon: Apple },
-  { id: 'body_measurements', label: 'Medidas Corporais', icon: Scale },
-  { id: 'meal_plan', label: 'Plano Alimentar', icon: Utensils },
-  { id: 'nutritional_evolution', label: 'Evolução Nutricional', icon: LineChart },
+// Nutrition tabs (usando os IDs corretos do sistema)
+  { id: 'avaliacao_nutricional', label: 'Avaliação Nutricional Inicial', icon: Apple },
+  { id: 'avaliacao_clinica', label: 'Avaliação Antropométrica', icon: Scale },
+  { id: 'diagnostico_nutricional', label: 'Diagnóstico Nutricional', icon: ClipboardCheck },
+  { id: 'plano_alimentar', label: 'Plano Alimentar', icon: Utensils },
   // Aesthetics tabs
   { id: 'aesthetic_assessment', label: 'Avaliação Estética', icon: Sparkles },
   { id: 'aesthetic_procedure', label: 'Procedimento Realizado', icon: Syringe },
@@ -1020,15 +1019,7 @@ export default function Prontuario() {
           />
         );
 
-      case 'evolucao_corporal':
-        // Nutrição - Evolução Corporal (visualização de gráficos)
-        return (
-          <EvolucaoCorporalBlock
-            avaliacoes={avaliacoesNutricao}
-            evolucoes={evolucoesNutricao}
-            loading={avaliacoesNutricaoLoading || evolucoesNutricaoLoading}
-          />
-        );
+      // case 'evolucao_corporal' removed - not in Nutrition menu
 
       case 'exames':
         // Clínica Geral - Exames / Documentos

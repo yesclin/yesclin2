@@ -35,12 +35,11 @@ export type ClinicalBlockKey =
   | 'facial_map'
   | 'odontograma'
   | 'instrumentos' // Instrumentos / Testes Psicológicos
-  // Nutrition-specific blocks (11 blocos)
-  | 'avaliacao_nutricional'    // Avaliação Antropométrica
-  | 'avaliacao_clinica'        // Avaliação Clínica / Bioquímica
+  // Nutrition-specific blocks (10 blocos - ordem fixa)
+  | 'avaliacao_nutricional'    // Avaliação Nutricional Inicial
+  | 'avaliacao_clinica'        // Avaliação Antropométrica
   | 'diagnostico_nutricional'  // Diagnóstico Nutricional
-  | 'plano_alimentar'          // Plano Alimentar
-  | 'evolucao_corporal';       // Evolução Corporal (gráficos)
+  | 'plano_alimentar';         // Plano Alimentar
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -175,15 +174,14 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     enabledBlocks: [
       'resumo',                   // 1. Visão Geral
       'anamnese',                 // 2. Anamnese Nutricional
-      'avaliacao_nutricional',    // 3. Avaliação Antropométrica
-      'avaliacao_clinica',        // 4. Avaliação Clínica / Bioquímica
+      'avaliacao_nutricional',    // 3. Avaliação Nutricional Inicial
+      'avaliacao_clinica',        // 4. Avaliação Antropométrica
       'diagnostico_nutricional',  // 5. Diagnóstico Nutricional
       'plano_alimentar',          // 6. Plano Alimentar
       'evolucao',                 // 7. Evoluções Nutricionais
-      'evolucao_corporal',        // 8. Evolução Corporal (gráficos)
-      'exames',                   // 9. Exames / Documentos
-      'timeline',                 // 10. Linha do Tempo
-      'alertas',                  // 11. Alertas Nutricionais
+      'exames',                   // 8. Exames / Documentos
+      'timeline',                 // 9. Linha do Tempo
+      'alertas',                  // 10. Alertas Nutricionais
     ],
     icon: 'Apple',
   },

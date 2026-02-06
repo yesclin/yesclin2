@@ -18,6 +18,7 @@ import type { SpecialtyKey } from './useActiveSpecialty';
  */
 export type ClinicalBlockKey = 
   | 'resumo'
+  | 'anamnese'
   | 'evolucao'
   | 'conduta'
   | 'exames'
@@ -64,6 +65,7 @@ export interface YesclinSpecialty {
  */
 const CLINICA_GERAL_BLOCKS: ClinicalBlockKey[] = [
   'resumo',           // Visão Geral do paciente
+  'anamnese',         // Anamnese completa (com versionamento)
   'evolucao',         // Evoluções clínicas
   'conduta',          // Plano / Conduta
   'exames',           // Exames / Documentos

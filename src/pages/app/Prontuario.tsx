@@ -102,8 +102,8 @@ import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
 import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock } from "@/components/prontuario/clinica-geral";
-import { useVisaoGeralData } from "@/hooks/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock } from "@/components/prontuario/clinica-geral";
+import { useVisaoGeralData, useAnamneseData } from "@/hooks/prontuario/clinica-geral";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -424,6 +424,15 @@ export default function Prontuario() {
     loading: visaoGeralLoading,
   } = useVisaoGeralData(patientId);
 
+  // Anamnese Data - specific for Clínica Geral specialty
+  const {
+    currentAnamnese,
+    anamneseHistory,
+    loading: anamneseLoading,
+    saving: anamneseSaving,
+    saveAnamnese,
+  } = useAnamneseData(patientId);
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -548,8 +557,20 @@ export default function Prontuario() {
           />
         );
 
-      case 'evolucao':
       case 'anamnese':
+        // Clínica Geral - Anamnese com versionamento
+        return (
+          <AnamneseBlock
+            currentAnamnese={currentAnamnese}
+            anamneseHistory={anamneseHistory}
+            loading={anamneseLoading}
+            saving={anamneseSaving}
+            canEdit={canEditCurrentTab}
+            onSave={saveAnamnese}
+          />
+        );
+
+      case 'evolucao':
       case 'diagnostico':
       case 'prescricoes':
         return (

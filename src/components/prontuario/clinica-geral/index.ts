@@ -13,3 +13,6 @@ export type {
   ClinicalAlertItem,
   LastAppointmentData 
 } from './VisaoGeralBlock';
+
+export { AnamneseBlock } from './AnamneseBlock';
+export type { AnamneseData } from './AnamneseBlock';

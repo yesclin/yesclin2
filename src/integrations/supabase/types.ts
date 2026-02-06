@@ -4196,6 +4196,75 @@ export type Database = {
           },
         ]
       }
+      patient_anamneses: {
+        Row: {
+          alergias: string | null
+          antecedentes_familiares: string | null
+          antecedentes_pessoais: string | null
+          clinic_id: string
+          comorbidades: string | null
+          created_at: string
+          created_by: string | null
+          habitos_vida: string | null
+          historia_doenca_atual: string | null
+          id: string
+          is_current: boolean
+          medicamentos_uso_continuo: string | null
+          patient_id: string
+          queixa_principal: string | null
+          version: number
+        }
+        Insert: {
+          alergias?: string | null
+          antecedentes_familiares?: string | null
+          antecedentes_pessoais?: string | null
+          clinic_id: string
+          comorbidades?: string | null
+          created_at?: string
+          created_by?: string | null
+          habitos_vida?: string | null
+          historia_doenca_atual?: string | null
+          id?: string
+          is_current?: boolean
+          medicamentos_uso_continuo?: string | null
+          patient_id: string
+          queixa_principal?: string | null
+          version?: number
+        }
+        Update: {
+          alergias?: string | null
+          antecedentes_familiares?: string | null
+          antecedentes_pessoais?: string | null
+          clinic_id?: string
+          comorbidades?: string | null
+          created_at?: string
+          created_by?: string | null
+          habitos_vida?: string | null
+          historia_doenca_atual?: string | null
+          id?: string
+          is_current?: boolean
+          medicamentos_uso_continuo?: string | null
+          patient_id?: string
+          queixa_principal?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_anamneses_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_anamneses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_clinical_data: {
         Row: {
           allergies: string[] | null

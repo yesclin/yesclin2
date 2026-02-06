@@ -5,3 +5,4 @@
  */
 
 export { useVisaoGeralData } from './useVisaoGeralData';
+export { useAnamneseData } from './useAnamneseData';

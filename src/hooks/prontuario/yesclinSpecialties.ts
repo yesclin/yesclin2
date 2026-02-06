@@ -58,32 +58,34 @@ export interface YesclinSpecialty {
  * Do NOT add specialties here unless their clinical modules are fully implemented.
  */
 /**
- * CLÍNICA GERAL - Blocos clínicos exclusivos
+ * CLÍNICA GERAL - Blocos clínicos exclusivos (10 blocos)
  * 
  * Prontuário focado em atendimento médico ambulatorial com:
- * - Visão geral do paciente
- * - Registro de evoluções clínicas
- * - Plano terapêutico e conduta
- * - Solicitação e resultado de exames
- * - Linha do tempo clínica
- * - Alertas médicos (alergias, medicamentos, condições)
- * - Histórico completo de atendimentos
+ * 1. Visão Geral - resumo do paciente
+ * 2. Anamnese - histórico clínico com versionamento
+ * 3. Evoluções - registros de consultas
+ * 4. Exame Físico - sinais vitais e medidas
+ * 5. Hipóteses Diagnósticas - CID-10
+ * 6. Plano / Conduta - orientações terapêuticas
+ * 7. Prescrições - receitas médicas
+ * 8. Exames / Documentos - arquivos e resultados
+ * 9. Alertas Clínicos - alergias, medicamentos, condições
+ * 10. Histórico / Linha do Tempo - cronologia de atendimentos
  * 
  * NÃO inclui: Odontograma, Mapa Facial, Fotos Antes/Depois, 
- * Procedimentos específicos de outras especialidades
+ * Instrumentos Psicológicos, Procedimentos estéticos
  */
 const CLINICA_GERAL_BLOCKS: ClinicalBlockKey[] = [
-  'resumo',           // Visão Geral do paciente
-  'anamnese',         // Anamnese completa (com versionamento)
-  'exame_fisico',     // Exame Físico (sinais vitais, medidas)
-  'evolucao',         // Evoluções clínicas
-  'diagnostico',      // Hipóteses Diagnósticas (CID-10)
-  'prescricoes',      // Prescrições médicas
-  'conduta',          // Plano / Conduta
-  'exames',           // Exames / Documentos
-  'timeline',         // Linha do Tempo
-  'alertas',          // Alertas clínicos
-  'historico',        // Histórico de atendimentos
+  'resumo',           // 1. Visão Geral
+  'anamnese',         // 2. Anamnese
+  'evolucao',         // 3. Evoluções
+  'exame_fisico',     // 4. Exame Físico
+  'diagnostico',      // 5. Hipóteses Diagnósticas (CID-10)
+  'conduta',          // 6. Plano / Conduta
+  'prescricoes',      // 7. Prescrições
+  'exames',           // 8. Exames / Documentos
+  'alertas',          // 9. Alertas Clínicos
+  'timeline',         // 10. Histórico / Linha do Tempo
 ];
 
 export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [

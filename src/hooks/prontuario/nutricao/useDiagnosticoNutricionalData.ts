@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useClinicData } from '@/hooks/useClinicData';
 
 export type StatusDiagnostico = 'ativo' | 'resolvido' | 'em_acompanhamento';
 
@@ -91,8 +92,9 @@ export const STATUS_DIAGNOSTICO_LABELS: Record<StatusDiagnostico, string> = {
   em_acompanhamento: 'Em acompanhamento',
 };
 
-export function useDiagnosticoNutricionalData(patientId: string, clinicId: string) {
+export function useDiagnosticoNutricionalData(patientId: string | null) {
   const { toast } = useToast();
+  const { clinic } = useClinicData();
   const queryClient = useQueryClient();
 
   // Buscar diagnósticos do paciente
@@ -101,13 +103,15 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['diagnostico-nutricional', patientId, clinicId],
+    queryKey: ['diagnostico-nutricional', patientId, clinic?.id],
     queryFn: async () => {
+      if (!patientId || !clinic?.id) return [];
+      
       const { data, error } = await supabase
         .from('clinical_evolutions')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('clinic_id', clinicId)
+        .eq('clinic_id', clinic.id)
         .eq('specialty', 'nutricao')
         .eq('evolution_type', 'followup')
         .order('created_at', { ascending: false });
@@ -137,12 +141,16 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
           } as DiagnosticoNutricional;
         });
     },
-    enabled: !!patientId && !!clinicId,
+    enabled: !!patientId && !!clinic?.id,
   });
 
   // Salvar novo diagnóstico
   const saveDiagnostico = useMutation({
     mutationFn: async (formData: DiagnosticoFormData) => {
+      if (!patientId || !clinic?.id) {
+        throw new Error('Dados incompletos para salvar diagnóstico');
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
@@ -150,7 +158,7 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
         .from('professionals')
         .select('id')
         .eq('user_id', user.id)
-        .eq('clinic_id', clinicId)
+        .eq('clinic_id', clinic.id)
         .single();
 
       const professionalId = professional?.id || user.id;
@@ -172,7 +180,7 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
         .from('clinical_evolutions')
         .insert([{
           patient_id: patientId,
-          clinic_id: clinicId,
+          clinic_id: clinic.id,
           professional_id: professionalId,
           specialty: 'nutricao',
           evolution_type: 'followup',
@@ -186,7 +194,7 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['diagnostico-nutricional', patientId, clinicId] });
+      queryClient.invalidateQueries({ queryKey: ['diagnostico-nutricional', patientId, clinic?.id] });
       toast({
         title: 'Diagnóstico registrado',
         description: 'O diagnóstico nutricional foi salvo com sucesso.',
@@ -229,7 +237,7 @@ export function useDiagnosticoNutricionalData(patientId: string, clinicId: strin
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['diagnostico-nutricional', patientId, clinicId] });
+      queryClient.invalidateQueries({ queryKey: ['diagnostico-nutricional', patientId, clinic?.id] });
       toast({
         title: 'Status atualizado',
         description: 'O status do diagnóstico foi alterado.',

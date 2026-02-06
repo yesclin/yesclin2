@@ -37,7 +37,7 @@ import {
 
 interface DiagnosticoNutricionalBlockProps {
   patientId: string;
-  clinicId: string;
+  canEdit?: boolean;
 }
 
 const initialFormData: DiagnosticoFormData = {
@@ -69,8 +69,8 @@ function StatusBadge({ status }: { status: StatusDiagnostico }) {
   );
 }
 
-export function DiagnosticoNutricionalBlock({ patientId, clinicId }: DiagnosticoNutricionalBlockProps) {
-  const { diagnosticos, isLoading, saveDiagnostico, updateStatus, isSaving } = useDiagnosticoNutricionalData(patientId, clinicId);
+export function DiagnosticoNutricionalBlock({ patientId, canEdit = true }: DiagnosticoNutricionalBlockProps) {
+  const { diagnosticos, isLoading, saveDiagnostico, updateStatus, isSaving } = useDiagnosticoNutricionalData(patientId);
   
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<DiagnosticoFormData>(initialFormData);
@@ -145,13 +145,15 @@ export function DiagnosticoNutricionalBlock({ patientId, clinicId }: Diagnostico
               Histórico ({diagnosticos.length})
             </Button>
           )}
-          <Button 
-            size="sm"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Diagnóstico
-          </Button>
+          {canEdit && (
+            <Button 
+              size="sm"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Diagnóstico
+            </Button>
+          )}
         </div>
       </div>
 

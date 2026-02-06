@@ -11,6 +11,7 @@ export { AnamnesePsicologiaBlock } from './AnamnesePsicologiaBlock';
 export { SessoesPsicologiaBlock } from './SessoesPsicologiaBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
 export { InstrumentosPsicologicosBlock } from './InstrumentosPsicologicosBlock';
+export { TermosConsentimentosPsicologiaBlock } from './TermosConsentimentosPsicologiaBlock';
 
 export type { 
   PsicologiaPatientData, 

@@ -348,8 +348,14 @@ export function EvolucaoCorporalBlock({ avaliacoes, evolucoes = [], loading }: E
         </div>
       )}
 
-      {/* Gráfico de Evolução do Peso - exibe apenas se houver mais de 1 registro */}
-      {mergedData.length > 1 && <WeightEvolutionChart data={mergedData} />}
+      {/* Gráficos de Evolução */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Gráfico de Evolução do Peso - exibe apenas se houver mais de 1 registro */}
+        {mergedData.length > 1 && <WeightEvolutionChart data={mergedData} />}
+        
+        {/* Gráfico de Evolução do IMC - exibe apenas se houver dados suficientes */}
+        {mergedData.length > 1 && <BMIEvolutionChart data={mergedData} />}
+      </div>
     </div>
   );
 }
@@ -476,6 +482,180 @@ function WeightEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-0.5 border-t border-dashed border-muted-foreground" />
             <span>Média: {avgWeight.toFixed(1)} kg</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Gráfico de linha para evolução do IMC
+ */
+interface BMIChartData {
+  date: string;
+  dateFormatted: string;
+  bmi: number | null;
+}
+
+// Classificação do IMC
+const BMI_RANGES = [
+  { max: 18.5, label: 'Abaixo do peso', color: 'hsl(var(--primary))' },
+  { max: 24.9, label: 'Peso normal', color: 'hsl(142, 76%, 36%)' },
+  { max: 29.9, label: 'Sobrepeso', color: 'hsl(45, 93%, 47%)' },
+  { max: 100, label: 'Obesidade', color: 'hsl(var(--destructive))' },
+];
+
+function getBMIClassification(bmi: number): { label: string; color: string } {
+  for (const range of BMI_RANGES) {
+    if (bmi < range.max) return range;
+  }
+  return BMI_RANGES[BMI_RANGES.length - 1];
+}
+
+function BMIEvolutionChart({ data }: { data: AvaliacaoNutricional[] }) {
+  // Preparar dados para o gráfico (ordem cronológica)
+  const chartData: BMIChartData[] = useMemo(() => {
+    return [...data]
+      .filter(d => d.bmi !== null)
+      .reverse() // ordem cronológica ascendente
+      .map(d => ({
+        date: d.measurement_date,
+        dateFormatted: format(parseISO(d.measurement_date), "dd/MM/yy", { locale: ptBR }),
+        bmi: d.bmi,
+      }));
+  }, [data]);
+
+  // Não renderizar se menos de 2 pontos
+  if (chartData.length < 2) return null;
+
+  // Calcular estatísticas
+  const validBMIs = chartData.filter(d => d.bmi !== null).map(d => d.bmi as number);
+  const currentBMI = validBMIs[validBMIs.length - 1];
+  const classification = getBMIClassification(currentBMI);
+
+  // Calcular domínio do eixo Y
+  const minBMI = Math.min(...validBMIs);
+  const maxBMI = Math.max(...validBMIs);
+  const yDomainMin = Math.floor(minBMI - 1);
+  const yDomainMax = Math.ceil(maxBMI + 1);
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) => {
+    if (active && payload && payload.length) {
+      const entry = payload[0] as { value: number };
+      const bmiClass = getBMIClassification(entry.value);
+      return (
+        <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
+          <p className="font-medium text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold" style={{ color: bmiClass.color }}>
+            {entry.value?.toFixed(1)} kg/m²
+          </p>
+          <p className="text-xs" style={{ color: bmiClass.color }}>
+            {bmiClass.label}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            Evolução do IMC
+          </CardTitle>
+          <Badge 
+            variant="outline" 
+            className="text-xs"
+            style={{ borderColor: classification.color, color: classification.color }}
+          >
+            {classification.label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="dateFormatted" 
+                tick={{ fontSize: 11 }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                domain={[yDomainMin, yDomainMax]}
+                tick={{ fontSize: 11 }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}`}
+                width={35}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              {/* Faixas de referência */}
+              <ReferenceLine 
+                y={18.5} 
+                stroke="hsl(var(--primary))" 
+                strokeDasharray="3 3"
+                strokeOpacity={0.4}
+              />
+              <ReferenceLine 
+                y={24.9} 
+                stroke="hsl(142, 76%, 36%)" 
+                strokeDasharray="3 3"
+                strokeOpacity={0.4}
+              />
+              <ReferenceLine 
+                y={29.9} 
+                stroke="hsl(45, 93%, 47%)" 
+                strokeDasharray="3 3"
+                strokeOpacity={0.4}
+              />
+              <Line
+                type="monotone"
+                dataKey="bmi"
+                name="IMC"
+                stroke={classification.color}
+                strokeWidth={2.5}
+                dot={{ 
+                  r: 5, 
+                  fill: classification.color,
+                  strokeWidth: 2,
+                  stroke: "hsl(var(--background))"
+                }}
+                activeDot={{ 
+                  r: 7, 
+                  fill: classification.color,
+                  strokeWidth: 3,
+                  stroke: "hsl(var(--background))"
+                }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        {/* Legenda de faixas */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(var(--primary))' }} />
+            <span className="text-muted-foreground">{"<18.5"}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(142, 76%, 36%)' }} />
+            <span className="text-muted-foreground">18.5-24.9</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(45, 93%, 47%)' }} />
+            <span className="text-muted-foreground">25-29.9</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ background: 'hsl(var(--destructive))' }} />
+            <span className="text-muted-foreground">≥30</span>
           </div>
         </div>
       </CardContent>

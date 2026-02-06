@@ -17,3 +17,10 @@ export type {
   AnamnesePsicologiaData,
   AnamnesePsicologiaFormData,
 } from './useAnamnesePsicologiaData';
+
+export { useSessoesPsicologiaData } from './useSessoesPsicologiaData';
+export type { 
+  SessaoPsicologia,
+  SessaoFormData,
+  StatusSessao,
+} from './useSessoesPsicologiaData';

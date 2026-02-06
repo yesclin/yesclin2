@@ -3,11 +3,12 @@
  * 
  * Bloco de visão geral do paciente para a especialidade Nutrição.
  * Exibe dados básicos, objetivo nutricional, status do acompanhamento e alertas ativos.
- * Este bloco é apenas informativo (somente leitura).
+ * Inclui atalhos rápidos para ações comuns.
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Apple, 
@@ -20,7 +21,10 @@ import {
   AlertCircle,
   Info,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Ruler,
+  UtensilsCrossed,
+  Plus
 } from 'lucide-react';
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,12 +35,15 @@ import {
   type NutricaoSummaryData, 
   type NutricaoAlert 
 } from '@/hooks/prontuario/nutricao';
+import type { TipoEvolucaoNutricao } from '@/hooks/prontuario/nutricao/evolucaoTemplates';
 
 interface VisaoGeralNutricaoBlockProps {
   patient: NutricaoPatientData | null;
   summary: NutricaoSummaryData;
   alerts: NutricaoAlert[];
   loading: boolean;
+  canEdit?: boolean;
+  onQuickAction?: (action: 'avaliacao_antropometrica' | 'plano_alimentar' | 'nova_evolucao', templateId?: TipoEvolucaoNutricao) => void;
 }
 
 /**
@@ -86,6 +93,8 @@ export function VisaoGeralNutricaoBlock({
   summary,
   alerts,
   loading,
+  canEdit = false,
+  onQuickAction,
 }: VisaoGeralNutricaoBlockProps) {
   if (loading) {
     return (
@@ -198,6 +207,48 @@ export function VisaoGeralNutricaoBlock({
           </div>
         </CardHeader>
       </Card>
+
+      {/* Atalhos Rápidos */}
+      {canEdit && onQuickAction && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Ações Rápidas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onQuickAction('avaliacao_antropometrica', 'avaliacao_antropometrica')}
+                className="flex items-center gap-2"
+              >
+                <Ruler className="h-4 w-4" />
+                Nova Avaliação Antropométrica
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onQuickAction('plano_alimentar', 'plano_alimentar')}
+                className="flex items-center gap-2"
+              >
+                <UtensilsCrossed className="h-4 w-4" />
+                Novo Plano Alimentar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onQuickAction('nova_evolucao')}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nova Evolução Nutricional
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cards de Informações */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

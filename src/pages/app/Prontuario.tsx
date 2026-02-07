@@ -120,6 +120,20 @@ import {
   AlertasBannerNutricao,
   LinhaTempoNutricaoBlock,
 } from "@/components/prontuario/nutricao";
+import {
+  VisaoGeralFisioterapiaBlock,
+  AnamneseFisioterapiaBlock,
+  AvaliacaoFuncionalBlock,
+  AvaliacaoDorBlock,
+  DiagnosticoFuncionalBlock,
+  PlanoTerapeuticoBlock as PlanoTerapeuticoFisioBlock,
+  SessoesFisioterapiaBlock,
+  ExerciciosPrescritosBlock,
+  ExamesDocumentosBlock as ExamesDocumentosFisioBlock,
+  AlertasFuncionaisBlock,
+  AlertasFuncionaisBanner,
+  HistoricoFisioterapiaBlock,
+} from "@/components/prontuario/fisioterapia";
 import { 
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
@@ -129,6 +143,16 @@ import {
   useAlertasNutricaoData,
   useLinhaTempoNutricaoData,
 } from "@/hooks/prontuario/nutricao";
+import {
+  useVisaoGeralFisioterapiaData,
+  useAnamneseFisioterapiaData,
+  useAvaliacaoFuncionalData,
+  useAvaliacaoDorData,
+  useDiagnosticoFuncionalData,
+  usePlanoTerapeuticoData as usePlanoTerapeuticoFisioData,
+  useSessoesFisioterapiaData,
+  useAlertasFuncionaisData,
+} from "@/hooks/prontuario/fisioterapia";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -673,6 +697,66 @@ export default function Prontuario() {
     signPrescricao,
   } = usePrescricoesData(patientId);
 
+  // ===== FISIOTERAPIA HOOKS =====
+  // Obter clinic_id do hook useClinicData
+  const clinicIdForFisio = patient ? config?.tabs?.[0]?.clinic_id : null;
+  
+  // Visão Geral Fisioterapia Data
+  const fisioVisaoGeral = useVisaoGeralFisioterapiaData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null 
+  });
+
+  // Anamnese Fisioterapia Data
+  const fisioAnamnese = useAnamneseFisioterapiaData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Avaliação Funcional Data
+  const fisioAvaliacaoFuncional = useAvaliacaoFuncionalData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Avaliação de Dor Data
+  const fisioAvaliacaoDor = useAvaliacaoDorData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Diagnóstico Funcional Data
+  const fisioDiagnostico = useDiagnosticoFuncionalData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Plano Terapêutico Fisioterapia Data
+  const fisioPlano = usePlanoTerapeuticoFisioData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Sessões Fisioterapia Data
+  const fisioSessoes = useSessoesFisioterapiaData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+  // Alertas Funcionais Data
+  const fisioAlertas = useAlertasFuncionaisData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
+
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
     if (!isTabPermissionsEnabled) return true;
@@ -843,6 +927,17 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <VisaoGeralFisioterapiaBlock
+              patient={fisioVisaoGeral.patient}
+              summary={fisioVisaoGeral.summary}
+              alerts={fisioVisaoGeral.alerts}
+              loading={fisioVisaoGeral.loading}
+              onNavigateToModule={(moduleKey) => setActiveTab(moduleKey)}
+            />
+          );
+        }
         // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
@@ -881,6 +976,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <AnamneseFisioterapiaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Anamnese com versionamento
         return (
           <AnamneseBlock
@@ -894,6 +999,17 @@ export default function Prontuario() {
         );
 
       case 'exame_fisico':
+        // Fisioterapia - Avaliação Funcional
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <AvaliacaoFuncionalBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Exame Físico (sinais vitais, medidas)
         return (
           <ExameFisicoBlock
@@ -970,6 +1086,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <SessoesFisioterapiaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Evoluções Clínicas
         return (
           <EvolucoesBlock
@@ -984,6 +1110,21 @@ export default function Prontuario() {
           />
         );
 
+      case 'diagnostico':
+        // Fisioterapia - Diagnóstico Funcional
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <DiagnosticoFuncionalBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
+        // Clínica Geral - Hipóteses Diagnósticas (CID-10) - handled at bottom
+        break;
+
       case 'conduta':
         // Render specialty-specific Conduta/Plano
         if (activeSpecialtyKey === 'psicologia') {
@@ -995,6 +1136,16 @@ export default function Prontuario() {
               saving={planoTerapeuticoSaving}
               canEdit={canEditCurrentTab}
               onSave={savePlanoTerapeutico}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <PlanoTerapeuticoFisioBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
             />
           );
         }
@@ -1108,6 +1259,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <AlertasFuncionaisBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1152,6 +1313,14 @@ export default function Prontuario() {
             <LinhaTempoNutricaoBlock
               eventos={timelineEventosNutricao}
               loading={timelineNutricaoLoading}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'fisioterapia') {
+          return (
+            <HistoricoFisioterapiaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
             />
           );
         }

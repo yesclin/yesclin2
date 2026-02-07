@@ -1964,31 +1964,29 @@ export default function Prontuario() {
         )}
       </div>
 
-      {/* Main Content with Sidebar Navigation */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <aside className="w-64 border-r bg-muted/30 hidden md:block">
-          <ScrollArea className="h-full">
-            <nav className="p-2 space-y-1">
+      {/* Main Content with Horizontal Tab Navigation */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Horizontal Tab Navigation - All screen sizes */}
+        <div className="w-full border-b bg-background sticky top-0 z-10">
+          <ScrollArea className="w-full">
+            <nav className="flex p-2 gap-1 min-w-max">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors text-left",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors",
                     activeTab === item.id 
                       ? "bg-primary text-primary-foreground" 
                       : "hover:bg-muted text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-                    <span>{item.label}</span>
-                  </div>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                  <span>{item.label}</span>
                   {item.id === 'alertas' && activeAlerts.length > 0 && (
                     <Badge 
                       variant={criticalAlerts.length > 0 ? "destructive" : "secondary"}
-                      className="text-[10px] px-1.5"
+                      className="text-[10px] px-1.5 ml-1"
                     >
                       {activeAlerts.length}
                     </Badge>
@@ -1997,27 +1995,6 @@ export default function Prontuario() {
               ))}
             </nav>
           </ScrollArea>
-        </aside>
-
-        {/* Mobile Navigation */}
-        <div className="md:hidden w-full border-b overflow-x-auto sticky top-0 bg-background z-10">
-          <div className="flex p-2 gap-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap",
-                  activeTab === item.id 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Content Area */}

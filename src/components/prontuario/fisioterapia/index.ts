@@ -9,3 +9,4 @@ export { AvaliacaoDorBlock } from './AvaliacaoDorBlock';
 export { DiagnosticoFuncionalBlock } from './DiagnosticoFuncionalBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
 export { SessoesFisioterapiaBlock } from './SessoesFisioterapiaBlock';
+export { ExerciciosPrescritosBlock } from './ExerciciosPrescritosBlock';

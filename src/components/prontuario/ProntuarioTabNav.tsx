@@ -181,19 +181,16 @@ export function ProntuarioTabNav({
     );
   }
 
-  // Desktop/Tablet: Compact horizontal menu with scroll
+  // Desktop/Tablet: Compact horizontal menu with flex-wrap (up to 2 lines)
   return (
     <div className={cn("w-full border-b bg-background sticky top-0 z-10", className)}>
-      <ScrollArea className="w-full">
-        <nav
-          className="flex items-center gap-1.5 py-2 px-3"
-          role="tablist"
-          aria-label="Navegação do prontuário"
-        >
-          {items.map(renderCompactButton)}
-        </nav>
-        <ScrollBar orientation="horizontal" className="h-1.5" />
-      </ScrollArea>
+      <nav
+        className="flex flex-wrap items-center gap-1.5 py-2 px-3"
+        role="tablist"
+        aria-label="Navegação do prontuário"
+      >
+        {items.map(renderCompactButton)}
+      </nav>
     </div>
   );
 }

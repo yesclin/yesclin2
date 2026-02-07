@@ -1,10 +1,14 @@
-import { useRef, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Menu, type LucideIcon } from "lucide-react";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface TabNavItem {
@@ -13,6 +17,8 @@ export interface TabNavItem {
   icon?: LucideIcon;
   badge?: number;
   badgeVariant?: "default" | "secondary" | "destructive" | "outline";
+  /** Mark as secondary tab - will be grouped in "More" menu on mobile */
+  secondary?: boolean;
 }
 
 interface ProntuarioTabNavProps {
@@ -33,9 +39,15 @@ export function ProntuarioTabNav({
   const isMobile = useIsMobile();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
+
+  // Separate primary and secondary tabs for mobile "More" menu
+  const primaryItems = isMobile ? items.filter(item => !item.secondary) : items;
+  const secondaryItems = isMobile ? items.filter(item => item.secondary) : [];
+
+  // Check if active tab is in secondary items (need to show in "More" menu)
+  const activeInSecondary = secondaryItems.some(item => item.id === activeTab);
 
   // Auto-scroll to active tab when it changes
   useEffect(() => {
@@ -43,44 +55,60 @@ export function ProntuarioTabNav({
       const container = scrollContainerRef.current;
       const activeElement = activeTabRef.current;
       
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = activeElement.getBoundingClientRect();
-      
-      // Check if active tab is outside visible area
-      if (activeRect.left < containerRect.left) {
-        container.scrollLeft -= (containerRect.left - activeRect.left) + 20;
-      } else if (activeRect.right > containerRect.right) {
-        container.scrollLeft += (activeRect.right - containerRect.right) + 20;
-      }
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        const containerRect = container.getBoundingClientRect();
+        const activeRect = activeElement.getBoundingClientRect();
+        
+        // Check if active tab is outside visible area
+        if (activeRect.left < containerRect.left + 40) {
+          container.scrollTo({
+            left: container.scrollLeft - (containerRect.left - activeRect.left) - 60,
+            behavior: 'smooth'
+          });
+        } else if (activeRect.right > containerRect.right - 40) {
+          container.scrollTo({
+            left: container.scrollLeft + (activeRect.right - containerRect.right) + 60,
+            behavior: 'smooth'
+          });
+        }
+      }, 50);
     }
   }, [activeTab]);
 
-  // Check scroll position for arrow visibility
+  // Check scroll position for fade visibility
+  const checkScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftFade(scrollLeft > 5);
+    setShowRightFade(scrollLeft < scrollWidth - clientWidth - 5);
+  }, []);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const checkScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      setShowLeftArrow(scrollLeft > 10);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    };
-
     checkScroll();
-    container.addEventListener("scroll", checkScroll);
+    container.addEventListener("scroll", checkScroll, { passive: true });
     window.addEventListener("resize", checkScroll);
+    
+    // Re-check after items load
+    const timeout = setTimeout(checkScroll, 100);
     
     return () => {
       container.removeEventListener("scroll", checkScroll);
       window.removeEventListener("resize", checkScroll);
+      clearTimeout(timeout);
     };
-  }, [items]);
+  }, [items, checkScroll]);
 
   const scrollTo = (direction: "left" | "right") => {
     const container = scrollContainerRef.current;
     if (!container) return;
     
-    const scrollAmount = container.clientWidth * 0.6;
+    const scrollAmount = isMobile ? container.clientWidth * 0.5 : container.clientWidth * 0.4;
     container.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -89,103 +117,64 @@ export function ProntuarioTabNav({
 
   const handleTabClick = (tabId: string) => {
     onTabChange(tabId);
-    if (isMobile) {
-      setSheetOpen(false);
-    }
   };
 
-  const activeItem = items.find(item => item.id === activeTab);
-
-  // Mobile: Show current tab + menu button to open sheet
-  if (isMobile) {
+  // Render a single tab button
+  const renderTabButton = (item: TabNavItem, isActive: boolean) => {
+    const Icon = item.icon;
+    
     return (
-      <div className={cn("w-full border-b bg-background sticky top-0 z-10", className)}>
-        <div className="flex items-center justify-between p-2 gap-2">
-          {/* Current Tab Display */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {activeItem?.icon && (
-              <activeItem.icon className="h-5 w-5 text-primary flex-shrink-0" />
-            )}
-            <span className="font-medium text-sm truncate">
-              {activeItem?.label || "Selecione uma aba"}
-            </span>
-            {activeItem?.badge && activeItem.badge > 0 && (
-              <Badge 
-                variant={activeItem.badgeVariant || "secondary"}
-                className="text-[10px] px-1.5 flex-shrink-0"
-              >
-                {activeItem.badge}
-              </Badge>
-            )}
-          </div>
-
-          {/* Menu Button */}
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-shrink-0">
-                <Menu className="h-4 w-4 mr-1.5" />
-                Módulos
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
-              <SheetHeader className="pb-4">
-                <SheetTitle>Módulos do Prontuário</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className="h-[calc(100%-60px)]">
-                <div className="grid gap-1.5 pr-4">
-                  {items.map((item) => {
-                    const isActive = activeTab === item.id;
-                    const Icon = item.icon;
-                    
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => handleTabClick(item.id)}
-                        className={cn(
-                          "flex items-center gap-3 w-full px-4 py-3 rounded-lg text-left transition-colors",
-                          isActive 
-                            ? "bg-primary text-primary-foreground" 
-                            : "hover:bg-muted"
-                        )}
-                      >
-                        {Icon && (
-                          <Icon className={cn(
-                            "h-5 w-5 flex-shrink-0",
-                            isActive ? "text-primary-foreground" : "text-muted-foreground"
-                          )} />
-                        )}
-                        <span className="flex-1 font-medium">{item.label}</span>
-                        {item.badge && item.badge > 0 && (
-                          <Badge 
-                            variant={isActive ? "secondary" : (item.badgeVariant || "secondary")}
-                            className="text-xs"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
+      <button
+        key={item.id}
+        ref={isActive ? activeTabRef : null}
+        role="tab"
+        aria-selected={isActive}
+        aria-controls={`panel-${item.id}`}
+        onClick={() => handleTabClick(item.id)}
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+          // Responsive padding
+          "px-2.5 py-2 md:px-3 md:py-2.5 lg:px-4",
+          isActive 
+            ? "bg-primary text-primary-foreground shadow-sm" 
+            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {Icon && <Icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
+        {/* Mobile: show abbreviated label, Desktop: full label */}
+        <span className="hidden sm:inline">{item.label}</span>
+        <span className="sm:hidden text-xs max-w-[60px] truncate">{item.label}</span>
+        {item.badge && item.badge > 0 && (
+          <Badge 
+            variant={isActive ? "secondary" : (item.badgeVariant || "secondary")}
+            className="text-[10px] px-1 h-4 min-w-[16px] flex-shrink-0"
+          >
+            {item.badge}
+          </Badge>
+        )}
+      </button>
     );
-  }
+  };
 
-  // Desktop/Tablet: Horizontal scrollable tabs with arrows
   return (
     <div className={cn("w-full border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10 relative", className)}>
-      {/* Left scroll arrow */}
-      {showLeftArrow && (
+      {/* Left fade indicator + scroll button */}
+      <div 
+        className={cn(
+          "absolute left-0 top-0 bottom-0 w-10 md:w-14 z-20 pointer-events-none transition-opacity duration-200",
+          "bg-gradient-to-r from-background via-background/80 to-transparent",
+          showLeftFade ? "opacity-100" : "opacity-0"
+        )}
+        aria-hidden="true"
+      />
+      {showLeftFade && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-background/90 shadow-md hover:bg-background"
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-30 h-7 w-7 md:h-8 md:w-8 rounded-full bg-background/90 shadow-md hover:bg-background border"
           onClick={() => scrollTo("left")}
-          aria-label="Scroll left"
+          aria-label="Rolar para a esquerda"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -194,64 +183,98 @@ export function ProntuarioTabNav({
       {/* Scrollable tabs container */}
       <div 
         ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-hide scroll-smooth"
+        className="overflow-x-auto overflow-y-hidden scroll-smooth touch-pan-x"
         style={{ 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch'
         }}
       >
+        <style dangerouslySetInnerHTML={{ __html: `
+          .scroll-container::-webkit-scrollbar { display: none; }
+        `}} />
         <nav 
-          className="flex p-2 gap-1.5 min-w-max px-10" 
+          className="flex p-1.5 md:p-2 gap-1 md:gap-1.5 min-w-max scroll-container" 
           role="tablist" 
           aria-label="Navegação do prontuário"
+          style={{ paddingLeft: showLeftFade ? '2.5rem' : '0.375rem', paddingRight: showRightFade || secondaryItems.length > 0 ? '2.5rem' : '0.375rem' }}
         >
-          {items.map((item) => {
+          {primaryItems.map((item) => {
             const isActive = activeTab === item.id;
-            const Icon = item.icon;
-            
-            return (
-              <button
-                key={item.id}
-                ref={isActive ? activeTabRef : null}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`panel-${item.id}`}
-                onClick={() => handleTabClick(item.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isActive 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {Icon && <Icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
-                <span className="hidden sm:inline">{item.label}</span>
-                {/* Show label on tablet+ */}
-                <span className="sm:hidden text-xs">{item.label.split(' ')[0]}</span>
-                {item.badge && item.badge > 0 && (
-                  <Badge 
-                    variant={isActive ? "secondary" : (item.badgeVariant || "secondary")}
-                    className="text-[10px] px-1.5 ml-0.5"
-                  >
-                    {item.badge}
-                  </Badge>
-                )}
-              </button>
-            );
+            return renderTabButton(item, isActive);
           })}
+
+          {/* "More" dropdown for secondary tabs on mobile */}
+          {secondaryItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                    activeInSecondary
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="text-xs">Mais</span>
+                  {activeInSecondary && (
+                    <span className="text-xs opacity-80">
+                      ({secondaryItems.find(i => i.id === activeTab)?.label.split(' ')[0]})
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {secondaryItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  
+                  return (
+                    <DropdownMenuItem
+                      key={item.id}
+                      onClick={() => handleTabClick(item.id)}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isActive && "bg-primary/10 text-primary font-medium"
+                      )}
+                    >
+                      {Icon && <Icon className="h-4 w-4" />}
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <Badge 
+                          variant={item.badgeVariant || "secondary"}
+                          className="text-[10px] px-1.5"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
       </div>
 
-      {/* Right scroll arrow */}
-      {showRightArrow && (
+      {/* Right fade indicator + scroll button */}
+      <div 
+        className={cn(
+          "absolute right-0 top-0 bottom-0 w-10 md:w-14 z-20 pointer-events-none transition-opacity duration-200",
+          "bg-gradient-to-l from-background via-background/80 to-transparent",
+          showRightFade ? "opacity-100" : "opacity-0"
+        )}
+        aria-hidden="true"
+      />
+      {showRightFade && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-background/90 shadow-md hover:bg-background"
+          className="absolute right-1 top-1/2 -translate-y-1/2 z-30 h-7 w-7 md:h-8 md:w-8 rounded-full bg-background/90 shadow-md hover:bg-background border"
           onClick={() => scrollTo("right")}
-          aria-label="Scroll right"
+          aria-label="Rolar para a direita"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

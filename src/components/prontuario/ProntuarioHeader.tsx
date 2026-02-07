@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SpecialtyOption, SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
+import { YESCLIN_SPECIALTY_LABELS } from "@/hooks/prontuario/yesclinSpecialties";
 
 interface PatientInfo {
   id: string;
@@ -159,7 +160,7 @@ export function ProntuarioHeader({
         "flex flex-col gap-2 px-3 py-2 border-b bg-background/95 backdrop-blur sticky top-0 z-20",
         className
       )}>
-        {/* Linha 1: Voltar + Nome + Menu */}
+        {/* Linha 1: Voltar + Título com Especialidade + Menu */}
         <div className="flex items-center gap-2">
           <Link to="/app/pacientes">
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -168,21 +169,13 @@ export function ProntuarioHeader({
           </Link>
           
           <div className="flex-1 min-w-0">
-            {patient ? (
-              <div className="flex items-center gap-1.5">
-                <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                <h1 className="text-sm font-semibold truncate">
-                  {patient.full_name}
-                </h1>
-                {age !== null && (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    ({age}a)
-                  </span>
-                )}
-              </div>
-            ) : (
-              <h1 className="text-sm font-semibold">Prontuário</h1>
-            )}
+            <div className="flex items-center gap-1">
+              <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+              <h1 className="text-sm font-semibold truncate">
+                Prontuário <span className="text-muted-foreground font-normal">—</span>{" "}
+                <span className="text-primary">{activeSpecialty?.name || YESCLIN_SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral'}</span>
+              </h1>
+            </div>
           </div>
 
           {/* Status Badge (único) */}
@@ -214,38 +207,45 @@ export function ProntuarioHeader({
           </DropdownMenu>
         </div>
 
-        {/* Linha 2: Especialidade + LGPD (se houver) */}
-        {patient && (
-          <div className="flex items-center gap-2">
-            <SpecialtySelector
-              activeSpecialty={activeSpecialty}
-              activeSpecialtyKey={activeSpecialtyKey}
-              specialties={specialties}
-              isFromAppointment={isSpecialtyFromAppointment}
-              onSelect={onSelectSpecialty}
-              loading={specialtyLoading}
-            />
-            
-            {isLgpdPending && (
-              <Badge variant="outline" className="gap-0.5 text-destructive border-destructive h-5 text-[10px] px-1.5">
-                <Lock className="h-3 w-3" />
-                LGPD
-              </Badge>
-            )}
-          </div>
-        )}
+        {/* Linha 2: Nome do paciente + Seletor de Especialidade */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {patient && (
+            <span className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{patient.full_name}</span>
+              {age !== null && <span> ({age}a)</span>}
+            </span>
+          )}
+          
+          <SpecialtySelector
+            activeSpecialty={activeSpecialty}
+            activeSpecialtyKey={activeSpecialtyKey}
+            specialties={specialties}
+            isFromAppointment={isSpecialtyFromAppointment}
+            onSelect={onSelectSpecialty}
+            loading={specialtyLoading}
+          />
+          
+          {isLgpdPending && (
+            <Badge variant="outline" className="gap-0.5 text-destructive border-destructive h-5 text-[10px] px-1.5">
+              <Lock className="h-3 w-3" />
+              LGPD
+            </Badge>
+          )}
+        </div>
       </div>
     );
   }
 
   // Desktop/Tablet Layout - Completo
+  const displaySpecialtyName = activeSpecialty?.name || YESCLIN_SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
+
   return (
     <div className={cn(
       "flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20",
       className
     )}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Lado esquerdo: Voltar + Info do paciente */}
+        {/* Lado esquerdo: Voltar + Título com Especialidade */}
         <div className="flex items-center gap-3 flex-wrap">
           <Link to="/app/pacientes">
             <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -256,33 +256,33 @@ export function ProntuarioHeader({
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             
-            {/* Nome + Idade + Sexo */}
-            {patient ? (
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-foreground">
-                  {patient.full_name}
-                </h1>
-                {(age !== null || gender) && (
-                  <span className="text-sm text-muted-foreground">
-                    ({[age !== null ? `${age}a` : null, gender].filter(Boolean).join(', ')})
-                  </span>
-                )}
-              </div>
-            ) : (
-              <h1 className="text-lg font-semibold text-foreground">Prontuário</h1>
-            )}
+            {/* Título: Prontuário — Especialidade */}
+            <h1 className="text-lg font-semibold text-foreground">
+              Prontuário <span className="text-muted-foreground font-normal">—</span>{" "}
+              <span className="text-primary">{displaySpecialtyName}</span>
+            </h1>
           </div>
 
-          {/* Seletor de Especialidade */}
+          {/* Seletor de Especialidade (sempre visível) */}
+          <SpecialtySelector
+            activeSpecialty={activeSpecialty}
+            activeSpecialtyKey={activeSpecialtyKey}
+            specialties={specialties}
+            isFromAppointment={isSpecialtyFromAppointment}
+            onSelect={onSelectSpecialty}
+            loading={specialtyLoading}
+          />
+
+          {/* Info do Paciente */}
           {patient && (
-            <SpecialtySelector
-              activeSpecialty={activeSpecialty}
-              activeSpecialtyKey={activeSpecialtyKey}
-              specialties={specialties}
-              isFromAppointment={isSpecialtyFromAppointment}
-              onSelect={onSelectSpecialty}
-              loading={specialtyLoading}
-            />
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground border-l pl-3 ml-1">
+              <span className="font-medium text-foreground">{patient.full_name}</span>
+              {(age !== null || gender) && (
+                <span>
+                  ({[age !== null ? `${age}a` : null, gender].filter(Boolean).join(', ')})
+                </span>
+              )}
+            </div>
           )}
 
           {/* Badges de Status */}

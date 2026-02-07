@@ -11,3 +11,4 @@ export * from './usePlanoTerapeuticoData';
 export * from './useSessoesFisioterapiaData';
 export * from './useExerciciosPrescritosData';
 export * from './useExamesDocumentosData';
+export * from './useAlertasFuncionaisData';

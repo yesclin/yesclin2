@@ -39,7 +39,10 @@ export type ClinicalBlockKey =
   | 'avaliacao_nutricional'    // Avaliação Nutricional Inicial
   | 'avaliacao_clinica'        // Avaliação Antropométrica
   | 'diagnostico_nutricional'  // Diagnóstico Nutricional
-  | 'plano_alimentar';         // Plano Alimentar
+  | 'plano_alimentar'          // Plano Alimentar
+  // Fisioterapia-specific blocks
+  | 'avaliacao_funcional'      // Avaliação Funcional (força, ADM, postura)
+  | 'avaliacao_dor';           // Avaliação de Dor (EVA, localização)
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -209,15 +212,16 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     name: 'Fisioterapia',
     description: 'Avaliação funcional, diagnóstico fisioterapêutico e acompanhamento de sessões',
     enabledBlocks: [
-      'resumo',           // 1. Visão Geral
-      'anamnese',         // 2. Anamnese
-      'exame_fisico',     // 3. Avaliação Funcional (reutilizado)
-      'diagnostico',      // 4. Diagnóstico Funcional
-      'conduta',          // 5. Plano Terapêutico
-      'evolucao',         // 6. Sessões de Fisioterapia
-      'exames',           // 7. Exames / Documentos
-      'alertas',          // 8. Alertas Funcionais
-      'timeline',         // 9. Histórico / Linha do Tempo
+      'resumo',              // 1. Visão Geral
+      'anamnese',            // 2. Anamnese
+      'avaliacao_funcional', // 3. Avaliação Funcional (força, ADM, postura)
+      'avaliacao_dor',       // 4. Avaliação de Dor (EVA, localização)
+      'diagnostico',         // 5. Diagnóstico Funcional
+      'conduta',             // 6. Plano Terapêutico
+      'evolucao',            // 7. Sessões de Fisioterapia
+      'exames',              // 8. Exames / Documentos
+      'alertas',             // 9. Alertas Funcionais
+      'timeline',            // 10. Histórico / Linha do Tempo
     ],
     icon: 'Activity',
   },

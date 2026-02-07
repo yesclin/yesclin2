@@ -87,3 +87,10 @@ export {
   type AlertaFuncionalPilates,
   type AlertaFuncionalFormData,
 } from './useAlertasFuncionaisPilatesData';
+
+export {
+  useHistoricoPilatesData,
+  TIMELINE_TYPES,
+  type TimelineItem,
+  type TimelineType,
+} from './useHistoricoPilatesData';

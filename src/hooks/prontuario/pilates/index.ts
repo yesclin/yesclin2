@@ -15,3 +15,12 @@ export {
   type AvaliacaoFuncionalPilatesData,
   type AvaliacaoFuncionalPilatesFormData,
 } from './useAvaliacaoFuncionalPilatesData';
+
+export {
+  useVisaoGeralPilatesData,
+  STATUS_ACOMPANHAMENTO_PILATES,
+  OBJETIVOS_PILATES,
+  type PilatesPatientData,
+  type PilatesSummaryData,
+  type PilatesAlert,
+} from './useVisaoGeralPilatesData';

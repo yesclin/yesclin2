@@ -185,35 +185,60 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Apple',
   },
+  /**
+   * FISIOTERAPIA - Blocos clínicos exclusivos (10 blocos)
+   * 
+   * Prontuário focado em reabilitação e cinesioterapia:
+   * 1. Visão Geral - resumo do paciente (alertas, plano ativo)
+   * 2. Anamnese - história clínica e queixa principal
+   * 3. Avaliação Funcional - força, amplitude, postura
+   * 4. Avaliação de Dor - escala EVA, localização
+   * 5. Diagnóstico Funcional - CIF, hipóteses
+   * 6. Plano Terapêutico - objetivos e técnicas
+   * 7. Sessões - registro de atendimentos
+   * 8. Exercícios Prescritos - programa domiciliar
+   * 9. Exames / Documentos - laudos e imagens
+   * 10. Alertas Funcionais - restrições, contraindicações
+   * 11. Histórico / Linha do Tempo - cronologia
+   * 
+   * NÃO inclui: Prescrições médicas, Medicamentos, Procedimentos invasivos,
+   * Mapa Facial, Odontograma, Instrumentos Psicológicos
+   */
   {
     key: 'fisioterapia',
     name: 'Fisioterapia',
-    description: 'Avaliação funcional e exercícios aplicados',
+    description: 'Avaliação funcional, diagnóstico fisioterapêutico e acompanhamento de sessões',
     enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'conduta',
-      'exames',
-      'timeline',
-      'alertas',
-      'historico',
-      'procedimentos_realizados',
+      'resumo',           // 1. Visão Geral
+      'anamnese',         // 2. Anamnese
+      'exame_fisico',     // 3. Avaliação Funcional (reutilizado)
+      'diagnostico',      // 4. Diagnóstico Funcional
+      'conduta',          // 5. Plano Terapêutico
+      'evolucao',         // 6. Sessões de Fisioterapia
+      'exames',           // 7. Exames / Documentos
+      'alertas',          // 8. Alertas Funcionais
+      'timeline',         // 9. Histórico / Linha do Tempo
     ],
     icon: 'Activity',
   },
+  /**
+   * PILATES - Blocos clínicos (subconjunto de Fisioterapia)
+   * 
+   * Foco em avaliação postural e acompanhamento de exercícios
+   */
   {
     key: 'fisioterapia',
     name: 'Pilates',
     description: 'Avaliação postural e acompanhamento de sessões',
     enabledBlocks: [
       'resumo',
-      'evolucao',
-      'conduta',
+      'anamnese',
+      'exame_fisico',     // Avaliação Postural
+      'conduta',          // Plano de Exercícios
+      'evolucao',         // Sessões
       'exames',
-      'timeline',
       'alertas',
-      'historico',
-      'procedimentos_realizados',
+      'timeline',
     ],
     icon: 'Dumbbell',
   },

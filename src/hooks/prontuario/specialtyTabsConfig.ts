@@ -104,6 +104,17 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     timeline: 'Linha do Tempo',
     alertas: 'Alertas',
   },
+  fisioterapia: {
+    resumo: 'Visão Geral',
+    anamnese: 'Anamnese',
+    exame_fisico: 'Avaliação Funcional',
+    diagnostico: 'Diagnóstico Funcional',
+    conduta: 'Plano Terapêutico',
+    evolucao: 'Sessões',
+    exames: 'Exames / Documentos',
+    alertas: 'Alertas Funcionais',
+    timeline: 'Histórico / Linha do Tempo',
+  },
 };
 
 /**

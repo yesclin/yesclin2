@@ -1972,15 +1972,29 @@ export default function Prontuario() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
         <ProntuarioTabNav
-          items={navItems.map((item, index) => ({
-            id: item.id,
-            label: item.label,
-            icon: item.icon,
-            badge: item.id === 'alertas' ? activeAlerts.length : undefined,
-            badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" : "secondary",
-            // Mark tabs after index 6 as secondary (will go to "More" menu on mobile)
-            secondary: index >= 7,
-          } as TabNavItem))}
+          items={navItems.map((item) => {
+            // Primary tabs (always visible): Visão Geral, Anamnese, Evoluções/Sessões, Plano
+            const primaryTabIds = [
+              'resumo',           // Visão Geral
+              'anamnese',         // Anamnese
+              'evolucao',         // Evoluções / Sessões
+              'conduta',          // Plano / Conduta
+              'plano_alimentar',  // Plano Alimentar (Nutrição)
+              'plano_terapeutico', // Plano Terapêutico (Psicologia/Fisioterapia)
+            ];
+            
+            const isPrimaryTab = primaryTabIds.includes(item.id);
+            
+            return {
+              id: item.id,
+              label: item.label,
+              icon: item.icon,
+              badge: item.id === 'alertas' ? activeAlerts.length : undefined,
+              badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" : "secondary",
+              // Secondary tabs go to "More" menu on mobile
+              secondary: !isPrimaryTab,
+            } as TabNavItem;
+          })}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           criticalAlerts={criticalAlerts.length}

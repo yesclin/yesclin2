@@ -8,3 +8,4 @@ export * from './useAvaliacaoFuncionalData';
 export * from './useAvaliacaoDorData';
 export * from './useDiagnosticoFuncionalData';
 export * from './usePlanoTerapeuticoData';
+export * from './useSessoesFisioterapiaData';

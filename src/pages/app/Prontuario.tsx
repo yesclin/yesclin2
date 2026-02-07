@@ -1972,12 +1972,14 @@ export default function Prontuario() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
         <ProntuarioTabNav
-          items={navItems.map((item) => ({
+          items={navItems.map((item, index) => ({
             id: item.id,
             label: item.label,
             icon: item.icon,
             badge: item.id === 'alertas' ? activeAlerts.length : undefined,
             badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" : "secondary",
+            // Mark tabs after index 6 as secondary (will go to "More" menu on mobile)
+            secondary: index >= 7,
           } as TabNavItem))}
           activeTab={activeTab}
           onTabChange={setActiveTab}

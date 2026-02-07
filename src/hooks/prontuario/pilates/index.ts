@@ -68,3 +68,12 @@ export {
   type SessaoPilatesFormData,
   type ExercicioRealizado,
 } from './useSessoesPilatesData';
+
+export {
+  useExamesDocumentosPilatesData,
+  getEmptyUploadForm,
+  formatFileSize,
+  CATEGORIA_DOCUMENTO_OPTIONS,
+  type DocumentoPilates,
+  type UploadDocumentoFormData,
+} from './useExamesDocumentosPilatesData';

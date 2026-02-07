@@ -42,7 +42,9 @@ export function ProntuarioTabNav({
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
 
-  // Separate primary and secondary tabs for mobile "More" menu
+  // On mobile: ALL tabs are shown with horizontal scroll
+  // The "More" menu is ONLY used when explicitly requested via secondary flag
+  // and even then, secondary tabs remain accessible via Visão Geral hub
   const primaryItems = isMobile ? items.filter(item => !item.secondary) : items;
   const secondaryItems = isMobile ? items.filter(item => item.secondary) : [];
 

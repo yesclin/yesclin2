@@ -93,6 +93,7 @@ import { useActiveSpecialty } from "@/hooks/prontuario/useActiveSpecialty";
 import { isTabVisibleForSpecialty, getClinicalBlockLabel, type ClinicalBlockKey } from "@/hooks/prontuario/specialtyTabsConfig";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
 import { PatientHeader } from "@/components/prontuario/PatientHeader";
+import { ProntuarioHeader } from "@/components/prontuario/ProntuarioHeader";
 import { ProntuarioSearchBar, type SearchResult } from "@/components/prontuario/ProntuarioSearchBar";
 import { LgpdBlockingOverlay } from "@/components/prontuario/LgpdBlockingOverlay";
 import { ConsentCollectionDialog } from "@/components/prontuario/ConsentCollectionDialog";
@@ -1803,133 +1804,30 @@ export default function Prontuario() {
         />
       )}
 
-      {/* Header */}
-      <div className="flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Link to="/app/pacientes">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Voltar
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">
-                Prontuário
-                {activeSpecialty && (
-                  <span className="text-muted-foreground font-normal"> — {activeSpecialty.name}</span>
-                )}
-              </h1>
-            </div>
-            
-            {/* Specialty Selector */}
-            {patientId && (
-              <SpecialtySelector
-                activeSpecialty={activeSpecialty}
-                activeSpecialtyKey={activeSpecialtyKey}
-                specialties={specialties}
-                isFromAppointment={isSpecialtyFromAppointment}
-                onSelect={setActiveSpecialty}
-                loading={specialtyLoading}
-              />
-            )}
+      {/* Header Unificado */}
+      <ProntuarioHeader
+        patient={patient}
+        patientLoading={patientLoading}
+        activeSpecialty={activeSpecialty}
+        activeSpecialtyKey={activeSpecialtyKey}
+        specialties={specialties}
+        isSpecialtyFromAppointment={isSpecialtyFromAppointment}
+        specialtyLoading={specialtyLoading}
+        onSelectSpecialty={setActiveSpecialty}
+        criticalAlertsCount={criticalAlerts.length}
+        isLgpdPending={isEnforcementEnabled && !hasValidConsent}
+        hasActiveAppointment={hasActiveAppointment}
+        activeAppointment={activeAppointment}
+        appointmentLoading={appointmentLoading}
+        appointmentReason={appointmentReason}
+        isAdmin={isAdmin}
+        canPrint={canPerformAction('print_record')}
+        canExport={canPerformAction('export_pdf')}
+      />
 
-            {criticalAlerts.length > 0 && (
-              <Badge variant="destructive" className="animate-pulse">
-                {criticalAlerts.length} Alerta(s) Crítico(s)
-              </Badge>
-            )}
-            {/* LGPD Status Badge */}
-            {isEnforcementEnabled && !hasValidConsent && (
-              <Badge variant="outline" className="gap-1 text-destructive border-destructive">
-                <Lock className="h-3 w-3" />
-                LGPD Pendente
-              </Badge>
-            )}
-            {/* Active Appointment Status Badge */}
-            {hasActiveAppointment && activeAppointment && (
-              <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
-                <Activity className="h-3 w-3" />
-                Atendimento Ativo
-              </Badge>
-            )}
-            {/* Admin Override Badge - editing allowed without active appointment */}
-            {!hasActiveAppointment && !appointmentLoading && isAdmin && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="default" className="gap-1 bg-amber-600 hover:bg-amber-700">
-                      <Shield className="h-3 w-3" />
-                      Modo Administrador
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>Edição permitida para administradores mesmo sem atendimento ativo</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {/* Read-Only Badge - only show for non-admins without active appointment */}
-            {!hasActiveAppointment && !appointmentLoading && !isAdmin && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="gap-1 text-muted-foreground border-muted-foreground cursor-help">
-                      <ShieldX className="h-3 w-3" />
-                      Somente Leitura
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>{appointmentReason}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={!canPerformAction('print_record')}
-                  >
-                    <Printer className="h-4 w-4 mr-1" />
-                    Imprimir
-                  </Button>
-                </TooltipTrigger>
-                {!canPerformAction('print_record') && (
-                  <TooltipContent>Você não tem permissão para imprimir</TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={!canPerformAction('export_pdf')}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Exportar
-                  </Button>
-                </TooltipTrigger>
-                {!canPerformAction('export_pdf') && (
-                  <TooltipContent>Você não tem permissão para exportar</TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-            <Link to="/app/config/prontuario">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-1" />
-                Config
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Global Search Bar */}
-        {patientId && (
+      {/* Barra de Pesquisa Global */}
+      {patientId && (
+        <div className="px-4 py-2 border-b bg-background">
           <ProntuarioSearchBar
             entries={entries}
             files={files}
@@ -1938,35 +1836,8 @@ export default function Prontuario() {
             onNavigateToTab={handleNavigateToTab}
             className="max-w-2xl"
           />
-        )}
-      </div>
-
-      {/* Patient Header */}
-      <div className="p-4 border-b">
-        {patientLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : patient ? (
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary">
-                {patient.full_name.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold">{patient.full_name}</h2>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {patient.birth_date && (
-                  <span>{format(new Date(patient.birth_date), "dd/MM/yyyy")}</span>
-                )}
-                {patient.gender && <span>{patient.gender}</span>}
-                {patient.phone && <span>{patient.phone}</span>}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="text-muted-foreground">Paciente não encontrado</p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Main Content with Responsive Tab Navigation */}
       <div className="flex flex-col flex-1 overflow-hidden">

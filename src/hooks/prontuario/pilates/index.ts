@@ -57,3 +57,14 @@ export {
   type PlanoExerciciosPilatesFormData,
   type ExercicioPrescrito,
 } from './usePlanoExerciciosPilatesData';
+
+export {
+  useSessoesPilatesData,
+  getEmptySessaoForm,
+  createEmptyExercicioRealizado,
+  RESPOSTA_ALUNO_OPTIONS,
+  AJUSTES_COMUNS,
+  type SessaoPilatesData,
+  type SessaoPilatesFormData,
+  type ExercicioRealizado,
+} from './useSessoesPilatesData';

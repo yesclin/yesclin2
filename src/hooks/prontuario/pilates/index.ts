@@ -33,3 +33,15 @@ export {
   type AnamneseFuncionalPilatesData,
   type AnamneseFuncionalPilatesFormData,
 } from './useAnamneseFuncionalPilatesData';
+
+export {
+  useAvaliacaoPosturalPilatesData,
+  getEmptyAvaliacaoPosturalForm,
+  ALINHAMENTO_OPTIONS,
+  REGIOES_POSTURAIS,
+  DESVIOS_POSTURAIS_OPTIONS,
+  ENCURTAMENTOS_OPTIONS,
+  type AvaliacaoPosturalPilatesData,
+  type AvaliacaoPosturalPilatesFormData,
+  type ImagemPostural,
+} from './useAvaliacaoPosturalPilatesData';

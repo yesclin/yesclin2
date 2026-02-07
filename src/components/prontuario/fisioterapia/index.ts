@@ -10,3 +10,4 @@ export { DiagnosticoFuncionalBlock } from './DiagnosticoFuncionalBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
 export { SessoesFisioterapiaBlock } from './SessoesFisioterapiaBlock';
 export { ExerciciosPrescritosBlock } from './ExerciciosPrescritosBlock';
+export { ExamesDocumentosBlock } from './ExamesDocumentosBlock';

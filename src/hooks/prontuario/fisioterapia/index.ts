@@ -10,3 +10,4 @@ export * from './useDiagnosticoFuncionalData';
 export * from './usePlanoTerapeuticoData';
 export * from './useSessoesFisioterapiaData';
 export * from './useExerciciosPrescritosData';
+export * from './useExamesDocumentosData';

@@ -37,6 +37,10 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
     chronic_diseases: [],
     current_medications: [],
     blood_type: null,
+    total_evolutions: 0,
+    last_evolution_date: null,
+    pending_prescriptions: 0,
+    total_exams: 0,
   });
   const [alerts, setAlerts] = useState<ClinicalAlertItem[]>([]);
   const [lastAppointment, setLastAppointment] = useState<LastAppointmentData | null>(null);
@@ -51,6 +55,10 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
         chronic_diseases: [],
         current_medications: [],
         blood_type: null,
+        total_evolutions: 0,
+        last_evolution_date: null,
+        pending_prescriptions: 0,
+        total_exams: 0,
       });
       setAlerts([]);
       setLastAppointment(null);
@@ -72,8 +80,7 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
       if (patientError) throw patientError;
       setPatient(patientData as PatientBasicData);
 
-      // Fetch clinical data from patient_clinical_data table if it exists
-      // For now, we'll use clinical_alerts to extract some info
+      // Fetch clinical alerts
       const { data: alertsData, error: alertsError } = await supabase
         .from('clinical_alerts')
         .select('id, title, severity, alert_type, description, is_active')
@@ -106,11 +113,33 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
         .filter(a => a.alert_type === 'medication' || a.alert_type === 'continuous_medication')
         .map(a => a.title);
 
+      // Fetch evolutions count and last date
+      const { data: evolutionsData, error: evolutionsError } = await supabase
+        .from('clinical_evolutions')
+        .select('id, created_at')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .order('created_at', { ascending: false });
+
+      const totalEvolutions = evolutionsData?.length ?? 0;
+      const lastEvolutionDate = evolutionsData?.[0]?.created_at ?? null;
+
+      // Fetch medical record files count (exams/documents)
+      const { count: examsCount, error: examsError } = await supabase
+        .from('medical_record_files')
+        .select('id', { count: 'exact', head: true })
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id);
+
       setClinicalData({
         allergies,
         chronic_diseases: chronicDiseases,
         current_medications: medications,
-        blood_type: null, // Would come from a separate field
+        blood_type: null,
+        total_evolutions: totalEvolutions,
+        last_evolution_date: lastEvolutionDate,
+        pending_prescriptions: 0, // TODO: implement when prescriptions have status
+        total_exams: examsCount ?? 0,
       });
 
       // Fetch last appointment

@@ -4,3 +4,4 @@
 
 export { VisaoGeralPilatesBlock } from './VisaoGeralPilatesBlock';
 export { AvaliacaoFuncionalPilatesBlock } from './AvaliacaoFuncionalPilatesBlock';
+export { AnamneseFuncionalPilatesBlock } from './AnamneseFuncionalPilatesBlock';

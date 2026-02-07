@@ -43,6 +43,7 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   // Fisioterapia-specific blocks
   avaliacao_funcional: 'Avaliação Funcional',
   avaliacao_dor: 'Avaliação de Dor',
+  exercicios_prescritos: 'Exercícios Prescritos',
 };
 
 // All available clinical block keys
@@ -115,6 +116,7 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     diagnostico: 'Diagnóstico Funcional',
     conduta: 'Plano Terapêutico',
     evolucao: 'Sessões',
+    exercicios_prescritos: 'Exercícios Prescritos',
     exames: 'Exames / Documentos',
     alertas: 'Alertas Funcionais',
     timeline: 'Histórico / Linha do Tempo',

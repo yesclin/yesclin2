@@ -42,7 +42,8 @@ export type ClinicalBlockKey =
   | 'plano_alimentar'          // Plano Alimentar
   // Fisioterapia-specific blocks
   | 'avaliacao_funcional'      // Avaliação Funcional (força, ADM, postura)
-  | 'avaliacao_dor';           // Avaliação de Dor (EVA, localização)
+  | 'avaliacao_dor'            // Avaliação de Dor (EVA, localização)
+  | 'exercicios_prescritos';   // Exercícios Prescritos (programa domiciliar)
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -219,9 +220,10 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
       'diagnostico',         // 5. Diagnóstico Funcional
       'conduta',             // 6. Plano Terapêutico
       'evolucao',            // 7. Sessões de Fisioterapia
-      'exames',              // 8. Exames / Documentos
-      'alertas',             // 9. Alertas Funcionais
-      'timeline',            // 10. Histórico / Linha do Tempo
+      'exercicios_prescritos', // 8. Exercícios Prescritos
+      'exames',              // 9. Exames / Documentos
+      'alertas',             // 10. Alertas Funcionais
+      'timeline',            // 11. Histórico / Linha do Tempo
     ],
     icon: 'Activity',
   },

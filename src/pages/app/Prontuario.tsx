@@ -272,6 +272,8 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   aesthetic_consent: 'consentimentos', // Map aesthetic consent to consentimentos
   // Physiotherapy tabs - map to appropriate permissions
   functional_assessment: 'anamnese',
+  avaliacao_funcional: 'anamnese',
+  avaliacao_dor: 'anamnese',
   chief_complaint: 'anamnese',
   pain_scale: 'anamnese',
   range_of_motion: 'anamnese',
@@ -346,7 +348,9 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'consent_form', label: 'Termo de Consentimento', icon: FileCheck },
   { id: 'facial_map', label: 'Mapa Facial', icon: MapPin },
   { id: 'aesthetic_consent', label: 'Termos Estéticos', icon: FileCheck },
-  // Physiotherapy tabs
+  // Physiotherapy tabs (using correct system IDs)
+  { id: 'avaliacao_funcional', label: 'Avaliação Funcional', icon: PersonStanding },
+  { id: 'avaliacao_dor', label: 'Avaliação de Dor', icon: Gauge },
   { id: 'functional_assessment', label: 'Avaliação Funcional', icon: PersonStanding },
   { id: 'chief_complaint', label: 'Queixa Principal', icon: MessageSquare },
   { id: 'pain_scale', label: 'Escala de Dor', icon: Gauge },
@@ -999,17 +1003,6 @@ export default function Prontuario() {
         );
 
       case 'exame_fisico':
-        // Fisioterapia - Avaliação Funcional
-        if (activeSpecialtyKey === 'fisioterapia') {
-          return (
-            <AvaliacaoFuncionalBlock
-              patientId={patientId}
-              clinicId={clinicIdForFisio || null}
-              professionalId={currentProfessionalId || null}
-              canEdit={canEditCurrentTab}
-            />
-          );
-        }
         // Clínica Geral - Exame Físico (sinais vitais, medidas)
         return (
           <ExameFisicoBlock
@@ -1021,6 +1014,28 @@ export default function Prontuario() {
             currentProfessionalId={exameProfId || undefined}
             currentProfessionalName={exameProfName || undefined}
             onSave={saveExameFisico}
+          />
+        );
+
+      case 'avaliacao_funcional':
+        // Fisioterapia - Avaliação Funcional (força, ADM, postura)
+        return (
+          <AvaliacaoFuncionalBlock
+            patientId={patientId}
+            clinicId={clinicIdForFisio || null}
+            professionalId={currentProfessionalId || null}
+            canEdit={canEditCurrentTab}
+          />
+        );
+
+      case 'avaliacao_dor':
+        // Fisioterapia - Avaliação de Dor (EVA, localização)
+        return (
+          <AvaliacaoDorBlock
+            patientId={patientId}
+            clinicId={clinicIdForFisio || null}
+            professionalId={currentProfessionalId || null}
+            canEdit={canEditCurrentTab}
           />
         );
 

@@ -35,11 +35,14 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   facial_map: 'Mapa Facial',
   odontograma: 'Odontograma Digital',
   instrumentos: 'Instrumentos / Testes',
-// Nutrition-specific blocks (10 blocos - ordem fixa para menu lateral)
+  // Nutrition-specific blocks
   avaliacao_nutricional: 'Avaliação Nutricional Inicial',
   avaliacao_clinica: 'Avaliação Antropométrica',
   diagnostico_nutricional: 'Diagnóstico Nutricional',
   plano_alimentar: 'Plano Alimentar',
+  // Fisioterapia-specific blocks
+  avaliacao_funcional: 'Avaliação Funcional',
+  avaliacao_dor: 'Avaliação de Dor',
 };
 
 // All available clinical block keys
@@ -107,7 +110,8 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
   fisioterapia: {
     resumo: 'Visão Geral',
     anamnese: 'Anamnese',
-    exame_fisico: 'Avaliação Funcional',
+    avaliacao_funcional: 'Avaliação Funcional',
+    avaliacao_dor: 'Avaliação de Dor',
     diagnostico: 'Diagnóstico Funcional',
     conduta: 'Plano Terapêutico',
     evolucao: 'Sessões',

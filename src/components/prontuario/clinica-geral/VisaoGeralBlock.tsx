@@ -16,10 +16,13 @@ import {
   Calendar,
   Activity,
   Target,
+  Info,
   type LucideIcon
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
+import { YESCLIN_SPECIALTY_LABELS } from "@/hooks/prontuario/yesclinSpecialties";
 
 /**
  * Dados do paciente para exibição na Visão Geral
@@ -79,6 +82,10 @@ interface VisaoGeralBlockProps {
   lastAppointment: LastAppointmentData | null;
   loading?: boolean;
   onNavigateToModule?: (moduleKey: string) => void;
+  /** Specialty key for context indication */
+  activeSpecialtyKey?: SpecialtyKey;
+  /** Specialty display name (optional, will use YESCLIN_SPECIALTY_LABELS if not provided) */
+  activeSpecialtyName?: string;
 }
 
 /**
@@ -153,11 +160,16 @@ export function VisaoGeralBlock({
   alerts,
   lastAppointment,
   loading = false,
-  onNavigateToModule
+  onNavigateToModule,
+  activeSpecialtyKey = 'geral',
+  activeSpecialtyName,
 }: VisaoGeralBlockProps) {
   
   const activeAlerts = alerts.filter(a => a.is_active);
   const criticalAlerts = activeAlerts.filter(a => a.severity === 'critical');
+  
+  // Resolve display name for specialty
+  const specialtyDisplayName = activeSpecialtyName || YESCLIN_SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
 
   if (loading) {
     return (
@@ -187,10 +199,19 @@ export function VisaoGeralBlock({
 
   return (
     <div className="space-y-4">
-      {/* Aviso de somente leitura */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-        <Activity className="h-3.5 w-3.5" />
-        <span>Clique nos cards para acessar os módulos</span>
+      {/* Context: Specialty indicator */}
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Activity className="h-3.5 w-3.5" />
+          <span>Clique nos cards para acessar os módulos</span>
+        </div>
+        
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+          <Info className="h-3 w-3" />
+          <span>
+            Módulos exibidos: <span className="font-medium text-primary">{specialtyDisplayName}</span>
+          </span>
+        </div>
       </div>
 
       {/* Grid de Cards de Resumo */}

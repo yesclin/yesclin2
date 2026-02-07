@@ -151,6 +151,7 @@ import {
   useDiagnosticoFuncionalData,
   usePlanoTerapeuticoData as usePlanoTerapeuticoFisioData,
   useSessoesFisioterapiaData,
+  useExerciciosPrescritosData,
   useAlertasFuncionaisData,
 } from "@/hooks/prontuario/fisioterapia";
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
@@ -274,6 +275,7 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   functional_assessment: 'anamnese',
   avaliacao_funcional: 'anamnese',
   avaliacao_dor: 'anamnese',
+  exercicios_prescritos: 'procedimentos',
   chief_complaint: 'anamnese',
   pain_scale: 'anamnese',
   range_of_motion: 'anamnese',
@@ -351,6 +353,7 @@ const DEFAULT_NAV_ITEMS = [
   // Physiotherapy tabs (using correct system IDs)
   { id: 'avaliacao_funcional', label: 'Avaliação Funcional', icon: PersonStanding },
   { id: 'avaliacao_dor', label: 'Avaliação de Dor', icon: Gauge },
+  { id: 'exercicios_prescritos', label: 'Exercícios Prescritos', icon: Dumbbell },
   { id: 'functional_assessment', label: 'Avaliação Funcional', icon: PersonStanding },
   { id: 'chief_complaint', label: 'Queixa Principal', icon: MessageSquare },
   { id: 'pain_scale', label: 'Escala de Dor', icon: Gauge },
@@ -753,6 +756,13 @@ export default function Prontuario() {
     professionalId: currentProfessionalId || null,
   });
 
+  // Exercícios Prescritos Fisioterapia Data
+  const fisioExercicios = useExerciciosPrescritosData({ 
+    patientId, 
+    clinicId: clinicIdForFisio || null,
+    professionalId: currentProfessionalId || null,
+  });
+
   // Alertas Funcionais Data
   const fisioAlertas = useAlertasFuncionaisData({ 
     patientId, 
@@ -1032,6 +1042,17 @@ export default function Prontuario() {
         // Fisioterapia - Avaliação de Dor (EVA, localização)
         return (
           <AvaliacaoDorBlock
+            patientId={patientId}
+            clinicId={clinicIdForFisio || null}
+            professionalId={currentProfessionalId || null}
+            canEdit={canEditCurrentTab}
+          />
+        );
+
+      case 'exercicios_prescritos':
+        // Fisioterapia - Exercícios Prescritos (programa domiciliar)
+        return (
+          <ExerciciosPrescritosBlock
             patientId={patientId}
             clinicId={clinicIdForFisio || null}
             professionalId={currentProfessionalId || null}

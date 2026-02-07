@@ -291,126 +291,206 @@ export function VisaoGeralBlock({
         </CardHeader>
       </Card>
 
-      {/* Grid de Módulos Conectados */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        
-        {/* Evoluções */}
-        <ModuleCard
-          title="Evoluções"
-          icon={FileText}
-          moduleKey="evolucao"
-          onNavigate={onNavigateToModule}
-          hasData={(clinicalData.total_evolutions ?? 0) > 0}
-        >
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">
-              {clinicalData.total_evolutions ?? 0}
-            </span>
-            <span className="text-muted-foreground text-sm">registros</span>
-          </div>
-          {clinicalData.last_evolution_date && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Última em {format(parseISO(clinicalData.last_evolution_date), "dd/MM/yyyy", { locale: ptBR })}
-            </p>
-          )}
-          {!clinicalData.total_evolutions && (
-            <p className="text-xs text-muted-foreground">Nenhuma evolução registrada</p>
-          )}
-        </ModuleCard>
-
-        {/* Anamnese */}
-        <ModuleCard
-          title="Anamnese"
-          icon={ClipboardList}
-          moduleKey="anamnese"
-          onNavigate={onNavigateToModule}
-          hasData={true}
-        >
-          <p className="text-sm text-muted-foreground">
-            Histórico médico e queixa principal
-          </p>
-          <Button 
-            variant="link" 
-            className="p-0 h-auto text-xs text-primary mt-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigateToModule?.('anamnese');
-            }}
+      {/* Grid de Módulos Conectados - Primários */}
+      <div>
+        <h3 className="text-sm font-medium text-muted-foreground mb-3">Módulos Principais</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          
+          {/* Evoluções */}
+          <ModuleCard
+            title="Evoluções"
+            icon={FileText}
+            moduleKey="evolucao"
+            onNavigate={onNavigateToModule}
+            hasData={(clinicalData.total_evolutions ?? 0) > 0}
           >
-            Acessar anamnese →
-          </Button>
-        </ModuleCard>
-
-        {/* Exame Físico */}
-        <ModuleCard
-          title="Exame Físico"
-          icon={Stethoscope}
-          moduleKey="exame_fisico"
-          onNavigate={onNavigateToModule}
-          hasData={true}
-        >
-          <p className="text-sm text-muted-foreground">
-            Sinais vitais e medidas antropométricas
-          </p>
-          <Button 
-            variant="link" 
-            className="p-0 h-auto text-xs text-primary mt-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigateToModule?.('exame_fisico');
-            }}
-          >
-            Acessar exame físico →
-          </Button>
-        </ModuleCard>
-
-        {/* Prescrições */}
-        <ModuleCard
-          title="Prescrições"
-          icon={Pill}
-          moduleKey="prescricoes"
-          onNavigate={onNavigateToModule}
-          hasData={(clinicalData.pending_prescriptions ?? 0) > 0 || true}
-        >
-          {(clinicalData.pending_prescriptions ?? 0) > 0 ? (
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{clinicalData.pending_prescriptions} pendentes</Badge>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold">
+                {clinicalData.total_evolutions ?? 0}
+              </span>
+              <span className="text-muted-foreground text-sm">registros</span>
             </div>
-          ) : (
+            {clinicalData.last_evolution_date && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Última em {format(parseISO(clinicalData.last_evolution_date), "dd/MM/yyyy", { locale: ptBR })}
+              </p>
+            )}
+            {!clinicalData.total_evolutions && (
+              <p className="text-xs text-muted-foreground">Nenhuma evolução registrada</p>
+            )}
+          </ModuleCard>
+
+          {/* Anamnese */}
+          <ModuleCard
+            title="Anamnese"
+            icon={ClipboardList}
+            moduleKey="anamnese"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
             <p className="text-sm text-muted-foreground">
-              Receitas e medicamentos
+              Histórico médico e queixa principal
             </p>
-          )}
-        </ModuleCard>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-xs text-primary mt-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToModule?.('anamnese');
+              }}
+            >
+              Acessar anamnese →
+            </Button>
+          </ModuleCard>
 
-        {/* Exames / Documentos */}
-        <ModuleCard
-          title="Exames / Documentos"
-          icon={Paperclip}
-          moduleKey="exames"
-          onNavigate={onNavigateToModule}
-          hasData={(clinicalData.total_exams ?? 0) > 0}
-        >
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">
-              {clinicalData.total_exams ?? 0}
-            </span>
-            <span className="text-muted-foreground text-sm">arquivos</span>
-          </div>
-        </ModuleCard>
+          {/* Plano / Conduta */}
+          <ModuleCard
+            title="Plano / Conduta"
+            icon={Activity}
+            moduleKey="conduta"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
+            <p className="text-sm text-muted-foreground">
+              Orientações e condutas terapêuticas
+            </p>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-xs text-primary mt-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToModule?.('conduta');
+              }}
+            >
+              Acessar plano →
+            </Button>
+          </ModuleCard>
 
-        {/* Linha do Tempo */}
-        <ModuleCard
-          title="Linha do Tempo"
-          icon={History}
-          moduleKey="timeline"
-          onNavigate={onNavigateToModule}
-          hasData={true}
-        >
-          <p className="text-sm text-muted-foreground">
-            Histórico cronológico de atendimentos
-          </p>
-        </ModuleCard>
+          {/* Exame Físico */}
+          <ModuleCard
+            title="Exame Físico"
+            icon={Stethoscope}
+            moduleKey="exame_fisico"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
+            <p className="text-sm text-muted-foreground">
+              Sinais vitais e medidas antropométricas
+            </p>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-xs text-primary mt-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToModule?.('exame_fisico');
+              }}
+            >
+              Acessar exame físico →
+            </Button>
+          </ModuleCard>
+
+          {/* Prescrições */}
+          <ModuleCard
+            title="Prescrições"
+            icon={Pill}
+            moduleKey="prescricoes"
+            onNavigate={onNavigateToModule}
+            hasData={(clinicalData.pending_prescriptions ?? 0) > 0 || true}
+          >
+            {(clinicalData.pending_prescriptions ?? 0) > 0 ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{clinicalData.pending_prescriptions} pendentes</Badge>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Receitas e medicamentos
+              </p>
+            )}
+          </ModuleCard>
+
+          {/* Diagnóstico */}
+          <ModuleCard
+            title="Diagnóstico"
+            icon={Stethoscope}
+            moduleKey="diagnostico"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
+            <p className="text-sm text-muted-foreground">
+              Hipóteses diagnósticas e CID
+            </p>
+          </ModuleCard>
+        </div>
+      </div>
+
+      {/* Grid de Módulos Conectados - Secundários */}
+      <div>
+        <h3 className="text-sm font-medium text-muted-foreground mb-3">Outros Módulos</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          
+          {/* Exames / Documentos */}
+          <ModuleCard
+            title="Exames / Documentos"
+            icon={Paperclip}
+            moduleKey="exames"
+            onNavigate={onNavigateToModule}
+            hasData={(clinicalData.total_exams ?? 0) > 0}
+          >
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold">
+                {clinicalData.total_exams ?? 0}
+              </span>
+              <span className="text-muted-foreground text-sm">arquivos</span>
+            </div>
+          </ModuleCard>
+
+          {/* Linha do Tempo */}
+          <ModuleCard
+            title="Linha do Tempo"
+            icon={History}
+            moduleKey="timeline"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
+            <p className="text-sm text-muted-foreground">
+              Histórico cronológico
+            </p>
+          </ModuleCard>
+
+          {/* Alertas */}
+          <ModuleCard
+            title="Alertas"
+            icon={AlertTriangle}
+            moduleKey="alertas"
+            onNavigate={onNavigateToModule}
+            hasData={activeAlerts.length > 0}
+          >
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold">
+                {activeAlerts.length}
+              </span>
+              <span className="text-muted-foreground text-sm">ativos</span>
+            </div>
+            {criticalAlerts.length > 0 && (
+              <Badge variant="destructive" className="text-xs mt-1">
+                {criticalAlerts.length} críticos
+              </Badge>
+            )}
+          </ModuleCard>
+
+          {/* Histórico */}
+          <ModuleCard
+            title="Histórico"
+            icon={Clock}
+            moduleKey="historico"
+            onNavigate={onNavigateToModule}
+            hasData={true}
+          >
+            <p className="text-sm text-muted-foreground">
+              Auditoria e registros
+            </p>
+          </ModuleCard>
+        </div>
       </div>
 
       {/* Card: Informações Clínicas */}

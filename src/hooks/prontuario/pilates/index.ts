@@ -77,3 +77,13 @@ export {
   type DocumentoPilates,
   type UploadDocumentoFormData,
 } from './useExamesDocumentosPilatesData';
+
+export {
+  useAlertasFuncionaisPilatesData,
+  getEmptyAlertaForm,
+  alertaToFormData,
+  TIPO_ALERTA_OPTIONS,
+  SEVERIDADE_OPTIONS,
+  type AlertaFuncionalPilates,
+  type AlertaFuncionalFormData,
+} from './useAlertasFuncionaisPilatesData';

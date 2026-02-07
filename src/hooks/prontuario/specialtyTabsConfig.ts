@@ -69,6 +69,7 @@ export const SPECIALTY_TABS: Record<SpecialtyKey, ClinicalBlockKey[]> = {
   nutricao: [],
   estetica: ['facial_map', 'procedimentos_realizados', 'produtos_utilizados', 'before_after_photos', 'termos_consentimentos'],
   fisioterapia: ['procedimentos_realizados'],
+  pilates: ['avaliacao_funcional'],
   pediatria: [],
   ginecologia: [],
   oftalmologia: [],
@@ -120,6 +121,16 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     exames: 'Exames / Documentos',
     alertas: 'Alertas Funcionais',
     timeline: 'Histórico / Linha do Tempo',
+  },
+  pilates: {
+    resumo: 'Visão Geral',
+    anamnese: 'Anamnese',
+    avaliacao_funcional: 'Avaliação Funcional',
+    conduta: 'Plano de Exercícios',
+    evolucao: 'Sessões de Pilates',
+    exames: 'Documentos',
+    alertas: 'Alertas / Restrições',
+    timeline: 'Histórico',
   },
 };
 

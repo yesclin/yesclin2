@@ -14,6 +14,7 @@ export type SpecialtyKey =
   | 'nutricao'        // Nutrição
   | 'estetica'        // Estética
   | 'fisioterapia'    // Fisioterapia
+  | 'pilates'         // Pilates (independente)
   | 'pediatria'       // Pediatria
   | 'ginecologia'     // Ginecologia (not in supported list)
   | 'oftalmologia'    // Oftalmologia (not in supported list)

@@ -136,6 +136,18 @@ import {
   AlertasFuncionaisBanner,
   HistoricoFisioterapiaBlock,
 } from "@/components/prontuario/fisioterapia";
+import {
+  VisaoGeralPilatesBlock,
+  AnamneseFuncionalPilatesBlock,
+  AvaliacaoFuncionalPilatesBlock,
+  AvaliacaoPosturalPilatesBlock,
+  PlanoExerciciosPilatesBlock,
+  SessoesPilatesBlock,
+  ExamesDocumentosPilatesBlock,
+  AlertasFuncionaisPilatesBlock,
+  AlertasFuncionaisBanner as AlertasFuncionaisBannerPilates,
+  HistoricoPilatesBlock,
+} from "@/components/prontuario/pilates";
 import { 
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
@@ -156,6 +168,7 @@ import {
   useExerciciosPrescritosData,
   useAlertasFuncionaisData,
 } from "@/hooks/prontuario/fisioterapia";
+// Pilates hooks are NOT imported here - components use hooks internally
 import { useConsentTerms, usePatientConsents } from "@/hooks/lgpd";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -772,6 +785,8 @@ export default function Prontuario() {
     professionalId: currentProfessionalId || null,
   });
 
+  // Pilates hooks are NOT needed here - components use hooks internally
+
 
   // Wrap permission checks to respect the enable_tab_permissions setting
   const canViewTab = (tabKey: TabKey): boolean => {
@@ -954,6 +969,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <VisaoGeralPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              canEdit={canEditCurrentTab}
+              onNavigateToModule={(moduleKey) => setActiveTab(moduleKey)}
+            />
+          );
+        }
         // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
@@ -1005,6 +1030,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <AnamneseFuncionalPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Anamnese com versionamento
         return (
           <AnamneseBlock
@@ -1033,6 +1068,17 @@ export default function Prontuario() {
         );
 
       case 'avaliacao_funcional':
+        // Fisioterapia / Pilates - Avaliação Funcional
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <AvaliacaoFuncionalPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Fisioterapia - Avaliação Funcional (força, ADM, postura)
         return (
           <AvaliacaoFuncionalBlock
@@ -1137,6 +1183,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <SessoesPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Evoluções Clínicas
         return (
           <EvolucoesBlock
@@ -1190,6 +1246,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <PlanoExerciciosPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Plano / Conduta
         return (
           <CondutaBlock
@@ -1221,6 +1287,17 @@ export default function Prontuario() {
       // case 'evolucao_corporal' removed - not in Nutrition menu
 
       case 'exames':
+        // Specialty-specific documents block
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <ExamesDocumentosPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Exames / Documentos
         return (
           <DocumentosBlock
@@ -1310,6 +1387,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <AlertasFuncionaisPilatesBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1360,6 +1447,14 @@ export default function Prontuario() {
         if (activeSpecialtyKey === 'fisioterapia') {
           return (
             <HistoricoFisioterapiaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'pilates') {
+          return (
+            <HistoricoPilatesBlock
               patientId={patientId}
               clinicId={clinicIdForFisio || null}
             />

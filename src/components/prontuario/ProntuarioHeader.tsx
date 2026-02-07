@@ -12,12 +12,20 @@ import {
   Shield, 
   ShieldX, 
   Activity,
-  AlertTriangle 
+  AlertTriangle,
+  MoreVertical,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { differenceInYears, parseISO } from "date-fns";
 import { SpecialtySelector } from "./SpecialtySelector";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SpecialtyOption, SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
 
 interface PatientInfo {
@@ -57,11 +65,8 @@ interface ProntuarioHeaderProps {
 /**
  * Cabeçalho unificado do prontuário
  * 
- * Exibe de forma compacta:
- * - Nome do paciente + idade
- * - Status do atendimento
- * - Especialidade ativa (com seletor)
- * - Botões de ação: Imprimir, Exportar, Config
+ * Mobile: Layout compacto com menu de ações em dropdown
+ * Desktop: Layout completo com todos os elementos visíveis
  */
 export function ProntuarioHeader({
   patient,
@@ -83,6 +88,7 @@ export function ProntuarioHeader({
   canExport = true,
   className,
 }: ProntuarioHeaderProps) {
+  const isMobile = useIsMobile();
 
   const calculateAge = (birthDate: string | null): number | null => {
     if (!birthDate) return null;
@@ -108,8 +114,8 @@ export function ProntuarioHeader({
 
   if (patientLoading) {
     return (
-      <div className={cn("flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20", className)}>
-        <Skeleton className="h-12 w-full" />
+      <div className={cn("flex flex-col gap-2 p-3 border-b bg-background/95 backdrop-blur sticky top-0 z-20", className)}>
+        <Skeleton className="h-10 w-full" />
       </div>
     );
   }
@@ -117,6 +123,122 @@ export function ProntuarioHeader({
   const age = patient ? calculateAge(patient.birth_date) : null;
   const gender = patient ? formatGender(patient.gender) : null;
 
+  // Status badge único para mobile (prioriza o mais importante)
+  const getPrimaryStatusBadge = () => {
+    if (criticalAlertsCount > 0) {
+      return (
+        <Badge variant="destructive" className="animate-pulse gap-0.5 h-5 text-[10px] px-1.5">
+          <AlertTriangle className="h-3 w-3" />
+          {criticalAlertsCount}
+        </Badge>
+      );
+    }
+    if (hasActiveAppointment && activeAppointment) {
+      return (
+        <Badge className="gap-0.5 bg-emerald-600 text-white h-5 text-[10px] px-1.5">
+          <Activity className="h-3 w-3" />
+          Ativo
+        </Badge>
+      );
+    }
+    if (isAdmin) {
+      return (
+        <Badge className="gap-0.5 bg-amber-600 text-white h-5 text-[10px] px-1.5">
+          <Shield className="h-3 w-3" />
+          Admin
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  // Mobile Layout - Super compacto
+  if (isMobile) {
+    return (
+      <div className={cn(
+        "flex flex-col gap-2 px-3 py-2 border-b bg-background/95 backdrop-blur sticky top-0 z-20",
+        className
+      )}>
+        {/* Linha 1: Voltar + Nome + Menu */}
+        <div className="flex items-center gap-2">
+          <Link to="/app/pacientes">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          
+          <div className="flex-1 min-w-0">
+            {patient ? (
+              <div className="flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                <h1 className="text-sm font-semibold truncate">
+                  {patient.full_name}
+                </h1>
+                {age !== null && (
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    ({age}a)
+                  </span>
+                )}
+              </div>
+            ) : (
+              <h1 className="text-sm font-semibold">Prontuário</h1>
+            )}
+          </div>
+
+          {/* Status Badge (único) */}
+          {getPrimaryStatusBadge()}
+
+          {/* Menu de ações */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem disabled={!canPrint}>
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!canExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/app/config/prontuario" className="flex items-center">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurações
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Linha 2: Especialidade + LGPD (se houver) */}
+        {patient && (
+          <div className="flex items-center gap-2">
+            <SpecialtySelector
+              activeSpecialty={activeSpecialty}
+              activeSpecialtyKey={activeSpecialtyKey}
+              specialties={specialties}
+              isFromAppointment={isSpecialtyFromAppointment}
+              onSelect={onSelectSpecialty}
+              loading={specialtyLoading}
+            />
+            
+            {isLgpdPending && (
+              <Badge variant="outline" className="gap-0.5 text-destructive border-destructive h-5 text-[10px] px-1.5">
+                <Lock className="h-3 w-3" />
+                LGPD
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/Tablet Layout - Completo
   return (
     <div className={cn(
       "flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20",

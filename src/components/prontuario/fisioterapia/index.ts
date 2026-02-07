@@ -12,3 +12,4 @@ export { SessoesFisioterapiaBlock } from './SessoesFisioterapiaBlock';
 export { ExerciciosPrescritosBlock } from './ExerciciosPrescritosBlock';
 export { ExamesDocumentosBlock } from './ExamesDocumentosBlock';
 export { AlertasFuncionaisBlock, AlertasFuncionaisBanner } from './AlertasFuncionaisBlock';
+export { HistoricoFisioterapiaBlock } from './HistoricoFisioterapiaBlock';

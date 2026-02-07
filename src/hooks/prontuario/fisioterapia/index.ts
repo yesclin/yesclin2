@@ -12,3 +12,4 @@ export * from './useSessoesFisioterapiaData';
 export * from './useExerciciosPrescritosData';
 export * from './useExamesDocumentosData';
 export * from './useAlertasFuncionaisData';
+export * from './useHistoricoFisioterapiaData';

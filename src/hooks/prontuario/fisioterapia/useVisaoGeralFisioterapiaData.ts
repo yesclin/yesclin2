@@ -193,28 +193,55 @@ export function useVisaoGeralFisioterapiaData({ patientId, clinicId }: UseVisaoG
     enabled: !!patientId && !!clinicId,
   });
 
-  // Buscar alertas funcionais ativos
+  // Buscar alertas funcionais ativos (da tabela clinical_evolutions)
   const alertsQuery = useQuery({
     queryKey: ['fisioterapia-alerts', patientId, clinicId],
     queryFn: async () => {
       if (!patientId || !clinicId) return [];
 
+      // Buscar alertas funcionais salvos como evoluções
       const { data, error } = await supabase
-        .from('clinical_alerts')
-        .select('id, title, description, severity, alert_type, created_at')
+        .from('clinical_evolutions')
+        .select('id, content, created_at')
         .eq('patient_id', patientId)
         .eq('clinic_id', clinicId)
-        .eq('is_active', true)
-        .in('alert_type', ['funcional', 'precaucao', 'contraindicacao', 'risco'])
-        .order('severity', { ascending: true })
+        .eq('evolution_type', 'alerta_funcional_fisio')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return (data || []).map(alert => ({
-        ...alert,
-        severity: alert.severity as 'critical' | 'warning' | 'info',
-      })) as FisioterapiaAlert[];
+      // Filtrar apenas alertas ativos e mapear para o formato esperado
+      return (data || [])
+        .map(record => {
+          const content = record.content as Record<string, unknown> | null;
+          if (!content) return null;
+          
+          const isAtivo = content.is_ativo as boolean ?? true;
+          if (!isAtivo) return null;
+
+          const severidade = content.severidade as string || 'moderado';
+          let mappedSeverity: 'critical' | 'warning' | 'info' = 'info';
+          if (severidade === 'critico' || severidade === 'alto') {
+            mappedSeverity = 'critical';
+          } else if (severidade === 'moderado') {
+            mappedSeverity = 'warning';
+          }
+
+          return {
+            id: record.id,
+            title: (content.titulo as string) || 'Alerta',
+            description: (content.descricao as string) || null,
+            severity: mappedSeverity,
+            alert_type: (content.tipo as string) || 'funcional',
+            created_at: record.created_at,
+          } as FisioterapiaAlert;
+        })
+        .filter((alert): alert is FisioterapiaAlert => alert !== null)
+        .sort((a, b) => {
+          // Ordenar por severidade (crítico primeiro)
+          const severityOrder = { critical: 0, warning: 1, info: 2 };
+          return severityOrder[a.severity] - severityOrder[b.severity];
+        });
     },
     enabled: !!patientId && !!clinicId,
   });

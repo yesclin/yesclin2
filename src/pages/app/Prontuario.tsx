@@ -1967,32 +1967,41 @@ export default function Prontuario() {
       {/* Main Content with Horizontal Tab Navigation */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Horizontal Tab Navigation - All screen sizes */}
-        <div className="w-full border-b bg-background sticky top-0 z-10">
+        <div className="w-full border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
           <ScrollArea className="w-full">
-            <nav className="flex p-2 gap-1 min-w-max">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors",
-                    activeTab === item.id 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  <span>{item.label}</span>
-                  {item.id === 'alertas' && activeAlerts.length > 0 && (
-                    <Badge 
-                      variant={criticalAlerts.length > 0 ? "destructive" : "secondary"}
-                      className="text-[10px] px-1.5 ml-1"
-                    >
-                      {activeAlerts.length}
-                    </Badge>
-                  )}
-                </button>
-              ))}
+            <nav className="flex p-2 gap-1.5 min-w-max" role="tablist" aria-label="Navegação do prontuário">
+              {navItems.map((item) => {
+                const isActive = activeTab === item.id;
+                const Icon = item.icon;
+                
+                return (
+                  <button
+                    key={item.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`panel-${item.id}`}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
+                    <span>{item.label}</span>
+                    {item.id === 'alertas' && activeAlerts.length > 0 && (
+                      <Badge 
+                        variant={criticalAlerts.length > 0 ? "destructive" : "secondary"}
+                        className="text-[10px] px-1.5 ml-1"
+                      >
+                        {activeAlerts.length}
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
           </ScrollArea>
         </div>

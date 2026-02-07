@@ -45,3 +45,15 @@ export {
   type AvaliacaoPosturalPilatesFormData,
   type ImagemPostural,
 } from './useAvaliacaoPosturalPilatesData';
+
+export {
+  usePlanoExerciciosPilatesData,
+  getEmptyPlanoExerciciosForm,
+  createEmptyExercicio,
+  APARELHOS_PILATES,
+  FOCOS_TREINO,
+  EXERCICIOS_PILATES,
+  type PlanoExerciciosPilatesData,
+  type PlanoExerciciosPilatesFormData,
+  type ExercicioPrescrito,
+} from './usePlanoExerciciosPilatesData';

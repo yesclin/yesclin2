@@ -10,3 +10,4 @@ export { PlanoExerciciosPilatesBlock } from './PlanoExerciciosPilatesBlock';
 export { SessoesPilatesBlock } from './SessoesPilatesBlock';
 export { ExamesDocumentosPilatesBlock } from './ExamesDocumentosPilatesBlock';
 export { AlertasFuncionaisPilatesBlock, AlertasFuncionaisBanner } from './AlertasFuncionaisPilatesBlock';
+export { HistoricoPilatesBlock } from './HistoricoPilatesBlock';

@@ -24,3 +24,12 @@ export {
   type PilatesSummaryData,
   type PilatesAlert,
 } from './useVisaoGeralPilatesData';
+
+export {
+  useAnamneseFuncionalPilatesData,
+  getEmptyAnamneseFuncionalPilatesForm,
+  NIVEL_ATIVIDADE_OPTIONS,
+  OBJETIVOS_PILATES_OPTIONS,
+  type AnamneseFuncionalPilatesData,
+  type AnamneseFuncionalPilatesFormData,
+} from './useAnamneseFuncionalPilatesData';

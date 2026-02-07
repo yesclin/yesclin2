@@ -7,3 +7,4 @@ export * from './useAnamneseFisioterapiaData';
 export * from './useAvaliacaoFuncionalData';
 export * from './useAvaliacaoDorData';
 export * from './useDiagnosticoFuncionalData';
+export * from './usePlanoTerapeuticoData';

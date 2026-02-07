@@ -3,3 +3,4 @@
  */
 
 export { VisaoGeralFisioterapiaBlock } from './VisaoGeralFisioterapiaBlock';
+export { AnamneseFisioterapiaBlock } from './AnamneseFisioterapiaBlock';

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -10,7 +11,13 @@ import {
   Heart,
   Clock,
   ShieldAlert,
-  Activity
+  Activity,
+  FileText,
+  Stethoscope,
+  ChevronRight,
+  ClipboardList,
+  Paperclip,
+  History
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,6 +43,10 @@ export interface ClinicalSummaryData {
   chronic_diseases: string[];
   current_medications: string[];
   blood_type?: string | null;
+  total_evolutions?: number;
+  last_evolution_date?: string | null;
+  pending_prescriptions?: number;
+  total_exams?: number;
 }
 
 /**
@@ -68,6 +79,48 @@ interface VisaoGeralBlockProps {
   alerts: ClinicalAlertItem[];
   lastAppointment: LastAppointmentData | null;
   loading?: boolean;
+  onNavigateToModule?: (moduleKey: string) => void;
+}
+
+/**
+ * Cartão de módulo clicável - navega para a aba correspondente
+ */
+function ModuleCard({
+  title,
+  icon: Icon,
+  moduleKey,
+  onNavigate,
+  hasData = true,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  moduleKey: string;
+  onNavigate?: (key: string) => void;
+  hasData?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card 
+      className={`cursor-pointer transition-all hover:shadow-md hover:border-primary/50 ${!hasData ? 'opacity-60' : ''}`}
+      onClick={() => onNavigate?.(moduleKey)}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary/10 rounded-md">
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {children}
+      </CardContent>
+    </Card>
+  );
 }
 
 /**
@@ -80,6 +133,7 @@ interface VisaoGeralBlockProps {
  * - Medicamentos de uso contínuo
  * - Última consulta
  * - Alertas clínicos ativos
+ * - Links rápidos para os demais módulos
  * 
  * Este bloco é SOMENTE LEITURA e não substitui evoluções clínicas.
  */
@@ -88,7 +142,8 @@ export function VisaoGeralBlock({
   clinicalData, 
   alerts,
   lastAppointment,
-  loading = false
+  loading = false,
+  onNavigateToModule
 }: VisaoGeralBlockProps) {
   
   const activeAlerts = alerts.filter(a => a.is_active);
@@ -133,9 +188,10 @@ export function VisaoGeralBlock({
     return (
       <div className="space-y-4">
         <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     );
@@ -157,21 +213,24 @@ export function VisaoGeralBlock({
       {/* Cabeçalho com aviso de leitura */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
         <Activity className="h-4 w-4" />
-        <span>Visão geral do paciente — somente leitura. Use a aba "Evoluções" para registros clínicos.</span>
+        <span>Visão geral do paciente — clique nos cartões para acessar os módulos.</span>
       </div>
 
       {/* Alertas Críticos - Destaque */}
       {criticalAlerts.length > 0 && (
-        <Card className="border-red-300 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+        <Card 
+          className="border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
+          onClick={() => onNavigateToModule?.('alertas')}
+        >
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <ShieldAlert className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2">
+                <h4 className="font-semibold text-destructive mb-2">
                   Alertas Críticos ({criticalAlerts.length})
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {criticalAlerts.map(alert => (
+                  {criticalAlerts.slice(0, 3).map(alert => (
                     <Badge 
                       key={alert.id} 
                       variant="destructive"
@@ -180,94 +239,199 @@ export function VisaoGeralBlock({
                       {alert.title}
                     </Badge>
                   ))}
+                  {criticalAlerts.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{criticalAlerts.length - 3} mais
+                    </Badge>
+                  )}
                 </div>
               </div>
+              <ChevronRight className="h-5 w-5 text-destructive" />
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Grid Principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card: Dados Básicos do Paciente */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              Dados do Paciente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Idade</p>
-                <p className="font-medium">{calculateAge(patient.birth_date)}</p>
+      {/* Cabeçalho do Paciente */}
+      <Card className="border-l-4 border-l-primary">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-lg font-bold text-primary">
+                  {patient.full_name.charAt(0)}
+                </span>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Sexo</p>
-                <p className="font-medium">{formatGender(patient.gender)}</p>
-              </div>
-              {clinicalData.blood_type && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Tipo Sanguíneo</p>
-                  <Badge variant="outline" className="font-medium">
-                    {clinicalData.blood_type}
+              <div>
+                <CardTitle className="text-lg">{patient.full_name}</CardTitle>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
+                    {calculateAge(patient.birth_date)}
                   </Badge>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Última Consulta */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Última Consulta</span>
-              </div>
-              {lastAppointment ? (
-                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                  <p className="text-sm font-medium">
-                    {formatLastAppointmentDate(lastAppointment.scheduled_date)}
-                  </p>
-                  {lastAppointment.professional_name && (
-                    <p className="text-xs text-muted-foreground">
-                      com {lastAppointment.professional_name}
-                    </p>
-                  )}
-                  {lastAppointment.specialty_name && (
-                    <Badge variant="secondary" className="text-xs mt-1">
-                      {lastAppointment.specialty_name}
+                  <Badge variant="outline" className="text-xs">
+                    {formatGender(patient.gender)}
+                  </Badge>
+                  {clinicalData.blood_type && (
+                    <Badge variant="secondary" className="text-xs">
+                      {clinicalData.blood_type}
                     </Badge>
                   )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  Nenhuma consulta registrada
-                </p>
-              )}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+            {lastAppointment && (
+              <div className="text-right text-sm">
+                <p className="text-muted-foreground">Última consulta</p>
+                <p className="font-medium">
+                  {format(parseISO(lastAppointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
 
-        {/* Card: Informações Clínicas */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Heart className="h-4 w-4 text-pink-500" />
-              Informações Clínicas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Grid de Módulos Conectados */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        
+        {/* Evoluções */}
+        <ModuleCard
+          title="Evoluções"
+          icon={FileText}
+          moduleKey="evolucao"
+          onNavigate={onNavigateToModule}
+          hasData={(clinicalData.total_evolutions ?? 0) > 0}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold">
+              {clinicalData.total_evolutions ?? 0}
+            </span>
+            <span className="text-muted-foreground text-sm">registros</span>
+          </div>
+          {clinicalData.last_evolution_date && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Última em {format(parseISO(clinicalData.last_evolution_date), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+          )}
+          {!clinicalData.total_evolutions && (
+            <p className="text-xs text-muted-foreground">Nenhuma evolução registrada</p>
+          )}
+        </ModuleCard>
+
+        {/* Anamnese */}
+        <ModuleCard
+          title="Anamnese"
+          icon={ClipboardList}
+          moduleKey="anamnese"
+          onNavigate={onNavigateToModule}
+          hasData={true}
+        >
+          <p className="text-sm text-muted-foreground">
+            Histórico médico e queixa principal
+          </p>
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-xs text-primary mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToModule?.('anamnese');
+            }}
+          >
+            Acessar anamnese →
+          </Button>
+        </ModuleCard>
+
+        {/* Exame Físico */}
+        <ModuleCard
+          title="Exame Físico"
+          icon={Stethoscope}
+          moduleKey="exame_fisico"
+          onNavigate={onNavigateToModule}
+          hasData={true}
+        >
+          <p className="text-sm text-muted-foreground">
+            Sinais vitais e medidas antropométricas
+          </p>
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-xs text-primary mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToModule?.('exame_fisico');
+            }}
+          >
+            Acessar exame físico →
+          </Button>
+        </ModuleCard>
+
+        {/* Prescrições */}
+        <ModuleCard
+          title="Prescrições"
+          icon={Pill}
+          moduleKey="prescricoes"
+          onNavigate={onNavigateToModule}
+          hasData={(clinicalData.pending_prescriptions ?? 0) > 0 || true}
+        >
+          {(clinicalData.pending_prescriptions ?? 0) > 0 ? (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{clinicalData.pending_prescriptions} pendentes</Badge>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Receitas e medicamentos
+            </p>
+          )}
+        </ModuleCard>
+
+        {/* Exames / Documentos */}
+        <ModuleCard
+          title="Exames / Documentos"
+          icon={Paperclip}
+          moduleKey="exames"
+          onNavigate={onNavigateToModule}
+          hasData={(clinicalData.total_exams ?? 0) > 0}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold">
+              {clinicalData.total_exams ?? 0}
+            </span>
+            <span className="text-muted-foreground text-sm">arquivos</span>
+          </div>
+        </ModuleCard>
+
+        {/* Linha do Tempo */}
+        <ModuleCard
+          title="Linha do Tempo"
+          icon={History}
+          moduleKey="timeline"
+          onNavigate={onNavigateToModule}
+          hasData={true}
+        >
+          <p className="text-sm text-muted-foreground">
+            Histórico cronológico de atendimentos
+          </p>
+        </ModuleCard>
+      </div>
+
+      {/* Card: Informações Clínicas */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Heart className="h-4 w-4 text-primary" />
+            Informações Clínicas Resumidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Alergias */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertTriangle className="h-4 w-4 text-destructive" />
                 <span className="text-sm font-medium">Alergias</span>
               </div>
               {clinicalData.allergies.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {clinicalData.allergies.map((allergy, idx) => (
+                  {clinicalData.allergies.slice(0, 3).map((allergy, idx) => (
                     <Badge 
                       key={idx} 
                       variant="destructive" 
@@ -276,121 +440,113 @@ export function VisaoGeralBlock({
                       {allergy}
                     </Badge>
                   ))}
+                  {clinicalData.allergies.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{clinicalData.allergies.length - 3}
+                    </Badge>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground italic">
-                  Nenhuma alergia registrada
+                  Nenhuma registrada
                 </p>
               )}
             </div>
-
-            <Separator />
 
             {/* Doenças Crônicas */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-orange-500" />
+                <Heart className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Doenças Crônicas</span>
               </div>
               {clinicalData.chronic_diseases.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {clinicalData.chronic_diseases.map((disease, idx) => (
+                  {clinicalData.chronic_diseases.slice(0, 3).map((disease, idx) => (
                     <Badge 
                       key={idx} 
                       variant="secondary"
-                      className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
+                      className="text-xs"
                     >
                       {disease}
                     </Badge>
                   ))}
+                  {clinicalData.chronic_diseases.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{clinicalData.chronic_diseases.length - 3}
+                    </Badge>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground italic">
-                  Nenhuma doença crônica registrada
+                  Nenhuma registrada
                 </p>
               )}
             </div>
-
-            <Separator />
 
             {/* Medicamentos de Uso Contínuo */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Pill className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium">Medicamentos de Uso Contínuo</span>
+                <Pill className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Medicamentos Contínuos</span>
               </div>
               {clinicalData.current_medications.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {clinicalData.current_medications.map((med, idx) => (
+                  {clinicalData.current_medications.slice(0, 3).map((med, idx) => (
                     <Badge 
                       key={idx} 
                       variant="outline"
-                      className="text-xs border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                      className="text-xs"
                     >
                       {med}
                     </Badge>
                   ))}
+                  {clinicalData.current_medications.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{clinicalData.current_medications.length - 3}
+                    </Badge>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground italic">
-                  Nenhum medicamento de uso contínuo
+                  Nenhum registrado
                 </p>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Alertas Clínicos Ativos */}
       {(warningAlerts.length > 0 || infoAlerts.length > 0) && (
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-all"
+          onClick={() => onNavigateToModule?.('alertas')}
+        >
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              Outros Alertas Ativos ({warningAlerts.length + infoAlerts.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-primary" />
+                Outros Alertas Ativos ({warningAlerts.length + infoAlerts.length})
+              </CardTitle>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {/* Warning Alerts */}
-              {warningAlerts.map(alert => (
-                <div 
+            <div className="flex flex-wrap gap-2">
+              {[...warningAlerts, ...infoAlerts].slice(0, 5).map(alert => (
+                <Badge 
                   key={alert.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
+                  variant={alert.severity === 'warning' ? 'secondary' : 'outline'}
+                  className="text-xs"
                 >
-                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm text-yellow-800 dark:text-yellow-300">
-                      {alert.title}
-                    </p>
-                    {alert.description && (
-                      <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-0.5">
-                        {alert.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                  {alert.title}
+                </Badge>
               ))}
-              
-              {/* Info Alerts */}
-              {infoAlerts.map(alert => (
-                <div 
-                  key={alert.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-                >
-                  <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm text-blue-800 dark:text-blue-300">
-                      {alert.title}
-                    </p>
-                    {alert.description && (
-                      <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
-                        {alert.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {warningAlerts.length + infoAlerts.length > 5 && (
+                <Badge variant="outline" className="text-xs">
+                  +{warningAlerts.length + infoAlerts.length - 5} mais
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -960,6 +960,9 @@ export default function Prontuario() {
             alerts={visaoGeralAlerts}
             lastAppointment={visaoGeralLastAppointment}
             loading={visaoGeralLoading}
+            onNavigateToModule={(moduleKey) => {
+              setActiveTab(moduleKey);
+            }}
           />
         );
 

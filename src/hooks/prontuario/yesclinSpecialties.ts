@@ -228,23 +228,33 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     icon: 'Activity',
   },
   /**
-   * PILATES - Blocos clínicos (subconjunto de Fisioterapia)
+   * PILATES - Blocos clínicos independentes (9 blocos)
    * 
-   * Foco em avaliação postural e acompanhamento de exercícios
+   * Prontuário focado em avaliação funcional, postural e sessões de Pilates:
+   * 1. Visão Geral - resumo do aluno
+   * 2. Anamnese - histórico e objetivos
+   * 3. Avaliação Funcional Pilates - mobilidade, força, core, respiração, testes
+   * 4. Plano de Exercícios - programa personalizado
+   * 5. Sessões - registro de aulas
+   * 6. Exames / Documentos - arquivos e atestados
+   * 7. Alertas - restrições e cuidados
+   * 8. Linha do Tempo - histórico de acompanhamento
+   * 
+   * NÃO inclui: Prescrições médicas, Odontograma, Mapa Facial
    */
   {
-    key: 'fisioterapia',
+    key: 'pilates',
     name: 'Pilates',
-    description: 'Avaliação postural e acompanhamento de sessões',
+    description: 'Avaliação funcional/postural e acompanhamento de sessões',
     enabledBlocks: [
-      'resumo',
-      'anamnese',
-      'exame_fisico',     // Avaliação Postural
-      'conduta',          // Plano de Exercícios
-      'evolucao',         // Sessões
-      'exames',
-      'alertas',
-      'timeline',
+      'resumo',              // 1. Visão Geral
+      'anamnese',            // 2. Anamnese
+      'avaliacao_funcional', // 3. Avaliação Funcional Pilates
+      'conduta',             // 4. Plano de Exercícios
+      'evolucao',            // 5. Sessões de Pilates
+      'exames',              // 6. Exames / Documentos
+      'alertas',             // 7. Alertas
+      'timeline',            // 8. Linha do Tempo
     ],
     icon: 'Dumbbell',
   },
@@ -326,6 +336,7 @@ export const YESCLIN_SPECIALTY_LABELS: Record<SpecialtyKey, string> = {
   nutricao: 'Nutrição',
   estetica: 'Estética',
   fisioterapia: 'Fisioterapia',
+  pilates: 'Pilates',
   pediatria: 'Pediatria',
   ginecologia: 'Ginecologia',
   oftalmologia: 'Oftalmologia',
@@ -373,7 +384,9 @@ export const SPECIALTY_NAME_TO_KEY_MAP: Record<string, SpecialtyKey> = {
   'dermatologia': 'estetica',
   'fisioterapia': 'fisioterapia',
   'fisioterapeuta': 'fisioterapia',
-  'pilates': 'fisioterapia',
+  'pilates': 'pilates',
+  'studio pilates': 'pilates',
+  'pilates clínico': 'pilates',
   'pediatria': 'pediatria',
   'pediatra': 'pediatria',
 };

@@ -54,3 +54,10 @@ export {
   DERMATOLOGY_PROCEDURE_TYPES,
   DERMATOLOGY_TECHNIQUES 
 } from './ProcedimentosDermatoBlock';
+
+export { EvolucoesDermatoBlock } from './EvolucoesDermatoBlock';
+export type { EvolucaoDermatoItem } from './EvolucoesDermatoBlock';
+export { 
+  EVOLUTION_STATUS,
+  COMMON_ADVERSE_EFFECTS 
+} from './EvolucoesDermatoBlock';

@@ -40,6 +40,11 @@ export {
   EvolucoesOdontologicasBlock, 
   type EvolucaoOdontologica 
 } from './EvolucoesOdontologicasBlock';
+export { 
+  HistoricoTimelineBlock, 
+  type TimelineEntry,
+  type TimelineEntryType 
+} from './HistoricoTimelineBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

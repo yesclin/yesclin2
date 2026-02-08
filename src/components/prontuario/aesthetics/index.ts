@@ -6,6 +6,7 @@ export { MuscleList } from './MuscleList';
 export { BeforeAfterModule } from './BeforeAfterModule';
 export { BeforeAfterCompare } from './BeforeAfterCompare';
 export { ConsentModule } from './ConsentModule';
+export { SignatureCanvas } from './SignatureCanvas';
 export { VisaoGeralEsteticaBlock } from './VisaoGeralEsteticaBlock';
 export { AnamneseEsteticaBlock } from './AnamneseEsteticaBlock';
 export { AvaliacaoEsteticaBlock } from './AvaliacaoEsteticaBlock';

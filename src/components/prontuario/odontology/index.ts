@@ -36,6 +36,10 @@ export {
   type DocumentoOdontologico,
   type TipoDocumentoOdonto 
 } from './ExamesDocumentosBlock';
+export { 
+  EvolucoesOdontologicasBlock, 
+  type EvolucaoOdontologica 
+} from './EvolucoesOdontologicasBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

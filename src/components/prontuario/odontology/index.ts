@@ -14,6 +14,10 @@ export {
   AvaliacaoClinicaOdontologicaBlock, 
   type AvaliacaoClinicaOdontologicaData 
 } from './AvaliacaoClinicaOdontologicaBlock';
+export { 
+  DiagnosticoOdontologicoBlock, 
+  type DiagnosticoOdontologicoData 
+} from './DiagnosticoOdontologicoBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

@@ -258,22 +258,43 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Dumbbell',
   },
+  /**
+   * ESTÉTICA / HARMONIZAÇÃO FACIAL - Blocos clínicos exclusivos (12 blocos)
+   * 
+   * Prontuário focado em procedimentos estéticos e harmonização:
+   * 1. Visão Geral - resumo do paciente e alertas
+   * 2. Anamnese Estética - histórico e expectativas
+   * 3. Avaliação Estética - análise facial e corporal
+   * 4. Evoluções - registros de procedimentos
+   * 5. Procedimentos Realizados - procedimentos executados
+   * 6. Produtos Utilizados - insumos e rastreabilidade
+   * 7. Fotos Antes / Depois - comparação visual
+   * 8. Termos de Consentimento - aceite digital
+   * 9. Mapa Facial - pontos de aplicação interativos
+   * 10. Alertas Clínicos - alergias, contraindicações, riscos
+   * 11. Linha do Tempo - histórico cronológico
+   * 12. Histórico - visão consolidada
+   * 
+   * NÃO inclui: Prescrição médica tradicional, Diagnóstico médico formal,
+   * CID obrigatório, Odontograma, Plano alimentar, Sessões fisioterapêuticas
+   */
   {
     key: 'estetica',
     name: 'Estética / Harmonização Facial',
     description: 'Mapa facial interativo, procedimentos estéticos e termos de consentimento',
     enabledBlocks: [
-      'resumo',
-      'anamnese',
-      'exame_fisico',
-      'evolucao',
-      'procedimentos_realizados',
-      'produtos_utilizados',
-      'before_after_photos',
-      'termos_consentimentos',
-      'facial_map',
-      'timeline',
-      'historico',
+      'resumo',                   // 1. Visão Geral
+      'anamnese',                 // 2. Anamnese Estética
+      'exame_fisico',             // 3. Avaliação Estética
+      'evolucao',                 // 4. Evoluções
+      'procedimentos_realizados', // 5. Procedimentos
+      'produtos_utilizados',      // 6. Produtos Utilizados
+      'before_after_photos',      // 7. Fotos Antes / Depois
+      'termos_consentimentos',    // 8. Termos
+      'facial_map',               // 9. Mapa Facial
+      'alertas',                  // 10. Alertas Clínicos
+      'timeline',                 // 11. Linha do Tempo
+      'historico',                // 12. Histórico
     ],
     icon: 'Sparkles',
   },
@@ -295,22 +316,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Smile',
   },
-  {
-    key: 'estetica',
-    name: 'Dermatologia',
-    description: 'Avaliação dermatológica e acompanhamento de tratamentos',
-    enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'procedimentos_realizados',
-      'produtos_utilizados',
-      'before_after_photos',
-      'exames',
-      'timeline',
-      'historico',
-    ],
-    icon: 'Scan',
-  },
+  // Dermatologia removido - usa a estrutura de Clínica Geral ou Estética conforme contexto
   {
     key: 'pediatria',
     name: 'Pediatria',

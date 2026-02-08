@@ -142,6 +142,7 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     before_after_photos: 'Fotos Antes / Depois',
     termos_consentimentos: 'Termos',
     facial_map: 'Mapa Facial',
+    alertas: 'Alertas Clínicos',
     timeline: 'Linha do Tempo',
     historico: 'Histórico',
   },

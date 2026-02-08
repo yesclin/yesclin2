@@ -87,3 +87,20 @@ export {
   type EvolucoesPediatriaRecord,
   type RespostaTratamento,
 } from './EvolucoesPediatriaBlock';
+
+// Alertas Pediátricos
+export {
+  AlertasPediatriaBlock,
+  AlertasPediatriaBanner,
+  TIPO_ALERTA_CONFIG,
+  SEVERIDADE_CONFIG,
+  COMMON_ALLERGIES,
+  COMMON_CHRONIC_DISEASES,
+  calculateAlertasSummary,
+  type AlertaPediatrico,
+  type AlertasPediatriaData,
+  type AlertasPediatriaRecord,
+  type AlertasSummary,
+  type TipoAlertaPediatrico,
+  type SeveridadeAlerta,
+} from './AlertasPediatriaBlock';

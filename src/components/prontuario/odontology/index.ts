@@ -18,6 +18,11 @@ export {
   DiagnosticoOdontologicoBlock, 
   type DiagnosticoOdontologicoData 
 } from './DiagnosticoOdontologicoBlock';
+export { 
+  PlanoTratamentoOdontologicoBlock, 
+  type PlanoTratamentoOdontologicoData,
+  type ProcedimentoPlanejado 
+} from './PlanoTratamentoOdontologicoBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

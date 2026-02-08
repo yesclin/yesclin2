@@ -340,9 +340,11 @@ export function VisaoGeralPediatriaBlock({
                 {getGenderLabel(patient.gender)}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Nascimento: {format(parseISO(patient.birth_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </p>
+            {patient.birth_date && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Nascimento: {format(parseISO(patient.birth_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </p>
+            )}
           </div>
         </div>
 

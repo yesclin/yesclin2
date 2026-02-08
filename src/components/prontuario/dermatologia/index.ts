@@ -18,3 +18,18 @@ export type {
   AnamneseDermatoData,
   DermatoSymptoms 
 } from './AnamneseDermatoBlock';
+
+export { ExameDermatoBlock } from './ExameDermatoBlock';
+export type { 
+  ExameDermatoData,
+  LesionDescription 
+} from './ExameDermatoBlock';
+export { 
+  LESION_TYPES,
+  BODY_LOCATIONS,
+  LESION_COLORS,
+  LESION_SHAPES,
+  LESION_BORDERS,
+  LESION_SURFACES,
+  DISTRIBUTION_PATTERNS 
+} from './ExameDermatoBlock';

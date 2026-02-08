@@ -44,3 +44,12 @@ export {
   type AvaliacaoClinicaPediatriaData,
   type AvaliacaoClinicaRecord,
 } from './AvaliacaoClinicaPediatriaBlock';
+
+// Diagnóstico Pediátrico
+export {
+  DiagnosticoPediatriaBlock,
+  COMMON_PEDIATRIC_CID,
+  type DiagnosticoItem,
+  type DiagnosticoPediatriaData,
+  type DiagnosticoPediatriaRecord,
+} from './DiagnosticoPediatriaBlock';

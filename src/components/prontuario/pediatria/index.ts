@@ -104,3 +104,11 @@ export {
   type TipoAlertaPediatrico,
   type SeveridadeAlerta,
 } from './AlertasPediatriaBlock';
+
+// Linha do Tempo
+export {
+  LinhaDoTempoPediatriaBlock,
+  type TimelineEvent,
+  type TimelineData,
+  type TimelineEventType,
+} from './LinhaDoTempoPediatriaBlock';

@@ -31,6 +31,11 @@ export {
   MateriaisUtilizadosBlock, 
   type MaterialUtilizado 
 } from './MateriaisUtilizadosBlock';
+export { 
+  ExamesDocumentosBlock, 
+  type DocumentoOdontologico,
+  type TipoDocumentoOdonto 
+} from './ExamesDocumentosBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

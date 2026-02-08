@@ -47,3 +47,10 @@ export {
   FREQUENCY_OPTIONS,
   DURATION_OPTIONS 
 } from './PrescricoesDermatoBlock';
+
+export { ProcedimentosDermatoBlock } from './ProcedimentosDermatoBlock';
+export type { ProcedimentoDermatoItem } from './ProcedimentosDermatoBlock';
+export { 
+  DERMATOLOGY_PROCEDURE_TYPES,
+  DERMATOLOGY_TECHNIQUES 
+} from './ProcedimentosDermatoBlock';

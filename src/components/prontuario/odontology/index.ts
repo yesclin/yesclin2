@@ -10,6 +10,10 @@ export {
   AnamneseOdontologicaBlock, 
   type AnamneseOdontologicaData 
 } from './AnamneseOdontologicaBlock';
+export { 
+  AvaliacaoClinicaOdontologicaBlock, 
+  type AvaliacaoClinicaOdontologicaData 
+} from './AvaliacaoClinicaOdontologicaBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

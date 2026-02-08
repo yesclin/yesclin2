@@ -36,3 +36,14 @@ export {
 
 export { DiagnosticoDermatoBlock } from './DiagnosticoDermatoBlock';
 export type { DiagnosticoDermatoData } from './DiagnosticoDermatoBlock';
+
+export { PrescricoesDermatoBlock } from './PrescricoesDermatoBlock';
+export type { 
+  PrescricaoDermatoData,
+  PrescriptionItem 
+} from './PrescricoesDermatoBlock';
+export { 
+  PHARMACEUTICAL_FORMS,
+  FREQUENCY_OPTIONS,
+  DURATION_OPTIONS 
+} from './PrescricoesDermatoBlock';

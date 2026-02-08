@@ -6,6 +6,10 @@ export {
   type OdontologySummaryData, 
   type OdontologyClinicalAlert 
 } from './OdontologiaVisaoGeralBlock';
+export { 
+  AnamneseOdontologicaBlock, 
+  type AnamneseOdontologicaData 
+} from './AnamneseOdontologicaBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

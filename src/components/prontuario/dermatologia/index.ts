@@ -79,3 +79,7 @@ export {
   DERMATO_ALERT_TYPES,
   DERMATO_ALERT_SEVERITY 
 } from './AlertasDermatoBlock';
+
+export { LinhaDoTempoDermatoBlock } from './LinhaDoTempoDermatoBlock';
+export type { TimelineItem, TimelineRecordType } from './LinhaDoTempoDermatoBlock';
+export { TIMELINE_RECORD_TYPES } from './LinhaDoTempoDermatoBlock';

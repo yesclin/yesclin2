@@ -2,7 +2,7 @@
  * Dialog para edição/criação de modelos de anamnese
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,10 +35,15 @@ import {
   Syringe,
   Droplets,
   Sparkles,
-  FileText
+  FileText,
+  Upload,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 import { useAnamnesisTemplates, type AnamnesisTemplate, type CreateAnamnesisTemplateInput } from '@/hooks/useAnamnesisTemplates';
 import type { CampoAnamnese } from '@/hooks/prontuario/estetica/anamneseTemplates';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AnamnesisTemplateEditorDialogProps {
   open: boolean;
@@ -63,6 +68,7 @@ const FIELD_TYPES = [
   { value: 'checkbox', label: 'Checkbox' },
   { value: 'date', label: 'Data' },
   { value: 'number', label: 'Número' },
+  { value: 'imagem_interativa', label: 'Imagem Interativa' },
 ];
 
 const TEMPLATE_TYPES = [
@@ -86,6 +92,8 @@ export function AnamnesisTemplateEditorDialog({
   template,
 }: AnamnesisTemplateEditorDialogProps) {
   const { createTemplate, updateTemplate, isCreating, isUpdating } = useAnamnesisTemplates();
+  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [uploadingFieldIndex, setUploadingFieldIndex] = useState<number | null>(null);
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -130,6 +138,50 @@ export function AnamnesisTemplateEditorDialog({
 
   const handleRemoveField = (index: number) => {
     setCampos(campos.filter((_, i) => i !== index));
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setUploadingFieldIndex(index);
+
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `base-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('anamnesis-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('anamnesis-images')
+        .getPublicUrl(filePath);
+
+      handleUpdateField(index, { baseImageUrl: publicUrl });
+      toast.success('Imagem carregada com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao carregar imagem');
+    } finally {
+      setUploadingFieldIndex(null);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    handleUpdateField(index, { baseImageUrl: undefined });
   };
 
   const handleSave = async () => {
@@ -363,6 +415,61 @@ export function AnamnesisTemplateEditorDialog({
                                   placeholder="Opção 1, Opção 2, Opção 3"
                                   className="h-8 text-sm"
                                 />
+                              </div>
+                            )}
+
+                            {/* Image upload for imagem_interativa type */}
+                            {campo.type === 'imagem_interativa' && (
+                              <div className="col-span-4 space-y-2">
+                                <Label className="text-xs">Imagem Base</Label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  ref={(el) => { fileInputRefs.current[index] = el; }}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleImageUpload(index, file);
+                                  }}
+                                />
+                                
+                                {campo.baseImageUrl ? (
+                                  <div className="relative inline-block">
+                                    <img 
+                                      src={campo.baseImageUrl} 
+                                      alt="Imagem base" 
+                                      className="h-24 rounded border object-cover"
+                                    />
+                                    <Button
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute -top-2 -right-2 h-6 w-6"
+                                      onClick={() => handleRemoveImage(index)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2"
+                                    onClick={() => fileInputRefs.current[index]?.click()}
+                                    disabled={uploadingFieldIndex === index}
+                                  >
+                                    {uploadingFieldIndex === index ? (
+                                      <>Carregando...</>
+                                    ) : (
+                                      <>
+                                        <Upload className="h-4 w-4" />
+                                        Carregar imagem
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  Imagem para desenho interativo (ex: mapa facial, corpo). Máx: 5MB
+                                </p>
                               </div>
                             )}
                           </div>

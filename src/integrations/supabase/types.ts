@@ -332,6 +332,62 @@ export type Database = {
           },
         ]
       }
+      anamnesis_templates: {
+        Row: {
+          campos: Json
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          specialty: string | null
+          template_type: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          campos?: Json
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          specialty?: string | null
+          template_type: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          campos?: Json
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          specialty?: string | null
+          template_type?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_templates_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_rules: {
         Row: {
           arrival_tolerance_minutes: number

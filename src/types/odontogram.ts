@@ -75,22 +75,22 @@ export const TOOTH_STATUS_LABELS: Record<ToothStatus, string> = {
   other: 'Outro',
 };
 
-// Status colors for visualization
+// Status colors for visualization - Using semantic tokens
 export const TOOTH_STATUS_COLORS: Record<ToothStatus, string> = {
-  healthy: 'hsl(var(--chart-2))',      // Green
-  caries: 'hsl(var(--destructive))',   // Red
-  restoration: 'hsl(var(--chart-1))',  // Blue
-  extraction: 'hsl(var(--chart-5))',   // Orange
-  missing: 'hsl(var(--muted))',        // Gray
-  implant: 'hsl(var(--chart-4))',      // Purple
-  crown: 'hsl(var(--chart-3))',        // Yellow
-  endodontic: 'hsl(var(--chart-1))',   // Blue variant
-  fracture: 'hsl(var(--destructive))', // Red
-  decay: 'hsl(var(--warning))',        // Amber
-  sealant: 'hsl(var(--chart-2))',      // Green variant
-  prosthesis: 'hsl(var(--chart-4))',   // Purple
-  bridge: 'hsl(var(--chart-4))',       // Purple
-  veneer: 'hsl(var(--chart-3))',       // Yellow
+  healthy: 'hsl(142 76% 36%)',           // Green - Hígido
+  caries: 'hsl(0 84% 60%)',              // Red - Cárie
+  restoration: 'hsl(217 91% 60%)',       // Blue - Restauração
+  extraction: 'hsl(25 95% 53%)',         // Orange - Extração indicada
+  missing: 'hsl(var(--muted))',          // Gray - Ausente
+  implant: 'hsl(280 68% 56%)',           // Purple - Implante
+  crown: 'hsl(43 96% 56%)',              // Gold/Yellow - Coroa
+  endodontic: 'hsl(330 81% 60%)',        // Pink - Tratamento de canal
+  fracture: 'hsl(0 84% 60%)',            // Red - Fratura
+  decay: 'hsl(38 92% 50%)',              // Amber - Lesão
+  sealant: 'hsl(173 80% 40%)',           // Teal - Selante
+  prosthesis: 'hsl(262 83% 58%)',        // Violet - Prótese
+  bridge: 'hsl(262 83% 58%)',            // Violet - Ponte
+  veneer: 'hsl(48 96% 53%)',             // Yellow - Faceta
   other: 'hsl(var(--muted-foreground))',
 };
 

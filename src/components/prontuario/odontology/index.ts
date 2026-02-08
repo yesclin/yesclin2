@@ -6,3 +6,4 @@ export { OdontogramModule } from '../odontogram/OdontogramModule';
 export { OdontogramChart } from '../odontogram/OdontogramChart';
 export { ToothIcon } from '../odontogram/ToothIcon';
 export { ToothDetailDialog } from '../odontogram/ToothDetailDialog';
+export { ToothSurfaceSelector } from '../odontogram/ToothSurfaceSelector';

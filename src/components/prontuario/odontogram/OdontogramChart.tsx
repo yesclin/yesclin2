@@ -3,6 +3,7 @@ import { ToothIcon } from "./ToothIcon";
 import { 
   PERMANENT_TEETH, 
   DECIDUOUS_TEETH,
+  TOOTH_STATUS_COLORS,
   type OdontogramTooth,
   type ToothStatus,
 } from "@/types/odontogram";
@@ -177,35 +178,34 @@ export function OdontogramChart({
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Legend with all main statuses */}
       <div className="flex flex-wrap gap-3 justify-center text-xs">
-        <LegendItem status="healthy" label="Saudável" />
+        <LegendItem status="healthy" label="Hígido" />
         <LegendItem status="caries" label="Cárie" />
         <LegendItem status="restoration" label="Restauração" />
-        <LegendItem status="missing" label="Ausente" />
-        <LegendItem status="crown" label="Coroa" />
+        <LegendItem status="extraction" label="Extração" />
+        <LegendItem status="endodontic" label="Canal" />
+        <LegendItem status="prosthesis" label="Prótese" />
         <LegendItem status="implant" label="Implante" />
-        <LegendItem status="endodontic" label="Endodontia" />
+        <LegendItem status="missing" label="Ausente" />
       </div>
     </div>
   );
 }
 
 function LegendItem({ status, label }: { status: ToothStatus; label: string }) {
+  const color = TOOTH_STATUS_COLORS[status];
+  
   return (
     <div className="flex items-center gap-1.5">
       <div 
         className={cn(
           "w-3 h-3 rounded-full border",
-          status === 'missing' && "bg-transparent border-dashed border-muted-foreground"
+          status === 'missing' && "bg-transparent border-dashed"
         )}
         style={{ 
-          backgroundColor: status === 'healthy' ? 'hsl(var(--background))' : 
-                          status === 'missing' ? 'transparent' :
-                          `hsl(var(--chart-${status === 'caries' ? 'destructive' : '1'}))`,
-          borderColor: status === 'healthy' ? 'hsl(var(--border))' : 
-                       status === 'missing' ? 'hsl(var(--muted-foreground))' : 
-                       'transparent'
+          backgroundColor: status === 'missing' ? 'transparent' : color,
+          borderColor: status === 'missing' ? 'hsl(var(--muted-foreground))' : color
         }}
       />
       <span className="text-muted-foreground">{label}</span>

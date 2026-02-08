@@ -1,3 +1,4 @@
- export * from './useFacialMap';
- export * from './useBeforeAfter';
- export * from './useAestheticConsent';
+export * from './useFacialMap';
+export * from './useBeforeAfter';
+export * from './useAestheticConsent';
+export * from './useVisaoGeralEsteticaData';

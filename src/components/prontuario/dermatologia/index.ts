@@ -33,3 +33,6 @@ export {
   LESION_SURFACES,
   DISTRIBUTION_PATTERNS 
 } from './ExameDermatoBlock';
+
+export { DiagnosticoDermatoBlock } from './DiagnosticoDermatoBlock';
+export type { DiagnosticoDermatoData } from './DiagnosticoDermatoBlock';

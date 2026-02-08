@@ -43,7 +43,14 @@ export type ClinicalBlockKey =
   // Fisioterapia-specific blocks
   | 'avaliacao_funcional'      // Avaliação Funcional (força, ADM, postura)
   | 'avaliacao_dor'            // Avaliação de Dor (EVA, localização)
-  | 'exercicios_prescritos';   // Exercícios Prescritos (programa domiciliar)
+  | 'exercicios_prescritos'    // Exercícios Prescritos (programa domiciliar)
+  // Pediatria-specific blocks
+  | 'anamnese_pediatrica'      // Anamnese Pediátrica (histórico neonatal, Apgar)
+  | 'crescimento_desenvolvimento' // Crescimento e Desenvolvimento (percentis, marcos)
+  | 'avaliacao_clinica_pediatrica' // Avaliação Clínica Pediátrica (sinais vitais, exame físico)
+  | 'diagnostico_pediatrico'   // Diagnóstico Pediátrico (CID-10)
+  | 'prescricoes_pediatricas'  // Prescrições Pediátricas (dose por peso)
+  | 'vacinacao';               // Registro de Vacinação (calendário PNI)
 
 export interface YesclinSpecialty {
   key: SpecialtyKey;
@@ -376,17 +383,41 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Scan',
   },
+  /**
+   * PEDIATRIA - Blocos clínicos exclusivos (12 blocos)
+   * 
+   * Prontuário focado no acompanhamento pediátrico:
+   * 1. Visão Geral - resumo do paciente pediátrico
+   * 2. Anamnese Pediátrica - histórico neonatal, Apgar, amamentação
+   * 3. Crescimento e Desenvolvimento - peso, altura, PC, IMC, marcos DNPM
+   * 4. Avaliação Clínica - sinais vitais pediátricos, exame físico
+   * 5. Diagnóstico Pediátrico - hipóteses diagnósticas (CID-10)
+   * 6. Prescrições Pediátricas - dosagem por peso, receitas
+   * 7. Vacinação - calendário PNI, doses aplicadas
+   * 8. Evoluções - registros de consultas
+   * 9. Exames / Documentos - laudos e arquivos
+   * 10. Alertas Pediátricos - alergias, condições crônicas
+   * 11. Linha do Tempo - cronologia de atendimentos
+   * 
+   * NÃO inclui: Odontograma, Mapa Facial, Instrumentos Psicológicos,
+   * Procedimentos Estéticos
+   */
   {
     key: 'pediatria',
     name: 'Pediatria',
-    description: 'Acompanhamento pediátrico básico',
+    description: 'Acompanhamento pediátrico com crescimento, vacinação e desenvolvimento',
     enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'exames',
-      'timeline',
-      'alertas',
-      'historico',
+      'resumo',                       // 1. Visão Geral
+      'anamnese_pediatrica',          // 2. Anamnese Pediátrica
+      'crescimento_desenvolvimento',  // 3. Crescimento e Desenvolvimento
+      'avaliacao_clinica_pediatrica', // 4. Avaliação Clínica
+      'diagnostico_pediatrico',       // 5. Diagnóstico Pediátrico
+      'prescricoes_pediatricas',      // 6. Prescrições Pediátricas
+      'vacinacao',                    // 7. Vacinação
+      'evolucao',                     // 8. Evoluções
+      'exames',                       // 9. Exames / Documentos
+      'alertas',                      // 10. Alertas Pediátricos
+      'timeline',                     // 11. Linha do Tempo
     ],
     icon: 'Baby',
   },

@@ -1,5 +1,11 @@
 export { SimpleOdontogram, TOOTH_STATUS_CONFIG, type ToothStatus, type ToothData } from './SimpleOdontogram';
 export { ToothProceduresList, type ToothProcedure } from './ToothProceduresList';
+export { 
+  OdontologiaVisaoGeralBlock, 
+  type OdontologyPatientData, 
+  type OdontologySummaryData, 
+  type OdontologyClinicalAlert 
+} from './OdontologiaVisaoGeralBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

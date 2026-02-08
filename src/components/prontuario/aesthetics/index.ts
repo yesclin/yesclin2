@@ -4,6 +4,7 @@ export { FacialMapModule } from './FacialMapModule';
 export { ApplicationPointDialog } from './ApplicationPointDialog';
 export { MuscleList } from './MuscleList';
 export { BeforeAfterModule } from './BeforeAfterModule';
+export { BeforeAfterCompare } from './BeforeAfterCompare';
 export { ConsentModule } from './ConsentModule';
 export { VisaoGeralEsteticaBlock } from './VisaoGeralEsteticaBlock';
 export { AnamneseEsteticaBlock } from './AnamneseEsteticaBlock';

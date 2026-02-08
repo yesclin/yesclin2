@@ -33,31 +33,47 @@
      enabled: !!patientId && !!clinic?.id,
    });
  
-   // Upload image
-   const uploadImage = async (file: File, type: 'before' | 'after'): Promise<string> => {
-     if (!clinic?.id) throw new Error('Clinic not found');
- 
-     const { data: userData } = await supabase.auth.getUser();
-     const userId = userData.user?.id;
- 
-     const fileExt = file.name.split('.').pop();
-     const fileName = `${userId}/${patientId}/${type}_${Date.now()}.${fileExt}`;
- 
-     const { error: uploadError } = await supabase.storage
-       .from('aesthetic-images')
-       .upload(fileName, file, {
-         cacheControl: '3600',
-         upsert: false,
-       });
- 
-     if (uploadError) throw uploadError;
- 
-     const { data: urlData } = supabase.storage
-       .from('aesthetic-images')
-       .getPublicUrl(fileName);
- 
-     return urlData.publicUrl;
-   };
+  // Upload image - retorna o path do arquivo (bucket é privado)
+  const uploadImage = async (file: File, type: 'before' | 'after'): Promise<string> => {
+    if (!clinic?.id) throw new Error('Clinic not found');
+
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${clinic.id}/${patientId}/${type}_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('aesthetic-images')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    // Retorna o path, não URL pública (bucket privado)
+    return fileName;
+  };
+
+  // Obter URL assinada para visualização (válida por 1 hora)
+  const getSignedUrl = async (path: string): Promise<string | null> => {
+    if (!path) return null;
+    
+    // Se já é uma URL completa (legacy), retorna diretamente
+    if (path.startsWith('http')) return path;
+
+    const { data, error } = await supabase.storage
+      .from('aesthetic-images')
+      .createSignedUrl(path, 3600); // 1 hora
+
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+
+    return data.signedUrl;
+  };
  
    // Create record
    const createRecordMutation = useMutation({
@@ -162,15 +178,16 @@
      },
    });
  
-   return {
-     records,
-     isLoading,
-     createRecord: createRecordMutation.mutateAsync,
-     updateRecord: updateRecordMutation.mutateAsync,
-     deleteRecord: deleteRecordMutation.mutateAsync,
-     uploadImage,
-     isCreating: createRecordMutation.isPending,
-     isUpdating: updateRecordMutation.isPending,
-     isDeleting: deleteRecordMutation.isPending,
-   };
- }
+  return {
+    records,
+    isLoading,
+    createRecord: createRecordMutation.mutateAsync,
+    updateRecord: updateRecordMutation.mutateAsync,
+    deleteRecord: deleteRecordMutation.mutateAsync,
+    uploadImage,
+    getSignedUrl,
+    isCreating: createRecordMutation.isPending,
+    isUpdating: updateRecordMutation.isPending,
+    isDeleting: deleteRecordMutation.isPending,
+  };
+}

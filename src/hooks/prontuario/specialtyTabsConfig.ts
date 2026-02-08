@@ -182,6 +182,19 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     alertas: 'Alertas Clínicos',
     timeline: 'Histórico / Linha do Tempo',
   },
+  pediatria: {
+    resumo: 'Visão Geral',
+    anamnese_pediatrica: 'Anamnese Pediátrica',
+    crescimento_desenvolvimento: 'Crescimento e Desenvolvimento',
+    avaliacao_clinica_pediatrica: 'Avaliação Clínica',
+    diagnostico_pediatrico: 'Diagnóstico Pediátrico',
+    prescricoes_pediatricas: 'Prescrições',
+    vacinacao: 'Vacinação',
+    evolucao: 'Evoluções',
+    exames: 'Exames / Documentos',
+    alertas: 'Alertas Pediátricos',
+    timeline: 'Linha do Tempo',
+  },
 };
 
 /**

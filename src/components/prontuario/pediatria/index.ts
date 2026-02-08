@@ -77,3 +77,13 @@ export {
   type VaccineStatusSummary,
   type VaccineDefinition,
 } from './VacinacaoPediatriaBlock';
+
+// Evoluções Clínicas
+export {
+  EvolucoesPediatriaBlock,
+  RESPOSTA_TRATAMENTO_OPTIONS,
+  type EvolucaoItem,
+  type EvolucoesPediatriaData,
+  type EvolucoesPediatriaRecord,
+  type RespostaTratamento,
+} from './EvolucoesPediatriaBlock';

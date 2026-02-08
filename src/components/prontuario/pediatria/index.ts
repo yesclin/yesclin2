@@ -64,3 +64,16 @@ export {
   type PrescricaoPediatriaData,
   type PrescricaoPediatriaRecord,
 } from './PrescricoesPediatriaBlock';
+
+// Vacinação
+export {
+  VacinacaoPediatriaBlock,
+  PEDIATRIC_VACCINE_CALENDAR,
+  APPLICATION_SITES,
+  calculateVaccineStatus,
+  type VacinaAplicada,
+  type VacinacaoPediatriaData,
+  type VacinacaoPediatriaRecord,
+  type VaccineStatusSummary,
+  type VaccineDefinition,
+} from './VacinacaoPediatriaBlock';

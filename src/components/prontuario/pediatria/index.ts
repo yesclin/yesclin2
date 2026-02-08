@@ -21,3 +21,13 @@ export {
   type MilestoneCategory,
   type GrowthFormData,
 } from './CrescimentoDesenvolvimentoBlock';
+
+// Anamnese Pediátrica
+export {
+  AnamnesePediatriaBlock,
+  DELIVERY_TYPES,
+  FEEDING_TYPES,
+  type AnamnesePediatriaData,
+  type AnamnesePediatriaRecord,
+  type MedicationItem,
+} from './AnamnesePediatriaBlock';

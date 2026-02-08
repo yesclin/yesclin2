@@ -31,3 +31,16 @@ export {
   type AnamnesePediatriaRecord,
   type MedicationItem,
 } from './AnamnesePediatriaBlock';
+
+// Avaliação Clínica
+export {
+  AvaliacaoClinicaPediatriaBlock,
+  GENERAL_STATE_OPTIONS,
+  CONSCIOUSNESS_OPTIONS,
+  HYDRATION_OPTIONS,
+  SKIN_COLOR_OPTIONS,
+  SKIN_TURGOR_OPTIONS,
+  FONTANELLE_OPTIONS,
+  type AvaliacaoClinicaPediatriaData,
+  type AvaliacaoClinicaRecord,
+} from './AvaliacaoClinicaPediatriaBlock';

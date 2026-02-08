@@ -103,7 +103,18 @@ import { PatientSelector } from "@/components/prontuario/PatientSelector";
 import { ClinicalTimeline } from "@/components/prontuario/ClinicalTimeline";
 import { SpecialtySelector } from "@/components/prontuario/SpecialtySelector";
 import { OdontogramModule } from "@/components/prontuario/odontogram/OdontogramModule";
-import { FacialMapModule, BeforeAfterModule, ConsentModule } from "@/components/prontuario/aesthetics";
+import { 
+  FacialMapModule, 
+  BeforeAfterModule, 
+  ConsentModule, 
+  VisaoGeralEsteticaBlock,
+  AnamneseEsteticaBlock,
+  AvaliacaoEsteticaBlock,
+  EvolucoesEsteticaBlock,
+  ProdutosUtilizadosBlock,
+  AlertasEsteticaBlock,
+  TimelineEsteticaBlock,
+} from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
@@ -979,6 +990,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <VisaoGeralEsteticaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              canEdit={canEditCurrentTab}
+              onNavigateToModule={(moduleKey) => setActiveTab(moduleKey)}
+            />
+          );
+        }
         // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
@@ -1040,6 +1061,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <AnamneseEsteticaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Anamnese com versionamento
         return (
           <AnamneseBlock
@@ -1053,6 +1084,17 @@ export default function Prontuario() {
         );
 
       case 'exame_fisico':
+        // Estética - Avaliação Estética
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <AvaliacaoEsteticaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Exame Físico (sinais vitais, medidas)
         return (
           <ExameFisicoBlock
@@ -1193,6 +1235,15 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <EvolucoesEsteticaBlock
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Default: Clínica Geral - Evoluções Clínicas
         return (
           <EvolucoesBlock
@@ -1328,6 +1379,16 @@ export default function Prontuario() {
         );
 
       case 'termos_consentimentos':
+        // Estética - Termos de Consentimento Estético
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <ConsentModule
+              patientId={patientId!}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Psicologia - Termos de Consentimento Terapêutico
         return (
           <TermosConsentimentosPsicologiaBlock
@@ -1397,6 +1458,14 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <AlertasEsteticaBlock
+              patientId={patientId!}
+              canEdit={canEditCurrentTab}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1457,6 +1526,13 @@ export default function Prontuario() {
             <HistoricoPilatesBlock
               patientId={patientId}
               clinicId={clinicIdForFisio || null}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'estetica') {
+          return (
+            <TimelineEsteticaBlock
+              patientId={patientId!}
             />
           );
         }
@@ -1804,6 +1880,29 @@ export default function Prontuario() {
             appointmentId={activeAppointment?.id}
             canEdit={canEditCurrentTab}
           />
+        );
+
+      case 'produtos_utilizados':
+        // Estética - Produtos Utilizados
+        return (
+          <ProdutosUtilizadosBlock
+            patientId={patientId!}
+            appointmentId={activeAppointment?.id}
+            canEdit={canEditCurrentTab}
+          />
+        );
+
+      case 'procedimentos_realizados':
+        // Estética / Odontologia - Procedimentos Realizados
+        // For now, redirect to evolutions or show placeholder
+        return (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">
+                Os procedimentos realizados são registrados nas Evoluções.
+              </p>
+            </CardContent>
+          </Card>
         );
 
       default:

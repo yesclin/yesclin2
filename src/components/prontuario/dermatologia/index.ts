@@ -12,3 +12,9 @@ export type {
   DermatoAlertItem,
   DermatoLastAppointment 
 } from './VisaoGeralDermatoBlock';
+
+export { AnamneseDermatoBlock } from './AnamneseDermatoBlock';
+export type { 
+  AnamneseDermatoData,
+  DermatoSymptoms 
+} from './AnamneseDermatoBlock';

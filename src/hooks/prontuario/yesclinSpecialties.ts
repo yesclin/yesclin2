@@ -264,6 +264,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     description: 'Mapa facial interativo, procedimentos estéticos e termos de consentimento',
     enabledBlocks: [
       'resumo',
+      'anamnese',
       'evolucao',
       'procedimentos_realizados',
       'produtos_utilizados',

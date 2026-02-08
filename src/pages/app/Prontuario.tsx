@@ -159,7 +159,20 @@ import {
   AlertasFuncionaisBanner as AlertasFuncionaisBannerPilates,
   HistoricoPilatesBlock,
 } from "@/components/prontuario/pilates";
-import { 
+import {
+  VisaoGeralPediatriaBlock,
+  AnamnesePediatriaBlock,
+  CrescimentoDesenvolvimentoBlock,
+  AvaliacaoClinicaPediatriaBlock,
+  DiagnosticoPediatriaBlock,
+  PrescricoesPediatriaBlock,
+  VacinacaoPediatriaBlock,
+  EvolucoesPediatriaBlock,
+  AlertasPediatriaBlock,
+  AlertasPediatriaBanner,
+  LinhaDoTempoPediatriaBlock,
+} from "@/components/prontuario/pediatria";
+import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
   usePlanoAlimentarData,
@@ -309,6 +322,12 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   applied_exercises: 'procedimentos',
   session_evolution: 'evolucao',
   // Pediatrics tabs - map to appropriate permissions
+  anamnese_pediatrica: 'anamnese',
+  crescimento_desenvolvimento: 'anamnese',
+  avaliacao_clinica_pediatrica: 'anamnese',
+  diagnostico_pediatrico: 'diagnostico',
+  prescricoes_pediatricas: 'prescricoes',
+  vacinacao: 'anamnese',
   pediatric_anamnesis: 'anamnese',
   gestational_history: 'anamnese',
   growth_data: 'anamnese',
@@ -999,6 +1018,16 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pediatria') {
+          return (
+            <VisaoGeralPediatriaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              canEdit={canEditCurrentTab}
+              onNavigateToModule={(moduleKey) => setActiveTab(moduleKey)}
+            />
+          );
+        }
         // Default: Clínica Geral - Visão Geral
         return (
           <VisaoGeralBlock
@@ -1184,6 +1213,75 @@ export default function Prontuario() {
           <DiagnosticoNutricionalBlock
             patientId={patientId}
             canEdit={canEditCurrentTab}
+          />
+        );
+
+      // ===== PEDIATRIA - SPECIFIC BLOCKS =====
+      case 'anamnese_pediatrica':
+        // Pediatria - Anamnese Pediátrica
+        if (!patientId) return null;
+        return (
+          <AnamnesePediatriaBlock
+            patientId={patientId}
+            isEditable={canEditCurrentTab}
+          />
+        );
+
+      case 'crescimento_desenvolvimento':
+        // Pediatria - Crescimento e Desenvolvimento
+        if (!patientId || !patient?.birth_date) return null;
+        return (
+          <CrescimentoDesenvolvimentoBlock
+            patientId={patientId}
+            birthDate={patient.birth_date}
+            measurements={[]}
+            milestones={[]}
+            isEditable={canEditCurrentTab}
+          />
+        );
+
+      case 'avaliacao_clinica_pediatrica':
+        // Pediatria - Avaliação Clínica
+        if (!patientId) return null;
+        return (
+          <AvaliacaoClinicaPediatriaBlock
+            patientId={patientId}
+            isEditable={canEditCurrentTab}
+          />
+        );
+
+      case 'diagnostico_pediatrico':
+        // Pediatria - Diagnóstico Pediátrico
+        if (!patientId) return null;
+        return (
+          <DiagnosticoPediatriaBlock
+            patientId={patientId}
+            isEditable={canEditCurrentTab}
+          />
+        );
+
+      case 'prescricoes_pediatricas':
+        // Pediatria - Prescrições Pediátricas
+        if (!patientId) return null;
+        return (
+          <PrescricoesPediatriaBlock
+            patientId={patientId}
+            isEditable={canEditCurrentTab}
+          />
+        );
+
+      case 'vacinacao':
+        // Pediatria - Vacinação
+        if (!patientId) return null;
+        // Calculate age in months from birth_date
+        const patientAgeMonths = patient?.birth_date 
+          ? Math.floor((Date.now() - new Date(patient.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+          : 0;
+        return (
+          <VacinacaoPediatriaBlock
+            patientId={patientId}
+            patientAgeMonths={patientAgeMonths}
+            isEditable={canEditCurrentTab}
           />
         );
 
@@ -1465,6 +1563,15 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'pediatria') {
+          return (
+            <AlertasPediatriaBlock
+              patientId={patientId}
+              isEditable={canEditCurrentTab}
+              currentProfessionalId={currentProfessionalId || undefined}
+            />
+          );
+        }
         // Clínica Geral - Alertas Clínicos
         return (
           <AlertasBlock
@@ -1532,6 +1639,14 @@ export default function Prontuario() {
           return (
             <TimelineEsteticaBlock
               patientId={patientId!}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'pediatria') {
+          return (
+            <LinhaDoTempoPediatriaBlock
+              patientId={patientId}
+              events={[]}
             />
           );
         }

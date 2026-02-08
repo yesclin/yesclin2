@@ -44,6 +44,13 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   avaliacao_funcional: 'Avaliação Funcional',
   avaliacao_dor: 'Avaliação de Dor',
   exercicios_prescritos: 'Exercícios Prescritos',
+  // Pediatria-specific blocks
+  anamnese_pediatrica: 'Anamnese Pediátrica',
+  crescimento_desenvolvimento: 'Crescimento e Desenvolvimento',
+  avaliacao_clinica_pediatrica: 'Avaliação Clínica',
+  diagnostico_pediatrico: 'Diagnóstico Pediátrico',
+  prescricoes_pediatricas: 'Prescrições Pediátricas',
+  vacinacao: 'Vacinação',
 };
 
 // All available clinical block keys

@@ -8,3 +8,4 @@ export { ConsentModule } from './ConsentModule';
 export { VisaoGeralEsteticaBlock } from './VisaoGeralEsteticaBlock';
 export { AnamneseEsteticaBlock } from './AnamneseEsteticaBlock';
 export { AvaliacaoEsteticaBlock } from './AvaliacaoEsteticaBlock';
+export { useFacialMapPdf } from './useFacialMapPdf';

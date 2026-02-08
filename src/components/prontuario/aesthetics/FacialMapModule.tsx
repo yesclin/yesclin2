@@ -1,33 +1,36 @@
- import { useState } from "react";
- import { Button } from "@/components/ui/button";
- import { Textarea } from "@/components/ui/textarea";
- import { Skeleton } from "@/components/ui/skeleton";
- import { 
-   Download, 
-   History,
-   Eye,
-   Save,
-   FileText,
-   RotateCcw,
- } from "lucide-react";
- import { FacialMapSVG } from "./FacialMapSVG";
- import { MuscleList } from "./MuscleList";
- import { ApplicationPointDialog } from "./ApplicationPointDialog";
- import { useFacialMap } from "@/hooks/aesthetics";
- import type { FacialMapApplication, ViewType, ProcedureType } from "./types";
- import { VIEW_TYPE_LABELS, FACIAL_MUSCLES, COMMON_PRODUCTS } from "./types";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Download, 
+  History,
+  Eye,
+  Save,
+  FileText,
+  RotateCcw,
+} from "lucide-react";
+import { FacialMapSVG } from "./FacialMapSVG";
+import { MuscleList } from "./MuscleList";
+import { ApplicationPointDialog } from "./ApplicationPointDialog";
+import { useFacialMap } from "@/hooks/aesthetics";
+import { useFacialMapPdf } from "./useFacialMapPdf";
+import type { FacialMapApplication, ViewType, ProcedureType } from "./types";
+import { VIEW_TYPE_LABELS, FACIAL_MUSCLES, COMMON_PRODUCTS } from "./types";
+
+interface FacialMapModuleProps {
+  patientId: string;
+  patientName?: string;
+  appointmentId?: string | null;
+  canEdit?: boolean;
+}
  
- interface FacialMapModuleProps {
-   patientId: string;
-   appointmentId?: string | null;
-   canEdit?: boolean;
- }
- 
- export function FacialMapModule({ 
-   patientId, 
-   appointmentId,
-   canEdit = false,
- }: FacialMapModuleProps) {
+export function FacialMapModule({ 
+  patientId, 
+  patientName,
+  appointmentId,
+  canEdit = false,
+}: FacialMapModuleProps) {
    const [viewType, setViewType] = useState<ViewType>('frontal');
    const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
    const [selectedPoint, setSelectedPoint] = useState<FacialMapApplication | null>(null);
@@ -48,8 +51,16 @@
      updateMapNotes,
    } = useFacialMap(patientId, showHistory ? null : appointmentId);
  
-   const displayApplications = showHistory ? allApplications : applications;
-   const isEditing = canEdit && selectedMuscle !== null;
+  const displayApplications = showHistory ? allApplications : applications;
+  const isEditing = canEdit && selectedMuscle !== null;
+
+  // PDF export hook
+  const { generatePdf } = useFacialMapPdf({
+    patientName,
+    patientId,
+    facialMap,
+    applications: displayApplications,
+  });
  
    // Calculate totals
    const totals = displayApplications.reduce<Record<string, number>>((acc, app) => {
@@ -186,10 +197,15 @@
              Visualizar
            </Button>
            
-           <Button variant="outline" size="sm">
-             <Download className="h-4 w-4 mr-1.5" />
-             PDF
-           </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={generatePdf}
+              disabled={displayApplications.length === 0}
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              PDF
+            </Button>
          </div>
        </div>
  

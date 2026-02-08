@@ -13,6 +13,7 @@ export type SpecialtyKey =
   | 'psiquiatria'     // Psiquiatria (not in supported list)
   | 'nutricao'        // Nutrição
   | 'estetica'        // Estética
+  | 'dermatologia'    // Dermatologia
   | 'fisioterapia'    // Fisioterapia
   | 'pilates'         // Pilates (independente)
   | 'pediatria'       // Pediatria

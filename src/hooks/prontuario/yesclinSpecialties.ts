@@ -338,7 +338,44 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Smile',
   },
-  // Dermatologia removido - usa a estrutura de Clínica Geral ou Estética conforme contexto
+  /**
+   * DERMATOLOGIA - Blocos clínicos exclusivos (11 blocos)
+   * 
+   * Prontuário focado em diagnóstico e acompanhamento dermatológico:
+   * 1. Visão Geral - resumo do paciente e alertas
+   * 2. Anamnese Dermatológica - histórico, queixas cutâneas, fototipo
+   * 3. Exame Dermatológico - inspeção da pele, lesões, dermatoscopia
+   * 4. Diagnóstico Dermatológico - hipóteses diagnósticas (CID-10)
+   * 5. Prescrições - medicações tópicas e sistêmicas
+   * 6. Plano / Conduta - orientações terapêuticas
+   * 7. Evoluções - registros de retornos e acompanhamento
+   * 8. Exames / Documentos - biópsias, dermatoscopia, laudos
+   * 9. Fotos Clínicas - documentação fotográfica de lesões
+   * 10. Alertas Clínicos - alergias, fotossensibilidade, medicamentos
+   * 11. Histórico / Linha do Tempo - cronologia de atendimentos
+   * 
+   * NÃO inclui: Odontograma, Mapa Facial Estético, Plano Alimentar,
+   * Instrumentos Psicológicos, Procedimentos Estéticos (harmonização)
+   */
+  {
+    key: 'dermatologia',
+    name: 'Dermatologia',
+    description: 'Diagnóstico dermatológico, acompanhamento clínico e prescrição médica',
+    enabledBlocks: [
+      'resumo',           // 1. Visão Geral
+      'anamnese',         // 2. Anamnese Dermatológica
+      'exame_fisico',     // 3. Exame Dermatológico
+      'diagnostico',      // 4. Diagnóstico Dermatológico (CID-10)
+      'prescricoes',      // 5. Prescrições
+      'conduta',          // 6. Plano / Conduta
+      'evolucao',         // 7. Evoluções
+      'exames',           // 8. Exames / Documentos
+      'before_after_photos', // 9. Fotos Clínicas
+      'alertas',          // 10. Alertas Clínicos
+      'timeline',         // 11. Histórico / Linha do Tempo
+    ],
+    icon: 'Scan',
+  },
   {
     key: 'pediatria',
     name: 'Pediatria',
@@ -365,6 +402,7 @@ export const YESCLIN_SPECIALTY_LABELS: Record<SpecialtyKey, string> = {
   psiquiatria: 'Psiquiatria',
   nutricao: 'Nutrição',
   estetica: 'Estética',
+  dermatologia: 'Dermatologia',
   fisioterapia: 'Fisioterapia',
   pilates: 'Pilates',
   pediatria: 'Pediatria',
@@ -411,7 +449,9 @@ export const SPECIALTY_NAME_TO_KEY_MAP: Record<string, SpecialtyKey> = {
   'estetica': 'estetica',
   'harmonização facial': 'estetica',
   'harmonizacao facial': 'estetica',
-  'dermatologia': 'estetica',
+  'dermatologia': 'dermatologia',
+  'dermatologista': 'dermatologia',
+  'dermato': 'dermatologia',
   'fisioterapia': 'fisioterapia',
   'fisioterapeuta': 'fisioterapia',
   'pilates': 'pilates',

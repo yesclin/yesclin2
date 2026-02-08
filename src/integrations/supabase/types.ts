@@ -155,6 +155,8 @@ export type Database = {
           id: string
           ip_address: string | null
           patient_id: string
+          procedure_id: string | null
+          procedure_name: string | null
           signature_data: string | null
           term_content: string
           term_title: string
@@ -171,6 +173,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           patient_id: string
+          procedure_id?: string | null
+          procedure_name?: string | null
           signature_data?: string | null
           term_content: string
           term_title: string
@@ -187,6 +191,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           patient_id?: string
+          procedure_id?: string | null
+          procedure_name?: string | null
           signature_data?: string | null
           term_content?: string
           term_title?: string
@@ -220,6 +226,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_consent_records_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
             referencedColumns: ["id"]
           },
         ]

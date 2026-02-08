@@ -23,6 +23,10 @@ export {
   type PlanoTratamentoOdontologicoData,
   type ProcedimentoPlanejado 
 } from './PlanoTratamentoOdontologicoBlock';
+export { 
+  ProcedimentosRealizadosBlock, 
+  type ProcedimentoRealizado 
+} from './ProcedimentosRealizadosBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

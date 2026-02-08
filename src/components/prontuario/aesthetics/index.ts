@@ -1,7 +1,8 @@
- export * from './types';
+export * from './types';
 export { FacialMapSVG } from './FacialMapSVG';
 export { FacialMapModule } from './FacialMapModule';
 export { ApplicationPointDialog } from './ApplicationPointDialog';
 export { MuscleList } from './MuscleList';
 export { BeforeAfterModule } from './BeforeAfterModule';
 export { ConsentModule } from './ConsentModule';
+export { VisaoGeralEsteticaBlock } from './VisaoGeralEsteticaBlock';

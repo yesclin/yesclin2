@@ -1,4 +1,16 @@
 // Pediatria - Prontuário Blocks
+
+// Visão Geral
+export { 
+  VisaoGeralPediatriaBlock,
+  type PediatricPatientInfo,
+  type PediatricGuardian,
+  type PediatricAlert,
+  type PediatricDiagnosis,
+  type LastAppointmentInfo,
+} from './VisaoGeralPediatriaBlock';
+
+// Crescimento e Desenvolvimento
 export { 
   CrescimentoDesenvolvimentoBlock,
   MILESTONE_CATEGORIES,

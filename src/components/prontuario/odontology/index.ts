@@ -27,6 +27,10 @@ export {
   ProcedimentosRealizadosBlock, 
   type ProcedimentoRealizado 
 } from './ProcedimentosRealizadosBlock';
+export { 
+  MateriaisUtilizadosBlock, 
+  type MaterialUtilizado 
+} from './MateriaisUtilizadosBlock';
 
 // New full-featured odontogram module
 export { OdontogramModule } from '../odontogram/OdontogramModule';

@@ -146,6 +146,21 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     timeline: 'Linha do Tempo',
     historico: 'Histórico',
   },
+  odontologia: {
+    resumo: 'Visão Geral',
+    anamnese: 'Anamnese Odontológica',
+    exame_fisico: 'Avaliação Clínica',
+    odontograma: 'Odontograma Digital',
+    diagnostico: 'Diagnóstico Odontológico',
+    conduta: 'Plano de Tratamento',
+    evolucao: 'Evoluções',
+    procedimentos_realizados: 'Procedimentos Realizados',
+    produtos_utilizados: 'Materiais Utilizados',
+    exames: 'Exames / Documentos',
+    before_after_photos: 'Fotos Antes / Depois',
+    alertas: 'Alertas',
+    timeline: 'Histórico / Linha do Tempo',
+  },
 };
 
 /**

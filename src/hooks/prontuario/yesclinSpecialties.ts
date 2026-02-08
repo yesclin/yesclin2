@@ -296,21 +296,45 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     ],
     icon: 'Sparkles',
   },
+  /**
+   * ODONTOLOGIA - Blocos clínicos exclusivos (14 blocos)
+   * 
+   * Prontuário focado em saúde bucal:
+   * 1. Visão Geral - resumo do paciente
+   * 2. Anamnese Odontológica - histórico e queixa
+   * 3. Avaliação Clínica - exame clínico bucal
+   * 4. Odontograma Digital - mapeamento dental FDI
+   * 5. Diagnóstico Odontológico - hipóteses e CID
+   * 6. Plano de Tratamento - procedimentos planejados
+   * 7. Evoluções Odontológicas - registros de sessões
+   * 8. Procedimentos Realizados - tratamentos executados
+   * 9. Materiais Utilizados - rastreabilidade de insumos
+   * 10. Exames / Documentos - radiografias, tomografias
+   * 11. Fotos Antes / Depois - documentação visual
+   * 12. Alertas - alergias e contraindicações
+   * 13. Histórico / Linha do Tempo
+   * 
+   * NÃO inclui: Mapa Facial Estético, Plano Alimentar, Sessões Fisioterapêuticas,
+   * Avaliações Nutricionais, Instrumentos Psicológicos
+   */
   {
     key: 'odontologia',
     name: 'Odontologia',
-    description: 'Odontograma digital e procedimentos por dente',
+    description: 'Odontograma digital, procedimentos por dente e rastreabilidade de materiais',
     enabledBlocks: [
-      'resumo',
-      'evolucao',
-      'conduta',
-      'procedimentos_realizados',
-      'produtos_utilizados',
-      'odontograma',
-      'exames',
-      'timeline',
-      'historico',
-      'before_after_photos',
+      'resumo',                   // 1. Visão Geral
+      'anamnese',                 // 2. Anamnese Odontológica
+      'exame_fisico',             // 3. Avaliação Clínica
+      'odontograma',              // 4. Odontograma Digital
+      'diagnostico',              // 5. Diagnóstico Odontológico
+      'conduta',                  // 6. Plano de Tratamento
+      'evolucao',                 // 7. Evoluções Odontológicas
+      'procedimentos_realizados', // 8. Procedimentos Realizados
+      'produtos_utilizados',      // 9. Materiais Utilizados
+      'exames',                   // 10. Exames / Documentos
+      'before_after_photos',      // 11. Fotos Antes / Depois
+      'alertas',                  // 12. Alertas
+      'timeline',                 // 13. Histórico / Linha do Tempo
     ],
     icon: 'Smile',
   },

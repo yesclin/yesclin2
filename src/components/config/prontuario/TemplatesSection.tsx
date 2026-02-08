@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter, Download } from 'lucide-react';
+import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter, Download, Syringe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useTemplates, useDefaultTemplates, type Template, type TemplateType } from '@/hooks/prontuario';
 import { TemplateDialog } from './TemplateDialog';
+import { Link } from 'react-router-dom';
 
 const TYPES: { value: TemplateType; label: string; category?: string }[] = [
   // General
@@ -266,7 +267,24 @@ export function TemplatesSection() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Link para Modelos de Anamnese Estética */}
+          <Link to="/app/config/modelos-anamnese">
+            <Card className="cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+              <CardContent className="flex items-center gap-4 py-4">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Syringe className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Modelos de Anamnese Estética</p>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie modelos de anamnese para procedimentos estéticos (Toxina, Preenchimento, Bioestimuladores)
+                  </p>
+                </div>
+                <Badge variant="secondary">Configurável</Badge>
+              </CardContent>
+            </Card>
+          </Link>
           {templates.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

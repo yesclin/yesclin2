@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { useToothHistory, useUpdateToothStatus } from "@/hooks/useOdontogram";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,10 +36,10 @@ import {
 import { 
   TOOTH_STATUS_LABELS, 
   TOOTH_NAMES,
-  TOOTH_SURFACES,
   type ToothStatus,
   type OdontogramTooth,
 } from "@/types/odontogram";
+import { ToothSurfaceSelector } from "./ToothSurfaceSelector";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -174,26 +173,15 @@ export function ToothDetailDialog({
               </Select>
             </div>
 
-            {/* Surface selection */}
+            {/* Interactive surface selection */}
             <div className="space-y-2">
               <Label>Superfícies Afetadas (opcional)</Label>
-              <div className="flex gap-2">
-                {TOOTH_SURFACES.map(({ code, label }) => (
-                  <Button
-                    key={code}
-                    type="button"
-                    variant={selectedSurfaces.includes(code) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleSurfaceToggle(code)}
-                    className="flex-1"
-                  >
-                    {code}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {TOOTH_SURFACES.map(s => `${s.code}=${s.label}`).join(', ')}
-              </p>
+              <ToothSurfaceSelector
+                selectedSurfaces={selectedSurfaces}
+                onToggleSurface={handleSurfaceToggle}
+                status={selectedStatus}
+                size="md"
+              />
             </div>
 
             {/* Procedure selection */}

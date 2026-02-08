@@ -132,6 +132,19 @@ const SPECIALTY_BLOCK_LABEL_OVERRIDES: Partial<Record<SpecialtyKey, Partial<Reco
     alertas: 'Alertas / Restrições',
     timeline: 'Histórico',
   },
+  estetica: {
+    resumo: 'Visão Geral',
+    anamnese: 'Anamnese Estética',
+    exame_fisico: 'Avaliação Estética',
+    evolucao: 'Evoluções',
+    procedimentos_realizados: 'Procedimentos',
+    produtos_utilizados: 'Produtos',
+    before_after_photos: 'Fotos Antes / Depois',
+    termos_consentimentos: 'Termos',
+    facial_map: 'Mapa Facial',
+    timeline: 'Linha do Tempo',
+    historico: 'Histórico',
+  },
 };
 
 /**

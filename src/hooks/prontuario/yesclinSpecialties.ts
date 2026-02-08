@@ -265,6 +265,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     enabledBlocks: [
       'resumo',
       'anamnese',
+      'exame_fisico',
       'evolucao',
       'procedimentos_realizados',
       'produtos_utilizados',

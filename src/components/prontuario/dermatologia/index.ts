@@ -68,3 +68,14 @@ export type {
   BeforeAfterPair 
 } from './ImagensDermatoBlock';
 export { IMAGE_TYPES } from './ImagensDermatoBlock';
+
+export { AlertasDermatoBlock } from './AlertasDermatoBlock';
+export type { 
+  AlertaDermatoItem,
+  DermatoAlertType,
+  DermatoAlertSeverity 
+} from './AlertasDermatoBlock';
+export { 
+  DERMATO_ALERT_TYPES,
+  DERMATO_ALERT_SEVERITY 
+} from './AlertasDermatoBlock';

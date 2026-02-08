@@ -7,3 +7,4 @@ export * from './useAvaliacaoEsteticaData';
 export * from './useProdutosUtilizadosData';
 export * from './useEvolucoesEsteticaData';
 export * from './useAestheticAlerts';
+export * from './useTimelineEsteticaData';

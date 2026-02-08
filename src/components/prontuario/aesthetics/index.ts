@@ -14,3 +14,4 @@ export { useFacialMapPdf } from './useFacialMapPdf';
 export { ProdutosUtilizadosBlock } from './ProdutosUtilizadosBlock';
 export { EvolucoesEsteticaBlock } from './EvolucoesEsteticaBlock';
 export { AlertasEsteticaBlock } from './AlertasEsteticaBlock';
+export { TimelineEsteticaBlock } from './TimelineEsteticaBlock';

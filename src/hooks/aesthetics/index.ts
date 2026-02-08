@@ -5,3 +5,4 @@ export * from './useVisaoGeralEsteticaData';
 export * from './useAnamneseEsteticaData';
 export * from './useAvaliacaoEsteticaData';
 export * from './useProdutosUtilizadosData';
+export * from './useEvolucoesEsteticaData';

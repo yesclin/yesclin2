@@ -368,14 +368,13 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'avaliacao_clinica', label: 'Avaliação Antropométrica', icon: Scale },
   { id: 'diagnostico_nutricional', label: 'Diagnóstico Nutricional', icon: ClipboardCheck },
   { id: 'plano_alimentar', label: 'Plano Alimentar', icon: Utensils },
-  // Aesthetics tabs
-  { id: 'aesthetic_assessment', label: 'Avaliação Estética', icon: Sparkles },
-  { id: 'aesthetic_procedure', label: 'Procedimento Realizado', icon: Syringe },
-  { id: 'products_used', label: 'Produtos Utilizados', icon: Package },
+  // Aesthetics tabs (using correct system IDs from yesclinSpecialties)
+  { id: 'exame_fisico', label: 'Avaliação Estética', icon: Sparkles },
+  { id: 'procedimentos_realizados', label: 'Procedimentos Realizados', icon: Syringe },
+  { id: 'produtos_utilizados', label: 'Produtos Utilizados', icon: Package },
   { id: 'before_after_photos', label: 'Fotos Antes/Depois', icon: ImageIcon },
-  { id: 'consent_form', label: 'Termo de Consentimento', icon: FileCheck },
+  { id: 'termos_consentimentos', label: 'Termos de Consentimento', icon: FileCheck },
   { id: 'facial_map', label: 'Mapa Facial', icon: MapPin },
-  { id: 'aesthetic_consent', label: 'Termos Estéticos', icon: FileCheck },
   // Physiotherapy tabs (using correct system IDs)
   { id: 'avaliacao_funcional', label: 'Avaliação Funcional', icon: PersonStanding },
   { id: 'avaliacao_dor', label: 'Avaliação de Dor', icon: Gauge },

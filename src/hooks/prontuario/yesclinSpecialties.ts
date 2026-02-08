@@ -259,7 +259,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
     icon: 'Dumbbell',
   },
   /**
-   * ESTÉTICA / HARMONIZAÇÃO FACIAL - Blocos clínicos exclusivos (12 blocos)
+   * ESTÉTICA / HARMONIZAÇÃO FACIAL - Blocos clínicos exclusivos (11 blocos)
    * 
    * Prontuário focado em procedimentos estéticos e harmonização:
    * 1. Visão Geral - resumo do paciente e alertas
@@ -272,8 +272,7 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
    * 8. Termos de Consentimento - aceite digital
    * 9. Mapa Facial - pontos de aplicação interativos
    * 10. Alertas Clínicos - alergias, contraindicações, riscos
-   * 11. Linha do Tempo - histórico cronológico
-   * 12. Histórico - visão consolidada
+   * 11. Linha do Tempo - histórico cronológico consolidado
    * 
    * NÃO inclui: Prescrição médica tradicional, Diagnóstico médico formal,
    * CID obrigatório, Odontograma, Plano alimentar, Sessões fisioterapêuticas
@@ -294,7 +293,6 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
       'facial_map',               // 9. Mapa Facial
       'alertas',                  // 10. Alertas Clínicos
       'timeline',                 // 11. Linha do Tempo
-      'historico',                // 12. Histórico
     ],
     icon: 'Sparkles',
   },

@@ -224,6 +224,101 @@ export type Database = {
           },
         ]
       }
+      aesthetic_products_used: {
+        Row: {
+          application_area: string | null
+          appointment_id: string | null
+          batch_number: string | null
+          clinic_id: string
+          created_at: string
+          expiry_date: string | null
+          facial_map_id: string | null
+          id: string
+          manufacturer: string | null
+          notes: string | null
+          patient_id: string
+          procedure_description: string | null
+          procedure_type: string | null
+          product_name: string
+          quantity: number
+          registered_at: string
+          registered_by: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          application_area?: string | null
+          appointment_id?: string | null
+          batch_number?: string | null
+          clinic_id: string
+          created_at?: string
+          expiry_date?: string | null
+          facial_map_id?: string | null
+          id?: string
+          manufacturer?: string | null
+          notes?: string | null
+          patient_id: string
+          procedure_description?: string | null
+          procedure_type?: string | null
+          product_name: string
+          quantity?: number
+          registered_at?: string
+          registered_by?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          application_area?: string | null
+          appointment_id?: string | null
+          batch_number?: string | null
+          clinic_id?: string
+          created_at?: string
+          expiry_date?: string | null
+          facial_map_id?: string | null
+          id?: string
+          manufacturer?: string | null
+          notes?: string | null
+          patient_id?: string
+          procedure_description?: string | null
+          procedure_type?: string | null
+          product_name?: string
+          quantity?: number
+          registered_at?: string
+          registered_by?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aesthetic_products_used_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_products_used_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_products_used_facial_map_id_fkey"
+            columns: ["facial_map_id"]
+            isOneToOne: false
+            referencedRelation: "facial_maps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aesthetic_products_used_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_rules: {
         Row: {
           arrival_tolerance_minutes: number

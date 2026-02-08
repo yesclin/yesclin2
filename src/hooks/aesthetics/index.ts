@@ -4,3 +4,4 @@ export * from './useAestheticConsent';
 export * from './useVisaoGeralEsteticaData';
 export * from './useAnamneseEsteticaData';
 export * from './useAvaliacaoEsteticaData';
+export * from './useProdutosUtilizadosData';

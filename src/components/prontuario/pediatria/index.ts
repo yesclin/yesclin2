@@ -53,3 +53,14 @@ export {
   type DiagnosticoPediatriaData,
   type DiagnosticoPediatriaRecord,
 } from './DiagnosticoPediatriaBlock';
+
+// Prescrições Pediátricas
+export {
+  PrescricoesPediatriaBlock,
+  FREQUENCY_OPTIONS,
+  ROUTE_OPTIONS,
+  COMMON_PEDIATRIC_MEDICATIONS,
+  type PrescricaoItem,
+  type PrescricaoPediatriaData,
+  type PrescricaoPediatriaRecord,
+} from './PrescricoesPediatriaBlock';

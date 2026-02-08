@@ -61,3 +61,10 @@ export {
   EVOLUTION_STATUS,
   COMMON_ADVERSE_EFFECTS 
 } from './EvolucoesDermatoBlock';
+
+export { ImagensDermatoBlock } from './ImagensDermatoBlock';
+export type { 
+  ImagemDermatoItem,
+  BeforeAfterPair 
+} from './ImagensDermatoBlock';
+export { IMAGE_TYPES } from './ImagensDermatoBlock';

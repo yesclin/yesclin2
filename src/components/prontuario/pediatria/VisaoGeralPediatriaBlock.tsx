@@ -1,24 +1,19 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Baby,
   Calendar,
   User,
-  Phone,
   AlertTriangle,
   Stethoscope,
   Clock,
-  UserCircle,
-  Heart,
   TrendingUp,
   Syringe,
-  FileText,
   Activity,
-  ChevronRight
+  CheckCircle
 } from 'lucide-react';
 import { format, differenceInMonths, differenceInYears, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -110,41 +105,30 @@ function getRelativeDate(dateStr: string): string {
   return format(date, 'dd/MM/yyyy', { locale: ptBR });
 }
 
-// ===== QUICK ACTION CARD =====
-interface QuickActionCardProps {
+// ===== SUMMARY INDICATOR CARD =====
+interface SummaryIndicatorProps {
   title: string;
-  description: string;
+  value: string | number;
   icon: React.ReactNode;
-  onClick: () => void;
-  badge?: string;
-  variant?: 'default' | 'warning' | 'success';
+  variant?: 'default' | 'warning' | 'success' | 'info';
 }
 
-function QuickActionCard({ title, description, icon, onClick, badge, variant = 'default' }: QuickActionCardProps) {
+function SummaryIndicator({ title, value, icon, variant = 'default' }: SummaryIndicatorProps) {
   const variantClasses = {
-    default: 'hover:bg-muted/70',
-    warning: 'border-warning/30 bg-warning/5 hover:bg-warning/10',
-    success: 'border-primary/30 bg-primary/5 hover:bg-primary/10',
+    default: 'bg-muted/50 border-muted',
+    warning: 'bg-warning/10 border-warning/30',
+    success: 'bg-primary/10 border-primary/30',
+    info: 'bg-blue-500/10 border-blue-500/30',
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full p-3 rounded-lg border text-left transition-colors flex items-center gap-3 ${variantClasses[variant]}`}
-    >
-      <div className="shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">{title}</span>
-          {badge && (
-            <Badge variant="secondary" className="text-xs">{badge}</Badge>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground truncate">{description}</p>
+    <div className={`p-3 rounded-lg border ${variantClasses[variant]}`}>
+      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+        {icon}
+        <span className="text-xs">{title}</span>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-    </button>
+      <p className="font-semibold text-sm">{value}</p>
+    </div>
   );
 }
 
@@ -350,47 +334,37 @@ export function VisaoGeralPediatriaBlock({
 
         <Separator />
 
-        {/* Quick Actions */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Acesso Rápido</p>
-          <div className="grid gap-2">
-            <QuickActionCard
-              title="Crescimento"
-              description="Peso, altura e marcos de desenvolvimento"
-              icon={<TrendingUp className="h-5 w-5 text-primary" />}
-              onClick={() => onNavigateToModule?.('crescimento_desenvolvimento')}
-              variant="default"
-            />
-            <QuickActionCard
-              title="Vacinação"
-              description="Calendário vacinal e doses aplicadas"
-              icon={<Syringe className="h-5 w-5 text-primary" />}
-              onClick={() => onNavigateToModule?.('vacinacao')}
-              variant="default"
-            />
-            <QuickActionCard
-              title="Anamnese"
-              description="Histórico neonatal e desenvolvimento"
-              icon={<FileText className="h-5 w-5 text-primary" />}
-              onClick={() => onNavigateToModule?.('anamnese_pediatrica')}
-              variant="default"
-            />
-            <QuickActionCard
-              title="Avaliação Clínica"
-              description="Sinais vitais e exame físico"
-              icon={<Activity className="h-5 w-5 text-primary" />}
-              onClick={() => onNavigateToModule?.('avaliacao_clinica_pediatrica')}
-              variant="default"
-            />
-          </div>
+        {/* Summary Indicators Grid */}
+        <div className="grid grid-cols-2 gap-2">
+          <SummaryIndicator
+            title="Evoluções"
+            value={evolutionsCount || 0}
+            icon={<Stethoscope className="h-3.5 w-3.5" />}
+            variant="default"
+          />
+          <SummaryIndicator
+            title="Alertas Ativos"
+            value={activeAlerts.length}
+            icon={<AlertTriangle className="h-3.5 w-3.5" />}
+            variant={activeAlerts.length > 0 ? 'warning' : 'success'}
+          />
+          <SummaryIndicator
+            title="Última Consulta"
+            value={lastAppointment ? getRelativeDate(lastAppointment.date) : 'Nenhuma'}
+            icon={<Clock className="h-3.5 w-3.5" />}
+            variant="info"
+          />
+          <SummaryIndicator
+            title="Idade"
+            value={age.text}
+            icon={<Calendar className="h-3.5 w-3.5" />}
+            variant="default"
+          />
         </div>
 
-        {/* Last Appointment */}
+        {/* Last Appointment Details */}
         {lastAppointment && (
-          <div 
-            className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-            onClick={() => onNavigateToModule?.('timeline')}
-          >
+          <div className="p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               <Clock className="h-4 w-4" />
               <span>Última Consulta</span>
@@ -409,36 +383,16 @@ export function VisaoGeralPediatriaBlock({
           </div>
         )}
 
-        {/* Evolutions Summary */}
-        {evolutionsCount > 0 && (
-          <div 
-            className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-            onClick={() => onNavigateToModule?.('evolucao')}
-          >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Stethoscope className="h-4 w-4" />
-              <span>Evoluções Clínicas</span>
-              <Badge variant="secondary" className="text-xs">{evolutionsCount}</Badge>
-            </div>
-            <p className="text-sm">
-              {evolutionsCount} {evolutionsCount === 1 ? 'registro' : 'registros'} no prontuário
-            </p>
-          </div>
-        )}
-
-        {/* Pediatric Alerts */}
+        {/* Pediatric Alerts Display */}
         {activeAlerts.length > 0 && (
           <div className="space-y-2">
-            <div 
-              className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer"
-              onClick={() => onNavigateToModule?.('alertas')}
-            >
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <AlertTriangle className="h-4 w-4" />
               <span>Alertas Pediátricos</span>
               <Badge variant="destructive" className="text-xs">{activeAlerts.length}</Badge>
             </div>
             <div className="space-y-2">
-              {criticalAlerts.slice(0, 2).map((alert) => (
+              {criticalAlerts.slice(0, 3).map((alert) => (
                 <div 
                   key={alert.id}
                   className="p-2 rounded-lg border border-destructive/30 bg-destructive/10 flex items-center gap-2"
@@ -456,16 +410,6 @@ export function VisaoGeralPediatriaBlock({
                   <span className="text-sm font-medium">{alert.title}</span>
                 </div>
               ))}
-              {activeAlerts.length > 4 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full text-xs"
-                  onClick={() => onNavigateToModule?.('alertas')}
-                >
-                  Ver todos os {activeAlerts.length} alertas
-                </Button>
-              )}
             </div>
           </div>
         )}

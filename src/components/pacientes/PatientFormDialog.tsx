@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, User, Phone, MapPin, Building2, AlertTriangle, Users } from 'lucide-react';
+import { X, User, Phone, MapPin, Building2, AlertTriangle, Users, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import type { PatientFormData, Patient } from '@/types/pacientes';
 import { brazilianStates, relationshipOptions, maritalStatusOptions } from '@/types/pacientes';
+import { maskCEP, validateCEP, fetchAddressFromCEP } from '@/lib/validators';
 import { toast } from 'sonner';
 
 interface PatientFormDialogProps {
@@ -116,9 +117,50 @@ export function PatientFormDialog({
   });
 
   const [activeTab, setActiveTab] = useState('identification');
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
 
   const handleChange = (field: keyof PatientFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCepChange = (value: string) => {
+    const masked = maskCEP(value);
+    handleChange('address_zip', masked);
+  };
+
+  const searchCEP = async () => {
+    const cleanCEP = formData.address_zip.replace(/\D/g, '');
+    if (!validateCEP(cleanCEP)) {
+      toast.error('Informe um CEP válido com 8 dígitos.');
+      return;
+    }
+    setIsSearchingCep(true);
+    try {
+      const result = await fetchAddressFromCEP(cleanCEP);
+      if (result) {
+        setFormData(prev => ({
+          ...prev,
+          address_street: result.logradouro || prev.address_street,
+          address_neighborhood: result.bairro || prev.address_neighborhood,
+          address_city: result.localidade || prev.address_city,
+          address_state: result.uf || prev.address_state,
+        }));
+        toast.success('Endereço encontrado!');
+      } else {
+        toast.error('CEP não encontrado. Preencha manualmente.');
+      }
+    } catch {
+      toast.error('Erro ao buscar CEP. Tente novamente.');
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
+
+  const handleCepBlur = async () => {
+    const cleanCEP = formData.address_zip.replace(/\D/g, '');
+    if (cleanCEP.length === 8) {
+      await searchCEP();
+    }
   };
 
   const handleSubmit = () => {
@@ -352,12 +394,33 @@ export function PatientFormDialog({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="address_zip">CEP</Label>
-                    <Input
-                      id="address_zip"
-                      value={formData.address_zip}
-                      onChange={(e) => handleChange('address_zip', e.target.value)}
-                      placeholder="00000-000"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="address_zip"
+                        value={formData.address_zip}
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        onBlur={handleCepBlur}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={searchCEP}
+                        disabled={isSearchingCep}
+                      >
+                        {isSearchingCep ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Digite o CEP para preencher automaticamente
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

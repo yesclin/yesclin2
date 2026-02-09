@@ -165,8 +165,8 @@ export function PatientFormDialog({
             </TabsList>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="p-6 pt-4">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-6 pt-4 pb-6">
               {/* Identification Tab */}
               <TabsContent value="identification" className="m-0 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -573,7 +573,7 @@ export function PatientFormDialog({
                 </div>
               </TabsContent>
             </div>
-          </ScrollArea>
+          </div>
         </Tabs>
 
         <div className="flex justify-end gap-2 p-6 pt-4 border-t shrink-0">

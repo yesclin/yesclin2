@@ -201,10 +201,10 @@ export default function Pacientes() {
       guardian_rg: data.guardian_rg || undefined,
       guardian_phone: data.guardian_phone || undefined,
       guardian_email: data.guardian_email || undefined,
-      allergies: data.allergies || undefined,
-      chronic_diseases: data.chronic_diseases || undefined,
-      current_medications: data.current_medications || undefined,
-      clinical_restrictions: data.clinical_restrictions || undefined,
+      allergies: data.allergies ?? '',
+      chronic_diseases: data.chronic_diseases ?? '',
+      current_medications: data.current_medications ?? '',
+      clinical_restrictions: data.clinical_restrictions ?? '',
     };
 
     if (editingPatient) {

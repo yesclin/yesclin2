@@ -255,17 +255,21 @@ export function useCreatePatient() {
       }
       
       // Insert clinical data if provided
-      const hasClinicData = data.allergies || data.chronic_diseases || data.current_medications || data.clinical_restrictions;
+      const allergiesArr = data.allergies ? data.allergies.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const chronicArr = data.chronic_diseases ? data.chronic_diseases.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const medsArr = data.current_medications ? data.current_medications.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const restrictions = data.clinical_restrictions || null;
+      const hasClinicData = allergiesArr.length > 0 || chronicArr.length > 0 || medsArr.length > 0 || !!restrictions;
       if (hasClinicData) {
         const { error: clinicalError } = await supabase
           .from("patient_clinical_data")
           .insert({
             clinic_id: clinicId,
             patient_id: patient.id,
-            allergies: data.allergies ? data.allergies.split(",").map(s => s.trim()) : [],
-            chronic_diseases: data.chronic_diseases ? data.chronic_diseases.split(",").map(s => s.trim()) : [],
-            current_medications: data.current_medications ? data.current_medications.split(",").map(s => s.trim()) : [],
-            clinical_restrictions: data.clinical_restrictions || null,
+            allergies: allergiesArr,
+            chronic_diseases: chronicArr,
+            current_medications: medsArr,
+            clinical_restrictions: restrictions,
           });
         
         if (clinicalError) console.error("Error inserting clinical data:", clinicalError);
@@ -340,16 +344,20 @@ export function useUpdatePatient() {
         if (guardErr) console.error("Error updating guardian:", guardErr);
       }
 
-      // Update clinical data: delete existing, then insert if provided
+      // Update clinical data: delete existing, then always re-insert to avoid data loss
       await supabase.from("patient_clinical_data").delete().eq("patient_id", id);
-      const hasClinicData = data.allergies || data.chronic_diseases || data.current_medications || data.clinical_restrictions;
-      if (hasClinicData) {
+      const allergiesArr = data.allergies ? data.allergies.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const chronicArr = data.chronic_diseases ? data.chronic_diseases.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const medsArr = data.current_medications ? data.current_medications.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const restrictions = data.clinical_restrictions || null;
+      const hasAnyClinicData = allergiesArr.length > 0 || chronicArr.length > 0 || medsArr.length > 0 || !!restrictions;
+      if (hasAnyClinicData) {
         const { error: clinErr } = await supabase.from("patient_clinical_data").insert({
           clinic_id: clinicId, patient_id: id,
-          allergies: data.allergies ? data.allergies.split(",").map(s => s.trim()) : [],
-          chronic_diseases: data.chronic_diseases ? data.chronic_diseases.split(",").map(s => s.trim()) : [],
-          current_medications: data.current_medications ? data.current_medications.split(",").map(s => s.trim()) : [],
-          clinical_restrictions: data.clinical_restrictions || null,
+          allergies: allergiesArr,
+          chronic_diseases: chronicArr,
+          current_medications: medsArr,
+          clinical_restrictions: restrictions,
         });
         if (clinErr) console.error("Error updating clinical data:", clinErr);
       }

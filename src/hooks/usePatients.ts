@@ -315,7 +315,8 @@ export function useUpdatePatient() {
 
       // Update insurance: delete existing, then insert if provided
       await supabase.from("patient_insurances").delete().eq("patient_id", id);
-      if (data.has_insurance && data.insurance_id && data.card_number) {
+      const hasInsurance = (data as any).payment_type === 'insurance' || data.has_insurance;
+      if (hasInsurance && data.insurance_id && data.card_number) {
         const { error: insErr } = await supabase.from("patient_insurances").insert({
           clinic_id: clinicId, patient_id: id, insurance_id: data.insurance_id,
           card_number: data.card_number, valid_until: data.valid_until || null,

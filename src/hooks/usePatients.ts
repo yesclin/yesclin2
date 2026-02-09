@@ -286,6 +286,8 @@ export function useUpdatePatient() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PatientFormData }) => {
+      const clinicId = await getClinicId();
+
       const { error } = await supabase
         .from("patients")
         .update({
@@ -310,6 +312,42 @@ export function useUpdatePatient() {
         .eq("id", id);
       
       if (error) throw error;
+
+      // Update insurance: delete existing, then insert if provided
+      await supabase.from("patient_insurances").delete().eq("patient_id", id);
+      if (data.has_insurance && data.insurance_id && data.card_number) {
+        const { error: insErr } = await supabase.from("patient_insurances").insert({
+          clinic_id: clinicId, patient_id: id, insurance_id: data.insurance_id,
+          card_number: data.card_number, valid_until: data.valid_until || null,
+        });
+        if (insErr) console.error("Error updating insurance:", insErr);
+      }
+
+      // Update guardian: delete existing, then insert if provided
+      await supabase.from("patient_guardians").delete().eq("patient_id", id);
+      if (data.has_guardian && data.guardian_name && data.guardian_relationship) {
+        const { error: guardErr } = await supabase.from("patient_guardians").insert({
+          clinic_id: clinicId, patient_id: id, full_name: data.guardian_name,
+          relationship: data.guardian_relationship, cpf: data.guardian_cpf || null,
+          phone: data.guardian_phone || null, email: data.guardian_email || null,
+        });
+        if (guardErr) console.error("Error updating guardian:", guardErr);
+      }
+
+      // Update clinical data: delete existing, then insert if provided
+      await supabase.from("patient_clinical_data").delete().eq("patient_id", id);
+      const hasClinicData = data.allergies || data.chronic_diseases || data.current_medications || data.clinical_restrictions;
+      if (hasClinicData) {
+        const { error: clinErr } = await supabase.from("patient_clinical_data").insert({
+          clinic_id: clinicId, patient_id: id,
+          allergies: data.allergies ? data.allergies.split(",").map(s => s.trim()) : [],
+          chronic_diseases: data.chronic_diseases ? data.chronic_diseases.split(",").map(s => s.trim()) : [],
+          current_medications: data.current_medications ? data.current_medications.split(",").map(s => s.trim()) : [],
+          clinical_restrictions: data.clinical_restrictions || null,
+        });
+        if (clinErr) console.error("Error updating clinical data:", clinErr);
+      }
+
       return { id };
     },
     onSuccess: (result) => {

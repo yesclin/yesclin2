@@ -351,6 +351,7 @@ export default function Pacientes() {
 
       {/* Patient Form Dialog */}
       <PatientFormDialog
+        key={editingPatient?.id || 'new'}
         open={showForm}
         onOpenChange={handleCloseForm}
         patient={editingPatient as any}

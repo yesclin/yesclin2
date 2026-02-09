@@ -78,14 +78,20 @@ export function PatientFormDialog({
 }: PatientFormDialogProps) {
   const [formData, setFormData] = useState<PatientFormData>(() => {
     if (patient) {
+      // Support both singular (typed) and array (from hook) shapes
+      const p = patient as any;
+      const insurance = p.insurance || (p.patient_insurances && p.patient_insurances[0]) || null;
+      const guardian = p.guardian || (p.patient_guardians && p.patient_guardians[0]) || null;
+      const clinical = p.clinical_data || (p.patient_clinical_data && p.patient_clinical_data[0]) || null;
+
       return {
         ...initialFormData,
         full_name: patient.full_name,
         birth_date: patient.birth_date || '',
         gender: patient.gender || '',
         cpf: patient.cpf || '',
-        rg: (patient as any).rg || '',
-        marital_status: (patient as any).marital_status || '',
+        rg: p.rg || '',
+        marital_status: p.marital_status || '',
         phone: patient.phone || '',
         email: patient.email || '',
         address_street: patient.address_street || '',
@@ -96,21 +102,22 @@ export function PatientFormDialog({
         address_state: patient.address_state || '',
         address_zip: patient.address_zip || '',
         notes: patient.notes || '',
-        payment_type: patient.insurance ? 'insurance' : 'particular',
-        insurance_id: patient.insurance?.insurance_id || '',
-        card_number: patient.insurance?.card_number || '',
-        valid_until: patient.insurance?.valid_until || '',
-        plan_name: patient.insurance?.plan_name || '',
-        has_guardian: !!patient.guardian,
-        guardian_name: patient.guardian?.full_name || '',
-        guardian_relationship: patient.guardian?.relationship || '',
-        guardian_cpf: patient.guardian?.cpf || '',
-        guardian_phone: patient.guardian?.phone || '',
-        guardian_email: patient.guardian?.email || '',
-        allergies: patient.clinical_data?.allergies.join(', ') || '',
-        chronic_diseases: patient.clinical_data?.chronic_diseases.join(', ') || '',
-        current_medications: patient.clinical_data?.current_medications.join(', ') || '',
-        clinical_restrictions: patient.clinical_data?.clinical_restrictions || '',
+        payment_type: insurance ? 'insurance' : 'particular',
+        insurance_id: insurance?.insurance_id || '',
+        card_number: insurance?.card_number || '',
+        valid_until: insurance?.valid_until || '',
+        plan_name: insurance?.plan_name || '',
+        has_guardian: !!guardian,
+        guardian_name: guardian?.full_name || '',
+        guardian_relationship: guardian?.relationship || '',
+        guardian_cpf: guardian?.cpf || '',
+        guardian_rg: guardian?.rg || '',
+        guardian_phone: guardian?.phone || '',
+        guardian_email: guardian?.email || '',
+        allergies: clinical?.allergies?.join?.(', ') || '',
+        chronic_diseases: clinical?.chronic_diseases?.join?.(', ') || '',
+        current_medications: clinical?.current_medications?.join?.(', ') || '',
+        clinical_restrictions: clinical?.clinical_restrictions || '',
       };
     }
     return initialFormData;

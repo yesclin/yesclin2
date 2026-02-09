@@ -77,6 +77,7 @@ interface AppointmentDialogProps {
   insurances: Insurance[];
   appointment?: Appointment;
   defaultDate?: Date;
+  defaultStartTime?: string;
   /** If provided, the professional field will be pre-filled and locked */
   lockedProfessionalId?: string;
   onSubmit?: (data: AppointmentFormData) => void;
@@ -99,6 +100,7 @@ export function AppointmentDialog({
   insurances,
   appointment,
   defaultDate,
+  defaultStartTime,
   lockedProfessionalId,
   onSubmit,
   existingAppointments = [],
@@ -126,7 +128,7 @@ export function AppointmentDialog({
       specialty_id: appointment?.specialty_id || "",
       room_id: appointment?.room_id || "",
       scheduled_date: appointment ? new Date(appointment.scheduled_date) : defaultDate || new Date(),
-      start_time: appointment?.start_time?.slice(0, 5) || "08:00",
+      start_time: appointment?.start_time?.slice(0, 5) || defaultStartTime || "08:00",
       duration_minutes: String(appointment?.duration_minutes || 30),
       appointment_type: appointment?.appointment_type || "consulta",
       payment_type: appointment?.payment_type || "particular",
@@ -143,6 +145,19 @@ export function AppointmentDialog({
       form.setValue("professional_id", lockedProfessionalId);
     }
   }, [lockedProfessionalId, form]);
+
+  // Update form when slot-click defaults change
+  useEffect(() => {
+    if (open && defaultStartTime) {
+      form.setValue("start_time", defaultStartTime);
+    }
+  }, [open, defaultStartTime, form]);
+
+  useEffect(() => {
+    if (open && defaultDate) {
+      form.setValue("scheduled_date", defaultDate);
+    }
+  }, [open, defaultDate, form]);
 
   const watchPaymentType = form.watch("payment_type");
   const watchProcedureId = form.watch("procedure_id");

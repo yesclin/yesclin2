@@ -4,7 +4,14 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AppointmentCard } from './AppointmentCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus } from 'lucide-react';
 import type { Appointment, ViewMode, GroupBy, Professional, Room, Specialty } from '@/types/agenda';
+
+export interface SlotClickData {
+  date: Date;
+  time: string;
+  professionalId?: string;
+}
 
 interface AgendaGridProps {
   appointments: Appointment[];
@@ -18,6 +25,7 @@ interface AgendaGridProps {
   onStatusChange?: (id: string, status: Appointment['status']) => void;
   onReschedule?: (appointment: Appointment) => void;
   onLaunchSale?: (appointment: Appointment) => void;
+  onSlotClick?: (data: SlotClickData) => void;
 }
 
 const timeSlots = Array.from({ length: 20 }, (_, i) => {
@@ -38,6 +46,7 @@ export function AgendaGrid({
   onStatusChange,
   onReschedule,
   onLaunchSale,
+  onSlotClick,
 }: AgendaGridProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -94,6 +103,33 @@ export function AgendaGrid({
     return groups;
   }, [filteredAppointments, groupBy]);
 
+  // Build a map from professional name -> professional id for slot clicks
+  const professionalNameToId = useMemo(() => {
+    const map: Record<string, string> = {};
+    professionals.forEach(p => {
+      map[p.full_name] = p.id;
+    });
+    return map;
+  }, [professionals]);
+
+  // Render a clickable empty slot cell
+  const renderEmptySlot = (date: Date, time: string, professionalId?: string) => {
+    if (!onSlotClick) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => onSlotClick({ date, time, professionalId })}
+        className="w-full h-full min-h-[44px] flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity group"
+        aria-label={`Agendar às ${time}`}
+      >
+        <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/5 rounded-md px-2 py-1 border border-dashed border-primary/30">
+          <Plus className="h-3 w-3" />
+          <span className="hidden sm:inline">Agendar</span>
+        </div>
+      </button>
+    );
+  };
+
   // Daily View
   if (viewMode === 'daily') {
     return (
@@ -118,19 +154,33 @@ export function AgendaGrid({
                 </div>
                 {Object.entries(groupedAppointments).map(([group, apts]) => {
                   const slotAppointments = apts.filter(a => a.start_time.slice(0, 5) === time);
+                  const isEmpty = slotAppointments.length === 0;
+                  const profId = groupBy === 'professional' ? professionalNameToId[group] : undefined;
+                  
                   return (
-                    <div key={`${group}-${time}`} className="border-b border-l p-1 min-h-[60px]">
-                      {slotAppointments.map(apt => (
-                        <AppointmentCard
-                          key={apt.id}
-                          appointment={apt}
-                          compact
-                          onClick={onAppointmentClick}
-                          onStatusChange={onStatusChange}
-                          onReschedule={onReschedule}
-                          onLaunchSale={onLaunchSale}
-                        />
-                      ))}
+                    <div
+                      key={`${group}-${time}`}
+                      className={cn(
+                        "border-b border-l p-1 min-h-[60px] relative",
+                        isEmpty && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                      )}
+                      onClick={isEmpty && onSlotClick ? () => onSlotClick({ date: selectedDate, time, professionalId: profId }) : undefined}
+                    >
+                      {slotAppointments.length > 0 ? (
+                        slotAppointments.map(apt => (
+                          <AppointmentCard
+                            key={apt.id}
+                            appointment={apt}
+                            compact
+                            onClick={onAppointmentClick}
+                            onStatusChange={onStatusChange}
+                            onReschedule={onReschedule}
+                            onLaunchSale={onLaunchSale}
+                          />
+                        ))
+                      ) : (
+                        renderEmptySlot(selectedDate, time, profId)
+                      )}
                     </div>
                   );
                 })}
@@ -184,30 +234,39 @@ export function AgendaGrid({
                     a => a.scheduled_date === dayStr && a.start_time.slice(0, 2) === time.slice(0, 2)
                   );
                   const isWeekend = [0, 6].includes(day.getDay());
+                  const isEmpty = slotAppointments.length === 0;
                   
                   return (
                     <div 
                       key={`${dayStr}-${time}`} 
                       className={cn(
-                        "border-b border-l p-1 min-h-[80px]",
-                        isWeekend && "bg-muted/20"
+                        "border-b border-l p-1 min-h-[80px] relative",
+                        isWeekend && "bg-muted/20",
+                        isEmpty && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                       )}
+                      onClick={isEmpty && onSlotClick ? () => onSlotClick({ date: day, time }) : undefined}
                     >
-                      {slotAppointments.slice(0, 2).map(apt => (
-                        <AppointmentCard
-                          key={apt.id}
-                          appointment={apt}
-                          compact
-                          onClick={onAppointmentClick}
-                          onStatusChange={onStatusChange}
-                          onReschedule={onReschedule}
-                          onLaunchSale={onLaunchSale}
-                        />
-                      ))}
-                      {slotAppointments.length > 2 && (
-                        <div className="text-xs text-muted-foreground text-center mt-1">
-                          +{slotAppointments.length - 2} mais
-                        </div>
+                      {slotAppointments.length > 0 ? (
+                        <>
+                          {slotAppointments.slice(0, 2).map(apt => (
+                            <AppointmentCard
+                              key={apt.id}
+                              appointment={apt}
+                              compact
+                              onClick={onAppointmentClick}
+                              onStatusChange={onStatusChange}
+                              onReschedule={onReschedule}
+                              onLaunchSale={onLaunchSale}
+                            />
+                          ))}
+                          {slotAppointments.length > 2 && (
+                            <div className="text-xs text-muted-foreground text-center mt-1">
+                              +{slotAppointments.length - 2} mais
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        renderEmptySlot(day, time)
                       )}
                     </div>
                   );
@@ -249,21 +308,33 @@ export function AgendaGrid({
               <div 
                 key={dayStr}
                 className={cn(
-                  "border-b border-l p-2 min-h-[100px]",
-                  !isCurrentMonth && "bg-muted/30 text-muted-foreground"
+                  "border-b border-l p-2 min-h-[100px] group relative",
+                  !isCurrentMonth && "bg-muted/30 text-muted-foreground",
+                  onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                 )}
+                onClick={onSlotClick ? () => onSlotClick({ date: day, time: '08:00' }) : undefined}
               >
-                <div className={cn(
-                  "text-sm font-medium mb-1",
-                  isToday && "text-primary"
-                )}>
-                  {format(day, 'd')}
+                <div className="flex items-center justify-between">
+                  <div className={cn(
+                    "text-sm font-medium mb-1",
+                    isToday && "text-primary"
+                  )}>
+                    {format(day, 'd')}
+                  </div>
+                  {onSlotClick && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Plus className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
                 </div>
                 {dayAppointments.slice(0, 3).map(apt => (
                   <div 
                     key={apt.id}
                     className="text-xs p-1 mb-1 rounded bg-primary/10 truncate cursor-pointer hover:bg-primary/20"
-                    onClick={() => onAppointmentClick?.(apt)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAppointmentClick?.(apt);
+                    }}
                   >
                     {apt.start_time.slice(0, 5)} {apt.patient?.full_name?.split(' ')[0]}
                   </div>

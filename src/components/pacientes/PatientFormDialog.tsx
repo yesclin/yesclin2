@@ -135,16 +135,16 @@ export function PatientFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        <DialogHeader className="p-6 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             {isEditing ? 'Editar Paciente' : 'Novo Paciente'}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <div className="px-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <div className="px-6 shrink-0">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="identification" className="text-xs sm:text-sm">
                 <User className="h-4 w-4 mr-1.5 hidden sm:inline" />
@@ -165,7 +165,7 @@ export function PatientFormDialog({
             </TabsList>
           </div>
 
-          <ScrollArea className="flex-1 max-h-[60vh]">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="p-6 pt-4">
               {/* Identification Tab */}
               <TabsContent value="identification" className="m-0 space-y-4">
@@ -576,7 +576,7 @@ export function PatientFormDialog({
           </ScrollArea>
         </Tabs>
 
-        <div className="flex justify-end gap-2 p-6 pt-0 border-t mt-4">
+        <div className="flex justify-end gap-2 p-6 pt-4 border-t shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

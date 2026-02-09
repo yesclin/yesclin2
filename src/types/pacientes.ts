@@ -110,6 +110,8 @@ export interface PatientFormData {
   birth_date: string;
   gender: 'M' | 'F' | 'O' | '';
   cpf: string;
+  rg: string;
+  marital_status: string;
   phone: string;
   email: string;
   address_street: string;
@@ -131,6 +133,7 @@ export interface PatientFormData {
   guardian_name: string;
   guardian_relationship: string;
   guardian_cpf: string;
+  guardian_rg: string;
   guardian_phone: string;
   guardian_email: string;
   // Clinical summary
@@ -146,6 +149,15 @@ export const genderLabels: Record<string, string> = {
   F: 'Feminino',
   O: 'Outro',
 };
+
+export const maritalStatusOptions = [
+  'Solteiro(a)',
+  'Casado(a)',
+  'Divorciado(a)',
+  'Viúvo(a)',
+  'União Estável',
+  'Separado(a)',
+];
 
 export const relationshipOptions = [
   'Pai',

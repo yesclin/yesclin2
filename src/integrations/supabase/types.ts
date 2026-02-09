@@ -5611,8 +5611,10 @@ export type Database = {
           has_clinical_alert: boolean
           id: string
           is_active: boolean
+          marital_status: string | null
           notes: string | null
           phone: string | null
+          rg: string | null
           updated_at: string
         }
         Insert: {
@@ -5634,8 +5636,10 @@ export type Database = {
           has_clinical_alert?: boolean
           id?: string
           is_active?: boolean
+          marital_status?: string | null
           notes?: string | null
           phone?: string | null
+          rg?: string | null
           updated_at?: string
         }
         Update: {
@@ -5657,8 +5661,10 @@ export type Database = {
           has_clinical_alert?: boolean
           id?: string
           is_active?: boolean
+          marital_status?: string | null
           notes?: string | null
           phone?: string | null
+          rg?: string | null
           updated_at?: string
         }
         Relationships: [

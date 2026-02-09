@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import type { PatientFormData, Patient } from '@/types/pacientes';
-import { brazilianStates, relationshipOptions } from '@/types/pacientes';
+import { brazilianStates, relationshipOptions, maritalStatusOptions } from '@/types/pacientes';
 import { toast } from 'sonner';
 
 interface PatientFormDialogProps {
@@ -38,6 +38,8 @@ const initialFormData: PatientFormData = {
   birth_date: '',
   gender: '',
   cpf: '',
+  rg: '',
+  marital_status: '',
   phone: '',
   email: '',
   address_street: '',
@@ -57,6 +59,7 @@ const initialFormData: PatientFormData = {
   guardian_name: '',
   guardian_relationship: '',
   guardian_cpf: '',
+  guardian_rg: '',
   guardian_phone: '',
   guardian_email: '',
   allergies: '',
@@ -80,6 +83,8 @@ export function PatientFormDialog({
         birth_date: patient.birth_date || '',
         gender: patient.gender || '',
         cpf: patient.cpf || '',
+        rg: (patient as any).rg || '',
+        marital_status: (patient as any).marital_status || '',
         phone: patient.phone || '',
         email: patient.email || '',
         address_street: patient.address_street || '',
@@ -209,6 +214,33 @@ export function PatientFormDialog({
                     />
                   </div>
                   <div>
+                    <Label htmlFor="rg">RG</Label>
+                    <Input
+                      id="rg"
+                      value={formData.rg}
+                      onChange={(e) => handleChange('rg', e.target.value)}
+                      placeholder="00.000.000-0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="marital_status">Estado Civil</Label>
+                    <Select
+                      value={formData.marital_status}
+                      onValueChange={(value) => handleChange('marital_status', value)}
+                    >
+                      <SelectTrigger id="marital_status">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {maritalStatusOptions.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label htmlFor="phone">Telefone / WhatsApp</Label>
                     <Input
                       id="phone"
@@ -280,6 +312,15 @@ export function PatientFormDialog({
                           value={formData.guardian_cpf}
                           onChange={(e) => handleChange('guardian_cpf', e.target.value)}
                           placeholder="000.000.000-00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="guardian_rg">RG do Responsável</Label>
+                        <Input
+                          id="guardian_rg"
+                          value={formData.guardian_rg || ''}
+                          onChange={(e) => handleChange('guardian_rg', e.target.value)}
+                          placeholder="00.000.000-0"
                         />
                       </div>
                       <div>

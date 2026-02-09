@@ -44,17 +44,22 @@ const nextSteps = [
   },
 ];
 
-export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
+// Simple navigate-only handler — no extra persistence
+function useNavigateOnly() {
   const navigate = useNavigate();
+  return (path: string) => navigate(path);
+}
+
+export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
+  const goTo = useNavigateOnly();
   const [status, setStatus] = useState<CompletionStatus>("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasAttempted, setHasAttempted] = useState(false);
 
-  // Auto-complete onboarding when step loads
   const finalizeOnboarding = useCallback(async () => {
     if (!clinicId) {
       setStatus("error");
-      setErrorMessage("ID da clínica não encontrado. Tente reiniciar o onboarding.");
+      setErrorMessage("ID da clínica não encontrado.");
       return;
     }
 
@@ -65,47 +70,26 @@ export function CompletionStep({ onComplete, clinicId }: CompletionStepProps) {
     try {
       await onComplete();
       setStatus("completed");
+      // Auto-redirect to dashboard after a brief celebration
+      setTimeout(() => goTo("/app"), 1500);
     } catch (err) {
-      console.error("Error completing onboarding:", err);
-      
-      // Check if the error message indicates the onboarding might already be complete
       const errorMsg = err instanceof Error ? err.message : "";
-      
-      // If already completed or just missing specialty link, treat as success
       if (errorMsg.includes("já concluído") || errorMsg.includes("already completed")) {
         setStatus("completed");
+        setTimeout(() => goTo("/app"), 1000);
         return;
       }
-      
       setStatus("error");
-      setErrorMessage(
-        err instanceof Error 
-          ? err.message 
-          : "Erro ao finalizar configuração. Tente novamente."
-      );
+      setErrorMessage(err instanceof Error ? err.message : "Erro ao finalizar. Tente novamente.");
     }
-  }, [onComplete, clinicId]);
+  }, [onComplete, clinicId, goTo]);
 
   useEffect(() => {
-    // Only auto-trigger on first mount
-    if (!hasAttempted) {
-      finalizeOnboarding();
-    }
+    if (!hasAttempted) finalizeOnboarding();
   }, [finalizeOnboarding, hasAttempted]);
 
-  const handleNavigate = (path: string) => {
-    if (status !== "completed") {
-      // Fallback: redirect to dashboard with warning
-      navigate("/app");
-      return;
-    }
-    navigate(path);
-  };
-
-  const handleRetry = () => {
-    finalizeOnboarding();
-  };
-
+  const handleNavigate = (path: string) => goTo(path);
+  const handleRetry = () => finalizeOnboarding();
   const isActionable = status === "completed";
 
   return (

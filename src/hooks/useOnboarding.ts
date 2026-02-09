@@ -214,26 +214,20 @@ export function useOnboarding() {
     }
 
     const prefs = progress.preferences;
-    let finalSpecialtyId: string | null = null;
 
-    // Determine the slug or ID to resolve
-    // Priority: slug > curated_id > existing id
+    // Try to link specialty to clinic (best-effort, non-blocking)
     const slugToResolve = prefs.primary_specialty_slug 
       || prefs.primary_specialty_curated_id 
       || prefs.primary_specialty_id;
 
     if (slugToResolve) {
       try {
-        // Use the idempotent resolver - handles both standard and custom specialties
         const resolved = await resolveSpecialtyBySlug(
           clinicId, 
           slugToResolve, 
           prefs.primary_specialty_name
         );
         
-        finalSpecialtyId = resolved.id;
-
-        // Enable core modules if this is a new specialty
         if (resolved.isNew) {
           try {
             await enableCoreModulesForSpecialty(clinicId, resolved.id);
@@ -241,26 +235,18 @@ export function useOnboarding() {
             console.error("Error enabling modules (non-fatal):", moduleErr);
           }
         }
+
+        await supabase
+          .from("clinics")
+          .update({ primary_specialty_id: resolved.id })
+          .eq("id", clinicId);
       } catch (resolveErr) {
-        console.error("Error resolving specialty:", resolveErr);
-        throw resolveErr; // Re-throw - has user-friendly message
+        // Non-fatal: specialty may already be linked or not selected
+        console.error("Error resolving specialty (non-fatal):", resolveErr);
       }
     }
 
-    // Link specialty to clinic (if we have one)
-    if (finalSpecialtyId) {
-      const { error: clinicErr } = await supabase
-        .from("clinics")
-        .update({ primary_specialty_id: finalSpecialtyId })
-        .eq("id", clinicId);
-      
-      if (clinicErr) {
-        console.error("Error updating clinic specialty:", clinicErr);
-        throw new Error("Não foi possível concluir a configuração. Tente novamente.");
-      }
-    }
-
-    // Mark onboarding as completed
+    // Mark onboarding as completed — this is the critical step
     const { error: completeErr } = await supabase
       .from("onboarding_progress")
       .update({

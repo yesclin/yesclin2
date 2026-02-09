@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, CalendarPlus, Ban, Settings, Loader2, Users } from "lucide-react";
+import type { SlotClickData } from "@/components/agenda/AgendaGrid";
 import { useNavigate } from "react-router-dom";
 import { useAgendaRealData } from "@/hooks/useAgendaRealData";
 import { useUpdateAppointmentStatus, useCreateAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
@@ -45,6 +46,8 @@ export default function Agenda() {
   // Dialogs
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
   const [appointmentDialogMode, setAppointmentDialogMode] = useState<'create' | 'fitIn' | 'reschedule'>('create');
+  const [defaultStartTime, setDefaultStartTime] = useState<string | undefined>();
+  const [defaultDialogDate, setDefaultDialogDate] = useState<Date | undefined>();
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>();
   
@@ -129,9 +132,14 @@ export default function Agenda() {
     ? professionals.find(p => p.id === effectiveSelectedProfessionalId)?.full_name
     : undefined;
 
-  const openCreateDialog = () => {
+  const openCreateDialog = (startTime?: string, date?: Date, professionalId?: string) => {
     setAppointmentDialogMode('create');
     setSelectedAppointment(undefined);
+    setDefaultStartTime(startTime);
+    setDefaultDialogDate(date);
+    if (professionalId && !effectiveSelectedProfessionalId) {
+      setSelectedProfessionalId(professionalId);
+    }
     setAppointmentDialogOpen(true);
   };
 
@@ -270,6 +278,10 @@ export default function Agenda() {
     }
   }, [filters.professionalId]);
 
+  const handleSlotClick = useCallback((data: SlotClickData) => {
+    openCreateDialog(data.time, data.date, data.professionalId);
+  }, [effectiveSelectedProfessionalId]);
+
   const handleLaunchSale = useCallback((apt: Appointment) => {
     if (!apt.patient) {
       toast.error("Agendamento sem paciente vinculado");
@@ -342,7 +354,7 @@ export default function Agenda() {
             <CalendarPlus className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Encaixe</span>
           </Button>
-          <Button size="sm" onClick={openCreateDialog}>
+          <Button size="sm" onClick={() => openCreateDialog()}>
             <Plus className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Novo</span>
           </Button>
@@ -440,26 +452,20 @@ export default function Agenda() {
                 />
               )}
 
-              {/* Agenda Grid */}
-              {filteredAppointments.length > 0 ? (
-                <AgendaGrid
-                  appointments={filteredAppointments}
-                  viewMode={viewMode}
-                  groupBy={effectiveSelectedProfessionalId ? 'general' : 'professional'}
-                  selectedDate={selectedDate}
-                  professionals={visibleProfessionals}
-                  rooms={rooms}
-                  specialties={specialties}
-                  onReschedule={handleReschedule}
-                  onStatusChange={handleStatusChange}
-                  onLaunchSale={handleLaunchSale}
-                />
-              ) : (
-                <AgendaEmptyState
-                  professionalName={selectedProfessionalName}
-                  onCreateAppointment={openCreateDialog}
-                />
-              )}
+              {/* Agenda Grid - always show to allow clicking free slots */}
+              <AgendaGrid
+                appointments={filteredAppointments}
+                viewMode={viewMode}
+                groupBy={effectiveSelectedProfessionalId ? 'general' : 'professional'}
+                selectedDate={selectedDate}
+                professionals={visibleProfessionals}
+                rooms={rooms}
+                specialties={specialties}
+                onReschedule={handleReschedule}
+                onStatusChange={handleStatusChange}
+                onLaunchSale={handleLaunchSale}
+                onSlotClick={handleSlotClick}
+              />
             </>
           )}
         </TabsContent>
@@ -496,7 +502,8 @@ export default function Agenda() {
         specialties={specialties}
         insurances={insurances}
         appointment={selectedAppointment}
-        defaultDate={selectedDate}
+        defaultDate={defaultDialogDate || selectedDate}
+        defaultStartTime={defaultStartTime}
         lockedProfessionalId={lockedProfessionalIdForDialog}
         existingAppointments={appointments}
         clinicSchedule={clinicSchedule}

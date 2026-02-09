@@ -268,6 +268,14 @@ export default function Pacientes() {
           onScheduleAppointment={() => handleScheduleAppointment(selectedPatient as any)}
           onOpenProntuario={() => handleOpenProntuario(selectedPatient as any)}
         />
+        <PatientFormDialog
+          key={editingPatient?.id || 'new'}
+          open={showForm}
+          onOpenChange={handleCloseForm}
+          patient={editingPatient as any}
+          insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
+          onSave={handleSavePatient}
+        />
       </div>
     );
   }

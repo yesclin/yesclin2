@@ -5153,6 +5153,7 @@ export type Database = {
           patient_id: string
           phone: string | null
           relationship: string
+          rg: string | null
           updated_at: string
         }
         Insert: {
@@ -5166,6 +5167,7 @@ export type Database = {
           patient_id: string
           phone?: string | null
           relationship: string
+          rg?: string | null
           updated_at?: string
         }
         Update: {
@@ -5179,6 +5181,7 @@ export type Database = {
           patient_id?: string
           phone?: string | null
           relationship?: string
+          rg?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -72,6 +72,8 @@ export interface PatientFormData {
   birth_date?: string;
   gender?: string;
   cpf?: string;
+  rg?: string;
+  marital_status?: string;
   phone?: string;
   email?: string;
   address_street?: string;
@@ -92,6 +94,7 @@ export interface PatientFormData {
   guardian_name?: string;
   guardian_relationship?: string;
   guardian_cpf?: string;
+  guardian_rg?: string;
   guardian_phone?: string;
   guardian_email?: string;
   // Clinical data
@@ -200,8 +203,8 @@ export function useCreatePatient() {
           birth_date: data.birth_date || null,
           gender: data.gender || null,
           cpf: data.cpf || null,
-          rg: (data as any).rg || null,
-          marital_status: (data as any).marital_status || null,
+          rg: data.rg || null,
+          marital_status: data.marital_status || null,
           phone: data.phone || null,
           email: data.email || null,
           address_street: data.address_street || null,
@@ -243,6 +246,7 @@ export function useCreatePatient() {
             full_name: data.guardian_name,
             relationship: data.guardian_relationship,
             cpf: data.guardian_cpf || null,
+            rg: data.guardian_rg || null,
             phone: data.guardian_phone || null,
             email: data.guardian_email || null,
           });
@@ -295,8 +299,8 @@ export function useUpdatePatient() {
           birth_date: data.birth_date || null,
           gender: data.gender || null,
           cpf: data.cpf || null,
-          rg: (data as any).rg || null,
-          marital_status: (data as any).marital_status || null,
+          rg: data.rg || null,
+          marital_status: data.marital_status || null,
           phone: data.phone || null,
           email: data.email || null,
           address_street: data.address_street || null,
@@ -330,7 +334,8 @@ export function useUpdatePatient() {
         const { error: guardErr } = await supabase.from("patient_guardians").insert({
           clinic_id: clinicId, patient_id: id, full_name: data.guardian_name,
           relationship: data.guardian_relationship, cpf: data.guardian_cpf || null,
-          phone: data.guardian_phone || null, email: data.guardian_email || null,
+          rg: data.guardian_rg || null, phone: data.guardian_phone || null, 
+          email: data.guardian_email || null,
         });
         if (guardErr) console.error("Error updating guardian:", guardErr);
       }

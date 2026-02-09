@@ -405,16 +405,13 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'physio_therapeutic_plan', label: 'Plano Terapêutico', icon: ClipboardList },
   { id: 'applied_exercises', label: 'Exercícios Aplicados', icon: Dumbbell },
   { id: 'session_evolution', label: 'Evolução por Sessão', icon: BarChart3 },
-  // Pediatrics tabs
-  { id: 'pediatric_anamnesis', label: 'Anamnese Pediátrica', icon: Baby },
-  { id: 'gestational_history', label: 'Histórico Gestacional', icon: Heart },
-  { id: 'growth_data', label: 'Dados de Crescimento', icon: Ruler },
-  { id: 'growth_curve', label: 'Curva de Crescimento', icon: GrowthChart },
-  { id: 'neuropsychomotor_development', label: 'Desenvolvimento DNPM', icon: BrainDevelopment },
-  { id: 'vaccines', label: 'Vacinas', icon: ShieldCheck },
-  { id: 'pediatric_diagnosis', label: 'Diagnóstico', icon: Stethoscope },
-  { id: 'pediatric_conduct', label: 'Conduta/Orientações', icon: Target },
-  { id: 'pediatric_evolution', label: 'Evolução Clínica', icon: Activity },
+  // Pediatrics tabs (correct system IDs from yesclinSpecialties)
+  { id: 'anamnese_pediatrica', label: 'Anamnese Pediátrica', icon: Baby },
+  { id: 'crescimento_desenvolvimento', label: 'Crescimento e Desenvolvimento', icon: Ruler },
+  { id: 'avaliacao_clinica_pediatrica', label: 'Avaliação Clínica', icon: Stethoscope },
+  { id: 'diagnostico_pediatrico', label: 'Diagnóstico Pediátrico', icon: ClipboardCheck },
+  { id: 'prescricoes_pediatricas', label: 'Prescrições', icon: Pill },
+  { id: 'vacinacao', label: 'Vacinação', icon: ShieldCheck },
   // Gynecology tabs
   { id: 'gyneco_anamnesis', label: 'Anamnese Ginecológica', icon: CircleUser },
   { id: 'gyneco_data', label: 'Dados Ginecológicos', icon: CalendarDays },

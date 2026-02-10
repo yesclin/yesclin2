@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,6 +47,13 @@ export function ProfessionalFields({
   specialties,
   loadingSpecialties,
 }: ProfessionalFieldsProps) {
+  // Auto-select when only one specialty is available
+  useEffect(() => {
+    if (specialties.length === 1 && selectedSpecialtyIds.length === 0) {
+      onToggleSpecialty(specialties[0].id);
+    }
+  }, [specialties, selectedSpecialtyIds.length, onToggleSpecialty]);
+
   return (
     <div className="space-y-4 p-4 rounded-lg border bg-primary/5">
       <div className="grid gap-2">

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
+import logoIcon from "@/assets/logo-icon.png";
 import { motion } from "framer-motion";
 
 const Login = () => {
@@ -165,7 +166,7 @@ const Login = () => {
           className="relative z-10 text-center"
         >
           <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-6">
-            <span className="text-white font-display font-bold text-4xl">Y</span>
+            <img src={logoIcon} alt="Yesclin" className="w-12 h-12 object-contain brightness-0 invert" />
           </div>
           <h2 className="font-display text-3xl font-bold text-white mb-4">
             Gestão simplificada

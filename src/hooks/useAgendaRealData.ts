@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useClinicData } from "./useClinicData";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import type { 
   Appointment, 
@@ -112,18 +113,22 @@ export function useRoomsList() {
 
 // ============= SPECIALTIES =============
 export function useSpecialtiesList() {
+  const { clinic } = useClinicData();
+  
   return useQuery({
-    queryKey: ["specialties-list"],
+    queryKey: ["specialties-list", clinic?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("specialties")
         .select("id, clinic_id, name, description, color, is_active")
         .eq("is_active", true)
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
         .order("name");
       
       if (error) throw error;
       return (data || []) as Specialty[];
     },
+    enabled: !!clinic?.id,
   });
 }
 

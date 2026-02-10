@@ -115,11 +115,12 @@ export function useSpecialtiesList(clinicId?: string) {
   return useQuery({
     queryKey: ["specialties-list", clinicId],
     queryFn: async () => {
+      // Only fetch specialties that belong to this clinic (not global ones)
       const { data, error } = await supabase
         .from("specialties")
         .select("id, clinic_id, name, description, color, is_active")
         .eq("is_active", true)
-        .or(`clinic_id.is.null,clinic_id.eq.${clinicId}`)
+        .eq("clinic_id", clinicId!)
         .order("name");
       
       if (error) throw error;

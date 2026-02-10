@@ -34,17 +34,16 @@ const RecuperarSenha = () => {
     setIsLoading(true);
 
     try {
-      // Call our edge function for password reset
-      const { data, error: invokeError } = await supabase.functions.invoke('send-password-reset', {
-        body: { email: email.trim().toLowerCase() }
-      });
+      // Use native auth password reset - sends email directly
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        {
+          redirectTo: `${window.location.origin}/`,
+        }
+      );
 
-      if (invokeError) {
-        throw invokeError;
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
+      if (resetError) {
+        throw resetError;
       }
 
       // Success - show email sent screen

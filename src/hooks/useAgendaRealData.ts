@@ -10,6 +10,7 @@ import type {
   Insurance,
   AgendaStats,
   AgendaInsight,
+  ScheduleBlock,
 } from "@/types/agenda";
 import { WeekSchedule, getDefaultWeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
@@ -566,6 +567,26 @@ export function useAgendaInsights(
   return insights;
 }
 
+// ============= SCHEDULE BLOCKS =============
+function useScheduleBlocksForPeriod(rangeStart: Date, rangeEnd: Date) {
+  const startStr = format(rangeStart, "yyyy-MM-dd");
+  const endStr = format(rangeEnd, "yyyy-MM-dd");
+
+  return useQuery({
+    queryKey: ["schedule-blocks", startStr, endStr],
+    queryFn: async (): Promise<ScheduleBlock[]> => {
+      const { data, error } = await supabase
+        .from("schedule_blocks")
+        .select("id, clinic_id, professional_id, title, reason, start_date, end_date, start_time, end_time, all_day")
+        .lte("start_date", endStr)
+        .gte("end_date", startStr);
+
+      if (error) throw error;
+      return (data || []) as ScheduleBlock[];
+    },
+  });
+}
+
 // ============= COMBINED HOOK FOR AGENDA PAGE =============
 export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekly" | "monthly" = "daily") {
   // Fetch all base data
@@ -594,13 +615,16 @@ export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekl
   const { data: appointments = [], isLoading: appointmentsLoading, refetch: refetchAppointments } = 
     useAppointmentsForPeriod(rangeStart, rangeEnd, viewMode);
   
+  const { data: scheduleBlocks = [], isLoading: blocksLoading } = 
+    useScheduleBlocksForPeriod(rangeStart, rangeEnd);
+  
   // Calculate stats and insights from real data (now with schedules)
   const stats = useAgendaStats(selectedDate, appointments, professionals, clinicSchedule, professionalSchedulesMap);
   const insights = useAgendaInsights(appointments, professionals, selectedDate);
   
   const isLoading = profLoading || patientsLoading || roomsLoading || 
                     specialtiesLoading || insurancesLoading || appointmentsLoading ||
-                    clinicScheduleLoading || profSchedulesLoading;
+                    clinicScheduleLoading || profSchedulesLoading || blocksLoading;
   
   // Build professional schedules map for AppointmentDialog
   const professionalSchedules = new Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>();
@@ -626,6 +650,7 @@ export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekl
     specialties,
     insurances,
     appointments,
+    scheduleBlocks,
     stats,
     insights,
     isLoading,

@@ -209,8 +209,8 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   // Owner/Admin can access system configurations - Receptionist CANNOT
   const canAccessConfigurations = state.isOwner || state.isAdmin;
   
-  // Only 'profissional' role can perform clinical care (admins and receptionists cannot)
-  const canPerformClinicalCare = state.role === 'profissional';
+  // Owner/Admin/Profissional can perform clinical care - Receptionist CANNOT
+  const canPerformClinicalCare = state.isOwner || state.isAdmin || state.role === 'profissional';
 
   const value: PermissionsContextType = {
     ...state,

@@ -76,6 +76,13 @@ export function AgendaGrid({
     }
 
     const groups: Record<string, Appointment[]> = {};
+
+    // Pre-populate with all professionals so empty columns still render
+    if (groupBy === 'professional') {
+      professionals.forEach(p => {
+        groups[p.full_name] = [];
+      });
+    }
     
     filteredAppointments.forEach(apt => {
       let key: string;
@@ -102,9 +109,14 @@ export function AgendaGrid({
       if (!groups[key]) groups[key] = [];
       groups[key].push(apt);
     });
+
+    // If still empty (no professionals loaded), ensure at least one column
+    if (Object.keys(groups).length === 0) {
+      groups['Agenda Geral'] = filteredAppointments;
+    }
     
     return groups;
-  }, [filteredAppointments, groupBy]);
+  }, [filteredAppointments, groupBy, professionals]);
 
   // Build a map from professional name -> professional id for slot clicks
   const professionalNameToId = useMemo(() => {

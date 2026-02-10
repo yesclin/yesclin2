@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   UserCog, Plus, Search, Edit, RotateCcw, ToggleLeft, ToggleRight,
   Shield, AlertCircle, Crown, Loader2, Users, CheckCircle2, XCircle,
-  Mail, Clock, Send, RefreshCw, X, History
+  Mail, Clock, Send, RefreshCw, X, History, Save
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -79,6 +80,10 @@ const initialFormState: NewUserFormState = {
 export default function ConfigUsuarios() {
   const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<ClinicUser | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ full_name: "", email: "" });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [newUserForm, setNewUserForm] = useState<NewUserFormState>(initialFormState);
   const queryClient = useQueryClient();
 
@@ -244,6 +249,40 @@ export default function ConfigUsuarios() {
 
   const handleToggleStatus = async (userId: string) => {
     await toggleUserStatus(userId);
+  };
+
+  const handleEditUser = (user: ClinicUser) => {
+    setEditingUser(user);
+    setEditForm({ full_name: user.full_name, email: user.email || "" });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return;
+    if (!editForm.full_name.trim()) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: editForm.full_name.trim() })
+        .eq("user_id", editingUser.user_id);
+
+      if (error) throw error;
+
+      toast.success("Dados atualizados com sucesso");
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      refetch();
+    } catch (err) {
+      console.error("Error updating user:", err);
+      toast.error("Erro ao atualizar dados do usuário");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -627,7 +666,8 @@ export default function ConfigUsuarios() {
                                     <Button 
                                       variant="ghost" 
                                       size="icon" 
-                                      disabled={!canManageUsers}
+                                      disabled={!canManageUsers && user.user_id !== currentUser?.user_id}
+                                      onClick={() => handleEditUser(user)}
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -726,6 +766,79 @@ export default function ConfigUsuarios() {
           <UserAuditLog clinicId={clinicId} />
         </TabsContent>
       </Tabs>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              {editingUser?.role === "owner" 
+                ? "Edite seus dados pessoais. Perfil e permissões não podem ser alterados."
+                : "Edite os dados do usuário."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Nome Completo *</Label>
+              <Input
+                id="edit-name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                disabled
+                className="opacity-60"
+              />
+              <p className="text-xs text-muted-foreground">
+                O e-mail não pode ser alterado por aqui.
+              </p>
+            </div>
+
+            {/* Show role as read-only */}
+            {editingUser && (
+              <div className="grid gap-2">
+                <Label>Perfil</Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={roleColors[editingUser.role]}>
+                    {editingUser.role === "owner" && <Crown className="h-3 w-3 mr-1" />}
+                    {roleLabels[editingUser.role]}
+                  </Badge>
+                  {editingUser.role === "owner" && (
+                    <span className="text-xs text-muted-foreground">
+                      (não editável)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSavingEdit}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSavingEdit}>
+              {isSavingEdit ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

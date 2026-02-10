@@ -94,9 +94,12 @@ const handler = async (req: Request): Promise<Response> => {
       u => u.email?.toLowerCase() === sanitizedEmail
     );
 
-    // If user doesn't exist, return success anyway (security: don't reveal if email exists)
+    // If user doesn't exist, add artificial delay to prevent timing-based enumeration
+    // then return success (security: don't reveal if email exists)
     if (!user) {
       console.log("[send-password-reset] User not found, returning generic success");
+      // Simulate the time it would take to generate link + send email
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
       return new Response(
         JSON.stringify({ 
           success: true, 

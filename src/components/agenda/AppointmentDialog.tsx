@@ -151,6 +151,28 @@ export function AppointmentDialog({
     },
   });
 
+  // Reset form values when dialog opens with an appointment (reschedule mode)
+  useEffect(() => {
+    if (open && appointment) {
+      form.reset({
+        patient_id: appointment.patient_id || "",
+        professional_id: lockedProfessionalId || appointment.professional_id || "",
+        procedure_id: appointment.procedure_id || "",
+        specialty_id: appointment.specialty_id || "",
+        room_id: appointment.room_id || "",
+        scheduled_date: new Date(appointment.scheduled_date),
+        start_time: appointment.start_time?.slice(0, 5) || "08:00",
+        duration_minutes: String(appointment.duration_minutes || 30),
+        appointment_type: appointment.appointment_type || "consulta",
+        payment_type: appointment.payment_type || "particular",
+        insurance_id: appointment.insurance_id || "",
+        expected_value: appointment.expected_value || 0,
+        notes: appointment.notes || "",
+        is_fit_in: mode === 'fitIn',
+      });
+    }
+  }, [open, appointment, mode, lockedProfessionalId]);
+
   // If lockedProfessionalId changes, update the form
   useEffect(() => {
     if (lockedProfessionalId) {

@@ -363,22 +363,8 @@ export function useRooms() {
   });
 }
 
-// Fetch specialties for dropdown
-export function useSpecialties() {
-  return useQuery({
-    queryKey: ["specialties"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("specialties")
-        .select("id, name, color")
-        .eq("is_active", true)
-        .order("name");
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-}
+// NOTE: useSpecialties is now centralized in src/hooks/useSpecialties.ts
+// Use that hook instead for clinic-filtered active specialties.
 
 // Fetch procedures for dropdown
 export function useProcedures() {

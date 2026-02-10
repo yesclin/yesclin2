@@ -73,6 +73,7 @@ export function useInvalidateSpecialties() {
       queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["standard-specialties"] });
       queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["specialties-list"] }); // Agenda uses this
     }
   };
 }

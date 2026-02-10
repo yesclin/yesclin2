@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
+import { format, startOfDay, isToday, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Dialog,
@@ -274,6 +274,23 @@ export function AppointmentDialog({
   });
 
   const handleSubmit = (data: AppointmentFormData) => {
+    // Validate: block past date/time
+    const now = new Date();
+    const scheduledDate = data.scheduled_date;
+    if (isBefore(startOfDay(scheduledDate), startOfDay(now))) {
+      toast.error("Não é possível agendar em data já passada.");
+      return;
+    }
+    if (isToday(scheduledDate)) {
+      const [h, m] = data.start_time.split(":").map(Number);
+      const slotTime = new Date(scheduledDate);
+      slotTime.setHours(h, m, 0, 0);
+      if (isBefore(slotTime, now)) {
+        toast.error("Não é possível agendar em horário já passado.");
+        return;
+      }
+    }
+
     // Check for critical conflicts - block save
     if (conflictResult.hasCriticalConflict) {
       toast.error("Não é possível salvar com conflitos críticos. Ajuste o horário.");
@@ -577,7 +594,7 @@ export function AppointmentDialog({
                           selected={field.value}
                           onSelect={field.onChange}
                           locale={ptBR}
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
                         />
                       </PopoverContent>
                     </Popover>

@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
+import { format, addDays, startOfWeek, isSameDay, isBefore, startOfDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AppointmentCard } from './AppointmentCard';
@@ -152,6 +152,35 @@ export function AgendaGrid({
     return null;
   }, [scheduleBlocks]);
 
+  // Check if a time slot is in the past
+  const isSlotInPast = useCallback((date: Date, time: string): boolean => {
+    const now = new Date();
+    if (isBefore(startOfDay(date), startOfDay(now))) return true;
+    if (isToday(date)) {
+      const [h, m] = time.split(":").map(Number);
+      const slotTime = new Date(date);
+      slotTime.setHours(h, m, 0, 0);
+      return isBefore(slotTime, now);
+    }
+    return false;
+  }, []);
+
+  // Render a past slot cell
+  const renderPastSlot = (time: string) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="w-full h-full min-h-[44px] flex items-center justify-center bg-muted/30 cursor-not-allowed">
+            <span className="text-xs text-muted-foreground/50">{time}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">Horário indisponível — tempo já decorrido</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   // Render a blocked slot cell
   const renderBlockedSlot = (block: ScheduleBlock) => (
     <TooltipProvider>
@@ -214,17 +243,19 @@ export function AgendaGrid({
                   const slotAppointments = apts.filter(a => a.start_time.slice(0, 5) === time);
                   const isEmpty = slotAppointments.length === 0;
                   const profId = groupBy === 'professional' ? professionalNameToId[group] : undefined;
-                  const block = isEmpty ? isSlotBlocked(selectedDate, time, profId) : null;
+                  const pastSlot = isEmpty ? isSlotInPast(selectedDate, time) : false;
+                  const block = isEmpty && !pastSlot ? isSlotBlocked(selectedDate, time, profId) : null;
                   
                   return (
                     <div
                       key={`${group}-${time}`}
                       className={cn(
                         "border-b border-l p-1 min-h-[60px] relative",
+                        pastSlot && "bg-muted/30",
                         block && "bg-muted/40",
-                        isEmpty && !block && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                        isEmpty && !block && !pastSlot && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                       )}
-                      onClick={isEmpty && !block && onSlotClick ? () => onSlotClick({ date: selectedDate, time, professionalId: profId }) : undefined}
+                      onClick={isEmpty && !block && !pastSlot && onSlotClick ? () => onSlotClick({ date: selectedDate, time, professionalId: profId }) : undefined}
                     >
                       {slotAppointments.length > 0 ? (
                         slotAppointments.map(apt => (
@@ -240,6 +271,8 @@ export function AgendaGrid({
                         ))
                       ) : block ? (
                         renderBlockedSlot(block)
+                      ) : pastSlot ? (
+                        renderPastSlot(time)
                       ) : (
                         renderEmptySlot(selectedDate, time, profId)
                       )}
@@ -297,7 +330,8 @@ export function AgendaGrid({
                   );
                   const isWeekend = [0, 6].includes(day.getDay());
                   const isEmpty = slotAppointments.length === 0;
-                  const block = isEmpty ? isSlotBlocked(day, time) : null;
+                  const pastSlot = isEmpty ? isSlotInPast(day, time) : false;
+                  const block = isEmpty && !pastSlot ? isSlotBlocked(day, time) : null;
                   
                   return (
                     <div 
@@ -305,10 +339,11 @@ export function AgendaGrid({
                       className={cn(
                         "border-b border-l p-1 min-h-[80px] relative",
                         isWeekend && "bg-muted/20",
+                        pastSlot && "bg-muted/30",
                         block && "bg-muted/40",
-                        isEmpty && !block && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                        isEmpty && !block && !pastSlot && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                       )}
-                      onClick={isEmpty && !block && onSlotClick ? () => onSlotClick({ date: day, time }) : undefined}
+                      onClick={isEmpty && !block && !pastSlot && onSlotClick ? () => onSlotClick({ date: day, time }) : undefined}
                     >
                       {slotAppointments.length > 0 ? (
                         <>
@@ -331,6 +366,8 @@ export function AgendaGrid({
                         </>
                       ) : block ? (
                         renderBlockedSlot(block)
+                      ) : pastSlot ? (
+                        renderPastSlot(time)
                       ) : (
                         renderEmptySlot(day, time)
                       )}
@@ -368,7 +405,8 @@ export function AgendaGrid({
             const dayStr = format(day, 'yyyy-MM-dd');
             const dayAppointments = filteredAppointments.filter(a => a.scheduled_date === dayStr);
             const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
-            const isToday = isSameDay(day, new Date());
+            const isDayToday = isSameDay(day, new Date());
+            const isPastDay = isBefore(startOfDay(day), startOfDay(new Date()));
             
             return (
               <div 
@@ -376,18 +414,19 @@ export function AgendaGrid({
                 className={cn(
                   "border-b border-l p-2 min-h-[100px] group relative",
                   !isCurrentMonth && "bg-muted/30 text-muted-foreground",
-                  onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                  isPastDay && "bg-muted/20 cursor-not-allowed",
+                  !isPastDay && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                 )}
-                onClick={onSlotClick ? () => onSlotClick({ date: day, time: '08:00' }) : undefined}
+                onClick={!isPastDay && onSlotClick ? () => onSlotClick({ date: day, time: '08:00' }) : undefined}
               >
                 <div className="flex items-center justify-between">
                   <div className={cn(
                     "text-sm font-medium mb-1",
-                    isToday && "text-primary"
+                    isDayToday && "text-primary"
                   )}>
                     {format(day, 'd')}
                   </div>
-                  {onSlotClick && (
+                  {!isPastDay && onSlotClick && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <Plus className="h-4 w-4 text-primary" />
                     </div>

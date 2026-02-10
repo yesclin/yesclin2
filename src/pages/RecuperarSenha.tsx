@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, AlertCircle } from "lucide-react";
+import logoFull from "@/assets/logo-full.png";
 import { motion } from "framer-motion";
 import { z } from "zod";
 
@@ -84,13 +85,8 @@ const RecuperarSenha = () => {
         </Link>
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-display font-bold text-xl">Y</span>
-          </div>
-          <span className="font-display font-bold text-2xl text-foreground">
-            Yesclin
-          </span>
+        <Link to="/" className="flex items-center mb-8">
+          <img src={logoFull} alt="Yesclin" className="h-10 object-contain" />
         </Link>
 
         {emailSent ? (

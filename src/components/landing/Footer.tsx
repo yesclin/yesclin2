@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import logoFull from "@/assets/logo-full.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -27,13 +28,8 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold">Y</span>
-              </div>
-              <span className="font-display font-bold text-lg text-background">
-                Yesclin
-              </span>
+            <Link to="/" className="flex items-center mb-4">
+              <img src={logoFull} alt="Yesclin" className="h-8 object-contain brightness-0 invert" />
             </Link>
             <p className="text-sm text-background/60 leading-relaxed">
               Sistema completo para gestão de clínicas e consultórios de saúde.

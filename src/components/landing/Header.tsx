@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoFull from "@/assets/logo-full.png";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,13 +34,8 @@ const Header = () => {
       <div className="section-container">
         <nav className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-lg">Y</span>
-            </div>
-            <span className="font-display font-bold text-xl text-foreground">
-              Yesclin
-            </span>
+          <Link to="/" className="flex items-center">
+            <img src={logoFull} alt="Yesclin" className="h-9 object-contain" />
           </Link>
 
           {/* Desktop Navigation */}

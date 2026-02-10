@@ -5,6 +5,7 @@ import {
   resolveSpecialtyKey,
   type YesclinSpecialty 
 } from './yesclinSpecialties';
+import { useEnabledSpecialties } from '@/hooks/useEnabledSpecialties';
 
 export type SpecialtyKey =
   | 'geral'           // Clínica Geral
@@ -54,19 +55,30 @@ export function mapSpecialtyNameToKey(name: string): SpecialtyKey {
  */
 export function useActiveSpecialty(patientId: string | null | undefined) {
   const { data: activeAppointment, isLoading: appointmentLoading } = useActiveAppointment(patientId);
+  const { data: enabledClinicSpecialties = [], isLoading: specialtiesLoading } = useEnabledSpecialties();
   
   const [manualSpecialtyKey, setManualSpecialtyKey] = useState<SpecialtyKey | null>(null);
 
-  // Use controlled Yesclin specialties list (no database fetch)
+  // Filter Yesclin supported specialties against clinic's enabled specialties
   const specialties = useMemo((): SpecialtyOption[] => {
-    return YESCLIN_SUPPORTED_SPECIALTIES.map((spec: YesclinSpecialty, index) => ({
-      id: `yesclin-${spec.key}-${index}`, // Synthetic ID for system specialties
-      name: spec.name,
-      key: spec.key,
-      description: spec.description,
-      icon: spec.icon,
-    }));
-  }, []);
+    // Build a set of enabled specialty names (lowercased) for matching
+    const enabledNames = new Set(
+      enabledClinicSpecialties.map(s => s.name.toLowerCase().trim())
+    );
+    
+    return YESCLIN_SUPPORTED_SPECIALTIES
+      .filter((spec: YesclinSpecialty) => {
+        // Match by name (case-insensitive)
+        return enabledNames.has(spec.name.toLowerCase().trim());
+      })
+      .map((spec: YesclinSpecialty, index) => ({
+        id: `yesclin-${spec.key}-${index}`,
+        name: spec.name,
+        key: spec.key,
+        description: spec.description,
+        icon: spec.icon,
+      }));
+  }, [enabledClinicSpecialties]);
 
   // CRITICAL: Check if specialty is locked (from active appointment)
   const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
@@ -153,7 +165,7 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     isSpecialtyLocked,
     selectionBlockedReason,
     setActiveSpecialty,
-    loading: appointmentLoading, // No more database loading
+    loading: appointmentLoading || specialtiesLoading,
     // Expose appointment info for context
     activeAppointment,
   };

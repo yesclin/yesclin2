@@ -201,14 +201,20 @@ export function AppointmentDialog({
       }));
   }, [selectedProfId, professionalSpecialties]);
 
-  // Clear specialty when professional changes and current selection is not in available list
+  // Auto-select when only one specialty; clear if current selection is no longer available
   useEffect(() => {
     const currentSpecialtyId = form.getValues("specialty_id");
-    if (currentSpecialtyId && availableSpecialties.length > 0) {
+    
+    if (availableSpecialties.length === 1) {
+      // Auto-select the only available specialty
+      form.setValue("specialty_id", availableSpecialties[0].id);
+    } else if (currentSpecialtyId && availableSpecialties.length > 0) {
       const stillAvailable = availableSpecialties.some(s => s.id === currentSpecialtyId);
       if (!stillAvailable) {
         form.setValue("specialty_id", "");
       }
+    } else if (availableSpecialties.length === 0) {
+      form.setValue("specialty_id", "");
     }
   }, [watchProfessionalId, availableSpecialties, form]);
 
@@ -502,28 +508,32 @@ export function AppointmentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Especialidade *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a especialidade" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableSpecialties.length === 0 ? (
-                          <div className="px-3 py-2 text-sm text-muted-foreground">
-                            {!selectedProfId 
-                              ? "Selecione um profissional primeiro" 
-                              : "Nenhuma especialidade cadastrada. Cadastre em Configurações > Especialidades."}
-                          </div>
-                        ) : (
-                          availableSpecialties.map((spec) => (
-                            <SelectItem key={spec.id} value={spec.id}>
-                              {spec.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    {availableSpecialties.length === 1 ? (
+                      <div className="flex items-center gap-2 h-10 px-3 py-2 rounded-md border bg-muted text-muted-foreground">
+                        <span className="truncate">{availableSpecialties[0].name}</span>
+                      </div>
+                    ) : (
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedProfId}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={!selectedProfId ? "Selecione um profissional primeiro" : "Selecione a especialidade"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSpecialties.length === 0 ? (
+                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                              Nenhuma especialidade cadastrada para este profissional.
+                            </div>
+                          ) : (
+                            availableSpecialties.map((spec) => (
+                              <SelectItem key={spec.id} value={spec.id}>
+                                {spec.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

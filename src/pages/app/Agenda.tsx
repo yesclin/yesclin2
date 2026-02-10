@@ -20,6 +20,7 @@ import { BlockDialog } from "@/components/agenda/BlockDialog";
 import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agenda/TissGuideGenerationDialog";
 import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
 import { ProductSaleDialog } from "@/components/agenda/ProductSaleDialog";
+import { AppointmentDetailDrawer } from "@/components/agenda/AppointmentDetailDrawer";
 import { StockValidationDialog } from "@/components/agenda/StockValidationDialog";
 import { PatientFormDialog } from "@/components/pacientes/PatientFormDialog";
 import { useQueryClient } from "@tanstack/react-query";
@@ -58,6 +59,8 @@ export default function Agenda() {
   const [defaultDialogDate, setDefaultDialogDate] = useState<Date | undefined>();
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>();
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [detailAppointment, setDetailAppointment] = useState<Appointment | null>(null);
   
   // Patient creation from appointment dialog
   const [patientFormOpen, setPatientFormOpen] = useState(false);
@@ -487,6 +490,10 @@ export default function Agenda() {
                 professionals={visibleProfessionals}
                 rooms={rooms}
                 specialties={specialties}
+                onAppointmentClick={(apt) => {
+                  setDetailAppointment(apt);
+                  setDetailDrawerOpen(true);
+                }}
                 onReschedule={handleReschedule}
                 onStatusChange={handleStatusChange}
                 onLaunchSale={handleLaunchSale}
@@ -516,6 +523,29 @@ export default function Agenda() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Appointment Detail Drawer */}
+      <AppointmentDetailDrawer
+        appointment={detailAppointment}
+        open={detailDrawerOpen}
+        onOpenChange={setDetailDrawerOpen}
+        onStatusChange={(id, status) => {
+          setDetailDrawerOpen(false);
+          handleStatusChange(id, status);
+        }}
+        onReschedule={(apt) => {
+          setDetailDrawerOpen(false);
+          handleReschedule(apt);
+        }}
+        onLaunchSale={(apt) => {
+          setDetailDrawerOpen(false);
+          handleLaunchSale(apt);
+        }}
+        onStartAtendimento={(apt) => {
+          setDetailDrawerOpen(false);
+          handleStatusChange(apt.id, 'em_atendimento');
+        }}
+      />
 
       {/* Dialogs */}
       <AppointmentDialog

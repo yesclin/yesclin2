@@ -41,6 +41,7 @@ import { useProceduresList, Procedure } from "@/hooks/useProceduresCRUD";
 import { useSlotSuggestions } from "@/hooks/useSlotSuggestions";
 import { useConflictDetection } from "@/hooks/useConflictDetection";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useProfessionalSpecialties } from "@/hooks/useProfessionalSpecialties";
 import { SlotSuggestions } from "./SlotSuggestions";
 import { ConflictAlert } from "./ConflictAlert";
 import { ConflictConfirmDialog } from "./ConflictConfirmDialog";
@@ -52,7 +53,7 @@ const appointmentSchema = z.object({
   patient_id: z.string().min(1, "Selecione um paciente"),
   professional_id: z.string().min(1, "Selecione um profissional"),
   procedure_id: z.string().optional(),
-  specialty_id: z.string().optional(),
+  specialty_id: z.string().min(1, "Selecione uma especialidade"),
   room_id: z.string().optional(),
   scheduled_date: z.date({ required_error: "Selecione uma data" }),
   start_time: z.string().min(1, "Informe o horário"),
@@ -118,10 +119,11 @@ export function AppointmentDialog({
   // NOTE: UI-only gating. All data operations must still be protected server-side.
   const { isOwner, isAdmin } = usePermissions();
   const canOverrideConflicts = isOwner || isAdmin;
+  const isAdminOrOwner = isOwner || isAdmin;
   
   // Fetch procedures from database
   const { data: procedures = [], isLoading: proceduresLoading } = useProceduresList(false);
-  
+
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
@@ -169,6 +171,38 @@ export function AppointmentDialog({
   const watchDurationMinutes = form.watch("duration_minutes");
   const watchStartTime = form.watch("start_time");
   const watchIsFitIn = form.watch("is_fit_in");
+
+  // Fetch professional-specific specialties for non-admin users
+  const selectedProfId = lockedProfessionalId || watchProfessionalId || null;
+  const { data: professionalSpecialties = [] } = useProfessionalSpecialties(
+    !isAdminOrOwner ? selectedProfId : null
+  );
+
+  // Compute available specialties based on role
+  const availableSpecialties = useMemo(() => {
+    if (isAdminOrOwner) {
+      return specialties.filter(s => s.is_active);
+    }
+    return professionalSpecialties
+      .filter(ps => ps.specialty && ps.specialty.is_active)
+      .map(ps => ({
+        id: ps.specialty!.id,
+        name: ps.specialty!.name,
+        area: ps.specialty!.area,
+        is_active: ps.specialty!.is_active,
+      }));
+  }, [isAdminOrOwner, specialties, professionalSpecialties]);
+
+  // Clear specialty when professional changes and current selection is not in available list
+  useEffect(() => {
+    const currentSpecialtyId = form.getValues("specialty_id");
+    if (currentSpecialtyId && availableSpecialties.length > 0) {
+      const stillAvailable = availableSpecialties.some(s => s.id === currentSpecialtyId);
+      if (!stillAvailable) {
+        form.setValue("specialty_id", "");
+      }
+    }
+  }, [watchProfessionalId, availableSpecialties, form]);
 
   // Auto-fill duration, price, and specialty when procedure is selected
   useEffect(() => {
@@ -435,19 +469,27 @@ export function AppointmentDialog({
                 name="specialty_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Especialidade</FormLabel>
+                    <FormLabel>Especialidade *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder="Selecione a especialidade" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {specialties.map((spec) => (
-                          <SelectItem key={spec.id} value={spec.id}>
-                            {spec.name}
-                          </SelectItem>
-                        ))}
+                        {availableSpecialties.length === 0 ? (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            {!selectedProfId 
+                              ? "Selecione um profissional primeiro" 
+                              : "Nenhuma especialidade disponível"}
+                          </div>
+                        ) : (
+                          availableSpecialties.map((spec) => (
+                            <SelectItem key={spec.id} value={spec.id}>
+                              {spec.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

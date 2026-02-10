@@ -41,6 +41,8 @@ import { UserProfileFooter } from "./UserProfileFooter";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useMemo } from "react";
+import logoIcon from "@/assets/logo-icon.png";
+import logoFull from "@/assets/logo-full.png";
 
 interface MenuItem {
   title: string;
@@ -166,13 +168,10 @@ export function AppSidebar() {
             "flex items-center min-w-0",
             isCollapsed ? "justify-center" : "gap-2"
           )}>
-            <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">Y</span>
-            </div>
-            {!isCollapsed && (
-              <span className="font-semibold text-lg text-sidebar-foreground truncate">
-                Yesclin
-              </span>
+            {isCollapsed ? (
+              <img src={logoIcon} alt="Yesclin" className="w-8 h-8 shrink-0 object-contain" />
+            ) : (
+              <img src={logoFull} alt="Yesclin" className="h-8 object-contain" />
             )}
           </div>
         </div>

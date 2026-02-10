@@ -112,23 +112,21 @@ export function useRoomsList() {
 }
 
 // ============= SPECIALTIES =============
-export function useSpecialtiesList() {
-  const { clinic } = useClinicData();
-  
+export function useSpecialtiesList(clinicId?: string) {
   return useQuery({
-    queryKey: ["specialties-list", clinic?.id],
+    queryKey: ["specialties-list", clinicId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("specialties")
         .select("id, clinic_id, name, description, color, is_active")
         .eq("is_active", true)
-        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
+        .or(`clinic_id.is.null,clinic_id.eq.${clinicId}`)
         .order("name");
       
       if (error) throw error;
       return (data || []) as Specialty[];
     },
-    enabled: !!clinic?.id,
+    enabled: !!clinicId,
   });
 }
 
@@ -594,11 +592,13 @@ function useScheduleBlocksForPeriod(rangeStart: Date, rangeEnd: Date) {
 
 // ============= COMBINED HOOK FOR AGENDA PAGE =============
 export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekly" | "monthly" = "daily") {
+  const { clinic } = useClinicData();
+  
   // Fetch all base data
   const { data: professionals = [], isLoading: profLoading } = useProfessionals();
   const { data: patients = [], isLoading: patientsLoading } = usePatientsList();
   const { data: rooms = [], isLoading: roomsLoading } = useRoomsList();
-  const { data: specialties = [], isLoading: specialtiesLoading } = useSpecialtiesList();
+  const { data: specialties = [], isLoading: specialtiesLoading } = useSpecialtiesList(clinic?.id);
   const { data: insurances = [], isLoading: insurancesLoading } = useInsurancesList();
   
   // Fetch schedules

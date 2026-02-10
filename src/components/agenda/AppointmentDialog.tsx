@@ -172,17 +172,13 @@ export function AppointmentDialog({
   const watchStartTime = form.watch("start_time");
   const watchIsFitIn = form.watch("is_fit_in");
 
-  // Fetch professional-specific specialties for non-admin users
+  // Fetch professional-specific specialties — ALWAYS filter by selected professional
   const selectedProfId = lockedProfessionalId || watchProfessionalId || null;
-  const { data: professionalSpecialties = [] } = useProfessionalSpecialties(
-    !isAdminOrOwner ? selectedProfId : null
-  );
+  const { data: professionalSpecialties = [] } = useProfessionalSpecialties(selectedProfId);
 
-  // Compute available specialties based on role
+  // Compute available specialties: always based on professional's linked specialties
   const availableSpecialties = useMemo(() => {
-    if (isAdminOrOwner) {
-      return specialties.filter(s => s.is_active);
-    }
+    if (!selectedProfId) return [];
     return professionalSpecialties
       .filter(ps => ps.specialty && ps.specialty.is_active)
       .map(ps => ({
@@ -191,7 +187,7 @@ export function AppointmentDialog({
         area: ps.specialty!.area,
         is_active: ps.specialty!.is_active,
       }));
-  }, [isAdminOrOwner, specialties, professionalSpecialties]);
+  }, [selectedProfId, professionalSpecialties]);
 
   // Clear specialty when professional changes and current selection is not in available list
   useEffect(() => {

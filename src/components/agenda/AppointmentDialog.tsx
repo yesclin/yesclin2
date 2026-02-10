@@ -215,7 +215,7 @@ export function AppointmentDialog({
           form.setValue("specialty_id", procedure.specialty_id);
         } else if (procedure.specialty) {
           // Fallback: match by name for backwards compatibility
-          const matchingSpecialty = specialties.find(s => 
+          const matchingSpecialty = availableSpecialties.find(s => 
             s.name.toLowerCase() === procedure.specialty?.toLowerCase()
           );
           if (matchingSpecialty) {
@@ -226,7 +226,7 @@ export function AppointmentDialog({
     } else {
       setSelectedProcedure(null);
     }
-  }, [watchProcedureId, procedures, form, specialties]);
+  }, [watchProcedureId, procedures, form, availableSpecialties]);
 
   // Get professional schedule for slot suggestions
   const professionalScheduleData = useMemo(() => {
@@ -477,7 +477,7 @@ export function AppointmentDialog({
                           <div className="px-3 py-2 text-sm text-muted-foreground">
                             {!selectedProfId 
                               ? "Selecione um profissional primeiro" 
-                              : "Nenhuma especialidade disponível"}
+                              : "Nenhuma especialidade cadastrada. Cadastre em Configurações > Especialidades."}
                           </div>
                         ) : (
                           availableSpecialties.map((spec) => (

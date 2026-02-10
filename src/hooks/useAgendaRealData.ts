@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useClinicData } from "./useClinicData";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import type { 
   Appointment, 
@@ -127,6 +126,20 @@ export function useSpecialtiesList(clinicId?: string) {
       return (data || []) as Specialty[];
     },
     enabled: !!clinicId,
+  });
+}
+
+// Helper hook to get clinic_id without useClinicData (avoids hook order issues)
+function useClinicId() {
+  return useQuery({
+    queryKey: ["clinic-id-only"],
+    queryFn: async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("clinic_id")
+        .maybeSingle();
+      return profile?.clinic_id || null;
+    },
   });
 }
 
@@ -592,13 +605,14 @@ function useScheduleBlocksForPeriod(rangeStart: Date, rangeEnd: Date) {
 
 // ============= COMBINED HOOK FOR AGENDA PAGE =============
 export function useAgendaRealData(selectedDate: Date, viewMode: "daily" | "weekly" | "monthly" = "daily") {
-  const { clinic } = useClinicData();
+  // Get clinic ID using react-query (stable hook order)
+  const { data: clinicId } = useClinicId();
   
   // Fetch all base data
   const { data: professionals = [], isLoading: profLoading } = useProfessionals();
   const { data: patients = [], isLoading: patientsLoading } = usePatientsList();
   const { data: rooms = [], isLoading: roomsLoading } = useRoomsList();
-  const { data: specialties = [], isLoading: specialtiesLoading } = useSpecialtiesList(clinic?.id);
+  const { data: specialties = [], isLoading: specialtiesLoading } = useSpecialtiesList(clinicId || undefined);
   const { data: insurances = [], isLoading: insurancesLoading } = useInsurancesList();
   
   // Fetch schedules

@@ -99,11 +99,14 @@ export function useConflictDetection({
     }
 
     // 0. Check past date/time (CRITICAL)
+    // Normalize both dates to YYYY-MM-DD integers to avoid timezone pitfalls
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const scheduledStart = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+    const todayInt = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const schedInt = scheduledDate.getFullYear() * 10000 + (scheduledDate.getMonth() + 1) * 100 + scheduledDate.getDate();
+
+    console.debug('[ConflictDetection] date check', { todayInt, schedInt, startTime });
     
-    if (scheduledStart < todayStart) {
+    if (schedInt < todayInt) {
       conflicts.push({
         id: 'past_date',
         type: 'past_date',
@@ -111,7 +114,7 @@ export function useConflictDetection({
         message: 'Data no passado',
         details: 'Não é possível agendar em uma data que já passou. Selecione uma data futura.',
       });
-    } else if (scheduledStart.getTime() === todayStart.getTime()) {
+    } else if (schedInt === todayInt) {
       const [h, m] = startTime.split(':').map(Number);
       const slotMinutes = h * 60 + (m || 0);
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -153,9 +156,15 @@ export function useConflictDetection({
       const dayOfWeek = scheduledDate.getDay();
       const dayKey = dayKeyMap[dayOfWeek];
       const daySchedule = schedule[dayKey];
+
+      console.debug('[ConflictDetection] schedule check', {
+        dayOfWeek, dayKey,
+        daySchedule,
+        scheduleSource: useClinicDefault ? 'clinic' : 'professional',
+      });
       
-      if (!daySchedule?.enabled) {
-        // Critical: Professional doesn't work this day
+      // Only flag as day off if `enabled` is explicitly false (not undefined/missing)
+      if (daySchedule && daySchedule.enabled === false) {
         conflicts.push({
           id: 'day_off',
           type: 'outside_hours',
@@ -163,7 +172,7 @@ export function useConflictDetection({
           message: 'Profissional não atende neste dia',
           details: 'Este dia está configurado como folga para o profissional.',
         });
-      } else {
+      } else if (daySchedule?.enabled) {
         const workStart = timeToMinutes(daySchedule.open);
         const workEnd = timeToMinutes(daySchedule.close);
         

@@ -6,7 +6,7 @@ import { Plus, CalendarPlus, Ban, Settings, Loader2, Users } from "lucide-react"
 import type { SlotClickData } from "@/components/agenda/AgendaGrid";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAgendaRealData } from "@/hooks/useAgendaRealData";
-import { useUpdateAppointmentStatus, useCreateAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
+import { useUpdateAppointmentStatus, useCreateAppointment, useRescheduleAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
 import { useTissGuideGeneration } from "@/hooks/useTissGuideGeneration";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AgendaDateNavigation } from "@/components/agenda/AgendaDateNavigation";
@@ -113,6 +113,7 @@ export default function Agenda() {
   // Mutations
   const updateStatusMutation = useUpdateAppointmentStatus();
   const createAppointmentMutation = useCreateAppointment();
+  const rescheduleAppointmentMutation = useRescheduleAppointment();
 
   // RBAC: Profissional vê apenas sua própria aba
   const effectiveSelectedProfessionalId = role === 'profissional' && userProfessionalId
@@ -334,6 +335,23 @@ export default function Agenda() {
     notes?: string;
     is_fit_in?: boolean;
   }) => {
+    // If reschedule mode, use the reschedule mutation (only update date/time/duration/room)
+    if (appointmentDialogMode === 'reschedule' && selectedAppointment) {
+      rescheduleAppointmentMutation.mutate({
+        id: selectedAppointment.id,
+        scheduled_date: data.scheduled_date || new Date(),
+        start_time: data.start_time || '08:00',
+        duration_minutes: parseInt(data.duration_minutes || '30'),
+        room_id: data.room_id || null,
+      }, {
+        onSuccess: () => {
+          setAppointmentDialogOpen(false);
+          refetchAppointments();
+        },
+      });
+      return;
+    }
+
     const formData: AppointmentFormData = {
       patient_id: data.patient_id || '',
       professional_id: data.professional_id || '',
@@ -356,7 +374,7 @@ export default function Agenda() {
         refetchAppointments();
       },
     });
-  }, [createAppointmentMutation, refetchAppointments]);
+  }, [appointmentDialogMode, selectedAppointment, createAppointmentMutation, rescheduleAppointmentMutation, refetchAppointments]);
 
   // Default to logged-in user's professional ID if no tab selected
   const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || userProfessionalId || undefined;

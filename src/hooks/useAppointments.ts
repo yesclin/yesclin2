@@ -308,31 +308,33 @@ export function useCancelAppointment() {
   });
 }
 
-// Reschedule appointment
+// Reschedule appointment (update only date/time/duration/room)
 export function useRescheduleAppointment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, scheduled_date, start_time, duration_minutes }: { 
-      id: string; 
-      scheduled_date: Date; 
-      start_time: string; 
+    mutationFn: async ({ id, scheduled_date, start_time, duration_minutes, room_id }: {
+      id: string;
+      scheduled_date: Date;
+      start_time: string;
       duration_minutes: number;
+      room_id?: string | null;
     }) => {
       const endTime = calculateEndTime(start_time, duration_minutes);
-      
+
       const { error } = await supabase
         .from("appointments")
-        .update({ 
+        .update({
           scheduled_date: format(scheduled_date, "yyyy-MM-dd"),
           start_time,
           end_time: endTime,
           duration_minutes,
-          status: "nao_confirmado", // Reset status when rescheduling
-          updated_at: new Date().toISOString() 
+          room_id: room_id || null,
+          status: "nao_confirmado",
+          updated_at: new Date().toISOString(),
         })
         .eq("id", id);
-      
+
       if (error) throw error;
       return { id };
     },

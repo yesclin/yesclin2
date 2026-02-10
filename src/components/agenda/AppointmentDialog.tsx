@@ -120,6 +120,8 @@ export function AppointmentDialog({
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
   
+  const isReschedule = mode === 'reschedule';
+  
   // RBAC
   // NOTE: UI-only gating. All data operations must still be protected server-side.
   const { isOwner, isAdmin } = usePermissions();
@@ -360,10 +362,12 @@ export function AppointmentDialog({
                   <FormItem className="md:col-span-2">
                     <FormLabel>Paciente *</FormLabel>
                     <FormControl>
-                      {lockedPatientId && lockedPatientName ? (
+                      {(isReschedule && appointment?.patient) || (lockedPatientId && lockedPatientName) ? (
                         <div className="flex items-center gap-2 h-10 px-3 py-2 rounded-md border bg-muted text-muted-foreground">
                           <User className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{lockedPatientName}</span>
+                          <span className="truncate">
+                            {isReschedule ? appointment?.patient?.full_name : lockedPatientName}
+                          </span>
                         </div>
                       ) : (
                         <PatientAutocomplete
@@ -384,26 +388,25 @@ export function AppointmentDialog({
                 control={form.control}
                 name="professional_id"
                 render={({ field }) => {
-                  const lockedProfessional = lockedProfessionalId 
-                    ? professionals.find(p => p.id === lockedProfessionalId)
+                  const shouldLock = isReschedule || !!lockedProfessionalId;
+                  const displayProfessional = shouldLock
+                    ? professionals.find(p => p.id === (lockedProfessionalId || field.value))
                     : null;
 
                   return (
                     <FormItem>
                       <FormLabel>Profissional *</FormLabel>
-                      {lockedProfessional ? (
-                        // Locked mode - show professional name as disabled input
+                      {shouldLock && displayProfessional ? (
                         <div className="flex items-center gap-2 h-10 px-3 py-2 rounded-md border bg-muted text-muted-foreground">
                           <div
                             className="h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0"
-                            style={{ backgroundColor: lockedProfessional.color || "#6366f1" }}
+                            style={{ backgroundColor: displayProfessional.color || "#6366f1" }}
                           >
-                            {lockedProfessional.full_name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                            {displayProfessional.full_name.split(" ").map(n => n[0]).slice(0, 2).join("")}
                           </div>
-                          <span className="truncate">{lockedProfessional.full_name}</span>
+                          <span className="truncate">{displayProfessional.full_name}</span>
                         </div>
                       ) : (
-                        // Normal mode - selectable
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -426,6 +429,7 @@ export function AppointmentDialog({
               />
 
               {/* Procedure Selection */}
+              {!isReschedule && (
               <FormField
                 control={form.control}
                 name="procedure_id"
@@ -483,8 +487,10 @@ export function AppointmentDialog({
                   </FormItem>
                 )}
               />
+              )}
 
               {/* Specialty */}
+              {!isReschedule && (
               <FormField
                 control={form.control}
                 name="specialty_id"
@@ -521,6 +527,7 @@ export function AppointmentDialog({
                   </FormItem>
                 )}
               />
+              )}
 
               {/* Room */}
               <FormField
@@ -549,6 +556,7 @@ export function AppointmentDialog({
               />
 
               {/* Appointment Type */}
+              {!isReschedule && (
               <FormField
                 control={form.control}
                 name="appointment_type"
@@ -573,6 +581,7 @@ export function AppointmentDialog({
                   </FormItem>
                 )}
               />
+              )}
 
               {/* Date */}
               <FormField
@@ -677,6 +686,7 @@ export function AppointmentDialog({
               )}
 
               {/* Payment Type */}
+              {!isReschedule && (
               <FormField
                 control={form.control}
                 name="payment_type"
@@ -698,9 +708,10 @@ export function AppointmentDialog({
                   </FormItem>
                 )}
               />
+              )}
 
               {/* Insurance (conditional) */}
-              {watchPaymentType === 'convenio' && (
+              {!isReschedule && watchPaymentType === 'convenio' && (
                 <FormField
                   control={form.control}
                   name="insurance_id"
@@ -728,7 +739,7 @@ export function AppointmentDialog({
               )}
 
               {/* Expected Value - shows when procedure has price or payment is particular */}
-              {(selectedProcedure?.price || watchPaymentType === 'particular') && (
+              {!isReschedule && (selectedProcedure?.price || watchPaymentType === 'particular') && (
                 <FormField
                   control={form.control}
                   name="expected_value"
@@ -760,6 +771,7 @@ export function AppointmentDialog({
               )}
 
               {/* Notes */}
+              {!isReschedule && (
               <FormField
                 control={form.control}
                 name="notes"
@@ -777,6 +789,7 @@ export function AppointmentDialog({
                   </FormItem>
                 )}
               />
+              )}
             </div>
 
             <DialogFooter>

@@ -183,6 +183,7 @@ export function AppointmentDialog({
   const watchDurationMinutes = form.watch("duration_minutes");
   const watchStartTime = form.watch("start_time");
   const watchIsFitIn = form.watch("is_fit_in");
+  const watchSpecialtyId = form.watch("specialty_id");
 
   // Fetch professional-specific specialties — ALWAYS filter by selected professional
   const selectedProfId = lockedProfessionalId || watchProfessionalId || null;
@@ -278,6 +279,8 @@ export function AppointmentDialog({
   };
 
   // Conflict detection
+  const activeSpecialtyIds = useMemo(() => availableSpecialties.map(s => s.id), [availableSpecialties]);
+  
   const conflictResult = useConflictDetection({
     professionalId: watchProfessionalId,
     scheduledDate: watchScheduledDate,
@@ -289,29 +292,14 @@ export function AppointmentDialog({
     useClinicDefault: professionalScheduleData.useClinicDefault,
     editingAppointmentId: appointment?.id,
     isFitIn: watchIsFitIn || mode === 'fitIn',
+    selectedSpecialtyId: watchSpecialtyId,
+    activeSpecialtyIds,
   });
 
   const handleSubmit = (data: AppointmentFormData) => {
-    // Validate: block past date/time
-    const now = new Date();
-    const scheduledDate = data.scheduled_date;
-    if (isBefore(startOfDay(scheduledDate), startOfDay(now))) {
-      toast.error("Não é possível agendar em data já passada.");
-      return;
-    }
-    if (isToday(scheduledDate)) {
-      const [h, m] = data.start_time.split(":").map(Number);
-      const slotTime = new Date(scheduledDate);
-      slotTime.setHours(h, m, 0, 0);
-      if (isBefore(slotTime, now)) {
-        toast.error("Não é possível agendar em horário já passado.");
-        return;
-      }
-    }
-
     // Check for critical conflicts - block save
     if (conflictResult.hasCriticalConflict) {
-      toast.error("Não é possível salvar com conflitos críticos. Ajuste o horário.");
+      toast.error("Não é possível salvar com conflitos críticos. Corrija os itens indicados.");
       return;
     }
     
@@ -321,12 +309,7 @@ export function AppointmentDialog({
       return;
     }
     
-    // Warning conflicts for non-admin/owner - block
-    if (conflictResult.hasWarningConflict && !canOverrideConflicts) {
-      toast.error("Conflito de horário detectado. Ajuste o horário ou solicite a um administrador.");
-      return;
-    }
-    
+    // Warning conflicts for non-admin/owner - still allow save (warnings don't block)
     performSave(data);
   };
   

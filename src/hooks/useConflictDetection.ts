@@ -11,7 +11,7 @@ export type ConflictSeverity = 'critical' | 'warning';
 
 export interface ScheduleConflict {
   id: string;
-  type: 'overlap' | 'outside_hours' | 'during_block' | 'during_break' | 'fit_in_overlap';
+  type: 'overlap' | 'outside_hours' | 'during_block' | 'during_break' | 'fit_in_overlap' | 'past_date' | 'inactive_specialty';
   severity: ConflictSeverity;
   message: string;
   details?: string;
@@ -66,6 +66,8 @@ export interface UseConflictDetectionParams {
   useClinicDefault: boolean;
   editingAppointmentId?: string; // Exclude this appointment when checking for overlaps
   isFitIn?: boolean;
+  selectedSpecialtyId?: string;
+  activeSpecialtyIds?: string[];
 }
 
 export function useConflictDetection({
@@ -79,6 +81,8 @@ export function useConflictDetection({
   useClinicDefault,
   editingAppointmentId,
   isFitIn = false,
+  selectedSpecialtyId,
+  activeSpecialtyIds,
 }: UseConflictDetectionParams): ConflictCheckResult {
   return useMemo(() => {
     const conflicts: ScheduleConflict[] = [];
@@ -92,6 +96,47 @@ export function useConflictDetection({
         canSaveWithConfirmation: true,
         canSave: true,
       };
+    }
+
+    // 0. Check past date/time (CRITICAL)
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const scheduledStart = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+    
+    if (scheduledStart < todayStart) {
+      conflicts.push({
+        id: 'past_date',
+        type: 'past_date',
+        severity: 'critical',
+        message: 'Data no passado',
+        details: 'Não é possível agendar em uma data que já passou. Selecione uma data futura.',
+      });
+    } else if (scheduledStart.getTime() === todayStart.getTime()) {
+      const [h, m] = startTime.split(':').map(Number);
+      const slotMinutes = h * 60 + (m || 0);
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (slotMinutes < nowMinutes) {
+        conflicts.push({
+          id: 'past_time',
+          type: 'past_date',
+          severity: 'critical',
+          message: 'Horário já passou',
+          details: 'Não é possível agendar em um horário que já passou hoje. Selecione um horário futuro.',
+        });
+      }
+    }
+
+    // 0b. Check inactive specialty (CRITICAL)
+    if (selectedSpecialtyId && activeSpecialtyIds && activeSpecialtyIds.length > 0) {
+      if (!activeSpecialtyIds.includes(selectedSpecialtyId)) {
+        conflicts.push({
+          id: 'inactive_specialty',
+          type: 'inactive_specialty',
+          severity: 'critical',
+          message: 'Especialidade inativa',
+          details: 'A especialidade selecionada não está ativa. Selecione outra especialidade.',
+        });
+      }
     }
     
     const dateStr = format(scheduledDate, 'yyyy-MM-dd');
@@ -210,5 +255,7 @@ export function useConflictDetection({
     useClinicDefault,
     editingAppointmentId,
     isFitIn,
+    selectedSpecialtyId,
+    activeSpecialtyIds,
   ]);
 }

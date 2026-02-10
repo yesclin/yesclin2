@@ -21,6 +21,8 @@ import { TissGuideGenerationDialog, GeneratedGuideData } from "@/components/agen
 import { AppointmentMaterialsDialog } from "@/components/agenda/AppointmentMaterialsDialog";
 import { ProductSaleDialog } from "@/components/agenda/ProductSaleDialog";
 import { StockValidationDialog } from "@/components/agenda/StockValidationDialog";
+import { PatientFormDialog } from "@/components/pacientes/PatientFormDialog";
+import { useQueryClient } from "@tanstack/react-query";
 import type { AgendaFilters as FiltersType, ViewMode, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
 import { validateProcedureStock, StockValidationResult } from "@/hooks/useProcedureStockValidation";
@@ -50,6 +52,10 @@ export default function Agenda() {
   const [defaultDialogDate, setDefaultDialogDate] = useState<Date | undefined>();
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>();
+  
+  // Patient creation from appointment dialog
+  const [patientFormOpen, setPatientFormOpen] = useState(false);
+  const queryClient = useQueryClient();
   
   // TISS Guide Generation
   const [tissDialogOpen, setTissDialogOpen] = useState(false);
@@ -332,7 +338,8 @@ export default function Agenda() {
     });
   }, [createAppointmentMutation, refetchAppointments]);
 
-  const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || undefined;
+  // Default to logged-in user's professional ID if no tab selected
+  const lockedProfessionalIdForDialog = effectiveSelectedProfessionalId || userProfessionalId || undefined;
 
   // Count active filters
   const activeFiltersCount = [
@@ -511,6 +518,19 @@ export default function Agenda() {
         clinicSchedule={clinicSchedule}
         professionalSchedules={professionalSchedules}
         onSubmit={handleAppointmentSubmit}
+        onCreatePatient={() => setPatientFormOpen(true)}
+      />
+
+      {/* Patient Form Dialog (from appointment) */}
+      <PatientFormDialog
+        open={patientFormOpen}
+        onOpenChange={setPatientFormOpen}
+        insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
+        onSave={() => {
+          setPatientFormOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["patients-list"] });
+          toast.success("Paciente cadastrado! Busque novamente no campo de paciente.");
+        }}
       />
 
       <BlockDialog

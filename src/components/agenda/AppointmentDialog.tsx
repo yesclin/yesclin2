@@ -45,6 +45,7 @@ import { SlotSuggestions } from "./SlotSuggestions";
 import { ConflictAlert } from "./ConflictAlert";
 import { ConflictConfirmDialog } from "./ConflictConfirmDialog";
 import { ProcedureProductsPreview } from "./ProcedureProductsPreview";
+import { PatientAutocomplete } from "./PatientAutocomplete";
 import { WeekSchedule } from "@/components/config/EnhancedWorkingHoursCard";
 
 const appointmentSchema = z.object({
@@ -87,6 +88,8 @@ interface AppointmentDialogProps {
   clinicSchedule?: WeekSchedule | null;
   /** Professional schedule configs for slot suggestions */
   professionalSchedules?: Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>;
+  /** Callback to open patient creation form */
+  onCreatePatient?: () => void;
 }
 
 export function AppointmentDialog({
@@ -106,8 +109,8 @@ export function AppointmentDialog({
   existingAppointments = [],
   clinicSchedule = null,
   professionalSchedules = new Map(),
+  onCreatePatient,
 }: AppointmentDialogProps) {
-  const [patientSearch, setPatientSearch] = useState("");
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
   
@@ -240,10 +243,6 @@ export function AppointmentDialog({
     isFitIn: watchIsFitIn || mode === 'fitIn',
   });
 
-  const filteredPatients = patients.filter(p => 
-    p.full_name.toLowerCase().includes(patientSearch.toLowerCase())
-  );
-
   const handleSubmit = (data: AppointmentFormData) => {
     // Check for critical conflicts - block save
     if (conflictResult.hasCriticalConflict) {
@@ -312,34 +311,14 @@ export function AppointmentDialog({
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Paciente *</FormLabel>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Buscar paciente..."
-                          value={patientSearch}
-                          onChange={(e) => setPatientSearch(e.target.value)}
-                          className="pl-9"
-                        />
-                      </div>
-                      <Button type="button" variant="outline" size="icon">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o paciente" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {filteredPatients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            {patient.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <PatientAutocomplete
+                        value={field.value}
+                        onSelect={field.onChange}
+                        onCreateNew={() => onCreatePatient?.()}
+                        patients={patients}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

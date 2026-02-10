@@ -61,8 +61,8 @@ export function AgendaSummarySheet({ stats, open, onOpenChange }: AgendaSummaryS
           <span className="hidden sm:inline">Resumo do dia</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[340px] sm:w-[400px]">
-        <SheetHeader>
+      <SheetContent side="right" className="w-[340px] sm:w-[400px] flex flex-col max-h-screen">
+        <SheetHeader className="flex-shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Resumo do Dia
@@ -72,7 +72,7 @@ export function AgendaSummarySheet({ stats, open, onOpenChange }: AgendaSummaryS
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-6 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* Occupancy Rate - Featured */}
           <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
             <CardContent className="p-4">

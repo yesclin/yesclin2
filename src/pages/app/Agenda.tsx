@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, CalendarPlus, Ban, Settings, Loader2, Users } from "lucide-react";
 import type { SlotClickData } from "@/components/agenda/AgendaGrid";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAgendaRealData } from "@/hooks/useAgendaRealData";
 import { useUpdateAppointmentStatus, useCreateAppointment, type AppointmentFormData } from "@/hooks/useAppointments";
 import { useTissGuideGeneration } from "@/hooks/useTissGuideGeneration";
@@ -29,7 +29,13 @@ import { validateProcedureStock, StockValidationResult } from "@/hooks/useProced
 
 export default function Agenda() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role, professionalId: userProfessionalId } = usePermissions();
+  
+  // Check if navigated from patient profile with pre-selected patient
+  const locationState = location.state as { patientId?: string; patientName?: string } | null;
+  const [lockedPatientId, setLockedPatientId] = useState<string | undefined>(locationState?.patientId);
+  const [lockedPatientName, setLockedPatientName] = useState<string | undefined>(locationState?.patientName);
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -90,6 +96,17 @@ export default function Agenda() {
     professionalSchedules,
   } = useAgendaRealData(selectedDate, viewMode === 'timeline' ? 'daily' : viewMode);
   
+  // Auto-open appointment dialog when navigated from patient profile
+  useEffect(() => {
+    if (locationState?.patientId) {
+      setAppointmentDialogMode('create');
+      setSelectedAppointment(undefined);
+      setAppointmentDialogOpen(true);
+      // Clear the navigation state so it doesn't re-trigger
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, []); // Run only once on mount
+
   // Mutations
   const updateStatusMutation = useUpdateAppointmentStatus();
   const createAppointmentMutation = useCreateAppointment();
@@ -503,7 +520,15 @@ export default function Agenda() {
       {/* Dialogs */}
       <AppointmentDialog
         open={appointmentDialogOpen}
-        onOpenChange={setAppointmentDialogOpen}
+        onOpenChange={(open) => {
+          setAppointmentDialogOpen(open);
+          if (!open) {
+            setLockedPatientId(undefined);
+            setLockedPatientName(undefined);
+          }
+        }}
+        lockedPatientId={lockedPatientId}
+        lockedPatientName={lockedPatientName}
         mode={appointmentDialogMode}
         professionals={professionals}
         patients={patients}

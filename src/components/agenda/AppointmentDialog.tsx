@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, Plus, Search, Clock, Banknote } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Search, Clock, Banknote, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Professional, Patient, Room, Specialty, Insurance, Appointment } from "@/types/agenda";
@@ -91,6 +91,9 @@ interface AppointmentDialogProps {
   professionalSchedules?: Map<string, { useClinicDefault: boolean; workingDays: WeekSchedule }>;
   /** Callback to open patient creation form */
   onCreatePatient?: () => void;
+  /** If provided, the patient field will be pre-filled and locked */
+  lockedPatientId?: string;
+  lockedPatientName?: string;
 }
 
 export function AppointmentDialog({
@@ -111,6 +114,8 @@ export function AppointmentDialog({
   clinicSchedule = null,
   professionalSchedules = new Map(),
   onCreatePatient,
+  lockedPatientId,
+  lockedPatientName,
 }: AppointmentDialogProps) {
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
@@ -127,7 +132,7 @@ export function AppointmentDialog({
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      patient_id: appointment?.patient_id || "",
+      patient_id: lockedPatientId || appointment?.patient_id || "",
       professional_id: lockedProfessionalId || appointment?.professional_id || "",
       procedure_id: appointment?.procedure_id || "",
       specialty_id: appointment?.specialty_id || "",
@@ -150,6 +155,13 @@ export function AppointmentDialog({
       form.setValue("professional_id", lockedProfessionalId);
     }
   }, [lockedProfessionalId, form]);
+
+  // If lockedPatientId changes, update the form
+  useEffect(() => {
+    if (lockedPatientId) {
+      form.setValue("patient_id", lockedPatientId);
+    }
+  }, [lockedPatientId, form]);
 
   // Update form when slot-click defaults change
   useEffect(() => {
@@ -359,12 +371,19 @@ export function AppointmentDialog({
                   <FormItem className="md:col-span-2">
                     <FormLabel>Paciente *</FormLabel>
                     <FormControl>
-                      <PatientAutocomplete
-                        value={field.value}
-                        onSelect={field.onChange}
-                        onCreateNew={() => onCreatePatient?.()}
-                        patients={patients}
-                      />
+                      {lockedPatientId && lockedPatientName ? (
+                        <div className="flex items-center gap-2 h-10 px-3 py-2 rounded-md border bg-muted text-muted-foreground">
+                          <User className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{lockedPatientName}</span>
+                        </div>
+                      ) : (
+                        <PatientAutocomplete
+                          value={field.value}
+                          onSelect={field.onChange}
+                          onCreateNew={() => onCreatePatient?.()}
+                          patients={patients}
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

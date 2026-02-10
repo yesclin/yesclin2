@@ -169,3 +169,16 @@ export const typeLabels: Record<AppointmentType, string> = {
   procedimento: 'Procedimento',
   encaixe: 'Encaixe',
 };
+
+export interface ScheduleBlock {
+  id: string;
+  clinic_id: string;
+  professional_id: string | null;
+  title: string;
+  reason: string | null;
+  start_date: string;
+  end_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  all_day: boolean;
+}

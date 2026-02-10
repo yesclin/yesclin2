@@ -75,7 +75,8 @@ export default function Agenda() {
     professionals, 
     patients, 
     insurances, 
-    appointments, 
+    appointments,
+    scheduleBlocks,
     stats, 
     isLoading: dataLoading,
     refetchAppointments,
@@ -455,6 +456,7 @@ export default function Agenda() {
               {/* Agenda Grid - always show to allow clicking free slots */}
               <AgendaGrid
                 appointments={filteredAppointments}
+                scheduleBlocks={scheduleBlocks}
                 viewMode={viewMode}
                 groupBy={effectiveSelectedProfessionalId ? 'general' : 'professional'}
                 selectedDate={selectedDate}

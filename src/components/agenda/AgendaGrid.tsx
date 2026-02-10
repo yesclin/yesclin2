@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AppointmentCard } from './AppointmentCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus } from 'lucide-react';
-import type { Appointment, ViewMode, GroupBy, Professional, Room, Specialty } from '@/types/agenda';
+import { Plus, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Appointment, ViewMode, GroupBy, Professional, Room, Specialty, ScheduleBlock } from '@/types/agenda';
 
 export interface SlotClickData {
   date: Date;
@@ -15,6 +16,7 @@ export interface SlotClickData {
 
 interface AgendaGridProps {
   appointments: Appointment[];
+  scheduleBlocks?: ScheduleBlock[];
   viewMode: ViewMode;
   groupBy: GroupBy;
   selectedDate: Date;
@@ -36,6 +38,7 @@ const timeSlots = Array.from({ length: 20 }, (_, i) => {
 
 export function AgendaGrid({
   appointments,
+  scheduleBlocks = [],
   viewMode,
   groupBy,
   selectedDate,
@@ -112,6 +115,49 @@ export function AgendaGrid({
     return map;
   }, [professionals]);
 
+  // Check if a time slot is blocked for a given date and optional professional
+  const isSlotBlocked = useCallback((date: Date, time: string, professionalId?: string): ScheduleBlock | null => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const timeMinutes = parseInt(time.slice(0, 2)) * 60 + parseInt(time.slice(3, 5));
+
+    for (const block of scheduleBlocks) {
+      // Check date range
+      if (dateStr < block.start_date || dateStr > block.end_date) continue;
+
+      // Check professional scope
+      if (block.professional_id && professionalId && block.professional_id !== professionalId) continue;
+
+      // All day block
+      if (block.all_day) return block;
+
+      // Check time range
+      if (block.start_time && block.end_time) {
+        const blockStart = parseInt(block.start_time.slice(0, 2)) * 60 + parseInt(block.start_time.slice(3, 5));
+        const blockEnd = parseInt(block.end_time.slice(0, 2)) * 60 + parseInt(block.end_time.slice(3, 5));
+        if (timeMinutes >= blockStart && timeMinutes < blockEnd) return block;
+      }
+    }
+    return null;
+  }, [scheduleBlocks]);
+
+  // Render a blocked slot cell
+  const renderBlockedSlot = (block: ScheduleBlock) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="w-full h-full min-h-[44px] flex items-center justify-center gap-1 bg-muted/60 cursor-not-allowed">
+            <Lock className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground truncate">{block.title}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="font-medium">Horário bloqueado</p>
+          <p className="text-xs text-muted-foreground">{block.title}{block.reason ? ` — ${block.reason}` : ''}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   // Render a clickable empty slot cell
   const renderEmptySlot = (date: Date, time: string, professionalId?: string) => {
     if (!onSlotClick) return null;
@@ -156,15 +202,17 @@ export function AgendaGrid({
                   const slotAppointments = apts.filter(a => a.start_time.slice(0, 5) === time);
                   const isEmpty = slotAppointments.length === 0;
                   const profId = groupBy === 'professional' ? professionalNameToId[group] : undefined;
+                  const block = isEmpty ? isSlotBlocked(selectedDate, time, profId) : null;
                   
                   return (
                     <div
                       key={`${group}-${time}`}
                       className={cn(
                         "border-b border-l p-1 min-h-[60px] relative",
-                        isEmpty && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                        block && "bg-muted/40",
+                        isEmpty && !block && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                       )}
-                      onClick={isEmpty && onSlotClick ? () => onSlotClick({ date: selectedDate, time, professionalId: profId }) : undefined}
+                      onClick={isEmpty && !block && onSlotClick ? () => onSlotClick({ date: selectedDate, time, professionalId: profId }) : undefined}
                     >
                       {slotAppointments.length > 0 ? (
                         slotAppointments.map(apt => (
@@ -178,6 +226,8 @@ export function AgendaGrid({
                             onLaunchSale={onLaunchSale}
                           />
                         ))
+                      ) : block ? (
+                        renderBlockedSlot(block)
                       ) : (
                         renderEmptySlot(selectedDate, time, profId)
                       )}
@@ -235,6 +285,7 @@ export function AgendaGrid({
                   );
                   const isWeekend = [0, 6].includes(day.getDay());
                   const isEmpty = slotAppointments.length === 0;
+                  const block = isEmpty ? isSlotBlocked(day, time) : null;
                   
                   return (
                     <div 
@@ -242,9 +293,10 @@ export function AgendaGrid({
                       className={cn(
                         "border-b border-l p-1 min-h-[80px] relative",
                         isWeekend && "bg-muted/20",
-                        isEmpty && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
+                        block && "bg-muted/40",
+                        isEmpty && !block && onSlotClick && "cursor-pointer hover:bg-primary/5 transition-colors"
                       )}
-                      onClick={isEmpty && onSlotClick ? () => onSlotClick({ date: day, time }) : undefined}
+                      onClick={isEmpty && !block && onSlotClick ? () => onSlotClick({ date: day, time }) : undefined}
                     >
                       {slotAppointments.length > 0 ? (
                         <>
@@ -265,6 +317,8 @@ export function AgendaGrid({
                             </div>
                           )}
                         </>
+                      ) : block ? (
+                        renderBlockedSlot(block)
                       ) : (
                         renderEmptySlot(day, time)
                       )}

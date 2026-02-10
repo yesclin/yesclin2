@@ -6,12 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PermissionsProvider } from "@/hooks/usePermissions";
 import { RequireAuth } from "@/components/app/RequireAuth";
 import { ProtectedRoute } from "@/components/app/ProtectedRoute";
+import { PasswordRecoveryHandler } from "@/components/app/PasswordRecoveryHandler";
 
 // Páginas Públicas
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import CriarConta from "./pages/CriarConta";
 import RecuperarSenha from "./pages/RecuperarSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import AceitarConvite from "./pages/AceitarConvite";
 
 import NotFound from "./pages/NotFound";
@@ -54,12 +56,14 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+        <PasswordRecoveryHandler />
         <Routes>
           {/* Páginas Públicas */}
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/criar-conta" element={<CriarConta />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           
           <Route path="/aceitar-convite" element={<AceitarConvite />} />
           

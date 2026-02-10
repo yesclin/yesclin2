@@ -30,18 +30,27 @@ const RedefinirSenha = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user has a valid recovery session
+    // Listen for PASSWORD_RECOVERY event (fires when Supabase processes the hash fragment)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        setHasSession(true);
+      }
+    });
+
+    // Also check if there's already a valid session (handles race condition
+    // where the event fired before this component mounted)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setHasSession(true);
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setHasSession(true);
-      }
-    });
+    // Check URL hash for recovery tokens that Supabase hasn't processed yet
+    const hash = window.location.hash;
+    if (hash && (hash.includes("type=recovery") || hash.includes("type=magiclink"))) {
+      // Supabase client will auto-process this, just wait for the event
+      setHasSession(false); // Will be set to true by the listener above
+    }
 
     return () => subscription.unsubscribe();
   }, []);

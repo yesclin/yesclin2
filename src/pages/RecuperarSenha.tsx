@@ -38,7 +38,7 @@ const RecuperarSenha = () => {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
         {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/redefinir-senha`,
         }
       );
 

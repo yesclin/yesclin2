@@ -12,15 +12,17 @@ export const PasswordRecoveryHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Check if we're already on the reset page to avoid redirect loops
+    if (location.pathname === "/redefinir-senha") return;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        // Redirect to the new password page
         navigate("/redefinir-senha", { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   return null;
 };

@@ -64,13 +64,33 @@ async function getUserContext() {
 // DATA FETCHING HOOKS
 // =============================================
 
-function useTodayAppointments(clinicId: string | null, userRole: string | null, professionalId: string | null) {
+function getPeriodDateRange(period: DashboardPeriod): { startDate: string; endDate: string } {
+  const now = new Date();
+  switch (period) {
+    case 'week':
+      return {
+        startDate: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+        endDate: format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+      };
+    case 'month':
+      return {
+        startDate: format(startOfMonth(now), 'yyyy-MM-dd'),
+        endDate: format(endOfMonth(now), 'yyyy-MM-dd'),
+      };
+    case 'today':
+    default:
+      const today = format(now, 'yyyy-MM-dd');
+      return { startDate: today, endDate: today };
+  }
+}
+
+function usePeriodAppointments(clinicId: string | null, userRole: string | null, professionalId: string | null, period: DashboardPeriod) {
+  const { startDate, endDate } = getPeriodDateRange(period);
+  
   return useQuery({
-    queryKey: ['dashboard-appointments', clinicId],
+    queryKey: ['dashboard-appointments', clinicId, period, startDate, endDate],
     queryFn: async (): Promise<DashboardAppointment[]> => {
       if (!clinicId) return [];
-      
-      const today = format(new Date(), 'yyyy-MM-dd');
       
       let query = supabase
         .from('appointments')
@@ -92,7 +112,9 @@ function useTodayAppointments(clinicId: string | null, userRole: string | null, 
           insurance_id
         `)
         .eq('clinic_id', clinicId)
-        .eq('scheduled_date', today)
+        .gte('scheduled_date', startDate)
+        .lte('scheduled_date', endDate)
+        .order('scheduled_date', { ascending: true })
         .order('start_time', { ascending: true });
       
       // Se for profissional, filtra apenas seus atendimentos
@@ -184,9 +206,11 @@ function useTodayAppointments(clinicId: string | null, userRole: string | null, 
   });
 }
 
-function useDashboardFinance(clinicId: string | null) {
+function useDashboardFinance(clinicId: string | null, period: DashboardPeriod) {
+  const { startDate, endDate } = getPeriodDateRange(period);
+  
   return useQuery({
-    queryKey: ['dashboard-finance', clinicId],
+    queryKey: ['dashboard-finance', clinicId, period, startDate, endDate],
     queryFn: async (): Promise<DashboardFinance> => {
       if (!clinicId) {
         return {
@@ -196,25 +220,26 @@ function useDashboardFinance(clinicId: string | null) {
       }
       
       const today = new Date();
-      const todayStr = format(today, 'yyyy-MM-dd');
       const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
       const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
       
-      // Buscar atendimentos do dia para calcular previsto
-      const { data: todayAppointments } = await supabase
+      // Buscar atendimentos do período para calcular previsto
+      const { data: periodAppointments } = await supabase
         .from('appointments')
         .select('expected_value, payment_type, status')
         .eq('clinic_id', clinicId)
-        .eq('scheduled_date', todayStr)
+        .gte('scheduled_date', startDate)
+        .lte('scheduled_date', endDate)
         .neq('status', 'cancelado');
       
-      // Buscar transações do dia (recebimentos)
-      const { data: todayTransactions } = await supabase
+      // Buscar transações do período (recebimentos)
+      const { data: periodTransactions } = await supabase
         .from('finance_transactions')
         .select('amount')
         .eq('clinic_id', clinicId)
         .eq('type', 'entrada')
-        .eq('transaction_date', todayStr);
+        .gte('transaction_date', startDate)
+        .lte('transaction_date', endDate);
       
       // Buscar transações do mês (acumulado)
       const { data: monthTransactions } = await supabase
@@ -241,10 +266,10 @@ function useDashboardFinance(clinicId: string | null) {
         .eq('id', clinicId)
         .single();
       
-      // Calcular valores do dia
-      const todayExpected = todayAppointments?.reduce((sum, apt) => sum + (Number(apt.expected_value) || 0), 0) || 0;
-      const todayReceived = todayTransactions?.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0;
-      const todayCount = todayAppointments?.length || 0;
+      // Calcular valores do período
+      const periodExpected = periodAppointments?.reduce((sum, apt) => sum + (Number(apt.expected_value) || 0), 0) || 0;
+      const periodReceived = periodTransactions?.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0;
+      const periodCount = periodAppointments?.length || 0;
       
       // Calcular valores do mês
       const monthAccumulated = monthTransactions?.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0;
@@ -260,11 +285,11 @@ function useDashboardFinance(clinicId: string | null) {
       
       return {
         today: {
-          expected: todayExpected,
-          received: todayReceived,
-          pending: Math.max(0, todayExpected - todayReceived),
-          ticketAverage: todayCount > 0 ? Math.round(todayExpected / todayCount) : 0,
-          appointmentsCount: todayCount,
+          expected: periodExpected,
+          received: periodReceived,
+          pending: Math.max(0, periodExpected - periodReceived),
+          ticketAverage: periodCount > 0 ? Math.round(periodExpected / periodCount) : 0,
+          appointmentsCount: periodCount,
         },
         month: {
           accumulated: monthAccumulated,
@@ -280,13 +305,13 @@ function useDashboardFinance(clinicId: string | null) {
   });
 }
 
-function useDashboardProfessionals(clinicId: string | null) {
+function useDashboardProfessionals(clinicId: string | null, period: DashboardPeriod) {
+  const { startDate, endDate } = getPeriodDateRange(period);
+  
   return useQuery({
-    queryKey: ['dashboard-professionals', clinicId],
+    queryKey: ['dashboard-professionals', clinicId, period, startDate, endDate],
     queryFn: async (): Promise<DashboardProfessional[]> => {
       if (!clinicId) return [];
-      
-      const today = format(new Date(), 'yyyy-MM-dd');
       
       // Buscar profissionais ativos
       const { data: professionals } = await supabase
@@ -308,12 +333,13 @@ function useDashboardProfessionals(clinicId: string | null) {
         specialtiesMap = new Map(specialties?.map(s => [s.id, s.name]) || []);
       }
       
-      // Buscar atendimentos do dia
+      // Buscar atendimentos do período
       const { data: appointments } = await supabase
         .from('appointments')
         .select('professional_id, status, patient_id')
         .eq('clinic_id', clinicId)
-        .eq('scheduled_date', today);
+        .gte('scheduled_date', startDate)
+        .lte('scheduled_date', endDate);
       
       // Buscar nomes dos pacientes em atendimento
       const inProgressApts = appointments?.filter(a => a.status === 'em_atendimento') || [];
@@ -586,19 +612,21 @@ export function useDashboardRealData() {
   }), [userContext]);
   
   // Fetch real data
-  const { data: appointments = [], isLoading: loadingAppointments } = useTodayAppointments(
+  const { data: appointments = [], isLoading: loadingAppointments } = usePeriodAppointments(
     userContext?.clinicId || null,
     userContext?.role || null,
-    userContext?.professionalId || null
+    userContext?.professionalId || null,
+    period
   );
   
   const { data: finance = {
     today: { expected: 0, received: 0, pending: 0, ticketAverage: 0, appointmentsCount: 0 },
     month: { accumulated: 0, goal: 0, goalPercent: 0, particular: 0, convenio: 0 },
-  }, isLoading: loadingFinance } = useDashboardFinance(userContext?.clinicId || null);
+  }, isLoading: loadingFinance } = useDashboardFinance(userContext?.clinicId || null, period);
   
   const { data: professionals = [], isLoading: loadingProfessionals } = useDashboardProfessionals(
-    userContext?.clinicId || null
+    userContext?.clinicId || null,
+    period
   );
   
   // Margin alerts - apenas para perfis elevados

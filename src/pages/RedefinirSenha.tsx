@@ -104,7 +104,12 @@ const RedefinirSenha = () => {
       });
     } catch (err: any) {
       console.error("Password update error:", err);
-      setError(err.message || "Erro ao redefinir senha. Tente novamente.");
+      const msg = (err.message || "").toLowerCase();
+      if (msg.includes("weak") || msg.includes("pwned") || msg.includes("easy to guess") || msg.includes("compromised")) {
+        setError("Esta senha foi encontrada em vazamentos de dados conhecidos. Por segurança, escolha uma senha diferente.");
+      } else {
+        setError(err.message || "Erro ao redefinir senha. Tente novamente.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -274,6 +279,9 @@ const RedefinirSenha = () => {
                 <Rule met={passwordValidation.hasLetter} label="Pelo menos uma letra" />
                 <Rule met={passwordValidation.hasNumber} label="Pelo menos um número" />
                 <Rule met={passwordValidation.matches} label="Senhas coincidem" />
+                <p className="text-xs text-muted-foreground mt-1.5 pl-6">
+                  Senhas presentes em vazamentos públicos serão bloqueadas por segurança.
+                </p>
               </div>
 
               <Button

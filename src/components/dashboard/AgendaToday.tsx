@@ -15,16 +15,23 @@ import {
   Timer,
   Zap
 } from 'lucide-react';
-import type { DashboardAppointment, DashboardStats } from '@/types/dashboard';
+import type { DashboardAppointment, DashboardStats, DashboardPeriod } from '@/types/dashboard';
 import { statusLabels, statusColors, appointmentTypeLabels } from '@/types/dashboard';
 import { useNavigate } from 'react-router-dom';
 
 interface AgendaTodayProps {
   appointments: DashboardAppointment[];
   stats: DashboardStats;
+  period?: DashboardPeriod;
 }
 
-export function AgendaToday({ appointments, stats }: AgendaTodayProps) {
+const periodTitles: Record<DashboardPeriod, string> = {
+  today: 'Agenda do Dia',
+  week: 'Agenda da Semana',
+  month: 'Agenda do Mês',
+};
+
+export function AgendaToday({ appointments, stats, period = 'today' }: AgendaTodayProps) {
   const navigate = useNavigate();
 
   const getStatusIcon = (status: DashboardAppointment['status']) => {
@@ -48,7 +55,7 @@ export function AgendaToday({ appointments, stats }: AgendaTodayProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Agenda do Dia
+            {periodTitles[period]}
           </CardTitle>
           <Button 
             variant="outline" 

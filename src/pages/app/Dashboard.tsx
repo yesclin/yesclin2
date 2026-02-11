@@ -79,7 +79,8 @@ export default function Dashboard() {
           {/* Agenda do Dia */}
           <AgendaToday 
             appointments={appointments} 
-            stats={stats} 
+            stats={stats}
+            period={period}
           />
         </div>
 

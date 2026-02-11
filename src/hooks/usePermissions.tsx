@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type AppModule = 
   | "dashboard"
   | "agenda"
-  | "atendimento"
+  
   | "pacientes"
   | "prontuario"
   | "comunicacao"

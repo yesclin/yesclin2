@@ -10,36 +10,11 @@ import logoFull from "@/assets/logo-full.png";
 import { motion } from "framer-motion";
 import { z } from "zod";
 
-// Common weak passwords and patterns to reject on the frontend
-const COMMON_PASSWORDS = [
-  "password", "123456", "12345678", "qwerty", "abc123", "letmein",
-  "admin", "welcome", "monkey", "master", "dragon", "login",
-  "princess", "football", "shadow", "sunshine", "trustno1",
-  "iloveyou", "batman", "access", "hello", "charlie",
-];
-
-function isWeakPassword(password: string): boolean {
-  const lower = password.toLowerCase();
-  // Check against common passwords
-  if (COMMON_PASSWORDS.some((p) => lower.includes(p))) return true;
-  // Check for simple patterns like Name@123, Word123!, etc.
-  if (/^[a-zA-Z]+[@#!$%&*]\d{2,4}$/.test(password)) return true;
-  // Check for sequential/repeated chars (aaaa, 1234, abcd)
-  if (/(.)\1{3,}/.test(password)) return true;
-  if (/^(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)/.test(lower)) return true;
-  return false;
-}
-
 const passwordSchema = z
   .string()
   .min(8, "A senha deve ter no mínimo 8 caracteres")
-  .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
-  .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
-  .regex(/[0-9]/, "A senha deve conter pelo menos um número")
-  .regex(/[^A-Za-z0-9]/, "A senha deve conter pelo menos um caractere especial")
-  .refine((val) => !isWeakPassword(val), {
-    message: "Senha muito previsível. Evite nomes, palavras comuns ou padrões como @123",
-  });
+  .regex(/[a-zA-Z]/, "A senha deve conter pelo menos uma letra")
+  .regex(/[0-9]/, "A senha deve conter pelo menos um número");
 
 const RedefinirSenha = () => {
   const [password, setPassword] = useState("");
@@ -81,21 +56,15 @@ const RedefinirSenha = () => {
 
   const passwordValidation = {
     minLength: password.length >= 8,
-    hasUpper: /[A-Z]/.test(password),
-    hasLower: /[a-z]/.test(password),
+    hasLetter: /[a-zA-Z]/.test(password),
     hasNumber: /[0-9]/.test(password),
-    hasSpecial: /[^A-Za-z0-9]/.test(password),
-    notWeak: password.length > 0 && !isWeakPassword(password),
     matches: password.length > 0 && password === confirmPassword,
   };
 
   const isValid =
     passwordValidation.minLength &&
-    passwordValidation.hasUpper &&
-    passwordValidation.hasLower &&
+    passwordValidation.hasLetter &&
     passwordValidation.hasNumber &&
-    passwordValidation.hasSpecial &&
-    passwordValidation.notWeak &&
     passwordValidation.matches;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,12 +104,7 @@ const RedefinirSenha = () => {
       });
     } catch (err: any) {
       console.error("Password update error:", err);
-      const msg = err.message || "";
-      if (msg.toLowerCase().includes("weak") || msg.toLowerCase().includes("easy to guess")) {
-        setError("Senha considerada fraca pelo sistema. Use uma combinação mais complexa, evitando nomes, palavras comuns ou padrões simples como @123.");
-      } else {
-        setError(msg || "Erro ao redefinir senha. Tente novamente.");
-      }
+      setError(err.message || "Erro ao redefinir senha. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -307,17 +271,9 @@ const RedefinirSenha = () => {
               {/* Password rules */}
               <div className="p-3 bg-muted/50 rounded-lg space-y-1.5">
                 <Rule met={passwordValidation.minLength} label="Mínimo 8 caracteres" />
-                <Rule met={passwordValidation.hasUpper} label="Uma letra maiúscula" />
-                <Rule met={passwordValidation.hasLower} label="Uma letra minúscula" />
-                <Rule met={passwordValidation.hasNumber} label="Um número" />
-                <Rule met={passwordValidation.hasSpecial} label="Um caractere especial (!@#$%...)" />
-                <Rule met={passwordValidation.notWeak} label="Sem padrões previsíveis" />
+                <Rule met={passwordValidation.hasLetter} label="Pelo menos uma letra" />
+                <Rule met={passwordValidation.hasNumber} label="Pelo menos um número" />
                 <Rule met={passwordValidation.matches} label="Senhas coincidem" />
-                {password.length > 0 && !passwordValidation.notWeak && (
-                  <p className="text-xs text-muted-foreground mt-1 pl-6">
-                    💡 Evite nomes, palavras comuns ou combinações simples como Nome@123
-                  </p>
-                )}
               </div>
 
               <Button

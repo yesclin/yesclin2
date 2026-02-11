@@ -11,7 +11,7 @@ import {
   BarChart3,
   Building,
   UserCog,
-  Stethoscope,
+  
   ListChecks,
   CalendarCog,
   Shield,
@@ -61,7 +61,6 @@ const ownerAdminMainMenu: MenuItem[] = [
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" },
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record" },
-  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" },
   { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication" },
 ];
 
@@ -78,7 +77,7 @@ const ownerAdminConfigMenu: MenuItem[] = [
   { title: "Usuários & Permissões", url: "/app/config/usuarios", icon: UserCog },
   { title: "Cadastros Clínicos", url: "/app/config/materiais", icon: Package },
   { title: "Regras de Agenda", url: "/app/config/agenda", icon: CalendarCog },
-  { title: "Fluxos de Atendimento", url: "/app/config/atendimento", icon: Stethoscope },
+  
   { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText },
   { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield },
 ];
@@ -88,7 +87,6 @@ const professionalMainMenu: MenuItem[] = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, tourId: "dashboard" }, // Own data
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" }, // Own schedule
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" }, // Own patients
-  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record" },
   { title: "Meu Financeiro", url: "/app/meu-financeiro", icon: Wallet }, // Own financial
 ];
@@ -97,7 +95,7 @@ const professionalMainMenu: MenuItem[] = [
 const receptionistMainMenu: MenuItem[] = [
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" }, // All professionals
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" }, // Registration data only
-  { title: "Atendimento", url: "/app/atendimento", icon: Stethoscope, tourId: "attendance" }, // Check-in, status
+  
 ];
 
 const receptionistGestaoMenu: MenuItem[] = [

@@ -97,7 +97,7 @@ export function ProtectedRoute({
 const moduleLabels: Record<AppModule, string> = {
   dashboard: "Dashboard",
   agenda: "Agenda",
-  atendimento: "Atendimento",
+  
   pacientes: "Pacientes",
   prontuario: "Prontuário",
   comunicacao: "Marketing",

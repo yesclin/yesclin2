@@ -66,7 +66,7 @@ function AccessDeniedMessage({ module }: { module: AppModule }) {
   const moduleLabels: Record<AppModule, string> = {
     dashboard: "Dashboard",
     agenda: "Agenda",
-    atendimento: "Atendimento",
+    
     pacientes: "Pacientes",
     prontuario: "Prontuário",
     comunicacao: "Comunicação",

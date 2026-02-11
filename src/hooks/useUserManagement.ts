@@ -103,7 +103,7 @@ export function hasFullAccess(type: UserType): boolean {
 /**
  * Get allowed modules for receptionist
  */
-export const RECEPTIONIST_ALLOWED_MODULES = ['agenda', 'pacientes', 'atendimento', 'convenios'] as const;
+export const RECEPTIONIST_ALLOWED_MODULES = ['agenda', 'pacientes', 'convenios'] as const;
 
 /**
  * Get blocked modules for receptionist

@@ -53,17 +53,6 @@ export const PERMISSION_MODULES: ModulePermissionConfig[] = [
     ],
   },
   {
-    module: "atendimento",
-    label: "Atendimento",
-    description: "Iniciar e finalizar consultas",
-    category: "clinical",
-    actions: [
-      { action: "view", label: "Visualizar" },
-      { action: "create", label: "Iniciar" },
-      { action: "edit", label: "Registrar procedimento" },
-    ],
-  },
-  {
     module: "pacientes",
     label: "Pacientes",
     description: "Cadastro de pacientes",

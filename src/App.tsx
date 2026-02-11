@@ -29,7 +29,7 @@ import Pacientes from "./pages/app/Pacientes";
 import Convenios from "./pages/app/gestao/Convenios";
 import Marketing from "./pages/app/Comunicacao";
 import MeuFinanceiro from "./pages/app/MeuFinanceiro";
-import Atendimento from "./pages/app/Atendimento";
+
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -42,7 +42,7 @@ import ConfigClinica from "./pages/app/config/Clinica";
 import ConfigUsuarios from "./pages/app/config/Usuarios";
 import ConfigMateriais from "./pages/app/config/Materiais";
 import ConfigAgenda from "./pages/app/config/Agenda";
-import ConfigAtendimento from "./pages/app/config/Atendimento";
+
 import ConfigProntuario from "./pages/app/config/Prontuario";
 import ConfigSeguranca from "./pages/app/config/Seguranca";
 import ModelosAnamnese from "./pages/configuracoes/ModelosAnamnese";
@@ -83,7 +83,7 @@ const App = () => (
             <Route path="gestao/convenios" element={<ProtectedRoute module="convenios"><Convenios /></ProtectedRoute>} />
             <Route path="marketing" element={<ProtectedRoute module="comunicacao"><Marketing /></ProtectedRoute>} />
             <Route path="meu-financeiro" element={<ProtectedRoute module="meu_financeiro"><MeuFinanceiro /></ProtectedRoute>} />
-            <Route path="atendimento" element={<ProtectedRoute module="atendimento"><Atendimento /></ProtectedRoute>} />
+            
             
             {/* Gestão */}
             <Route path="gestao/financas" element={<ProtectedRoute module="financeiro"><Financas /></ProtectedRoute>} />
@@ -96,7 +96,7 @@ const App = () => (
             <Route path="config/usuarios" element={<ProtectedRoute module="configuracoes"><ConfigUsuarios /></ProtectedRoute>} />
             <Route path="config/materiais" element={<ProtectedRoute module="configuracoes"><ConfigMateriais /></ProtectedRoute>} />
             <Route path="config/agenda" element={<ProtectedRoute module="configuracoes"><ConfigAgenda /></ProtectedRoute>} />
-            <Route path="config/atendimento" element={<ProtectedRoute module="configuracoes"><ConfigAtendimento /></ProtectedRoute>} />
+            
             <Route path="config/prontuario" element={<ProtectedRoute module="configuracoes"><ConfigProntuario /></ProtectedRoute>} />
             <Route path="config/seguranca" element={<ProtectedRoute module="configuracoes"><ConfigSeguranca /></ProtectedRoute>} />
             <Route path="config/modelos-anamnese" element={<ProtectedRoute module="configuracoes"><ModelosAnamnese /></ProtectedRoute>} />

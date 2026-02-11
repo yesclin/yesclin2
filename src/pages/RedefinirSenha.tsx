@@ -106,9 +106,9 @@ const RedefinirSenha = () => {
       console.error("Password update error:", err);
       const msg = (err.message || "").toLowerCase();
       if (msg.includes("weak") || msg.includes("pwned") || msg.includes("easy to guess") || msg.includes("compromised")) {
-        setError("Essa senha é muito comum ou já foi exposta em vazamentos. Escolha uma combinação menos previsível — ex: clinica45saude, brunaClin01.");
+        setError("Não foi possível usar essa senha. Tente uma combinação um pouco diferente.");
       } else {
-        setError(err.message || "Erro ao redefinir senha. Tente novamente.");
+        setError("Erro ao redefinir senha. Tente novamente.");
       }
     } finally {
       setIsLoading(false);
@@ -279,17 +279,6 @@ const RedefinirSenha = () => {
                 <Rule met={passwordValidation.hasLetter} label="Pelo menos uma letra" />
                 <Rule met={passwordValidation.hasNumber} label="Pelo menos um número" />
                 <Rule met={passwordValidation.matches} label="Senhas coincidem" />
-                <div className="mt-2 pt-2 border-t border-muted-foreground/10 space-y-1">
-                  <p className="text-xs text-muted-foreground pl-6">
-                    ⚠️ Senhas comuns ou já vazadas não são permitidas por segurança.
-                  </p>
-                  <p className="text-xs text-muted-foreground pl-6">
-                    💡 Evite nomes, datas ou combinações simples como nome123.
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 pl-6">
-                    Exemplos aceitos: clinica45saude, brunaClin01, yesclin2026app
-                  </p>
-                </div>
               </div>
 
               <Button

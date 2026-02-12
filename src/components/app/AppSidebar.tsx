@@ -17,6 +17,7 @@ import {
   Shield,
   ChevronDown,
   Wallet,
+  Plug,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -80,6 +81,7 @@ const ownerAdminConfigMenu: MenuItem[] = [
   
   { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText },
   { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield },
+  { title: "Integrações", url: "/app/config/integracoes", icon: Plug },
 ];
 
 // Profissional de Saúde - Limited menus (own data only)

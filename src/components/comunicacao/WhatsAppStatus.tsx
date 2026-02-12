@@ -5,17 +5,29 @@ import {
   MessageCircle, 
   Wifi,
   WifiOff,
+  AlertTriangle,
   Settings,
-  ExternalLink,
   Shield,
 } from "lucide-react";
-import type { CommunicationSettings } from "@/types/comunicacao";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { useNavigate } from "react-router-dom";
 
-interface WhatsAppStatusProps {
-  settings: CommunicationSettings;
-}
+export function WhatsAppStatus() {
+  const { integration, loading, isConfigured } = useWhatsAppIntegration();
+  const navigate = useNavigate();
 
-export function WhatsAppStatus({ settings }: WhatsAppStatusProps) {
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground text-sm">
+          Verificando conexão...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const status = integration?.status || 'not_configured';
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -25,60 +37,33 @@ export function WhatsAppStatus({ settings }: WhatsAppStatusProps) {
             WhatsApp Business
           </CardTitle>
           <Badge 
-            variant={settings.whatsapp_connected ? "default" : "secondary"}
-            className={settings.whatsapp_connected ? "bg-green-500" : ""}
+            variant={status === 'active' ? "default" : status === 'invalid' ? "destructive" : "secondary"}
+            className={status === 'active' ? "bg-green-500" : ""}
           >
-            {settings.whatsapp_connected ? (
-              <>
-                <Wifi className="h-3 w-3 mr-1" />
-                Conectado
-              </>
+            {status === 'active' ? (
+              <><Wifi className="h-3 w-3 mr-1" />Conectado</>
+            ) : status === 'invalid' ? (
+              <><AlertTriangle className="h-3 w-3 mr-1" />Inválido</>
             ) : (
-              <>
-                <WifiOff className="h-3 w-3 mr-1" />
-                Desconectado
-              </>
+              <><WifiOff className="h-3 w-3 mr-1" />Desconectado</>
             )}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        {settings.whatsapp_connected ? (
+        {isConfigured ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
               <div>
                 <p className="font-medium text-sm">Número Conectado</p>
-                <p className="text-lg font-bold text-green-700">
-                  {settings.whatsapp_number || '(11) 99999-9999'}
+                <p className="text-lg font-bold text-green-700 dark:text-green-400">
+                  {integration?.display_phone_number || 'Número configurado'}
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/app/config/integracoes')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Configurar
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Limite Diário</p>
-                <p className="font-medium">{settings.daily_message_limit} mensagens</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Horário de Envio</p>
-                <p className="font-medium">
-                  {settings.send_start_time} - {settings.send_end_time}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Fins de Semana</p>
-                <p className="font-medium">
-                  {settings.send_on_weekends ? 'Habilitado' : 'Desabilitado'}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Canal Padrão</p>
-                <p className="font-medium capitalize">{settings.default_channel}</p>
-              </div>
             </div>
           </div>
         ) : (
@@ -92,9 +77,9 @@ export function WhatsAppStatus({ settings }: WhatsAppStatusProps) {
               Automatize confirmações, lembretes e campanhas diretamente pelo WhatsApp da sua clínica.
             </p>
             
-            <Button className="mb-4">
+            <Button onClick={() => navigate('/app/config/integracoes')} className="mb-4">
               <MessageCircle className="h-4 w-4 mr-2" />
-              Conectar WhatsApp
+              Configurar WhatsApp
             </Button>
             
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">

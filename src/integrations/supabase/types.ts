@@ -957,6 +957,59 @@ export type Database = {
           },
         ]
       }
+      clinic_channel_integrations: {
+        Row: {
+          access_token: string | null
+          business_account_id: string | null
+          channel: string
+          clinic_id: string
+          created_at: string
+          display_phone_number: string | null
+          id: string
+          metadata: Json | null
+          phone_number_id: string | null
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          business_account_id?: string | null
+          channel?: string
+          clinic_id: string
+          created_at?: string
+          display_phone_number?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number_id?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          business_account_id?: string | null
+          channel?: string
+          clinic_id?: string
+          created_at?: string
+          display_phone_number?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number_id?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_channel_integrations_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_schedule_config: {
         Row: {
           clinic_id: string

@@ -2035,34 +2035,8 @@ export default function Prontuario() {
 
   // Print handler - must be before early returns (Rules of Hooks)
   const onPrintClick = useCallback(() => {
-    if (!patient || !clinic) return;
-    handlePrint({
-      clinic: {
-        name: clinic.name,
-        phone: clinic.phone,
-        email: clinic.email,
-        address: getFormattedAddress() || undefined,
-        cnpj: clinic.cnpj,
-      },
-      patient: {
-        full_name: patient.full_name,
-        birth_date: patient.birth_date,
-        gender: patient.gender,
-        phone: patient.phone,
-      },
-      appointment: activeAppointment ? {
-        id: activeAppointment.id,
-        scheduled_date: new Date().toISOString(),
-        specialty_name: activeSpecialty?.name,
-      } : undefined,
-      anamnese: currentAnamnese as unknown as Record<string, unknown> | null,
-      exameFisico: examesFisicos as unknown as Array<Record<string, unknown>>,
-      diagnosticos: diagnosticos as unknown as Array<Record<string, unknown>>,
-      condutas: condutas as unknown as Array<Record<string, unknown>>,
-      evolucoes: evolucoes as unknown as Array<Record<string, unknown>>,
-      prescricoes: prescricoes as unknown as Array<Record<string, unknown>>,
-    });
-  }, [patient, clinic, activeAppointment, activeSpecialty, currentAnamnese, examesFisicos, diagnosticos, condutas, evolucoes, prescricoes, handlePrint, getFormattedAddress]);
+    handlePrint();
+  }, [handlePrint]);
 
   // Export handler
   const onExportClick = useCallback(() => {
@@ -2192,7 +2166,7 @@ export default function Prontuario() {
       )}
 
       {/* Main Content with Responsive Tab Navigation */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div id="print-area" className="flex flex-col flex-1 overflow-hidden">
         {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
         <ProntuarioTabNav
           items={navItems.map((item) => {

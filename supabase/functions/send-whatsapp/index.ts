@@ -148,13 +148,14 @@ Deno.serve(async (req) => {
       result = await sendMessage(integration, formattedPhone, message);
     } catch (fetchErr: any) {
       const newAttempts = currentAttempts + 1;
-      const shouldRetry = newAttempts < 2;
+      const shouldRetry = newAttempts < 3;
 
       await supabase.from("message_queue").update({
         status: shouldRetry ? "pending" : "failed",
         attempts: newAttempts,
         error_message: `Erro de rede: ${fetchErr.message}`,
-        next_retry_at: shouldRetry ? new Date(Date.now() + 60000).toISOString() : null,
+        scheduled_for: shouldRetry ? new Date(Date.now() + 120000).toISOString() : null,
+        next_retry_at: shouldRetry ? new Date(Date.now() + 120000).toISOString() : null,
       }).eq("id", currentQueueId);
 
       return new Response(
@@ -196,14 +197,15 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
-      const shouldRetry = newAttempts < 2;
+      const shouldRetry = newAttempts < 3;
 
       await supabase.from("message_queue").update({
         status: shouldRetry ? "pending" : "failed",
         attempts: newAttempts,
         provider_response: result.body,
         error_message: `API retornou ${result.status}`,
-        next_retry_at: shouldRetry ? new Date(Date.now() + 60000).toISOString() : null,
+        scheduled_for: shouldRetry ? new Date(Date.now() + 120000).toISOString() : null,
+        next_retry_at: shouldRetry ? new Date(Date.now() + 120000).toISOString() : null,
       }).eq("id", currentQueueId);
 
       return new Response(

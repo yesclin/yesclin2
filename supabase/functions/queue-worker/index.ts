@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("status", "pending")
       .lte("scheduled_for", new Date().toISOString())
-      .lt("attempts", 2)
+      .lt("attempts", 3)
       .order("scheduled_for", { ascending: true })
       .limit(50);
 
@@ -130,14 +130,17 @@ Deno.serve(async (req) => {
 
           sent++;
         } else {
-          const shouldRetry = newAttempts < 2;
+          const shouldRetry = newAttempts < 3;
           await supabase.from("message_queue").update({
             status: shouldRetry ? "pending" : "failed",
             attempts: newAttempts,
             provider_response: result.body,
             error_message: `API ${result.status}`,
+            scheduled_for: shouldRetry
+              ? new Date(Date.now() + 120000).toISOString()
+              : null,
             next_retry_at: shouldRetry
-              ? new Date(Date.now() + 60000).toISOString()
+              ? new Date(Date.now() + 120000).toISOString()
               : null,
           }).eq("id", msg.id);
 
@@ -145,14 +148,17 @@ Deno.serve(async (req) => {
         }
       } catch (fetchErr: any) {
         const newAttempts = (msg.attempts || 0) + 1;
-        const shouldRetry = newAttempts < 2;
+        const shouldRetry = newAttempts < 3;
 
         await supabase.from("message_queue").update({
           status: shouldRetry ? "pending" : "failed",
           attempts: newAttempts,
           error_message: `Erro de rede: ${fetchErr.message}`,
+          scheduled_for: shouldRetry
+            ? new Date(Date.now() + 120000).toISOString()
+            : null,
           next_retry_at: shouldRetry
-            ? new Date(Date.now() + 60000).toISOString()
+            ? new Date(Date.now() + 120000).toISOString()
             : null,
         }).eq("id", msg.id);
 

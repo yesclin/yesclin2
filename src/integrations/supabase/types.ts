@@ -4103,6 +4103,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          delivered_at: string | null
           error_message: string | null
           external_id: string | null
           id: string
@@ -4111,6 +4112,7 @@ export type Database = {
           patient_id: string
           phone: string | null
           provider_response: Json | null
+          read_at: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
@@ -4127,6 +4129,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           error_message?: string | null
           external_id?: string | null
           id?: string
@@ -4135,6 +4138,7 @@ export type Database = {
           patient_id: string
           phone?: string | null
           provider_response?: Json | null
+          read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
@@ -4151,6 +4155,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           error_message?: string | null
           external_id?: string | null
           id?: string
@@ -4159,6 +4164,7 @@ export type Database = {
           patient_id?: string
           phone?: string | null
           provider_response?: Json | null
+          read_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string

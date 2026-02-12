@@ -11,13 +11,16 @@ import {
   BarChart3,
   Building,
   UserCog,
-  
   ListChecks,
   CalendarCog,
   Shield,
   ChevronDown,
   Wallet,
   Plug,
+  MessageSquare,
+  Zap,
+  History,
+  Contact,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -62,7 +65,15 @@ const ownerAdminMainMenu: MenuItem[] = [
   { title: "Agenda", url: "/app/agenda", icon: Calendar, tourId: "agenda" },
   { title: "Pacientes", url: "/app/pacientes", icon: Users, tourId: "patients" },
   { title: "Prontuário", url: "/app/prontuario", icon: FileText, tourId: "medical-record" },
-  { title: "Marketing", url: "/app/marketing", icon: Megaphone, tourId: "communication" },
+];
+
+const ownerAdminMarketingMenu: MenuItem[] = [
+  { title: "Dashboard", url: "/app/marketing", icon: LayoutDashboard },
+  { title: "Templates", url: "/app/marketing/templates", icon: MessageSquare },
+  { title: "Automações", url: "/app/marketing/automacoes", icon: Zap },
+  { title: "Campanhas", url: "/app/marketing/campanhas", icon: Megaphone },
+  { title: "Histórico", url: "/app/marketing/historico", icon: History },
+  { title: "CRM", url: "/app/marketing/crm", icon: Contact },
 ];
 
 const ownerAdminGestaoMenu: MenuItem[] = [
@@ -117,11 +128,12 @@ export function AppSidebar() {
   };
 
   // Determine menus based on user type
-  const { mainItems, gestaoItems, configItems } = useMemo(() => {
+  const { mainItems, marketingItems, gestaoItems, configItems } = useMemo(() => {
     // Owner/Admin - full access
     if (isOwner || isAdmin) {
       return {
         mainItems: ownerAdminMainMenu,
+        marketingItems: ownerAdminMarketingMenu,
         gestaoItems: ownerAdminGestaoMenu,
         configItems: ownerAdminConfigMenu,
       };
@@ -131,8 +143,9 @@ export function AppSidebar() {
     if (isRecepcionista) {
       return {
         mainItems: receptionistMainMenu,
+        marketingItems: [],
         gestaoItems: receptionistGestaoMenu,
-        configItems: [], // NO ACCESS to configurations
+        configItems: [],
       };
     }
     
@@ -140,19 +153,22 @@ export function AppSidebar() {
     if (role === 'profissional') {
       return {
         mainItems: professionalMainMenu,
-        gestaoItems: [], // No management access
-        configItems: [], // NO ACCESS to configurations
+        marketingItems: [],
+        gestaoItems: [],
+        configItems: [],
       };
     }
     
-    // Default fallback (no permissions loaded yet)
+    // Default fallback
     return {
       mainItems: [],
+      marketingItems: [],
       gestaoItems: [],
       configItems: [],
     };
   }, [isOwner, isAdmin, isRecepcionista, role]);
 
+  const isMarketingActive = marketingItems.some((item) => isActive(item.url));
   const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
   const isConfigActive = configItems.some((item) => isActive(item.url));
 
@@ -206,6 +222,62 @@ export function AppSidebar() {
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Marketing - Expandable menu */}
+        {marketingItems.length > 0 && (
+          <SidebarGroup data-tour="communication">
+            {isCollapsed ? (
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {marketingItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive(item.url)}
+                        tooltip={item.title}
+                      >
+                        <NavLink to={item.url} className="flex items-center justify-center">
+                          <item.icon className="h-4 w-4 shrink-0" />
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            ) : (
+              <Collapsible defaultOpen={isMarketingActive}>
+                <CollapsibleTrigger className="w-full">
+                  <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent/50 rounded-md px-2 py-1.5 transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Megaphone className="h-4 w-4 shrink-0" />
+                      <span className="truncate">Marketing</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </SidebarGroupLabel>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {marketingItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild 
+                            isActive={isActive(item.url)}
+                          >
+                            <NavLink to={item.url} className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </SidebarGroup>
         )}
 

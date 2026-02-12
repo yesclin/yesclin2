@@ -1,14 +1,9 @@
 import { useComunicacaoMockData } from "@/hooks/useComunicacaoMockData";
 import { CommunicationStats } from "@/components/comunicacao/CommunicationStats";
 import { WhatsAppStatus } from "@/components/comunicacao/WhatsAppStatus";
-import { CRMPipeline } from "@/components/comunicacao/CRMPipeline";
-import { CRMPatientList } from "@/components/comunicacao/CRMPatientList";
-import { useState } from "react";
-import type { CRMStatus } from "@/types/comunicacao";
 
 export default function MarketingDashboard() {
-  const { crmPatients, pipelineStats, messageStats } = useComunicacaoMockData();
-  const [selectedStatus, setSelectedStatus] = useState<CRMStatus | null>(null);
+  const { messageStats } = useComunicacaoMockData();
 
   return (
     <div className="space-y-6">
@@ -16,8 +11,6 @@ export default function MarketingDashboard() {
         <div className="lg:col-span-2"><CommunicationStats stats={messageStats} /></div>
         <WhatsAppStatus />
       </div>
-      <CRMPipeline stats={pipelineStats} onStatusClick={(s) => setSelectedStatus(selectedStatus === s ? null : s)} selectedStatus={selectedStatus} />
-      <CRMPatientList patients={crmPatients} selectedStatus={selectedStatus} />
     </div>
   );
 }

@@ -58,14 +58,19 @@ Deno.serve(async (req) => {
         if (logs && logs.length > 0) {
           const log = logs[0];
           if (shouldUpdateStatus(log.status, mappedStatus)) {
+          const now = new Date().toISOString();
             const updatePayload: Record<string, unknown> = {
               status: mappedStatus,
-              status_updated_at: new Date().toISOString(),
+              status_updated_at: now,
               provider_response: payload,
             };
 
             if (mappedStatus === "sent") {
-              updatePayload.sent_at = new Date().toISOString();
+              updatePayload.sent_at = now;
+            } else if (mappedStatus === "delivered") {
+              updatePayload.delivered_at = now;
+            } else if (mappedStatus === "read") {
+              updatePayload.read_at = now;
             }
 
             await supabase.from("message_logs").update(updatePayload).eq("id", log.id);

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
+import { OFFICIAL_SPECIALTY_NAMES } from "@/constants/officialSpecialties";
 
 export type SpecialtyType = 'padrao' | 'personalizada';
 
@@ -53,7 +54,11 @@ export function useSpecialties() {
         throw error;
       }
       
-      return data as Specialty[];
+      // WHITELIST FILTER: Only return officially supported specialties
+      const filtered = (data as Specialty[]).filter(s =>
+        OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase())
+      );
+      return filtered;
     },
     enabled: !!clinic?.id,
   });

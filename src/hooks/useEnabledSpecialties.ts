@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
 import { toast } from "sonner";
+import { OFFICIAL_SPECIALTY_NAMES } from "@/constants/officialSpecialties";
 
 export type SpecialtyType = 'padrao' | 'personalizada';
 
@@ -47,7 +48,11 @@ export function useEnabledSpecialties() {
         throw error;
       }
       
-      return data as EnabledSpecialty[];
+      // WHITELIST FILTER: Only return officially supported specialties
+      const filtered = (data as EnabledSpecialty[]).filter(s =>
+        OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase())
+      );
+      return filtered;
     },
     enabled: !!clinic?.id,
   });
@@ -75,7 +80,10 @@ export function useStandardSpecialties() {
         throw error;
       }
       
-      return data as EnabledSpecialty[];
+      const filtered = (data as EnabledSpecialty[]).filter(s =>
+        OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase())
+      );
+      return filtered;
     },
   });
 }

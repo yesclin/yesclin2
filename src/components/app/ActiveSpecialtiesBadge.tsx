@@ -1,6 +1,7 @@
 import { useEnabledSpecialties } from "@/hooks/useEnabledSpecialties";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope } from "lucide-react";
+import { filterOfficialSpecialties } from "@/constants/officialSpecialties";
 import {
   Tooltip,
   TooltipContent,
@@ -12,7 +13,8 @@ import {
  * Visível no header de todas as telas do app.
  */
 export function ActiveSpecialtiesBadge() {
-  const { data: specialties = [], isLoading } = useEnabledSpecialties();
+  const { data: rawSpecialties = [], isLoading } = useEnabledSpecialties();
+  const specialties = filterOfficialSpecialties(rawSpecialties);
 
   if (isLoading || specialties.length === 0) return null;
 

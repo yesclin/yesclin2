@@ -52,14 +52,33 @@ async function sendViaEvolution(integration: any, phone: string, message: string
       "Content-Type": "application/json",
       "apikey": access_token,
     },
-    body: JSON.stringify({
-      number: phone,
-      text: message,
-    }),
+    body: JSON.stringify({ number: phone, text: message }),
   });
   
   const body = await response.json().catch(() => ({}));
   return { ok: response.ok, status: response.status, body };
+}
+
+async function sendViaZApi(integration: any, phone: string, message: string) {
+  const baseUrl = (integration.base_url || integration.api_url || "").replace(/\/$/, "");
+  const { instance_id, access_token } = integration;
+  const url = `${baseUrl}/instances/${instance_id}/token/${access_token}/send-text`;
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message }),
+  });
+  
+  const body = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function sendMessage(integration: any, phone: string, message: string) {
+  if (integration.provider === "z-api") {
+    return sendViaZApi(integration, phone, message);
+  }
+  return sendViaEvolution(integration, phone, message);
 }
 
 Deno.serve(async (req) => {
@@ -82,7 +101,6 @@ Deno.serve(async (req) => {
     const integration = await getIntegration(supabase, clinic_id);
 
     if (!integration) {
-      // WhatsApp não configurado - não criar na fila
       return new Response(
         JSON.stringify({ error: "WhatsApp não configurado", status: "not_configured" }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -91,7 +109,6 @@ Deno.serve(async (req) => {
 
     const formattedPhone = formatPhone(phone);
     
-    // Create or get queue item
     let currentQueueId = queue_id;
     let currentAttempts = 0;
 
@@ -124,13 +141,11 @@ Deno.serve(async (req) => {
       currentQueueId = newQueue.id;
     }
 
-    // Mark as processing
     await supabase.from("message_queue").update({ status: "processing" }).eq("id", currentQueueId);
 
-    // Send via Evolution API
     let result;
     try {
-      result = await sendViaEvolution(integration, formattedPhone, message);
+      result = await sendMessage(integration, formattedPhone, message);
     } catch (fetchErr: any) {
       const newAttempts = currentAttempts + 1;
       const shouldRetry = newAttempts < 2;
@@ -159,7 +174,6 @@ Deno.serve(async (req) => {
         error_message: null,
       }).eq("id", currentQueueId);
 
-      // Create message log
       await supabase.from("message_logs").insert({
         clinic_id,
         patient_id: patient_id || null,
@@ -172,7 +186,7 @@ Deno.serve(async (req) => {
         status: "sent",
         phone: formattedPhone,
         provider_response: result.body,
-        external_id: result.body?.key?.id || null,
+        external_id: result.body?.key?.id || result.body?.messageId || null,
         sent_at: new Date().toISOString(),
         metadata: { queue_id: currentQueueId },
       });
@@ -188,7 +202,7 @@ Deno.serve(async (req) => {
         status: shouldRetry ? "pending" : "failed",
         attempts: newAttempts,
         provider_response: result.body,
-        error_message: `Evolution API retornou ${result.status}`,
+        error_message: `API retornou ${result.status}`,
         next_retry_at: shouldRetry ? new Date(Date.now() + 60000).toISOString() : null,
       }).eq("id", currentQueueId);
 

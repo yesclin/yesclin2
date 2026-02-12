@@ -74,6 +74,7 @@ const ownerAdminMarketingMenu: MenuItem[] = [
   { title: "Campanhas", url: "/app/marketing/campanhas", icon: Megaphone },
   { title: "Histórico", url: "/app/marketing/historico", icon: History },
   { title: "CRM", url: "/app/marketing/crm", icon: Contact },
+  { title: "Config WhatsApp", url: "/app/marketing/config-whatsapp", icon: MessageSquare },
 ];
 
 const ownerAdminGestaoMenu: MenuItem[] = [

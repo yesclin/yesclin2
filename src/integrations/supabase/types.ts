@@ -960,12 +960,14 @@ export type Database = {
       clinic_channel_integrations: {
         Row: {
           access_token: string | null
+          base_url: string | null
           business_account_id: string | null
           channel: string
           clinic_id: string
           created_at: string
           display_phone_number: string | null
           id: string
+          instance_id: string | null
           metadata: Json | null
           phone_number_id: string | null
           provider: string
@@ -974,12 +976,14 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          base_url?: string | null
           business_account_id?: string | null
           channel?: string
           clinic_id: string
           created_at?: string
           display_phone_number?: string | null
           id?: string
+          instance_id?: string | null
           metadata?: Json | null
           phone_number_id?: string | null
           provider?: string
@@ -988,12 +992,14 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          base_url?: string | null
           business_account_id?: string | null
           channel?: string
           clinic_id?: string
           created_at?: string
           display_phone_number?: string | null
           id?: string
+          instance_id?: string | null
           metadata?: Json | null
           phone_number_id?: string | null
           provider?: string
@@ -4173,6 +4179,85 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_queue: {
+        Row: {
+          attempts: number
+          automation_rule_id: string | null
+          channel: string
+          clinic_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          max_attempts: number
+          message_body: string
+          next_retry_at: string | null
+          patient_id: string | null
+          phone: string
+          provider_response: Json | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          automation_rule_id?: string | null
+          channel?: string
+          clinic_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          message_body: string
+          next_retry_at?: string | null
+          patient_id?: string | null
+          phone: string
+          provider_response?: Json | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          automation_rule_id?: string | null
+          channel?: string
+          clinic_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          message_body?: string
+          next_retry_at?: string | null
+          patient_id?: string | null
+          phone?: string
+          provider_response?: Json | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_queue_automation_rule_id_fkey"
+            columns: ["automation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]

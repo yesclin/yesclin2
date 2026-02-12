@@ -11,17 +11,18 @@ export interface WhatsAppIntegration {
   phone_number_id: string | null;
   business_account_id: string | null;
   access_token: string | null;
-  status: 'active' | 'invalid' | 'not_configured';
+  status: string;
   display_phone_number: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
+  base_url: string | null;
+  instance_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface WhatsAppFormData {
-  provider: string;
-  phone_number_id: string;
-  business_account_id: string;
+export interface ZApiFormData {
+  base_url: string;
+  instance_id: string;
   access_token: string;
   display_phone_number: string;
 }
@@ -56,19 +57,19 @@ export function useWhatsAppIntegration() {
     fetchIntegration();
   }, [fetchIntegration]);
 
-  const saveIntegration = async (formData: WhatsAppFormData) => {
+  const saveIntegration = async (formData: ZApiFormData) => {
     if (!clinic?.id) return;
     setSaving(true);
     try {
       const payload = {
         clinic_id: clinic.id,
         channel: 'whatsapp',
-        provider: formData.provider,
-        phone_number_id: formData.phone_number_id || null,
-        business_account_id: formData.business_account_id || null,
+        provider: 'z_api',
+        base_url: formData.base_url || null,
+        instance_id: formData.instance_id || null,
         access_token: formData.access_token || null,
         display_phone_number: formData.display_phone_number || null,
-        status: formData.phone_number_id && formData.access_token ? 'active' : 'not_configured',
+        status: formData.instance_id && formData.access_token && formData.base_url ? 'active' : 'not_configured',
       };
 
       if (integration?.id) {
@@ -84,7 +85,7 @@ export function useWhatsAppIntegration() {
         if (error) throw error;
       }
 
-      toast.success('Integração WhatsApp salva com sucesso');
+      toast.success('Integração WhatsApp Z-API salva com sucesso');
       await fetchIntegration();
     } catch (err: any) {
       console.error('Error saving WhatsApp integration:', err);
@@ -102,14 +103,14 @@ export function useWhatsAppIntegration() {
         .from('clinic_channel_integrations')
         .update({
           status: 'not_configured',
-          phone_number_id: null,
-          business_account_id: null,
+          base_url: null,
+          instance_id: null,
           access_token: null,
           display_phone_number: null,
         })
         .eq('id', integration.id);
       if (error) throw error;
-      toast.success('WhatsApp desconectado');
+      toast.success('WhatsApp Z-API desconectado');
       await fetchIntegration();
     } catch (err: any) {
       toast.error('Erro ao desconectar: ' + (err.message || ''));

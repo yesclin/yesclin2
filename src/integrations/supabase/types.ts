@@ -4714,11 +4714,15 @@ export type Database = {
           created_by: string | null
           habitos_vida: string | null
           historia_doenca_atual: string | null
+          historia_ginecologica: string | null
           id: string
           is_current: boolean
           medicamentos_uso_continuo: string | null
           patient_id: string
           queixa_principal: string | null
+          revisao_sistemas: string | null
+          structured_data: Json | null
+          template_id: string | null
           version: number
         }
         Insert: {
@@ -4731,11 +4735,15 @@ export type Database = {
           created_by?: string | null
           habitos_vida?: string | null
           historia_doenca_atual?: string | null
+          historia_ginecologica?: string | null
           id?: string
           is_current?: boolean
           medicamentos_uso_continuo?: string | null
           patient_id: string
           queixa_principal?: string | null
+          revisao_sistemas?: string | null
+          structured_data?: Json | null
+          template_id?: string | null
           version?: number
         }
         Update: {
@@ -4748,11 +4756,15 @@ export type Database = {
           created_by?: string | null
           habitos_vida?: string | null
           historia_doenca_atual?: string | null
+          historia_ginecologica?: string | null
           id?: string
           is_current?: boolean
           medicamentos_uso_continuo?: string | null
           patient_id?: string
           queixa_principal?: string | null
+          revisao_sistemas?: string | null
+          structured_data?: Json | null
+          template_id?: string | null
           version?: number
         }
         Relationships: [

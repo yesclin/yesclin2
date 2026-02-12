@@ -16,11 +16,7 @@ interface UseAnamneseDataResult {
 
 /**
  * Hook para gerenciar dados de Anamnese com versionamento
- * 
- * Regras:
- * - Não sobrescreve automaticamente anamneses anteriores
- * - Cada salvamento cria uma nova versão
- * - Mantém histórico completo
+ * Supports both legacy columns and new structured_data JSON
  */
 export function useAnamneseData(patientId: string | null): UseAnamneseDataResult {
   const { clinic } = useClinicData();
@@ -41,7 +37,6 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
     setError(null);
 
     try {
-      // Fetch all anamneses for this patient, ordered by version desc
       const { data, error: fetchError } = await supabase
         .from('patient_anamneses')
         .select('*')
@@ -49,11 +44,9 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
         .eq('clinic_id', clinic.id)
         .order('version', { ascending: false });
 
-      if (fetchError) {
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
-      // Get creator names for each anamnese
+      // Get creator names
       const creatorIds = [...new Set((data || []).map(a => a.created_by).filter(Boolean))];
       let creatorsMap: Record<string, string> = {};
       
@@ -65,9 +58,7 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
         
         if (profiles) {
           creatorsMap = profiles.reduce((acc, p) => {
-            if (p.user_id && p.full_name) {
-              acc[p.user_id] = p.full_name;
-            }
+            if (p.user_id && p.full_name) acc[p.user_id] = p.full_name;
             return acc;
           }, {} as Record<string, string>);
         }
@@ -85,6 +76,10 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
         medicamentos_uso_continuo: item.medicamentos_uso_continuo || '',
         alergias: item.alergias || '',
         comorbidades: item.comorbidades || '',
+        historia_ginecologica: (item as any).historia_ginecologica || '',
+        revisao_sistemas: (item as any).revisao_sistemas || '',
+        structured_data: (item as any).structured_data as Record<string, unknown> || {},
+        template_id: (item as any).template_id || undefined,
         created_at: item.created_at,
         created_by: item.created_by || '',
         created_by_name: item.created_by ? creatorsMap[item.created_by] : undefined,
@@ -93,7 +88,6 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
 
       setAnamneseHistory(mapped);
       setCurrentAnamnese(mapped.find(a => a.is_current) || mapped[0] || null);
-
     } catch (err) {
       console.error('Error fetching anamneses:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar anamnese');
@@ -114,50 +108,52 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
     setError(null);
 
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
+      if (!user) throw new Error('Usuário não autenticado');
 
-      // Get next version number
       const nextVersion = (currentAnamnese?.version || 0) + 1;
 
-      // First, mark all existing anamneses as not current
+      // Mark existing as not current
       if (anamneseHistory.length > 0) {
         const { error: updateError } = await supabase
           .from('patient_anamneses')
           .update({ is_current: false })
           .eq('patient_id', patientId)
           .eq('clinic_id', clinic.id);
-
         if (updateError) throw updateError;
       }
 
-      // Insert new anamnese version
+      // Insert new version with structured data
+      const insertData: Record<string, unknown> = {
+        patient_id: patientId,
+        clinic_id: clinic.id,
+        version: nextVersion,
+        queixa_principal: data.queixa_principal,
+        historia_doenca_atual: data.historia_doenca_atual,
+        antecedentes_pessoais: data.antecedentes_pessoais,
+        antecedentes_familiares: data.antecedentes_familiares,
+        habitos_vida: data.habitos_vida,
+        medicamentos_uso_continuo: data.medicamentos_uso_continuo,
+        alergias: data.alergias,
+        comorbidades: data.comorbidades,
+        created_by: user.id,
+        is_current: true,
+      };
+
+      // Add new structured fields
+      if (data.structured_data) insertData.structured_data = data.structured_data;
+      if (data.template_id) insertData.template_id = data.template_id;
+      if (data.historia_ginecologica) insertData.historia_ginecologica = data.historia_ginecologica;
+      if (data.revisao_sistemas) insertData.revisao_sistemas = data.revisao_sistemas;
+
       const { error: insertError } = await supabase
         .from('patient_anamneses')
-        .insert({
-          patient_id: patientId,
-          clinic_id: clinic.id,
-          version: nextVersion,
-          queixa_principal: data.queixa_principal,
-          historia_doenca_atual: data.historia_doenca_atual,
-          antecedentes_pessoais: data.antecedentes_pessoais,
-          antecedentes_familiares: data.antecedentes_familiares,
-          habitos_vida: data.habitos_vida,
-          medicamentos_uso_continuo: data.medicamentos_uso_continuo,
-          alergias: data.alergias,
-          comorbidades: data.comorbidades,
-          created_by: user.id,
-          is_current: true,
-        });
+        .insert(insertData as any);
 
       if (insertError) throw insertError;
 
       toast.success(`Anamnese salva (versão ${nextVersion})`);
       await fetchAnamneses();
-
     } catch (err) {
       console.error('Error saving anamnese:', err);
       const message = err instanceof Error ? err.message : 'Erro ao salvar anamnese';

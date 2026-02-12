@@ -69,12 +69,11 @@ const ownerAdminMainMenu: MenuItem[] = [
 
 const ownerAdminMarketingMenu: MenuItem[] = [
   { title: "Dashboard", url: "/app/marketing", icon: LayoutDashboard },
-  { title: "Templates", url: "/app/marketing/templates", icon: MessageSquare },
-  { title: "Automações", url: "/app/marketing/automacoes", icon: Zap },
-  { title: "Campanhas", url: "/app/marketing/campanhas", icon: Megaphone },
-  { title: "Histórico", url: "/app/marketing/historico", icon: History },
-  { title: "CRM", url: "/app/marketing/crm", icon: Contact },
-  { title: "Config WhatsApp", url: "/app/marketing/config-whatsapp", icon: MessageSquare },
+  { title: "Templates", url: "/app/marketing?tab=templates", icon: MessageSquare },
+  { title: "Automações", url: "/app/marketing?tab=automacoes", icon: Zap },
+  { title: "Campanhas", url: "/app/marketing?tab=campanhas", icon: Megaphone },
+  { title: "Histórico", url: "/app/marketing?tab=historico", icon: History },
+  { title: "WhatsApp", url: "/app/marketing?tab=whatsapp", icon: MessageSquare },
 ];
 
 const ownerAdminGestaoMenu: MenuItem[] = [
@@ -125,6 +124,19 @@ export function AppSidebar() {
 
   const isActive = (path: string) => {
     if (path === "/app") return currentPath === path;
+    // Handle query param-based tabs (e.g., /app/marketing?tab=templates)
+    if (path.includes("?")) {
+      const [basePath, queryString] = path.split("?");
+      if (currentPath !== basePath) return false;
+      const params = new URLSearchParams(queryString);
+      const tabParam = params.get("tab");
+      const currentTab = new URLSearchParams(location.search).get("tab");
+      return tabParam === currentTab;
+    }
+    // For /app/marketing without query param, active only when no tab param
+    if (path === "/app/marketing") {
+      return currentPath === path && !location.search.includes("tab=");
+    }
     return currentPath.startsWith(path);
   };
 
@@ -169,7 +181,7 @@ export function AppSidebar() {
     };
   }, [isOwner, isAdmin, isRecepcionista, role]);
 
-  const isMarketingActive = marketingItems.some((item) => isActive(item.url));
+  const isMarketingActive = currentPath.startsWith("/app/marketing");
   const isGestaoActive = gestaoItems.some((item) => isActive(item.url));
   const isConfigActive = configItems.some((item) => isActive(item.url));
 

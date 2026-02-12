@@ -6,6 +6,8 @@ import { GuidedTour } from "./GuidedTour";
 import { useClinicData } from "@/hooks/useClinicData";
 import { Building2, ChevronDown } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
+import { ActiveSpecialtiesBadge } from "./ActiveSpecialtiesBadge";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppLayout() {
   const location = useLocation();
@@ -38,6 +40,9 @@ export function AppLayout() {
                 <span className="text-sm font-semibold text-foreground">Yesclin</span>
               )}
             </div>
+            <TooltipProvider>
+              <ActiveSpecialtiesBadge />
+            </TooltipProvider>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             <Outlet />

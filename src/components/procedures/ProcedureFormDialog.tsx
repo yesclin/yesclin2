@@ -79,8 +79,8 @@ export function ProcedureFormDialog({
       const { data, error } = await supabase
         .from("specialties")
         .select("id, name")
-        .eq("clinic_id", clinic.id)
         .eq("is_active", true)
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic.id}`)
         .order("name");
       
       if (error) throw error;

@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "./useClinicData";
 import { toast } from "sonner";
-import { OFFICIAL_SPECIALTY_NAMES } from "@/constants/officialSpecialties";
+import { OFFICIAL_SPECIALTY_NAMES, getSpecialtySlug } from "@/constants/officialSpecialties";
 
 export type SpecialtyType = 'padrao' | 'personalizada';
 
 export interface EnabledSpecialty {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   color: string | null;
   area: string | null;
@@ -48,11 +49,11 @@ export function useEnabledSpecialties() {
         throw error;
       }
       
-      // WHITELIST FILTER: Only return officially supported specialties
-      const filtered = (data as EnabledSpecialty[]).filter(s =>
-        OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase())
-      );
-      return filtered;
+      // WHITELIST FILTER: Only return officially supported specialties, enrich with slug
+      const filtered = (data as Array<Omit<EnabledSpecialty, 'slug'> & { name: string }>)
+        .filter(s => OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase()))
+        .map(s => ({ ...s, slug: getSpecialtySlug(s.name) || s.name.toLowerCase().replace(/\s+/g, '-') }));
+      return filtered as EnabledSpecialty[];
     },
     enabled: !!clinic?.id,
   });
@@ -80,10 +81,10 @@ export function useStandardSpecialties() {
         throw error;
       }
       
-      const filtered = (data as EnabledSpecialty[]).filter(s =>
-        OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase())
-      );
-      return filtered;
+      const filtered = (data as Array<Omit<EnabledSpecialty, 'slug'> & { name: string }>)
+        .filter(s => OFFICIAL_SPECIALTY_NAMES.some(name => name.toLowerCase() === s.name.trim().toLowerCase()))
+        .map(s => ({ ...s, slug: getSpecialtySlug(s.name) || s.name.toLowerCase().replace(/\s+/g, '-') }));
+      return filtered as EnabledSpecialty[];
     },
   });
 }

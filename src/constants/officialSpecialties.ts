@@ -18,17 +18,32 @@
  * The ONLY valid specialty names in Yesclin.
  * Used as a whitelist filter across the entire application.
  */
-export const OFFICIAL_SPECIALTY_NAMES: readonly string[] = [
-  "Clínica Geral",
-  "Psicologia",
-  "Nutrição",
-  "Fisioterapia",
-  "Pilates",
-  "Estética / Harmonização Facial",
-  "Odontologia",
-  "Dermatologia",
-  "Pediatria",
+export interface OfficialSpecialtyDef {
+  name: string;
+  slug: string;
+}
+
+export const OFFICIAL_SPECIALTIES: readonly OfficialSpecialtyDef[] = [
+  { name: "Clínica Geral", slug: "clinica-geral" },
+  { name: "Psicologia", slug: "psicologia" },
+  { name: "Nutrição", slug: "nutricao" },
+  { name: "Fisioterapia", slug: "fisioterapia" },
+  { name: "Pilates", slug: "pilates" },
+  { name: "Estética / Harmonização Facial", slug: "estetica-harmonizacao" },
+  { name: "Odontologia", slug: "odontologia" },
+  { name: "Dermatologia", slug: "dermatologia" },
+  { name: "Pediatria", slug: "pediatria" },
 ] as const;
+
+/** Flat array of names for backward compatibility */
+export const OFFICIAL_SPECIALTY_NAMES: readonly string[] = OFFICIAL_SPECIALTIES.map(s => s.name);
+
+/** Get the slug for an official specialty name */
+export function getSpecialtySlug(name: string): string | null {
+  const normalized = name.trim().toLowerCase();
+  const match = OFFICIAL_SPECIALTIES.find(s => s.name.toLowerCase() === normalized);
+  return match?.slug ?? null;
+}
 
 /**
  * Check if a specialty name is in the official whitelist.

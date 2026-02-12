@@ -48,157 +48,135 @@ export const ANAMNESE_CLINICA_GERAL_TEMPLATE: TemplateAnamneseClinicaGeral = {
   is_system: true,
   specialty: 'clinica_geral',
   secoes: [
-    // ── 1. IDENTIFICAÇÃO ──────────────────────────────────────────
-    {
-      id: 'identificacao',
-      titulo: '1. Identificação do Paciente',
-      descricao: 'Dados complementares à ficha cadastral',
-      icon: 'UserCircle',
-      campos: [
-        { id: 'estado_civil', label: 'Estado Civil', type: 'select', options: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável', 'Outro'], section: 'Identificação' },
-        { id: 'profissao', label: 'Profissão', type: 'text', placeholder: 'Profissão atual do paciente', section: 'Identificação' },
-        { id: 'naturalidade', label: 'Naturalidade / Procedência', type: 'text', placeholder: 'Cidade e estado de origem', section: 'Identificação' },
-        { id: 'convenio', label: 'Convênio', type: 'text', placeholder: 'Nome do convênio (se houver)', section: 'Identificação' },
-      ],
-    },
-
-    // ── 2. QUEIXA PRINCIPAL (QP) ──────────────────────────────────
+    // ── 1. QUEIXA PRINCIPAL (QP) ──────────────────────────────────
     {
       id: 'queixa_principal',
-      titulo: '2. Queixa Principal (QP)',
+      titulo: '1. Queixa Principal (QP)',
       descricao: 'Motivo da consulta, descrito com as palavras do paciente',
       icon: 'MessageSquare',
       legacyColumn: 'queixa_principal',
       campos: [
-        { id: 'qp_descricao', label: 'Queixa Principal', type: 'textarea', placeholder: 'Ex: "Dor no peito há 2 dias"', required: true, section: 'QP' },
+        { id: 'qp_descricao', label: 'Motivo da consulta (nas palavras do paciente)', type: 'textarea', placeholder: 'Ex: "Dor no peito há 2 dias"', required: true, section: 'QP' },
       ],
     },
 
-    // ── 3. HISTÓRIA DA DOENÇA ATUAL (HDA) ─────────────────────────
+    // ── 2. HISTÓRIA DA DOENÇA ATUAL (HDA) ─────────────────────────
     {
       id: 'historia_doenca_atual',
-      titulo: '3. História da Doença Atual (HDA)',
+      titulo: '2. História da Doença Atual (HDA)',
       descricao: 'Descrição cronológica e detalhada usando método OPQRST',
       icon: 'Clock',
       legacyColumn: 'historia_doenca_atual',
       campos: [
-        // OPQRST
-        { id: 'hda_onset', label: 'O – Início (Onset)', type: 'textarea', placeholder: 'Quando começou? O que estava fazendo?', section: 'OPQRST' },
-        { id: 'hda_provocation', label: 'P – Fatores de Piora / Melhora (Provocation)', type: 'textarea', placeholder: 'O que piora? O que melhora?', section: 'OPQRST' },
-        { id: 'hda_quality', label: 'Q – Qualidade (Quality)', type: 'textarea', placeholder: 'Tipo da dor/sintoma: pontada, queimação, pressão, cólica...', section: 'OPQRST' },
-        { id: 'hda_radiation', label: 'R – Irradiação (Radiation)', type: 'textarea', placeholder: 'Irradia para algum lugar?', section: 'OPQRST' },
-        { id: 'hda_severity', label: 'S – Intensidade (Severity)', type: 'select', options: ['0 - Sem dor', '1', '2', '3', '4', '5 - Moderada', '6', '7', '8', '9', '10 - Insuportável'], section: 'OPQRST' },
-        { id: 'hda_time', label: 'T – Tempo / Duração (Time)', type: 'textarea', placeholder: 'Quanto tempo dura? Frequência? Contínuo ou intermitente?', section: 'OPQRST' },
-        // Complementares
+        { id: 'hda_onset', label: 'Início dos sintomas (O)', type: 'date', section: 'OPQRST' },
+        { id: 'hda_provocation', label: 'Fatores de piora/melhora (P)', type: 'textarea', placeholder: 'O que piora? O que melhora?', section: 'OPQRST' },
+        { id: 'hda_quality', label: 'Qualidade do sintoma (Q)', type: 'textarea', placeholder: 'Tipo da dor/sintoma: pontada, queimação, pressão, cólica...', section: 'OPQRST' },
+        { id: 'hda_radiation', label: 'Irradiação (R)', type: 'textarea', placeholder: 'Irradia para algum lugar?', section: 'OPQRST' },
+        { id: 'hda_severity', label: 'Intensidade (0–10) (S)', type: 'number', placeholder: '0 a 10', section: 'OPQRST' },
+        { id: 'hda_time', label: 'Tempo/duração (T)', type: 'textarea', placeholder: 'Quanto tempo dura? Frequência? Contínuo ou intermitente?', section: 'OPQRST' },
         { id: 'hda_evolucao', label: 'Evolução', type: 'textarea', placeholder: 'Como evoluiu desde o início?', section: 'Complementar' },
-        { id: 'hda_sintomas_associados', label: 'Sintomas Associados', type: 'textarea', placeholder: 'Outros sintomas relacionados', section: 'Complementar' },
-        { id: 'hda_tratamentos_previos', label: 'Tratamentos Já Realizados', type: 'textarea', placeholder: 'Medicações ou medidas já tentadas', section: 'Complementar' },
-        { id: 'hda_impacto_funcional', label: 'Impacto Funcional', type: 'textarea', placeholder: 'Como afeta as atividades diárias?', section: 'Complementar' },
+        { id: 'hda_sintomas_associados', label: 'Sintomas associados', type: 'textarea', placeholder: 'Outros sintomas relacionados', section: 'Complementar' },
+        { id: 'hda_tratamentos_previos', label: 'Tratamentos já realizados', type: 'textarea', placeholder: 'Medicações ou medidas já tentadas', section: 'Complementar' },
+        { id: 'hda_impacto_funcional', label: 'Impacto funcional', type: 'textarea', placeholder: 'Como afeta as atividades diárias?', section: 'Complementar' },
       ],
     },
 
-    // ── 4. HISTÓRIA PATOLÓGICA PREGRESSA (HPP) ────────────────────
+    // ── 3. HISTÓRIA PATOLÓGICA PREGRESSA (HPP) ────────────────────
     {
       id: 'antecedentes_pessoais',
-      titulo: '4. História Patológica Pregressa (HPP)',
+      titulo: '3. História Patológica Pregressa (HPP)',
       descricao: 'Doenças prévias, internações, cirurgias, transfusões e traumas',
       icon: 'BookOpen',
       legacyColumn: 'antecedentes_pessoais',
       campos: [
-        { id: 'hpp_doencas_previas', label: 'Doenças Prévias', type: 'multiselect', options: ['HAS', 'DM tipo 1', 'DM tipo 2', 'Dislipidemia', 'Asma', 'DPOC', 'Hipotireoidismo', 'Hipertireoidismo', 'Depressão', 'Ansiedade', 'Epilepsia', 'AVC', 'IAM', 'ICC', 'IRC', 'Hepatite', 'HIV', 'Tuberculose', 'Câncer', 'Nenhuma', 'Outra'], section: 'HPP' },
-        { id: 'hpp_doencas_obs', label: 'Detalhamento das Doenças', type: 'textarea', placeholder: 'Detalhes, data de diagnóstico, tratamento atual...', section: 'HPP' },
-        { id: 'hpp_internacoes', label: 'Internações Anteriores', type: 'textarea', placeholder: 'Motivo, data e duração das internações', section: 'HPP' },
+        { id: 'hpp_doencas_previas', label: 'Doenças prévias', type: 'textarea', placeholder: 'HAS, DM, dislipidemia, etc.', section: 'HPP' },
+        { id: 'hpp_internacoes', label: 'Internações', type: 'textarea', placeholder: 'Motivo, data e duração das internações', section: 'HPP' },
         { id: 'hpp_cirurgias', label: 'Cirurgias', type: 'textarea', placeholder: 'Procedimentos cirúrgicos realizados, datas', section: 'HPP' },
-        { id: 'hpp_transfusoes', label: 'Transfusões Sanguíneas', type: 'radio', options: ['Sim', 'Não'], section: 'HPP' },
-        { id: 'hpp_transfusoes_obs', label: 'Detalhes da Transfusão', type: 'text', placeholder: 'Quando e motivo', section: 'HPP' },
-        { id: 'hpp_traumas', label: 'Traumas Relevantes', type: 'textarea', placeholder: 'Fraturas, TCE, acidentes...', section: 'HPP' },
+        { id: 'hpp_transfusoes', label: 'Transfusões', type: 'textarea', placeholder: 'Quando e motivo', section: 'HPP' },
+        { id: 'hpp_traumas', label: 'Traumas relevantes', type: 'textarea', placeholder: 'Fraturas, TCE, acidentes...', section: 'HPP' },
       ],
     },
 
-    // ── 5. HISTÓRIA FAMILIAR (HF) ────────────────────────────────
+    // ── 4. HISTÓRIA FAMILIAR (HF) ────────────────────────────────
     {
       id: 'antecedentes_familiares',
-      titulo: '5. História Familiar (HF)',
+      titulo: '4. História Familiar (HF)',
       descricao: 'Doenças hereditárias e histórico familiar',
       icon: 'Users',
       legacyColumn: 'antecedentes_familiares',
       campos: [
-        { id: 'hf_doencas', label: 'Doenças Familiares', type: 'multiselect', options: ['HAS', 'DM', 'Câncer', 'Doença Cardiovascular', 'AVC', 'Doença Renal', 'Doença Pulmonar', 'Doença Autoimune', 'Doença Mental', 'Obesidade', 'Dislipidemia', 'Nenhuma relevante', 'Outra'], section: 'HF' },
-        { id: 'hf_detalhes', label: 'Detalhamento', type: 'textarea', placeholder: 'Quem na família, idade de início, causa de óbito de familiares (se relevante)', section: 'HF' },
+        { id: 'hf_doencas_hereditarias', label: 'Doenças hereditárias', type: 'textarea', placeholder: 'Doenças hereditárias na família', section: 'HF' },
+        { id: 'hf_has_dm_cancer', label: 'HAS / DM / Câncer / Cardiovasculares', type: 'textarea', placeholder: 'Detalhamento por familiar', section: 'HF' },
+        { id: 'hf_obitos', label: 'Idade e causa de óbito (se relevante)', type: 'textarea', placeholder: 'Familiares falecidos, idade e causa', section: 'HF' },
       ],
     },
 
-    // ── 6. MEDICAMENTOS EM USO ────────────────────────────────────
+    // ── 5. MEDICAMENTOS EM USO ────────────────────────────────────
     {
       id: 'medicamentos',
-      titulo: '6. Medicamentos em Uso',
+      titulo: '5. Medicamentos em Uso',
       descricao: 'Medicamentos contínuos e automedicação',
       icon: 'Pill',
       legacyColumn: 'medicamentos_uso_continuo',
       campos: [
-        { id: 'med_lista', label: 'Medicamentos em Uso Contínuo', type: 'textarea', placeholder: 'Nome, dose, frequência e tempo de uso\nEx: Losartana 50mg, 1x/dia, há 3 anos', required: true, section: 'Medicamentos' },
+        { id: 'med_lista', label: 'Nome / Dose / Frequência / Tempo de uso', type: 'textarea', placeholder: 'Ex: Losartana 50mg, 1x/dia, há 3 anos', required: true, section: 'Medicamentos' },
         { id: 'med_automedicacao', label: 'Automedicação', type: 'textarea', placeholder: 'Medicamentos usados por conta própria, chás, suplementos...', section: 'Medicamentos' },
       ],
     },
 
-    // ── 7. ALERGIAS ───────────────────────────────────────────────
+    // ── 6. ALERGIAS ───────────────────────────────────────────────
     {
       id: 'alergias',
-      titulo: '7. Alergias',
+      titulo: '6. Alergias',
       descricao: 'Alergias medicamentosas, alimentares e ambientais',
       icon: 'AlertTriangle',
       legacyColumn: 'alergias',
       campos: [
-        { id: 'alergias_medicamentosas', label: 'Alergias Medicamentosas', type: 'textarea', placeholder: 'Medicamento e tipo de reação apresentada', section: 'Alergias' },
-        { id: 'alergias_alimentares', label: 'Alergias Alimentares', type: 'textarea', placeholder: 'Alimentos e tipo de reação', section: 'Alergias' },
-        { id: 'alergias_ambientais', label: 'Alergias Ambientais', type: 'textarea', placeholder: 'Pólen, poeira, animais, látex...', section: 'Alergias' },
-        { id: 'alergias_reacao', label: 'Tipo de Reação Apresentada', type: 'multiselect', options: ['Urticária', 'Angioedema', 'Anafilaxia', 'Broncoespasmo', 'Rash cutâneo', 'Náusea/Vômito', 'Nenhuma grave', 'Outra'], section: 'Alergias' },
+        { id: 'alergias_medicamentosas', label: 'Medicamentosas', type: 'textarea', placeholder: 'Medicamento e tipo de reação apresentada', section: 'Alergias' },
+        { id: 'alergias_alimentares', label: 'Alimentares', type: 'textarea', placeholder: 'Alimentos e tipo de reação', section: 'Alergias' },
+        { id: 'alergias_ambientais', label: 'Ambientais', type: 'textarea', placeholder: 'Pólen, poeira, animais, látex...', section: 'Alergias' },
+        { id: 'alergias_reacao', label: 'Reação apresentada', type: 'textarea', placeholder: 'Urticária, angioedema, anafilaxia, broncoespasmo...', section: 'Alergias' },
       ],
     },
 
-    // ── 8. HÁBITOS DE VIDA ────────────────────────────────────────
+    // ── 7. HÁBITOS DE VIDA ────────────────────────────────────────
     {
       id: 'habitos_vida',
-      titulo: '8. Hábitos de Vida',
+      titulo: '7. Hábitos de Vida',
       descricao: 'Tabagismo, etilismo, atividade física, alimentação, drogas e sono',
       icon: 'Activity',
       legacyColumn: 'habitos_vida',
       campos: [
-        { id: 'hab_tabagismo', label: 'Tabagismo', type: 'select', options: ['Nunca fumou', 'Ex-tabagista', 'Fumante ativo'], section: 'Hábitos' },
-        { id: 'hab_tabagismo_carga', label: 'Carga Tabágica', type: 'text', placeholder: 'Ex: 20 maços/ano', section: 'Hábitos' },
-        { id: 'hab_etilismo', label: 'Etilismo', type: 'select', options: ['Não bebe', 'Social/Eventual', 'Moderado', 'Frequente/Abusivo', 'Ex-etilista'], section: 'Hábitos' },
-        { id: 'hab_etilismo_detalhe', label: 'Frequência/Quantidade', type: 'text', placeholder: 'Ex: 2 cervejas nos fins de semana', section: 'Hábitos' },
-        { id: 'hab_atividade_fisica', label: 'Atividade Física', type: 'select', options: ['Sedentário', 'Leve (1-2x/semana)', 'Moderada (3-4x/semana)', 'Intensa (5+x/semana)'], section: 'Hábitos' },
-        { id: 'hab_atividade_tipo', label: 'Tipo de Atividade', type: 'text', placeholder: 'Caminhada, musculação, natação...', section: 'Hábitos' },
+        { id: 'hab_tabagismo', label: 'Tabagismo (carga tabágica)', type: 'text', placeholder: 'Ex: 20 maços/ano, nunca fumou', section: 'Hábitos' },
+        { id: 'hab_etilismo', label: 'Etilismo (frequência/quantidade)', type: 'text', placeholder: 'Ex: 2 cervejas nos fins de semana', section: 'Hábitos' },
+        { id: 'hab_atividade_fisica', label: 'Atividade física', type: 'textarea', placeholder: 'Tipo, frequência, duração', section: 'Hábitos' },
         { id: 'hab_alimentacao', label: 'Alimentação', type: 'textarea', placeholder: 'Padrão alimentar, restrições, dietas...', section: 'Hábitos' },
-        { id: 'hab_drogas', label: 'Uso de Drogas Ilícitas', type: 'select', options: ['Nunca usou', 'Já usou (passado)', 'Uso atual'], section: 'Hábitos' },
-        { id: 'hab_drogas_detalhe', label: 'Detalhes (se aplicável)', type: 'text', placeholder: 'Substância e frequência', section: 'Hábitos' },
-        { id: 'hab_sono', label: 'Padrão de Sono', type: 'select', options: ['Bom (7-9h)', 'Insônia', 'Sono fragmentado', 'Sono excessivo', 'Apneia do sono'], section: 'Hábitos' },
-        { id: 'hab_sono_detalhe', label: 'Detalhes do Sono', type: 'text', placeholder: 'Horas de sono, uso de medicação para dormir...', section: 'Hábitos' },
+        { id: 'hab_drogas', label: 'Uso de drogas', type: 'textarea', placeholder: 'Substância e frequência', section: 'Hábitos' },
+        { id: 'hab_sono', label: 'Padrão de sono', type: 'textarea', placeholder: 'Horas de sono, qualidade, uso de medicação...', section: 'Hábitos' },
       ],
     },
 
-    // ── 9. HISTÓRIA GINECOLÓGICA/OBSTÉTRICA ───────────────────────
+    // ── 8. HISTÓRIA GINECOLÓGICA/OBSTÉTRICA ───────────────────────
     {
       id: 'historia_ginecologica',
-      titulo: '9. História Ginecológica/Obstétrica',
+      titulo: '8. História Ginecológica/Obstétrica',
       descricao: 'Quando aplicável',
       icon: 'Baby',
       legacyColumn: 'historia_ginecologica',
       campos: [
-        { id: 'gin_aplicavel', label: 'Aplicável ao paciente?', type: 'radio', options: ['Sim', 'Não'], section: 'Ginecológica' },
-        { id: 'gin_menarca', label: 'Menarca (idade)', type: 'text', placeholder: 'Idade da primeira menstruação', section: 'Ginecológica' },
-        { id: 'gin_ciclo', label: 'Ciclo Menstrual', type: 'select', options: ['Regular', 'Irregular', 'Amenorreia', 'Menopausa', 'Não se aplica'], section: 'Ginecológica' },
-        { id: 'gin_gestacoes', label: 'Gestações (G/P/A)', type: 'text', placeholder: 'Ex: G2P2A0 (2 gestações, 2 partos, 0 abortos)', section: 'Ginecológica' },
-        { id: 'gin_dum', label: 'Data da Última Menstruação (DUM)', type: 'date', section: 'Ginecológica' },
-        { id: 'gin_contraceptivo', label: 'Método Contraceptivo', type: 'select', options: ['Nenhum', 'ACO (pílula)', 'DIU cobre', 'DIU hormonal', 'Implante', 'Preservativo', 'Laqueadura', 'Vasectomia', 'Outro'], section: 'Ginecológica' },
+        { id: 'gin_menarca', label: 'Menarca', type: 'text', placeholder: 'Idade da primeira menstruação', section: 'Ginecológica' },
+        { id: 'gin_ciclo', label: 'Ciclo menstrual', type: 'text', placeholder: 'Regular, irregular, amenorreia...', section: 'Ginecológica' },
+        { id: 'gin_gestacoes', label: 'Gestações', type: 'number', placeholder: 'Número de gestações', section: 'Ginecológica' },
+        { id: 'gin_abortos', label: 'Abortos', type: 'number', placeholder: 'Número de abortos', section: 'Ginecológica' },
+        { id: 'gin_dum', label: 'Última menstruação', type: 'date', section: 'Ginecológica' },
+        { id: 'gin_contraceptivo', label: 'Método contraceptivo', type: 'text', placeholder: 'ACO, DIU, preservativo, nenhum...', section: 'Ginecológica' },
       ],
     },
 
-    // ── 10. REVISÃO DE SISTEMAS (ROS) ─────────────────────────────
+    // ── 9. REVISÃO DE SISTEMAS (ROS) ─────────────────────────────
     {
       id: 'revisao_sistemas',
-      titulo: '10. Revisão de Sistemas (ROS)',
+      titulo: '9. Revisão de Sistemas (ROS)',
       descricao: 'Investigação ativa por sistemas',
       icon: 'LayoutList',
       legacyColumn: 'revisao_sistemas',
@@ -213,19 +191,6 @@ export const ANAMNESE_CLINICA_GERAL_TEMPLATE: TemplateAnamneseClinicaGeral = {
         { id: 'ros_musculoesqueletico', label: 'Musculoesquelético', type: 'textarea', placeholder: 'Artralgia, mialgia, rigidez, limitação de movimento...', section: 'ROS' },
         { id: 'ros_dermatologico', label: 'Dermatológico', type: 'textarea', placeholder: 'Lesões de pele, prurido, alterações ungueais/capilares...', section: 'ROS' },
         { id: 'ros_psiquiatrico', label: 'Psiquiátrico', type: 'textarea', placeholder: 'Humor, ansiedade, insônia, ideação suicida...', section: 'ROS' },
-      ],
-    },
-
-    // ── DADOS ANTROPOMÉTRICOS (IMC automático) ────────────────────
-    {
-      id: 'dados_antropometricos',
-      titulo: 'Dados Antropométricos',
-      descricao: 'Peso, altura e IMC (calculado automaticamente)',
-      icon: 'Ruler',
-      campos: [
-        { id: 'peso_kg', label: 'Peso (kg)', type: 'number', placeholder: 'Ex: 72.5', section: 'Antropometria' },
-        { id: 'altura_cm', label: 'Altura (cm)', type: 'number', placeholder: 'Ex: 175', section: 'Antropometria' },
-        // IMC is calculated automatically, not a user input
       ],
     },
   ],
@@ -275,13 +240,12 @@ export function mapStructuredToLegacy(data: Record<string, unknown>): Record<str
     hda_evolucao: 'Evolução', hda_sintomas_associados: 'Sintomas associados',
     hda_tratamentos_previos: 'Tratamentos prévios', hda_impacto_funcional: 'Impacto funcional',
   };
-  const hdaParts = hdaFields.filter(f => data[f]).map(f => `${hdaLabels[f]}: ${data[f]}`);
+  const hdaParts = hdaFields.filter(f => data[f] !== undefined && data[f] !== null && data[f] !== '').map(f => `${hdaLabels[f]}: ${data[f]}`);
   if (hdaParts.length > 0) legacy.historia_doenca_atual = hdaParts.join('\n');
 
   // HPP
   const hppParts: string[] = [];
-  if (data.hpp_doencas_previas) hppParts.push(`Doenças: ${(data.hpp_doencas_previas as string[]).join(', ')}`);
-  if (data.hpp_doencas_obs) hppParts.push(String(data.hpp_doencas_obs));
+  if (data.hpp_doencas_previas) hppParts.push(`Doenças: ${data.hpp_doencas_previas}`);
   if (data.hpp_internacoes) hppParts.push(`Internações: ${data.hpp_internacoes}`);
   if (data.hpp_cirurgias) hppParts.push(`Cirurgias: ${data.hpp_cirurgias}`);
   if (data.hpp_transfusoes) hppParts.push(`Transfusões: ${data.hpp_transfusoes}`);
@@ -290,8 +254,9 @@ export function mapStructuredToLegacy(data: Record<string, unknown>): Record<str
 
   // HF
   const hfParts: string[] = [];
-  if (data.hf_doencas) hfParts.push(`Doenças familiares: ${(data.hf_doencas as string[]).join(', ')}`);
-  if (data.hf_detalhes) hfParts.push(String(data.hf_detalhes));
+  if (data.hf_doencas_hereditarias) hfParts.push(`Hereditárias: ${data.hf_doencas_hereditarias}`);
+  if (data.hf_has_dm_cancer) hfParts.push(`HAS/DM/Câncer/Cardio: ${data.hf_has_dm_cancer}`);
+  if (data.hf_obitos) hfParts.push(`Óbitos: ${data.hf_obitos}`);
   if (hfParts.length > 0) legacy.antecedentes_familiares = hfParts.join('\n');
 
   // Medicamentos
@@ -305,17 +270,17 @@ export function mapStructuredToLegacy(data: Record<string, unknown>): Record<str
   if (data.alergias_medicamentosas) alParts.push(`Medicamentosas: ${data.alergias_medicamentosas}`);
   if (data.alergias_alimentares) alParts.push(`Alimentares: ${data.alergias_alimentares}`);
   if (data.alergias_ambientais) alParts.push(`Ambientais: ${data.alergias_ambientais}`);
-  if (data.alergias_reacao) alParts.push(`Reações: ${(data.alergias_reacao as string[]).join(', ')}`);
+  if (data.alergias_reacao) alParts.push(`Reação: ${data.alergias_reacao}`);
   if (alParts.length > 0) legacy.alergias = alParts.join('\n');
 
   // Hábitos
   const habParts: string[] = [];
-  if (data.hab_tabagismo) habParts.push(`Tabagismo: ${data.hab_tabagismo}${data.hab_tabagismo_carga ? ` (${data.hab_tabagismo_carga})` : ''}`);
-  if (data.hab_etilismo) habParts.push(`Etilismo: ${data.hab_etilismo}${data.hab_etilismo_detalhe ? ` (${data.hab_etilismo_detalhe})` : ''}`);
-  if (data.hab_atividade_fisica) habParts.push(`Atividade física: ${data.hab_atividade_fisica}${data.hab_atividade_tipo ? ` - ${data.hab_atividade_tipo}` : ''}`);
+  if (data.hab_tabagismo) habParts.push(`Tabagismo: ${data.hab_tabagismo}`);
+  if (data.hab_etilismo) habParts.push(`Etilismo: ${data.hab_etilismo}`);
+  if (data.hab_atividade_fisica) habParts.push(`Atividade física: ${data.hab_atividade_fisica}`);
   if (data.hab_alimentacao) habParts.push(`Alimentação: ${data.hab_alimentacao}`);
-  if (data.hab_drogas) habParts.push(`Drogas: ${data.hab_drogas}${data.hab_drogas_detalhe ? ` (${data.hab_drogas_detalhe})` : ''}`);
-  if (data.hab_sono) habParts.push(`Sono: ${data.hab_sono}${data.hab_sono_detalhe ? ` (${data.hab_sono_detalhe})` : ''}`);
+  if (data.hab_drogas) habParts.push(`Drogas: ${data.hab_drogas}`);
+  if (data.hab_sono) habParts.push(`Sono: ${data.hab_sono}`);
   if (habParts.length > 0) legacy.habitos_vida = habParts.join('\n');
 
   return legacy;

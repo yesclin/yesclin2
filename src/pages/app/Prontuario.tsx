@@ -92,6 +92,8 @@ import {
 import { useActiveSpecialty } from "@/hooks/prontuario/useActiveSpecialty";
 import { isTabVisibleForSpecialty, getClinicalBlockLabel, type ClinicalBlockKey } from "@/hooks/prontuario/specialtyTabsConfig";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
+import { useProntuarioPrint } from "@/hooks/prontuario/useProntuarioPrint";
+import { useClinicData } from "@/hooks/useClinicData";
 import { PatientHeader } from "@/components/prontuario/PatientHeader";
 import { ProntuarioHeader } from "@/components/prontuario/ProntuarioHeader";
 import { ProntuarioSearchBar, type SearchResult } from "@/components/prontuario/ProntuarioSearchBar";
@@ -452,6 +454,10 @@ export default function Prontuario() {
     getEntriesForTab,
     getFilesForTab,
   } = useProntuarioData(patientId);
+
+  // Print & Export
+  const { handlePrint, handleExport, printing, exporting } = useProntuarioPrint();
+  const { clinic, getFormattedAddress } = useClinicData();
 
   // LGPD Enforcement and Feature Flags
   const {
@@ -2069,6 +2075,43 @@ export default function Prontuario() {
     return success;
   };
 
+  // Print handler
+  const onPrintClick = useCallback(() => {
+    if (!patient || !clinic) return;
+    handlePrint({
+      clinic: {
+        name: clinic.name,
+        phone: clinic.phone,
+        email: clinic.email,
+        address: getFormattedAddress() || undefined,
+        cnpj: clinic.cnpj,
+      },
+      patient: {
+        full_name: patient.full_name,
+        birth_date: patient.birth_date,
+        gender: patient.gender,
+        phone: patient.phone,
+      },
+      appointment: activeAppointment ? {
+        id: activeAppointment.id,
+        scheduled_date: new Date().toISOString(),
+        specialty_name: activeSpecialty?.name,
+      } : undefined,
+      anamnese: currentAnamnese as unknown as Record<string, unknown> | null,
+      exameFisico: examesFisicos as unknown as Array<Record<string, unknown>>,
+      diagnosticos: diagnosticos as unknown as Array<Record<string, unknown>>,
+      condutas: condutas as unknown as Array<Record<string, unknown>>,
+      evolucoes: evolucoes as unknown as Array<Record<string, unknown>>,
+      prescricoes: prescricoes as unknown as Array<Record<string, unknown>>,
+    });
+  }, [patient, clinic, activeAppointment, activeSpecialty, currentAnamnese, examesFisicos, diagnosticos, condutas, evolucoes, prescricoes, handlePrint, getFormattedAddress]);
+
+  // Export handler
+  const onExportClick = useCallback(() => {
+    if (!patientId || !patient) return;
+    handleExport(patientId, activeAppointment?.id, patient.full_name);
+  }, [patientId, patient, activeAppointment, handleExport]);
+
   return (
     <ClinicalAccessGuard>
     <div className="flex flex-col h-full relative">
@@ -2128,6 +2171,9 @@ export default function Prontuario() {
         isAdmin={isAdmin}
         canPrint={canPerformAction('print_record')}
         canExport={canPerformAction('export_pdf')}
+        onPrint={onPrintClick}
+        onExport={onExportClick}
+        exporting={exporting}
       />
 
       {/* Barra de Pesquisa Global */}

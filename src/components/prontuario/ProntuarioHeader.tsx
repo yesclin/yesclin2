@@ -60,6 +60,9 @@ interface ProntuarioHeaderProps {
   isAdmin?: boolean;
   canPrint?: boolean;
   canExport?: boolean;
+  onPrint?: () => void;
+  onExport?: () => void;
+  exporting?: boolean;
   className?: string;
 }
 
@@ -87,6 +90,9 @@ export function ProntuarioHeader({
   isAdmin = false,
   canPrint = true,
   canExport = true,
+  onPrint,
+  onExport,
+  exporting = false,
   className,
 }: ProntuarioHeaderProps) {
   const isMobile = useIsMobile();
@@ -189,13 +195,13 @@ export function ProntuarioHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem disabled={!canPrint}>
+              <DropdownMenuItem disabled={!canPrint} onClick={onPrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={!canExport}>
+              <DropdownMenuItem disabled={!canExport || exporting} onClick={onExport}>
                 <Download className="h-4 w-4 mr-2" />
-                Exportar
+                {exporting ? 'Exportando...' : 'Exportar PDF'}
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/app/config/prontuario" className="flex items-center">
@@ -353,6 +359,7 @@ export function ProntuarioHeader({
                   size="sm" 
                   className="h-8 px-2.5"
                   disabled={!canPrint}
+                  onClick={onPrint}
                 >
                   <Printer className="h-4 w-4" />
                   <span className="hidden sm:inline ml-1.5">Imprimir</span>
@@ -371,10 +378,11 @@ export function ProntuarioHeader({
                   variant="outline" 
                   size="sm" 
                   className="h-8 px-2.5"
-                  disabled={!canExport}
+                  disabled={!canExport || exporting}
+                  onClick={onExport}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1.5">Exportar</span>
+                  <span className="hidden sm:inline ml-1.5">{exporting ? 'Exportando...' : 'Exportar PDF'}</span>
                 </Button>
               </TooltipTrigger>
               {!canExport && (

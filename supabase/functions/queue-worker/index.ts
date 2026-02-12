@@ -92,9 +92,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      await supabase.from("message_queue")
-        .update({ status: "processing" })
-        .eq("id", msg.id);
+      // "processing" is not a valid status in the check constraint; skip intermediate update
 
       const messageText = msg.rendered_message || msg.message_body;
 

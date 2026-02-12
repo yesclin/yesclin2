@@ -21,10 +21,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "@/hooks/useClinicData";
 import { toast } from "sonner";
 
-interface ZApiIntegration {
+interface EvolutionIntegration {
   id: string;
   clinic_id: string;
   provider: string;
+  api_url: string | null;
   base_url: string | null;
   instance_id: string | null;
   access_token: string | null;
@@ -34,13 +35,13 @@ interface ZApiIntegration {
 
 export default function MarketingConfigWhatsApp() {
   const { clinic } = useClinicData();
-  const [integration, setIntegration] = useState<ZApiIntegration | null>(null);
+  const [integration, setIntegration] = useState<EvolutionIntegration | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const [baseUrl, setBaseUrl] = useState("");
+  const [apiUrl, setApiUrl] = useState("");
   const [instanceId, setInstanceId] = useState("");
   const [token, setToken] = useState("");
   const [testPhone, setTestPhone] = useState("");
@@ -58,19 +59,18 @@ export default function MarketingConfigWhatsApp() {
         .select("*")
         .eq("clinic_id", clinic.id)
         .eq("channel", "whatsapp")
-        .eq("provider", "z-api")
         .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
-        setIntegration(data as ZApiIntegration);
-        setBaseUrl(data.base_url || "");
+        setIntegration(data as EvolutionIntegration);
+        setApiUrl(data.api_url || data.base_url || "");
         setInstanceId(data.instance_id || "");
         setToken(data.access_token || "");
       }
     } catch (err) {
-      console.error("Error fetching Z-API integration:", err);
+      console.error("Error fetching Evolution API integration:", err);
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function MarketingConfigWhatsApp() {
 
   const handleSave = async () => {
     if (!clinic?.id) return;
-    if (!baseUrl || !instanceId || !token) {
+    if (!apiUrl || !instanceId || !token) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -88,11 +88,11 @@ export default function MarketingConfigWhatsApp() {
       const payload = {
         clinic_id: clinic.id,
         channel: "whatsapp",
-        provider: "z-api",
-        base_url: baseUrl.replace(/\/$/, ""),
+        provider: "evolution-api",
+        api_url: apiUrl.replace(/\/$/, ""),
+        base_url: apiUrl.replace(/\/$/, ""),
         instance_id: instanceId,
         access_token: token,
-        api_url: baseUrl.replace(/\/$/, ""),
         status: "active",
       };
 
@@ -109,10 +109,10 @@ export default function MarketingConfigWhatsApp() {
         if (error) throw error;
       }
 
-      toast.success("Integração Z-API salva e ativada com sucesso!");
+      toast.success("Integração Evolution API salva e ativada com sucesso!");
       await fetchIntegration();
     } catch (err: any) {
-      console.error("Error saving Z-API:", err);
+      console.error("Error saving Evolution API:", err);
       toast.error("Erro ao salvar: " + (err.message || "Erro desconhecido"));
     } finally {
       setSaving(false);
@@ -133,7 +133,7 @@ export default function MarketingConfigWhatsApp() {
         body: {
           clinic_id: clinic.id,
           phone: testPhone,
-          message: "✅ Teste de conexão YesClin via Z-API — mensagem recebida com sucesso!",
+          message: "✅ Teste de conexão YesClin via Evolution API — mensagem recebida com sucesso!",
         },
       });
 
@@ -172,8 +172,8 @@ export default function MarketingConfigWhatsApp() {
         })
         .eq("id", integration.id);
       if (error) throw error;
-      toast.success("Z-API desconectado");
-      setBaseUrl("");
+      toast.success("Evolution API desconectado");
+      setApiUrl("");
       setInstanceId("");
       setToken("");
       await fetchIntegration();
@@ -207,8 +207,8 @@ export default function MarketingConfigWhatsApp() {
                 <MessageCircle className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <CardTitle>WhatsApp via Z-API</CardTitle>
-                <CardDescription>Configure sua instância Z-API para envio de mensagens</CardDescription>
+                <CardTitle>WhatsApp via Evolution API</CardTitle>
+                <CardDescription>Configure sua instância Evolution API para envio de mensagens</CardDescription>
               </div>
             </div>
             <Badge
@@ -228,46 +228,49 @@ export default function MarketingConfigWhatsApp() {
           {/* Form Fields */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="base_url">Base URL da Z-API *</Label>
+              <Label htmlFor="api_url">URL da Evolution API *</Label>
               <Input
-                id="base_url"
-                placeholder="https://api.z-api.io"
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
+                id="api_url"
+                placeholder="https://sua-evolution-api.com"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                URL base da sua instância Z-API (ex: https://api.z-api.io)
+                URL base da sua instância Evolution API (ex: https://api.seudominio.com)
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="instance_id">Instance ID *</Label>
+              <Label htmlFor="instance_id">Nome da Instância *</Label>
               <Input
                 id="instance_id"
-                placeholder="Seu Instance ID"
+                placeholder="Nome da sua instância"
                 value={instanceId}
                 onChange={(e) => setInstanceId(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Nome da instância criada na Evolution API
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="token">Token *</Label>
+              <Label htmlFor="token">API Key *</Label>
               <Input
                 id="token"
                 type="password"
-                placeholder="Seu Token Z-API"
+                placeholder="Sua API Key da Evolution API"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
               />
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Shield className="h-3 w-3" />
-                O token é armazenado de forma segura e nunca exposto no frontend.
+                A API Key é armazenada de forma segura e nunca exposta no frontend.
               </p>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={handleSave} disabled={saving || !baseUrl || !instanceId || !token}>
+            <Button onClick={handleSave} disabled={saving || !apiUrl || !instanceId || !token}>
               {saving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (

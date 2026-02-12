@@ -34,7 +34,7 @@ export function WhatsAppStatus() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-green-600" />
-            WhatsApp via Z-API
+            WhatsApp via Evolution API
           </CardTitle>
           <Badge 
             variant={status === 'active' ? "default" : status === 'invalid' ? "destructive" : "secondary"}
@@ -55,9 +55,9 @@ export function WhatsAppStatus() {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
               <div>
-                <p className="font-medium text-sm">Número Conectado</p>
+                <p className="font-medium text-sm">Instância Conectada</p>
                 <p className="text-lg font-bold text-green-700 dark:text-green-400">
-                  {integration?.display_phone_number || 'Número configurado'}
+                  {integration?.display_phone_number || integration?.instance_id || 'Configurado'}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate('/app/marketing?tab=whatsapp')}>
@@ -72,7 +72,7 @@ export function WhatsAppStatus() {
               <MessageCircle className="h-8 w-8 text-muted-foreground" />
             </div>
             
-            <h3 className="font-medium mb-2">Conecte seu WhatsApp via Z-API</h3>
+            <h3 className="font-medium mb-2">Conecte seu WhatsApp via Evolution API</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
               Automatize confirmações, lembretes e campanhas diretamente pelo WhatsApp da sua clínica.
             </p>
@@ -84,7 +84,7 @@ export function WhatsAppStatus() {
             
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              <span>Integração via Z-API — isolamento por clínica</span>
+              <span>Integração via Evolution API — isolamento por clínica</span>
             </div>
           </div>
         )}

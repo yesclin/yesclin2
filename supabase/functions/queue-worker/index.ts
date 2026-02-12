@@ -6,8 +6,9 @@ const corsHeaders = {
 };
 
 async function sendViaEvolution(integration: any, phone: string, message: string) {
-  const { api_url, instance_id, access_token } = integration;
-  const url = `${api_url}/message/sendText/${instance_id}`;
+  const apiUrl = (integration.api_url || integration.base_url || "").replace(/\/$/, "");
+  const { instance_id, access_token } = integration;
+  const url = `${apiUrl}/message/sendText/${instance_id}`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "apikey": access_token },
@@ -15,26 +16,6 @@ async function sendViaEvolution(integration: any, phone: string, message: string
   });
   const body = await response.json().catch(() => ({}));
   return { ok: response.ok, status: response.status, body };
-}
-
-async function sendViaZApi(integration: any, phone: string, message: string) {
-  const baseUrl = (integration.base_url || integration.api_url || "").replace(/\/$/, "");
-  const { instance_id, access_token } = integration;
-  const url = `${baseUrl}/instances/${instance_id}/token/${access_token}/send-text`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, message }),
-  });
-  const body = await response.json().catch(() => ({}));
-  return { ok: response.ok, status: response.status, body };
-}
-
-async function sendMessage(integration: any, phone: string, message: string) {
-  if (integration.provider === "z-api") {
-    return sendViaZApi(integration, phone, message);
-  }
-  return sendViaEvolution(integration, phone, message);
 }
 
 Deno.serve(async (req) => {
@@ -92,12 +73,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // "processing" is not a valid status in the check constraint; skip intermediate update
-
       const messageText = msg.rendered_message || msg.message_body;
 
       try {
-        const result = await sendMessage(integration, msg.phone, messageText);
+        const result = await sendViaEvolution(integration, msg.phone, messageText);
         const newAttempts = (msg.attempts || 0) + 1;
 
         if (result.ok) {

@@ -25,12 +25,11 @@ import {
   Unplug,
   Eye,
   EyeOff,
-  ExternalLink,
   Shield,
   Mail,
   Smartphone,
 } from "lucide-react";
-import { useWhatsAppIntegration, type EvolutionApiFormData } from "@/hooks/useWhatsAppIntegration";
+import { useWhatsAppIntegration, type ZApiFormData } from "@/hooks/useWhatsAppIntegration";
 
 export default function ConfigIntegracoes() {
   return (
@@ -59,18 +58,18 @@ export default function ConfigIntegracoes() {
         </TabsList>
 
         <TabsContent value="whatsapp">
-          <EvolutionApiConfigCard />
+          <ZApiConfigCard />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function EvolutionApiConfigCard() {
+function ZApiConfigCard() {
   const { integration, loading, saving, saveIntegration, disconnectIntegration, isConfigured } = useWhatsAppIntegration();
   const [showToken, setShowToken] = useState(false);
-  const [form, setForm] = useState<EvolutionApiFormData>({
-    api_url: '',
+  const [form, setForm] = useState<ZApiFormData>({
+    base_url: '',
     instance_id: '',
     access_token: '',
     display_phone_number: '',
@@ -79,7 +78,7 @@ function EvolutionApiConfigCard() {
 
   if (integration && !formInitialized) {
     setForm({
-      api_url: integration.api_url || '',
+      base_url: integration.base_url || '',
       instance_id: integration.instance_id || '',
       access_token: integration.access_token || '',
       display_phone_number: integration.display_phone_number || '',
@@ -123,8 +122,8 @@ function EvolutionApiConfigCard() {
               <MessageCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <CardTitle>WhatsApp via Evolution API</CardTitle>
-              <CardDescription>Integração com Evolution API — envio automatizado de mensagens</CardDescription>
+              <CardTitle>WhatsApp via Z-API</CardTitle>
+              <CardDescription>Integração com Z-API — envio automatizado de mensagens</CardDescription>
             </div>
           </div>
           {statusBadge()}
@@ -133,7 +132,6 @@ function EvolutionApiConfigCard() {
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Info banner */}
           <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border">
             <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div className="text-sm text-muted-foreground">
@@ -143,7 +141,6 @@ function EvolutionApiConfigCard() {
             </div>
           </div>
 
-          {/* Display Phone */}
           <div className="space-y-2">
             <Label htmlFor="display_phone">Número de Exibição</Label>
             <Input
@@ -155,45 +152,36 @@ function EvolutionApiConfigCard() {
             <p className="text-xs text-muted-foreground">O número que será exibido para os pacientes</p>
           </div>
 
-          {/* API URL */}
           <div className="space-y-2">
-            <Label htmlFor="api_url">URL da Evolution API</Label>
+            <Label htmlFor="base_url">Base URL da Z-API</Label>
             <Input
-              id="api_url"
-              placeholder="https://sua-evolution-api.com"
-              value={form.api_url}
-              onChange={(e) => setForm({ ...form, api_url: e.target.value })}
+              id="base_url"
+              placeholder="https://api.z-api.io"
+              value={form.base_url}
+              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              URL base da sua instância Evolution API (ex: https://api.seudominio.com)
+              URL base da sua instância Z-API (ex: https://api.z-api.io)
             </p>
           </div>
 
-          {/* Instance ID */}
           <div className="space-y-2">
-            <Label htmlFor="instance_id">Nome da Instância</Label>
+            <Label htmlFor="instance_id">Instance ID</Label>
             <Input
               id="instance_id"
-              placeholder="Ex: minha-clinica"
+              placeholder="Seu Instance ID"
               value={form.instance_id}
               onChange={(e) => setForm({ ...form, instance_id: e.target.value })}
             />
-            <p className="text-xs text-muted-foreground">
-              Nome da instância configurada na{' '}
-              <a href="https://doc.evolution-api.com" target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
-                Evolution API <ExternalLink className="h-3 w-3" />
-              </a>
-            </p>
           </div>
 
-          {/* API Key */}
           <div className="space-y-2">
-            <Label htmlFor="access_token">API Key</Label>
+            <Label htmlFor="access_token">Token</Label>
             <div className="relative">
               <Input
                 id="access_token"
                 type={showToken ? "text" : "password"}
-                placeholder="Chave de API da Evolution"
+                placeholder="Seu Token Z-API"
                 value={form.access_token}
                 onChange={(e) => setForm({ ...form, access_token: e.target.value })}
                 className="pr-10"
@@ -209,11 +197,10 @@ function EvolutionApiConfigCard() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              API Key global ou da instância na Evolution API
+              Token de autenticação da sua instância Z-API
             </p>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3 pt-2">
             <Button type="submit" disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
@@ -246,7 +233,6 @@ function EvolutionApiConfigCard() {
             )}
           </div>
 
-          {/* Not configured warning */}
           {!isConfigured && (
             <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />

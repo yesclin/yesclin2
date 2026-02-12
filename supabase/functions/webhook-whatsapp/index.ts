@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // Extract clinic_id from query params
     const url = new URL(req.url);
     const clinicId = url.searchParams.get("clinic_id");
 
@@ -28,55 +27,60 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    console.log("Webhook received for clinic:", clinicId, JSON.stringify(payload));
+    console.log("Z-API Webhook received for clinic:", clinicId, JSON.stringify(payload));
 
-    // Evolution API webhook payload structure
-    const event = payload.event;
-    const data = payload.data;
+    // Z-API sends different event structures
+    // Status update: { phone, zapiMessageId, status, ... }
+    // Message received: { phone, text, messageId, ... }
+    const zapiMessageId = payload.zapiMessageId || payload.ids?.zapiMessageId || payload.messageId;
+    const status = payload.status;
 
-    if (!event || !data) {
+    if (!zapiMessageId && !status) {
       return new Response(
-        JSON.stringify({ received: true, action: "ignored", reason: "no event or data" }),
+        JSON.stringify({ received: true, action: "ignored", reason: "no messageId or status" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Handle message status updates
-    if (event === "messages.update" || event === "message.update") {
-      const remoteJid = data.remoteJid || data.key?.remoteJid;
-      const messageId = data.id || data.key?.id;
-      const status = mapEvolutionStatus(data.status || data.messageStatus);
+    // Handle message status updates from Z-API
+    if (status) {
+      const mappedStatus = mapZApiStatus(status);
 
-      if (messageId && status) {
-        // Update message_logs by external_id
+      if (zapiMessageId && mappedStatus) {
+        // Find message_log by external_id
         const { data: logs } = await supabase
           .from("message_logs")
           .select("id, status")
           .eq("clinic_id", clinicId)
-          .eq("external_id", messageId)
+          .eq("external_id", zapiMessageId)
           .limit(1);
 
         if (logs && logs.length > 0) {
           const log = logs[0];
-          // Only update if status progresses forward
-          if (shouldUpdateStatus(log.status, status)) {
-            await supabase.from("message_logs").update({
-              status,
+          if (shouldUpdateStatus(log.status, mappedStatus)) {
+            const updatePayload: Record<string, unknown> = {
+              status: mappedStatus,
               status_updated_at: new Date().toISOString(),
               provider_response: payload,
-            }).eq("id", log.id);
+            };
 
-            // Also update the queue item if it exists
+            if (mappedStatus === "sent") {
+              updatePayload.sent_at = new Date().toISOString();
+            }
+
+            await supabase.from("message_logs").update(updatePayload).eq("id", log.id);
+
+            // Also update queue item if exists
             const { data: queueItems } = await supabase
               .from("message_queue")
               .select("id")
               .eq("clinic_id", clinicId)
-              .eq("provider_response->>key->>id", messageId)
+              .eq("external_id", zapiMessageId)
               .limit(1);
 
             if (queueItems && queueItems.length > 0) {
               await supabase.from("message_queue").update({
-                status: status === "delivered" || status === "read" ? "sent" : status,
+                status: mappedStatus === "delivered" || mappedStatus === "read" ? "sent" : mappedStatus,
                 provider_response: payload,
               }).eq("id", queueItems[0].id);
             }
@@ -85,15 +89,13 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ received: true, action: "status_updated", status }),
+        JSON.stringify({ received: true, action: "status_updated", status: mapZApiStatus(status) }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Handle other events (messages.upsert = incoming messages, etc.)
-    // For now, just acknowledge
     return new Response(
-      JSON.stringify({ received: true, event, action: "acknowledged" }),
+      JSON.stringify({ received: true, action: "acknowledged" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
@@ -105,24 +107,28 @@ Deno.serve(async (req) => {
   }
 });
 
-function mapEvolutionStatus(status: string | number): string | null {
-  // Evolution API status codes
+function mapZApiStatus(status: string): string | null {
   const statusMap: Record<string, string> = {
+    // Z-API status values
     "PENDING": "pending",
-    "SERVER_ACK": "sent",
-    "DELIVERY_ACK": "delivered",
+    "SENT": "sent",
+    "RECEIVED": "delivered",
     "READ": "read",
     "PLAYED": "read",
+    "FAILED": "failed",
     "ERROR": "failed",
-    "1": "pending",
-    "2": "sent",
-    "3": "delivered",
-    "4": "read",
-    "5": "read",
+    "DELETED": "failed",
+    // Lowercase variants
+    "pending": "pending",
+    "sent": "sent",
+    "received": "delivered",
+    "read": "read",
+    "played": "read",
+    "failed": "failed",
+    "error": "failed",
   };
-  
-  const key = String(status).toUpperCase();
-  return statusMap[key] || null;
+
+  return statusMap[status] || null;
 }
 
 function shouldUpdateStatus(current: string, incoming: string): boolean {
@@ -133,9 +139,7 @@ function shouldUpdateStatus(current: string, incoming: string): boolean {
     read: 3,
     failed: -1,
   };
-  
-  // Failed can always be set
+
   if (incoming === "failed") return true;
-  // Otherwise only progress forward
   return (order[incoming] ?? 0) > (order[current] ?? 0);
 }

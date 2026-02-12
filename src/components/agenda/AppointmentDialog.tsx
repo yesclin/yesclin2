@@ -245,6 +245,19 @@ export function AppointmentDialog({
     }
   }, [watchProfessionalId, availableSpecialties, form]);
 
+  // Clear procedure when specialty changes and current procedure doesn't match
+  useEffect(() => {
+    if (!watchSpecialtyId) return;
+    const currentProcId = form.getValues("procedure_id");
+    if (currentProcId && currentProcId !== "none") {
+      const proc = procedures.find(p => p.id === currentProcId);
+      if (proc && proc.specialty_id && proc.specialty_id !== watchSpecialtyId) {
+        form.setValue("procedure_id", "");
+        setSelectedProcedure(null);
+      }
+    }
+  }, [watchSpecialtyId, procedures, form]);
+
   // Auto-fill duration, price, and specialty when procedure is selected
   useEffect(() => {
     if (watchProcedureId && watchProcedureId !== "none") {
@@ -472,7 +485,9 @@ export function AppointmentDialog({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">Nenhum procedimento</SelectItem>
-                        {procedures.map((proc) => (
+                        {procedures
+                          .filter(proc => !watchSpecialtyId || proc.specialty_id === watchSpecialtyId)
+                          .map((proc) => (
                           <SelectItem key={proc.id} value={proc.id}>
                             <div className="flex items-center justify-between gap-4 w-full">
                               <span>{proc.name}</span>

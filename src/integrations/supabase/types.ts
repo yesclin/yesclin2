@@ -960,6 +960,7 @@ export type Database = {
       clinic_channel_integrations: {
         Row: {
           access_token: string | null
+          api_url: string | null
           base_url: string | null
           business_account_id: string | null
           channel: string
@@ -976,6 +977,7 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          api_url?: string | null
           base_url?: string | null
           business_account_id?: string | null
           channel?: string
@@ -992,6 +994,7 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          api_url?: string | null
           base_url?: string | null
           business_account_id?: string | null
           channel?: string
@@ -4079,6 +4082,7 @@ export type Database = {
       }
       message_logs: {
         Row: {
+          appointment_id: string | null
           automation_rule_id: string | null
           campaign_id: string | null
           channel: string
@@ -4093,12 +4097,16 @@ export type Database = {
           message_type: string
           metadata: Json | null
           patient_id: string
+          phone: string | null
+          provider_response: Json | null
+          sent_at: string | null
           sent_by: string | null
           status: string
           status_updated_at: string | null
           template_id: string | null
         }
         Insert: {
+          appointment_id?: string | null
           automation_rule_id?: string | null
           campaign_id?: string | null
           channel: string
@@ -4113,12 +4121,16 @@ export type Database = {
           message_type: string
           metadata?: Json | null
           patient_id: string
+          phone?: string | null
+          provider_response?: Json | null
+          sent_at?: string | null
           sent_by?: string | null
           status?: string
           status_updated_at?: string | null
           template_id?: string | null
         }
         Update: {
+          appointment_id?: string | null
           automation_rule_id?: string | null
           campaign_id?: string | null
           channel?: string
@@ -4133,12 +4145,22 @@ export type Database = {
           message_type?: string
           metadata?: Json | null
           patient_id?: string
+          phone?: string | null
+          provider_response?: Json | null
+          sent_at?: string | null
           sent_by?: string | null
           status?: string
           status_updated_at?: string | null
           template_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "message_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "message_logs_automation_rule_id_fkey"
             columns: ["automation_rule_id"]
@@ -4185,6 +4207,7 @@ export type Database = {
       }
       message_queue: {
         Row: {
+          appointment_id: string | null
           attempts: number
           automation_rule_id: string | null
           channel: string
@@ -4198,11 +4221,15 @@ export type Database = {
           patient_id: string | null
           phone: string
           provider_response: Json | null
+          rendered_message: string | null
+          scheduled_for: string | null
           sent_at: string | null
           status: string
+          template_id: string | null
           updated_at: string
         }
         Insert: {
+          appointment_id?: string | null
           attempts?: number
           automation_rule_id?: string | null
           channel?: string
@@ -4216,11 +4243,15 @@ export type Database = {
           patient_id?: string | null
           phone: string
           provider_response?: Json | null
+          rendered_message?: string | null
+          scheduled_for?: string | null
           sent_at?: string | null
           status?: string
+          template_id?: string | null
           updated_at?: string
         }
         Update: {
+          appointment_id?: string | null
           attempts?: number
           automation_rule_id?: string | null
           channel?: string
@@ -4234,11 +4265,21 @@ export type Database = {
           patient_id?: string | null
           phone?: string
           provider_response?: Json | null
+          rendered_message?: string | null
+          scheduled_for?: string | null
           sent_at?: string | null
           status?: string
+          template_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "message_queue_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "message_queue_automation_rule_id_fkey"
             columns: ["automation_rule_id"]
@@ -4258,6 +4299,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
             referencedColumns: ["id"]
           },
         ]

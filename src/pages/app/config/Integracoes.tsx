@@ -30,7 +30,7 @@ import {
   Mail,
   Smartphone,
 } from "lucide-react";
-import { useWhatsAppIntegration, type ZApiFormData } from "@/hooks/useWhatsAppIntegration";
+import { useWhatsAppIntegration, type EvolutionApiFormData } from "@/hooks/useWhatsAppIntegration";
 
 export default function ConfigIntegracoes() {
   return (
@@ -59,18 +59,18 @@ export default function ConfigIntegracoes() {
         </TabsList>
 
         <TabsContent value="whatsapp">
-          <ZApiConfigCard />
+          <EvolutionApiConfigCard />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function ZApiConfigCard() {
+function EvolutionApiConfigCard() {
   const { integration, loading, saving, saveIntegration, disconnectIntegration, isConfigured } = useWhatsAppIntegration();
   const [showToken, setShowToken] = useState(false);
-  const [form, setForm] = useState<ZApiFormData>({
-    base_url: 'https://api.z-api.io',
+  const [form, setForm] = useState<EvolutionApiFormData>({
+    api_url: '',
     instance_id: '',
     access_token: '',
     display_phone_number: '',
@@ -79,7 +79,7 @@ function ZApiConfigCard() {
 
   if (integration && !formInitialized) {
     setForm({
-      base_url: integration.base_url || 'https://api.z-api.io',
+      api_url: integration.api_url || '',
       instance_id: integration.instance_id || '',
       access_token: integration.access_token || '',
       display_phone_number: integration.display_phone_number || '',
@@ -123,8 +123,8 @@ function ZApiConfigCard() {
               <MessageCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <CardTitle>WhatsApp via Z-API</CardTitle>
-              <CardDescription>Integração oficial Z-API — envio automatizado de mensagens</CardDescription>
+              <CardTitle>WhatsApp via Evolution API</CardTitle>
+              <CardDescription>Integração com Evolution API — envio automatizado de mensagens</CardDescription>
             </div>
           </div>
           {statusBadge()}
@@ -155,45 +155,45 @@ function ZApiConfigCard() {
             <p className="text-xs text-muted-foreground">O número que será exibido para os pacientes</p>
           </div>
 
-          {/* Base URL */}
+          {/* API URL */}
           <div className="space-y-2">
-            <Label htmlFor="base_url">Base URL da API</Label>
+            <Label htmlFor="api_url">URL da Evolution API</Label>
             <Input
-              id="base_url"
-              placeholder="https://api.z-api.io"
-              value={form.base_url}
-              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+              id="api_url"
+              placeholder="https://sua-evolution-api.com"
+              value={form.api_url}
+              onChange={(e) => setForm({ ...form, api_url: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              URL base da Z-API (padrão: https://api.z-api.io)
+              URL base da sua instância Evolution API (ex: https://api.seudominio.com)
             </p>
           </div>
 
           {/* Instance ID */}
           <div className="space-y-2">
-            <Label htmlFor="instance_id">Instance ID</Label>
+            <Label htmlFor="instance_id">Nome da Instância</Label>
             <Input
               id="instance_id"
-              placeholder="Ex: 3C2A1B4D5E6F..."
+              placeholder="Ex: minha-clinica"
               value={form.instance_id}
               onChange={(e) => setForm({ ...form, instance_id: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              Encontre no painel da{' '}
-              <a href="https://developer.z-api.io" target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
-                Z-API <ExternalLink className="h-3 w-3" />
+              Nome da instância configurada na{' '}
+              <a href="https://doc.evolution-api.com" target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
+                Evolution API <ExternalLink className="h-3 w-3" />
               </a>
             </p>
           </div>
 
-          {/* Token */}
+          {/* API Key */}
           <div className="space-y-2">
-            <Label htmlFor="access_token">Token</Label>
+            <Label htmlFor="access_token">API Key</Label>
             <div className="relative">
               <Input
                 id="access_token"
                 type={showToken ? "text" : "password"}
-                placeholder="Token da instância Z-API"
+                placeholder="Chave de API da Evolution"
                 value={form.access_token}
                 onChange={(e) => setForm({ ...form, access_token: e.target.value })}
                 className="pr-10"
@@ -209,7 +209,7 @@ function ZApiConfigCard() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Token de segurança da sua instância Z-API
+              API Key global ou da instância na Evolution API
             </p>
           </div>
 

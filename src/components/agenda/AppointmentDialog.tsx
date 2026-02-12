@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useGlobalSpecialty } from "@/hooks/useGlobalSpecialty";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -117,6 +118,7 @@ export function AppointmentDialog({
   lockedPatientId,
   lockedPatientName,
 }: AppointmentDialogProps) {
+  const { activeSpecialtyId: globalSpecialtyId } = useGlobalSpecialty();
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
   
@@ -137,7 +139,7 @@ export function AppointmentDialog({
       patient_id: lockedPatientId || appointment?.patient_id || "",
       professional_id: lockedProfessionalId || appointment?.professional_id || "",
       procedure_id: appointment?.procedure_id || "",
-      specialty_id: appointment?.specialty_id || "",
+      specialty_id: appointment?.specialty_id || globalSpecialtyId || "",
       room_id: appointment?.room_id || "",
       scheduled_date: appointment ? new Date(appointment.scheduled_date) : defaultDate || new Date(),
       start_time: appointment?.start_time?.slice(0, 5) || defaultStartTime || "08:00",

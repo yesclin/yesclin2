@@ -341,3 +341,37 @@
 .driver-popover-arrow-side-bottom.driver-popover-arrow {
   border-color: hsl(var(--card)) !important;
 }
+
+/* Print styles - hide everything except #print-area */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: visible;
+  }
+
+  /* Hide non-content elements */
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .sidebar,
+  .navigation,
+  [role="navigation"],
+  [role="banner"],
+  [data-no-print] {
+    display: none !important;
+  }
+}

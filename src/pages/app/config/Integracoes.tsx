@@ -30,7 +30,7 @@ import {
   Mail,
   Smartphone,
 } from "lucide-react";
-import { useWhatsAppIntegration, type WhatsAppFormData } from "@/hooks/useWhatsAppIntegration";
+import { useWhatsAppIntegration, type ZApiFormData } from "@/hooks/useWhatsAppIntegration";
 
 export default function ConfigIntegracoes() {
   return (
@@ -59,31 +59,28 @@ export default function ConfigIntegracoes() {
         </TabsList>
 
         <TabsContent value="whatsapp">
-          <WhatsAppConfigCard />
+          <ZApiConfigCard />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function WhatsAppConfigCard() {
+function ZApiConfigCard() {
   const { integration, loading, saving, saveIntegration, disconnectIntegration, isConfigured } = useWhatsAppIntegration();
   const [showToken, setShowToken] = useState(false);
-  const [form, setForm] = useState<WhatsAppFormData>({
-    provider: 'meta_cloud_api',
-    phone_number_id: '',
-    business_account_id: '',
+  const [form, setForm] = useState<ZApiFormData>({
+    base_url: 'https://api.z-api.io',
+    instance_id: '',
     access_token: '',
     display_phone_number: '',
   });
   const [formInitialized, setFormInitialized] = useState(false);
 
-  // Initialize form when integration loads
   if (integration && !formInitialized) {
     setForm({
-      provider: integration.provider || 'meta_cloud_api',
-      phone_number_id: integration.phone_number_id || '',
-      business_account_id: integration.business_account_id || '',
+      base_url: integration.base_url || 'https://api.z-api.io',
+      instance_id: integration.instance_id || '',
       access_token: integration.access_token || '',
       display_phone_number: integration.display_phone_number || '',
     });
@@ -126,8 +123,8 @@ function WhatsAppConfigCard() {
               <MessageCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <CardTitle>WhatsApp Business API</CardTitle>
-              <CardDescription>Meta Cloud API — Integração oficial</CardDescription>
+              <CardTitle>WhatsApp via Z-API</CardTitle>
+              <CardDescription>Integração oficial Z-API — envio automatizado de mensagens</CardDescription>
             </div>
           </div>
           {statusBadge()}
@@ -158,42 +155,45 @@ function WhatsAppConfigCard() {
             <p className="text-xs text-muted-foreground">O número que será exibido para os pacientes</p>
           </div>
 
-          {/* Phone Number ID */}
+          {/* Base URL */}
           <div className="space-y-2">
-            <Label htmlFor="phone_number_id">Phone Number ID</Label>
+            <Label htmlFor="base_url">Base URL da API</Label>
             <Input
-              id="phone_number_id"
-              placeholder="Ex: 123456789012345"
-              value={form.phone_number_id}
-              onChange={(e) => setForm({ ...form, phone_number_id: e.target.value })}
+              id="base_url"
+              placeholder="https://api.z-api.io"
+              value={form.base_url}
+              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              Encontre em{' '}
-              <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
-                Meta for Developers <ExternalLink className="h-3 w-3" />
+              URL base da Z-API (padrão: https://api.z-api.io)
+            </p>
+          </div>
+
+          {/* Instance ID */}
+          <div className="space-y-2">
+            <Label htmlFor="instance_id">Instance ID</Label>
+            <Input
+              id="instance_id"
+              placeholder="Ex: 3C2A1B4D5E6F..."
+              value={form.instance_id}
+              onChange={(e) => setForm({ ...form, instance_id: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Encontre no painel da{' '}
+              <a href="https://developer.z-api.io" target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
+                Z-API <ExternalLink className="h-3 w-3" />
               </a>
             </p>
           </div>
 
-          {/* Business Account ID */}
+          {/* Token */}
           <div className="space-y-2">
-            <Label htmlFor="business_account_id">Business Account ID</Label>
-            <Input
-              id="business_account_id"
-              placeholder="Ex: 123456789012345"
-              value={form.business_account_id}
-              onChange={(e) => setForm({ ...form, business_account_id: e.target.value })}
-            />
-          </div>
-
-          {/* Access Token */}
-          <div className="space-y-2">
-            <Label htmlFor="access_token">Access Token</Label>
+            <Label htmlFor="access_token">Token</Label>
             <div className="relative">
               <Input
                 id="access_token"
                 type={showToken ? "text" : "password"}
-                placeholder="Token de acesso permanente"
+                placeholder="Token da instância Z-API"
                 value={form.access_token}
                 onChange={(e) => setForm({ ...form, access_token: e.target.value })}
                 className="pr-10"
@@ -209,7 +209,7 @@ function WhatsAppConfigCard() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Use um token permanente (System User Token) para evitar expiração
+              Token de segurança da sua instância Z-API
             </p>
           </div>
 

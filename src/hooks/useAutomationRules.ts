@@ -2,7 +2,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
-import type { TriggerType } from '@/types/comunicacao';
+
+export type EventType = 'appointment_created' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_completed';
+export type DelayType = 'immediate' | 'hours_before' | 'days_before' | 'hours_after' | 'days_after';
+export type AutomationChannel = 'whatsapp' | 'email';
+
+export const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  appointment_created: 'Novo Agendamento',
+  appointment_reminder: 'Antes da Consulta',
+  appointment_cancelled: 'Cancelamento',
+  appointment_completed: 'Após Consulta',
+};
+
+export const DELAY_TYPE_LABELS: Record<DelayType, string> = {
+  immediate: 'Imediato',
+  hours_before: 'Horas antes',
+  days_before: 'Dias antes',
+  hours_after: 'Horas depois',
+  days_after: 'Dias depois',
+};
 
 export interface AutomationRuleRow {
   id: string;
@@ -11,6 +29,9 @@ export interface AutomationRuleRow {
   description: string | null;
   trigger_type: string;
   trigger_config: Record<string, unknown> | null;
+  delay_type: string;
+  delay_value: number;
+  channel: string;
   template_id: string | null;
   is_active: boolean;
   priority: number;
@@ -28,12 +49,10 @@ export interface AutomationRuleRow {
 export interface AutomationFormData {
   name: string;
   description: string;
-  trigger_type: TriggerType;
-  trigger_config: {
-    hours_before?: number;
-    days_after?: number;
-    days_inactive?: number;
-  };
+  trigger_type: EventType;
+  delay_type: DelayType;
+  delay_value: number;
+  channel: AutomationChannel;
   template_id: string | null;
   is_active: boolean;
   priority: number;
@@ -44,23 +63,39 @@ export function useAutomationRules() {
   const [automations, setAutomations] = useState<AutomationRuleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [maxAutomations, setMaxAutomations] = useState<number>(2);
 
   const fetchAutomations = useCallback(async () => {
     if (!clinic?.id) return;
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('automation_rules')
-        .select('*, message_templates(id, name, channel, content)')
-        .eq('clinic_id', clinic.id)
-        .order('priority', { ascending: true });
+
+      const [{ data, error }, { data: clinicData }] = await Promise.all([
+        supabase
+          .from('automation_rules')
+          .select('*, message_templates(id, name, channel, content)')
+          .eq('clinic_id', clinic.id)
+          .order('priority', { ascending: true }),
+        supabase
+          .from('clinics')
+          .select('max_automations')
+          .eq('id', clinic.id)
+          .single(),
+      ]);
 
       if (error) throw error;
+
+      if (clinicData) {
+        setMaxAutomations((clinicData as any).max_automations ?? 2);
+      }
 
       const mapped = (data || []).map((row: any) => ({
         ...row,
         is_active: row.is_active ?? false,
         priority: row.priority ?? 0,
+        delay_type: row.delay_type ?? 'immediate',
+        delay_value: row.delay_value ?? 0,
+        channel: row.channel ?? 'whatsapp',
         trigger_config: (row.trigger_config as Record<string, unknown>) ?? {},
         template: row.message_templates ?? null,
       }));
@@ -78,8 +113,14 @@ export function useAutomationRules() {
     fetchAutomations();
   }, [fetchAutomations]);
 
+  const canCreateMore = automations.length < maxAutomations || maxAutomations === 0;
+
   const createAutomation = async (formData: AutomationFormData) => {
     if (!clinic?.id) return;
+    if (!canCreateMore) {
+      toast.error(`Limite de ${maxAutomations} automações atingido. Faça upgrade do plano.`);
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -89,7 +130,10 @@ export function useAutomationRules() {
           name: formData.name,
           description: formData.description || null,
           trigger_type: formData.trigger_type,
-          trigger_config: formData.trigger_config as any,
+          trigger_config: {} as any,
+          delay_type: formData.delay_type,
+          delay_value: formData.delay_value,
+          channel: formData.channel,
           template_id: formData.template_id || null,
           is_active: formData.is_active,
           priority: formData.priority,
@@ -112,7 +156,9 @@ export function useAutomationRules() {
       if (formData.name !== undefined) updateData.name = formData.name;
       if (formData.description !== undefined) updateData.description = formData.description || null;
       if (formData.trigger_type !== undefined) updateData.trigger_type = formData.trigger_type;
-      if (formData.trigger_config !== undefined) updateData.trigger_config = formData.trigger_config;
+      if (formData.delay_type !== undefined) updateData.delay_type = formData.delay_type;
+      if (formData.delay_value !== undefined) updateData.delay_value = formData.delay_value;
+      if (formData.channel !== undefined) updateData.channel = formData.channel;
       if (formData.template_id !== undefined) updateData.template_id = formData.template_id || null;
       if (formData.is_active !== undefined) updateData.is_active = formData.is_active;
       if (formData.priority !== undefined) updateData.priority = formData.priority;
@@ -158,6 +204,10 @@ export function useAutomationRules() {
 
   const duplicateAutomation = async (automation: AutomationRuleRow) => {
     if (!clinic?.id) return;
+    if (!canCreateMore) {
+      toast.error(`Limite de ${maxAutomations} automações atingido. Faça upgrade do plano.`);
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -168,9 +218,12 @@ export function useAutomationRules() {
           description: automation.description,
           trigger_type: automation.trigger_type,
           trigger_config: automation.trigger_config as any,
+          delay_type: automation.delay_type,
+          delay_value: automation.delay_value,
+          channel: automation.channel,
           template_id: automation.template_id,
           is_active: false,
-          priority: (automations.length + 1),
+          priority: automations.length + 1,
         });
       if (error) throw error;
       toast.success('Automação duplicada com sucesso');
@@ -187,6 +240,8 @@ export function useAutomationRules() {
     automations,
     loading,
     saving,
+    maxAutomations,
+    canCreateMore,
     createAutomation,
     updateAutomation,
     deleteAutomation,

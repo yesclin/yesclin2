@@ -671,9 +671,12 @@ export type Database = {
       }
       automation_rules: {
         Row: {
+          channel: string
           clinic_id: string
           created_at: string
           created_by: string | null
+          delay_type: string
+          delay_value: number | null
           description: string | null
           id: string
           is_active: boolean | null
@@ -685,9 +688,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel?: string
           clinic_id: string
           created_at?: string
           created_by?: string | null
+          delay_type?: string
+          delay_value?: number | null
           description?: string | null
           id?: string
           is_active?: boolean | null
@@ -699,9 +705,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel?: string
           clinic_id?: string
           created_at?: string
           created_by?: string | null
+          delay_type?: string
+          delay_value?: number | null
           description?: string | null
           id?: string
           is_active?: boolean | null
@@ -1478,6 +1487,7 @@ export type Database = {
           margin_alert_enabled: boolean | null
           margin_alert_min_percent: number | null
           margin_alert_period_days: number | null
+          max_automations: number
           monthly_goal: number | null
           name: string
           opening_hours: Json | null
@@ -1509,6 +1519,7 @@ export type Database = {
           margin_alert_enabled?: boolean | null
           margin_alert_min_percent?: number | null
           margin_alert_period_days?: number | null
+          max_automations?: number
           monthly_goal?: number | null
           name: string
           opening_hours?: Json | null
@@ -1540,6 +1551,7 @@ export type Database = {
           margin_alert_enabled?: boolean | null
           margin_alert_min_percent?: number | null
           margin_alert_period_days?: number | null
+          max_automations?: number
           monthly_goal?: number | null
           name?: string
           opening_hours?: Json | null

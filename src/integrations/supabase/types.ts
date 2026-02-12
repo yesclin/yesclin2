@@ -332,48 +332,170 @@ export type Database = {
           },
         ]
       }
-      anamnesis_templates: {
+      anamnesis_records: {
         Row: {
-          campos: Json
+          appointment_id: string | null
           clinic_id: string
           created_at: string
           created_by: string | null
+          id: string
+          patient_id: string
+          responses: Json
+          template_id: string
+          template_version_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_id: string
+          responses?: Json
+          template_id: string
+          template_version_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_id?: string
+          responses?: Json
+          template_id?: string
+          template_version_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anamnesis_template_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          structure: Json
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          structure?: Json
+          template_id: string
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          structure?: Json
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anamnesis_templates: {
+        Row: {
+          campos: Json
+          clinic_id: string | null
+          created_at: string
+          created_by: string | null
+          current_version_id: string | null
           description: string | null
           icon: string | null
           id: string
           is_active: boolean
+          is_default: boolean
+          is_system: boolean
           name: string
           specialty: string | null
+          specialty_id: string | null
           template_type: string
           updated_at: string
           usage_count: number
         }
         Insert: {
           campos?: Json
-          clinic_id: string
+          clinic_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_version_id?: string | null
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean
+          is_system?: boolean
           name: string
           specialty?: string | null
+          specialty_id?: string | null
           template_type: string
           updated_at?: string
           usage_count?: number
         }
         Update: {
           campos?: Json
-          clinic_id?: string
+          clinic_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_version_id?: string | null
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean
+          is_system?: boolean
           name?: string
           specialty?: string | null
+          specialty_id?: string | null
           template_type?: string
           updated_at?: string
           usage_count?: number
@@ -384,6 +506,20 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_templates_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_templates_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
             referencedColumns: ["id"]
           },
         ]

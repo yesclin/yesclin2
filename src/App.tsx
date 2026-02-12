@@ -37,6 +37,7 @@ import MarketingAutomacoes from "./pages/app/marketing/MarketingAutomacoes";
 import MarketingCampanhas from "./pages/app/marketing/MarketingCampanhas";
 import MarketingHistorico from "./pages/app/marketing/MarketingHistorico";
 import MarketingCRM from "./pages/app/marketing/MarketingCRM";
+import MarketingConfigWhatsApp from "./pages/app/marketing/MarketingConfigWhatsApp";
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="campanhas" element={<MarketingCampanhas />} />
               <Route path="historico" element={<MarketingHistorico />} />
               <Route path="crm" element={<MarketingCRM />} />
+              <Route path="config-whatsapp" element={<MarketingConfigWhatsApp />} />
             </Route>
             
             {/* Gestão */}

@@ -5,6 +5,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function sendViaEvolution(integration: any, phone: string, message: string) {
+  const { api_url, instance_id, access_token } = integration;
+  const url = `${api_url}/message/sendText/${instance_id}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": access_token },
+    body: JSON.stringify({ number: phone, text: message }),
+  });
+  const body = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function sendViaZApi(integration: any, phone: string, message: string) {
+  const baseUrl = (integration.base_url || integration.api_url || "").replace(/\/$/, "");
+  const { instance_id, access_token } = integration;
+  const url = `${baseUrl}/instances/${instance_id}/token/${access_token}/send-text`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message }),
+  });
+  const body = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function sendMessage(integration: any, phone: string, message: string) {
+  if (integration.provider === "z-api") {
+    return sendViaZApi(integration, phone, message);
+  }
+  return sendViaEvolution(integration, phone, message);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,7 +48,6 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // Fetch pending messages ready to send (scheduled_for <= now, attempts < max)
     const { data: pendingMessages, error: fetchError } = await supabase
       .from("message_queue")
       .select("*")
@@ -35,10 +66,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Group by clinic to batch integration lookups
     const clinicIds = [...new Set(pendingMessages.map((m: any) => m.clinic_id))];
     
-    // Fetch integrations for all clinics
     const { data: integrations } = await supabase
       .from("clinic_channel_integrations")
       .select("*")
@@ -59,46 +88,29 @@ Deno.serve(async (req) => {
       const integration = integrationMap.get(msg.clinic_id);
 
       if (!integration) {
-        // No active integration - skip, don't fail
         skipped++;
         continue;
       }
 
-      // Mark as processing
       await supabase.from("message_queue")
         .update({ status: "processing" })
         .eq("id", msg.id);
 
       const messageText = msg.rendered_message || msg.message_body;
-      const { api_url, instance_id, access_token } = integration;
 
       try {
-        const url = `${api_url}/message/sendText/${instance_id}`;
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": access_token,
-          },
-          body: JSON.stringify({
-            number: msg.phone,
-            text: messageText,
-          }),
-        });
-
-        const responseBody = await response.json().catch(() => ({}));
+        const result = await sendMessage(integration, msg.phone, messageText);
         const newAttempts = (msg.attempts || 0) + 1;
 
-        if (response.ok) {
+        if (result.ok) {
           await supabase.from("message_queue").update({
             status: "sent",
             attempts: newAttempts,
-            provider_response: responseBody,
+            provider_response: result.body,
             sent_at: new Date().toISOString(),
             error_message: null,
           }).eq("id", msg.id);
 
-          // Create log entry
           await supabase.from("message_logs").insert({
             clinic_id: msg.clinic_id,
             patient_id: msg.patient_id,
@@ -110,8 +122,8 @@ Deno.serve(async (req) => {
             content: messageText,
             status: "sent",
             phone: msg.phone,
-            provider_response: responseBody,
-            external_id: responseBody?.key?.id || null,
+            provider_response: result.body,
+            external_id: result.body?.key?.id || result.body?.messageId || null,
             sent_at: new Date().toISOString(),
             metadata: { queue_id: msg.id },
           });
@@ -122,8 +134,8 @@ Deno.serve(async (req) => {
           await supabase.from("message_queue").update({
             status: shouldRetry ? "pending" : "failed",
             attempts: newAttempts,
-            provider_response: responseBody,
-            error_message: `Evolution API ${response.status}`,
+            provider_response: result.body,
+            error_message: `API ${result.status}`,
             next_retry_at: shouldRetry
               ? new Date(Date.now() + 60000).toISOString()
               : null,

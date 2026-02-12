@@ -36,6 +36,7 @@ import MarketingTemplates from "./pages/app/marketing/MarketingTemplates";
 import MarketingAutomacoes from "./pages/app/marketing/MarketingAutomacoes";
 import MarketingCampanhas from "./pages/app/marketing/MarketingCampanhas";
 import MarketingHistorico from "./pages/app/marketing/MarketingHistorico";
+import MarketingCRM from "./pages/app/marketing/MarketingCRM";
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -97,6 +98,7 @@ const App = () => (
               <Route path="automacoes" element={<MarketingAutomacoes />} />
               <Route path="campanhas" element={<MarketingCampanhas />} />
               <Route path="historico" element={<MarketingHistorico />} />
+              <Route path="crm" element={<MarketingCRM />} />
             </Route>
             
             {/* Gestão */}

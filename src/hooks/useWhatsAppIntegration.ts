@@ -21,8 +21,8 @@ export interface WhatsAppIntegration {
   updated_at: string;
 }
 
-export interface ZApiFormData {
-  base_url: string;
+export interface EvolutionApiFormData {
+  api_url: string;
   instance_id: string;
   access_token: string;
   display_phone_number?: string;
@@ -83,20 +83,20 @@ export function useWhatsAppIntegration() {
     };
   }, [clinic?.id, fetchIntegration]);
 
-  const saveIntegration = async (formData: ZApiFormData) => {
+  const saveIntegration = async (formData: EvolutionApiFormData) => {
     if (!clinic?.id) return;
     setSaving(true);
     try {
       const payload = {
         clinic_id: clinic.id,
         channel: 'whatsapp',
-        provider: 'z-api',
-        base_url: formData.base_url || null,
-        api_url: formData.base_url || null,
+        provider: 'evolution-api',
+        base_url: formData.api_url || null,
+        api_url: formData.api_url || null,
         instance_id: formData.instance_id || null,
         access_token: formData.access_token || null,
         display_phone_number: formData.display_phone_number || null,
-        status: formData.instance_id && formData.access_token && formData.base_url ? 'active' : 'not_configured',
+        status: formData.instance_id && formData.access_token && formData.api_url ? 'active' : 'not_configured',
       };
 
       if (integration?.id) {
@@ -112,7 +112,7 @@ export function useWhatsAppIntegration() {
         if (error) throw error;
       }
 
-      toast.success('Integração Z-API salva com sucesso');
+      toast.success('Integração Evolution API salva com sucesso');
       await fetchIntegration();
     } catch (err: any) {
       console.error('Error saving WhatsApp integration:', err);
@@ -138,7 +138,7 @@ export function useWhatsAppIntegration() {
         })
         .eq('id', integration.id);
       if (error) throw error;
-      toast.success('Z-API desconectado');
+      toast.success('Evolution API desconectado');
       await fetchIntegration();
     } catch (err: any) {
       toast.error('Erro ao desconectar: ' + (err.message || ''));

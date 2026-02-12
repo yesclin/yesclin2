@@ -27,74 +27,74 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    console.log("Z-API Webhook received for clinic:", clinicId, JSON.stringify(payload));
+    console.log("Evolution API Webhook received for clinic:", clinicId, JSON.stringify(payload));
 
-    // Z-API sends different event structures
-    // Status update: { phone, zapiMessageId, status, ... }
-    // Message received: { phone, text, messageId, ... }
-    const zapiMessageId = payload.zapiMessageId || payload.ids?.zapiMessageId || payload.messageId;
-    const status = payload.status;
+    // Evolution API webhook events
+    // Message status: { event: "messages.update", data: { key: { id }, status } }
+    // Message received: { event: "messages.upsert", data: { key: { remoteJid, id }, message } }
+    const event = payload.event;
+    const data = payload.data;
 
-    if (!zapiMessageId && !status) {
+    if (!data) {
       return new Response(
-        JSON.stringify({ received: true, action: "ignored", reason: "no messageId or status" }),
+        JSON.stringify({ received: true, action: "ignored", reason: "no data" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Handle message status updates from Z-API
-    if (status) {
-      const mappedStatus = mapZApiStatus(status);
+    // Handle message status updates from Evolution API
+    if (event === "messages.update") {
+      const messageId = data.key?.id;
+      const status = data.status;
 
-      if (zapiMessageId && mappedStatus) {
-        // Find message_log by external_id
-        const { data: logs } = await supabase
-          .from("message_logs")
-          .select("id, status")
-          .eq("clinic_id", clinicId)
-          .eq("external_id", zapiMessageId)
-          .limit(1);
+      if (messageId && status) {
+        const mappedStatus = mapEvolutionStatus(status);
 
-        if (logs && logs.length > 0) {
-          const log = logs[0];
-          if (shouldUpdateStatus(log.status, mappedStatus)) {
-          const now = new Date().toISOString();
-            const updatePayload: Record<string, unknown> = {
-              status: mappedStatus,
-              status_updated_at: now,
-              provider_response: payload,
-            };
+        if (mappedStatus) {
+          const { data: logs } = await supabase
+            .from("message_logs")
+            .select("id, status")
+            .eq("clinic_id", clinicId)
+            .eq("external_id", messageId)
+            .limit(1);
 
-            if (mappedStatus === "sent") {
-              updatePayload.sent_at = now;
-            } else if (mappedStatus === "delivered") {
-              updatePayload.delivered_at = now;
-            } else if (mappedStatus === "read") {
-              updatePayload.read_at = now;
-            }
-
-            await supabase.from("message_logs").update(updatePayload).eq("id", log.id);
-
-            // Also update queue item if exists
-            const { data: queueItems } = await supabase
-              .from("message_queue")
-              .select("id")
-              .eq("clinic_id", clinicId)
-              .eq("external_id", zapiMessageId)
-              .limit(1);
-
-            if (queueItems && queueItems.length > 0) {
-              await supabase.from("message_queue").update({
-                status: mappedStatus === "delivered" || mappedStatus === "read" ? "sent" : mappedStatus,
+          if (logs && logs.length > 0) {
+            const log = logs[0];
+            if (shouldUpdateStatus(log.status, mappedStatus)) {
+              const now = new Date().toISOString();
+              const updatePayload: Record<string, unknown> = {
+                status: mappedStatus,
+                status_updated_at: now,
                 provider_response: payload,
-              }).eq("id", queueItems[0].id);
+              };
+
+              if (mappedStatus === "sent") updatePayload.sent_at = now;
+              else if (mappedStatus === "delivered") updatePayload.delivered_at = now;
+              else if (mappedStatus === "read") updatePayload.read_at = now;
+
+              await supabase.from("message_logs").update(updatePayload).eq("id", log.id);
+
+              // Also update queue item if exists
+              const { data: queueItems } = await supabase
+                .from("message_queue")
+                .select("id")
+                .eq("clinic_id", clinicId)
+                .eq("external_id", messageId)
+                .limit(1);
+
+              if (queueItems && queueItems.length > 0) {
+                await supabase.from("message_queue").update({
+                  status: mappedStatus === "delivered" || mappedStatus === "read" ? "sent" : mappedStatus,
+                  provider_response: payload,
+                }).eq("id", queueItems[0].id);
+              }
             }
           }
         }
       }
 
       return new Response(
-        JSON.stringify({ received: true, action: "status_updated", status: mapZApiStatus(status) }),
+        JSON.stringify({ received: true, action: "status_updated" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -112,28 +112,25 @@ Deno.serve(async (req) => {
   }
 });
 
-function mapZApiStatus(status: string): string | null {
+function mapEvolutionStatus(status: string | number): string | null {
   const statusMap: Record<string, string> = {
-    // Z-API status values
     "PENDING": "pending",
-    "SENT": "sent",
-    "RECEIVED": "delivered",
+    "SERVER_ACK": "sent",
+    "DELIVERY_ACK": "delivered",
     "READ": "read",
     "PLAYED": "read",
-    "FAILED": "failed",
     "ERROR": "failed",
-    "DELETED": "failed",
-    // Lowercase variants
-    "pending": "pending",
-    "sent": "sent",
-    "received": "delivered",
-    "read": "read",
-    "played": "read",
-    "failed": "failed",
-    "error": "failed",
+    "FAILED": "failed",
+    // Numeric codes from Evolution API
+    "0": "pending",
+    "1": "sent",
+    "2": "delivered",
+    "3": "read",
+    "4": "read",
+    "5": "failed",
   };
 
-  return statusMap[status] || null;
+  return statusMap[String(status)] || null;
 }
 
 function shouldUpdateStatus(current: string, incoming: string): boolean {

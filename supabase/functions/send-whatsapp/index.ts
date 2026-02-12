@@ -43,9 +43,13 @@ async function getIntegration(supabase: any, clinicId: string) {
 }
 
 async function sendViaEvolution(integration: any, phone: string, message: string) {
-  const { api_url, instance_id, access_token } = integration;
-  const url = `${api_url}/message/sendText/${instance_id}`;
-  
+  const apiUrl = (integration.api_url || integration.base_url || "").replace(/\/$/, "");
+  const { instance_id, access_token } = integration;
+  const url = `${apiUrl}/message/sendText/${instance_id}`;
+
+  console.log("[Evolution] URL:", url);
+  console.log("[Evolution] Phone:", phone);
+
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -54,35 +58,10 @@ async function sendViaEvolution(integration: any, phone: string, message: string
     },
     body: JSON.stringify({ number: phone, text: message }),
   });
-  
-  const body = await response.json().catch(() => ({}));
-  return { ok: response.ok, status: response.status, body };
-}
 
-async function sendViaZApi(integration: any, phone: string, message: string) {
-  const baseUrl = (integration.base_url || integration.api_url || "").replace(/\/$/, "");
-  const { instance_id, access_token } = integration;
-  const url = `${baseUrl}/instances/${instance_id}/token/${access_token}/send-text`;
-  
-  console.log("[Z-API] URL:", url);
-  console.log("[Z-API] Phone:", phone);
-  
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, message }),
-  });
-  
   const body = await response.json().catch(() => ({}));
-  console.log("[Z-API] Status:", response.status, "Body:", JSON.stringify(body));
+  console.log("[Evolution] Status:", response.status, "Body:", JSON.stringify(body));
   return { ok: response.ok, status: response.status, body };
-}
-
-async function sendMessage(integration: any, phone: string, message: string) {
-  if (integration.provider === "z-api") {
-    return sendViaZApi(integration, phone, message);
-  }
-  return sendViaEvolution(integration, phone, message);
 }
 
 Deno.serve(async (req) => {
@@ -147,7 +126,7 @@ Deno.serve(async (req) => {
 
     let result;
     try {
-      result = await sendMessage(integration, formattedPhone, message);
+      result = await sendViaEvolution(integration, formattedPhone, message);
     } catch (fetchErr: any) {
       const newAttempts = currentAttempts + 1;
       const shouldRetry = newAttempts < 3;

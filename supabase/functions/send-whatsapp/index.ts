@@ -64,6 +64,9 @@ async function sendViaZApi(integration: any, phone: string, message: string) {
   const { instance_id, access_token } = integration;
   const url = `${baseUrl}/instances/${instance_id}/token/${access_token}/send-text`;
   
+  console.log("[Z-API] URL:", url);
+  console.log("[Z-API] Phone:", phone);
+  
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -71,6 +74,7 @@ async function sendViaZApi(integration: any, phone: string, message: string) {
   });
   
   const body = await response.json().catch(() => ({}));
+  console.log("[Z-API] Status:", response.status, "Body:", JSON.stringify(body));
   return { ok: response.ok, status: response.status, body };
 }
 
@@ -131,7 +135,7 @@ Deno.serve(async (req) => {
           appointment_id: appointment_id || null,
           template_id: template_id || null,
           automation_rule_id: automation_rule_id || null,
-          status: "processing",
+          status: "pending",
           scheduled_for: new Date().toISOString(),
         })
         .select("id")
@@ -140,8 +144,6 @@ Deno.serve(async (req) => {
       if (qErr) throw qErr;
       currentQueueId = newQueue.id;
     }
-
-    await supabase.from("message_queue").update({ status: "processing" }).eq("id", currentQueueId);
 
     let result;
     try {

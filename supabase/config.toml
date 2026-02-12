@@ -1,1 +1,10 @@
 project_id = "jelbyajfzvpeegwjpwpt"
+
+[functions.send-whatsapp]
+verify_jwt = false
+
+[functions.queue-worker]
+verify_jwt = false
+
+[functions.webhook-whatsapp]
+verify_jwt = false

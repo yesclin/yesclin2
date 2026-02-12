@@ -7,13 +7,14 @@ import { useClinicData } from "@/hooks/useClinicData";
 import { Building2, ChevronDown } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
 import { ActiveSpecialtiesBadge } from "./ActiveSpecialtiesBadge";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { GlobalSpecialtyProvider } from "@/hooks/useGlobalSpecialty";
 
 export function AppLayout() {
   const location = useLocation();
   const { clinic, isLoading } = useClinicData();
 
   return (
+    <GlobalSpecialtyProvider>
     <SidebarProvider defaultOpen>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
@@ -40,9 +41,7 @@ export function AppLayout() {
                 <span className="text-sm font-semibold text-foreground">Yesclin</span>
               )}
             </div>
-            <TooltipProvider>
-              <ActiveSpecialtiesBadge />
-            </TooltipProvider>
+            <ActiveSpecialtiesBadge />
           </header>
           <div className="flex-1 p-6 overflow-auto">
             <Outlet />
@@ -56,5 +55,6 @@ export function AppLayout() {
       {/* Guided Tour for first-time users */}
       {location.pathname === "/app" && <GuidedTour />}
     </SidebarProvider>
+    </GlobalSpecialtyProvider>
   );
 }

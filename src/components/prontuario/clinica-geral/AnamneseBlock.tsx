@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   FileText,
@@ -45,6 +55,7 @@ import {
   Users,
   Stethoscope,
   ChevronRight,
+  ChevronDown,
   MessageSquare,
   BookOpen,
   Baby,
@@ -52,6 +63,8 @@ import {
   Ruler,
   UserCircle,
   Calculator,
+  Lock,
+  Copy,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,6 +74,7 @@ import {
   mapStructuredToLegacy,
   type SecaoAnamnese 
 } from "@/hooks/prontuario/clinica-geral/anamneseTemplates";
+import { useAnamnesisTemplates, type AnamnesisTemplate } from "@/hooks/useAnamnesisTemplates";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -136,6 +150,34 @@ function MultiSelectField({
 
 // ─── Main component ──────────────────────────────────────────────────
 
+// ─── Unified template type for selector ──────────────────────────
+
+interface UnifiedTemplate {
+  id: string;
+  nome: string;
+  descricao: string;
+  icon: string;
+  is_system: boolean;
+  secoes: SecaoAnamnese[];
+}
+
+/** Convert a DB template to the unified format */
+function dbTemplateToUnified(t: AnamnesisTemplate): UnifiedTemplate {
+  return {
+    id: t.id,
+    nome: t.name,
+    descricao: t.description || '',
+    icon: t.icon || 'Stethoscope',
+    is_system: false,
+    secoes: [{
+      id: 'campos_personalizados',
+      titulo: t.name,
+      icon: t.icon || 'Stethoscope',
+      campos: t.campos,
+    }],
+  };
+}
+
 export function AnamneseBlock({
   currentAnamnese,
   anamneseHistory,
@@ -148,8 +190,63 @@ export function AnamneseBlock({
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamneseData | null>(null);
   const [structuredData, setStructuredData] = useState<Record<string, unknown>>({});
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(ANAMNESE_CLINICA_GERAL_TEMPLATE.id);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
 
-  const template = ANAMNESE_CLINICA_GERAL_TEMPLATE;
+  // ─── Fetch clinic templates from DB ─────────────────────────────
+  const { templates: dbTemplates, isLoading: loadingTemplates } = useAnamnesisTemplates(true);
+
+  // ─── Build unified template list ────────────────────────────────
+  const systemTemplate: UnifiedTemplate = useMemo(() => ({
+    id: ANAMNESE_CLINICA_GERAL_TEMPLATE.id,
+    nome: ANAMNESE_CLINICA_GERAL_TEMPLATE.nome,
+    descricao: ANAMNESE_CLINICA_GERAL_TEMPLATE.descricao,
+    icon: ANAMNESE_CLINICA_GERAL_TEMPLATE.icon,
+    is_system: true,
+    secoes: ANAMNESE_CLINICA_GERAL_TEMPLATE.secoes,
+  }), []);
+
+  const clinicTemplates: UnifiedTemplate[] = useMemo(() => {
+    return dbTemplates
+      .filter(t => t.specialty === 'clinica_geral' || t.specialty === 'geral')
+      .map(dbTemplateToUnified);
+  }, [dbTemplates]);
+
+  const allTemplates = useMemo(() => [systemTemplate, ...clinicTemplates], [systemTemplate, clinicTemplates]);
+
+  const activeTemplate = useMemo(() => {
+    return allTemplates.find(t => t.id === selectedTemplateId) || systemTemplate;
+  }, [allTemplates, selectedTemplateId, systemTemplate]);
+
+  // ─── Check if form has data ─────────────────────────────────────
+  const hasFilledData = useCallback(() => {
+    return Object.values(structuredData).some(v => {
+      if (Array.isArray(v)) return v.length > 0;
+      return v !== undefined && v !== null && v !== '';
+    });
+  }, [structuredData]);
+
+  // ─── Template switch handler ────────────────────────────────────
+  const handleTemplateSwitch = useCallback((newTemplateId: string) => {
+    if (newTemplateId === selectedTemplateId) return;
+    if (hasFilledData()) {
+      setPendingTemplateId(newTemplateId);
+      setShowSwitchConfirm(true);
+    } else {
+      setSelectedTemplateId(newTemplateId);
+      setStructuredData({});
+    }
+  }, [selectedTemplateId, hasFilledData]);
+
+  const confirmTemplateSwitch = useCallback(() => {
+    if (pendingTemplateId) {
+      setSelectedTemplateId(pendingTemplateId);
+      setStructuredData({});
+      setPendingTemplateId(null);
+    }
+    setShowSwitchConfirm(false);
+  }, [pendingTemplateId]);
 
   // ─── IMC calculation ────────────────────────────────────────────
   const imcResult = useMemo(() => {
@@ -160,10 +257,13 @@ export function AnamneseBlock({
 
   // ─── Handlers ───────────────────────────────────────────────────
   const handleStartEdit = () => {
+    // Set template from existing anamnese if available
+    if (currentAnamnese?.template_id) {
+      setSelectedTemplateId(currentAnamnese.template_id);
+    }
     if (currentAnamnese?.structured_data && Object.keys(currentAnamnese.structured_data).length > 0) {
       setStructuredData({ ...currentAnamnese.structured_data });
     } else if (currentAnamnese) {
-      // Backward compat: populate from legacy columns
       setStructuredData({
         qp_descricao: currentAnamnese.queixa_principal || '',
         hda_evolucao: currentAnamnese.historia_doenca_atual || '',
@@ -194,7 +294,7 @@ export function AnamneseBlock({
       alergias: legacy.alergias || '',
       comorbidades: currentAnamnese?.comorbidades || '',
       structured_data: structuredData,
-      template_id: template.id,
+      template_id: activeTemplate.id,
     });
     setIsEditing(false);
     setStructuredData({});
@@ -375,33 +475,88 @@ export function AnamneseBlock({
     );
   }
 
+  // ─── Template selector component ─────────────────────────────────
+  const renderTemplateSelector = (size: 'sm' | 'lg' = 'sm') => (
+    <div className={size === 'lg' ? 'w-full max-w-sm mx-auto' : 'w-64'}>
+      <Select value={selectedTemplateId} onValueChange={handleTemplateSwitch}>
+        <SelectTrigger className={`bg-background ${size === 'lg' ? 'h-10' : 'h-8 text-xs'}`}>
+          <div className="flex items-center gap-1.5 truncate">
+            <Stethoscope className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+            <SelectValue placeholder="Selecionar modelo..." />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="bg-background z-50">
+          {allTemplates.map(t => (
+            <SelectItem key={t.id} value={t.id}>
+              <div className="flex items-center gap-2">
+                <span className="truncate">{t.nome}</span>
+                {t.is_system && (
+                  <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  // ─── Switch confirmation dialog ─────────────────────────────────
+  const renderSwitchConfirmDialog = () => (
+    <AlertDialog open={showSwitchConfirm} onOpenChange={setShowSwitchConfirm}>
+      <AlertDialogContent className="bg-background">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Trocar modelo de anamnese?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Trocar o modelo irá apagar os dados atuais preenchidos. Deseja continuar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setPendingTemplateId(null)}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmTemplateSwitch} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Trocar modelo
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   // ─── Empty state ────────────────────────────────────────────────
   if (!currentAnamnese && !isEditing) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="p-8 text-center">
-          <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <h3 className="font-semibold mb-1">Nenhuma anamnese registrada</h3>
-          <p className="text-sm text-muted-foreground mb-1">
-            Modelo: <span className="font-medium">{template.nome}</span>
-          </p>
-          <p className="text-xs text-muted-foreground mb-4">
-            {template.descricao}
-          </p>
-          {canEdit && (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit3 className="h-4 w-4 mr-2" />
-              Registrar Anamnese
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <>
+        {renderSwitchConfirmDialog()}
+        <Card className="border-dashed">
+          <CardContent className="p-8 text-center">
+            <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+            <h3 className="font-semibold mb-1">Nenhuma anamnese registrada</h3>
+            <div className="flex flex-col items-center gap-3 mb-4">
+              <p className="text-sm text-muted-foreground">Selecione o modelo:</p>
+              {renderTemplateSelector('lg')}
+              <p className="text-xs text-muted-foreground">
+                {activeTemplate.descricao}
+              </p>
+            </div>
+            {canEdit && (
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit3 className="h-4 w-4 mr-2" />
+                Registrar Anamnese
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   // ─── Editing mode ───────────────────────────────────────────────
   if (isEditing) {
     return (
+      <>
+      {renderSwitchConfirmDialog()}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -418,11 +573,13 @@ export function AnamneseBlock({
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              <Stethoscope className="h-3 w-3 mr-1" />
-              {template.nome}
-            </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            {renderTemplateSelector()}
+            {activeTemplate.is_system && (
+              <Badge variant="outline" className="text-[10px]">
+                <Lock className="h-2.5 w-2.5 mr-1" /> Sistema
+              </Badge>
+            )}
             {currentAnamnese && (
               <p className="text-xs text-muted-foreground">
                 Nova versão será criada. Histórico preservado.
@@ -433,7 +590,7 @@ export function AnamneseBlock({
         <CardContent>
           <ScrollArea className="h-[650px] pr-4">
             <Accordion type="multiple" defaultValue={['queixa_principal', 'historia_doenca_atual']} className="w-full space-y-1">
-              {template.secoes.map(secao => (
+              {activeTemplate.secoes.map(secao => (
                 <AccordionItem key={secao.id} value={secao.id} className="border rounded-lg px-1 mb-2">
                   <AccordionTrigger className="px-3 hover:no-underline">
                     <div className="flex items-center gap-2">
@@ -479,6 +636,7 @@ export function AnamneseBlock({
           </ScrollArea>
         </CardContent>
       </Card>
+      </>
     );
   }
 
@@ -495,7 +653,9 @@ export function AnamneseBlock({
             Versão {currentAnamnese?.version || 1}
           </Badge>
           {currentAnamnese?.template_id && (
-            <Badge variant="secondary" className="text-[10px]">Padrão Médico</Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              {allTemplates.find(t => t.id === currentAnamnese.template_id)?.nome || currentAnamnese.template_id}
+            </Badge>
           )}
         </div>
         <div className="flex gap-2">
@@ -531,10 +691,10 @@ export function AnamneseBlock({
           {hasStructuredData ? (
             <Accordion 
               type="multiple" 
-              defaultValue={template.secoes.slice(0, 3).map(s => s.id)} 
+              defaultValue={activeTemplate.secoes.slice(0, 3).map(s => s.id)} 
               className="w-full"
             >
-              {template.secoes.map(secao => 
+              {activeTemplate.secoes.map(secao => 
                 renderViewSection(secao, currentAnamnese!.structured_data!)
               )}
             </Accordion>
@@ -608,7 +768,7 @@ export function AnamneseBlock({
             {selectedVersion && (
               selectedVersion.structured_data && Object.keys(selectedVersion.structured_data).length > 0 ? (
                 <div className="space-y-4 pr-4">
-                  {template.secoes.map(secao => {
+                  {activeTemplate.secoes.map(secao => {
                     const filledFields = secao.campos.filter(c => {
                       const v = selectedVersion.structured_data?.[c.id];
                       if (Array.isArray(v)) return v.length > 0;

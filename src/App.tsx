@@ -31,13 +31,6 @@ import MeuFinanceiro from "./pages/app/MeuFinanceiro";
 
 // Marketing
 import MarketingLayout from "./pages/app/marketing/MarketingLayout";
-import MarketingDashboard from "./pages/app/marketing/MarketingDashboard";
-import MarketingTemplates from "./pages/app/marketing/MarketingTemplates";
-import MarketingAutomacoes from "./pages/app/marketing/MarketingAutomacoes";
-import MarketingCampanhas from "./pages/app/marketing/MarketingCampanhas";
-import MarketingHistorico from "./pages/app/marketing/MarketingHistorico";
-import MarketingCRM from "./pages/app/marketing/MarketingCRM";
-import MarketingConfigWhatsApp from "./pages/app/marketing/MarketingConfigWhatsApp";
 
 // Gestão
 import Financas from "./pages/app/gestao/Financas";
@@ -92,16 +85,8 @@ const App = () => (
             <Route path="gestao/convenios" element={<ProtectedRoute module="convenios"><Convenios /></ProtectedRoute>} />
             <Route path="meu-financeiro" element={<ProtectedRoute module="meu_financeiro"><MeuFinanceiro /></ProtectedRoute>} />
             
-            {/* Marketing - Sub-rotas */}
-            <Route path="marketing" element={<ProtectedRoute module="comunicacao"><MarketingLayout /></ProtectedRoute>}>
-              <Route index element={<MarketingDashboard />} />
-              <Route path="templates" element={<MarketingTemplates />} />
-              <Route path="automacoes" element={<MarketingAutomacoes />} />
-              <Route path="campanhas" element={<MarketingCampanhas />} />
-              <Route path="historico" element={<MarketingHistorico />} />
-              <Route path="crm" element={<MarketingCRM />} />
-              <Route path="config-whatsapp" element={<MarketingConfigWhatsApp />} />
-            </Route>
+            {/* Marketing - Página única com abas */}
+            <Route path="marketing" element={<ProtectedRoute module="comunicacao"><MarketingLayout /></ProtectedRoute>} />
             
             {/* Gestão */}
             <Route path="gestao/financas" element={<ProtectedRoute module="financeiro"><Financas /></ProtectedRoute>} />

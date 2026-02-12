@@ -60,7 +60,7 @@ export function WhatsAppStatus() {
                   {integration?.display_phone_number || 'Número configurado'}
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/app/config/integracoes')}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/app/marketing?tab=whatsapp')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Configurar
               </Button>
@@ -77,7 +77,7 @@ export function WhatsAppStatus() {
               Automatize confirmações, lembretes e campanhas diretamente pelo WhatsApp da sua clínica.
             </p>
             
-            <Button onClick={() => navigate('/app/config/integracoes')} className="mb-4">
+            <Button onClick={() => navigate('/app/marketing?tab=whatsapp')} className="mb-4">
               <MessageCircle className="h-4 w-4 mr-2" />
               Configurar WhatsApp
             </Button>

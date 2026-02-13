@@ -1,11 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useActiveAppointment } from './useActiveAppointment';
 import { 
   YESCLIN_SUPPORTED_SPECIALTIES, 
   resolveSpecialtyKey,
   type YesclinSpecialty 
 } from './yesclinSpecialties';
-import { useEnabledSpecialties } from '@/hooks/useEnabledSpecialties';
 import { useGlobalSpecialty } from '@/hooks/useGlobalSpecialty';
 
 export type SpecialtyKey =
@@ -41,128 +40,121 @@ export function mapSpecialtyNameToKey(name: string): SpecialtyKey {
 }
 
 /**
- * Hook that determines the active specialty based on:
- * 1. Active appointment's specialty (if in progress) - LOCKED, cannot change
- * 2. Manual selection (stored in session state) - only when no active appointment
- * 3. Default: 'geral' (Clínica Geral)
+ * Hook that determines the active specialty for the Prontuário.
  * 
- * CRITICAL CHANGES:
- * - Now uses YESCLIN_SUPPORTED_SPECIALTIES (controlled system list)
- * - Does NOT fetch from database specialties catalog
- * - Only shows specialties with actual implementations
+ * SINGLE SOURCE OF TRUTH: Uses GlobalSpecialtyProvider (which uses useEnabledSpecialties
+ * via React Query). No local state for specialties — everything flows from the global store.
  * 
- * CRITICAL RULE: During an active appointment, specialty selection is BLOCKED.
- * The specialty is determined by the procedure/appointment and cannot be changed.
+ * Priority:
+ * 1. Active appointment's specialty (LOCKED, cannot change)
+ * 2. Global specialty context (header dropdown / auto-selected)
+ * 3. First enabled specialty
+ * 4. Default: 'geral'
+ * 
+ * When specialties change in Configurações > Clínica:
+ * → React Query cache invalidated → useEnabledSpecialties refetches
+ * → GlobalSpecialtyProvider updates → this hook recomputes automatically
  */
 export function useActiveSpecialty(patientId: string | null | undefined) {
   const { data: activeAppointment, isLoading: appointmentLoading } = useActiveAppointment(patientId);
-  const { data: enabledClinicSpecialties = [], isLoading: specialtiesLoading } = useEnabledSpecialties();
-  const { activeSpecialtyName: globalSpecialtyName } = useGlobalSpecialty();
   
-  const [manualSpecialtyKey, setManualSpecialtyKey] = useState<SpecialtyKey | null>(null);
+  // SINGLE SOURCE OF TRUTH: Global specialty context
+  const { 
+    activeSpecialty: globalActiveSpecialty,
+    activeSpecialtyName: globalSpecialtyName,
+    enabledSpecialties: globalEnabledSpecialties,
+    isSingleSpecialty,
+    setActiveSpecialtyId,
+  } = useGlobalSpecialty();
 
-  // Filter Yesclin supported specialties against clinic's enabled specialties
+  // Map enabled DB specialties to Yesclin SpecialtyOptions (for UI rendering)
   const specialties = useMemo((): SpecialtyOption[] => {
-    // Build a set of enabled specialty names (lowercased) for matching
     const enabledNames = new Set(
-      enabledClinicSpecialties.map(s => s.name.toLowerCase().trim())
+      globalEnabledSpecialties.map(s => s.name.toLowerCase().trim())
     );
     
     return YESCLIN_SUPPORTED_SPECIALTIES
-      .filter((spec: YesclinSpecialty) => {
-        // Match by name (case-insensitive)
-        return enabledNames.has(spec.name.toLowerCase().trim());
-      })
-      .map((spec: YesclinSpecialty, index) => ({
-        id: `yesclin-${spec.key}-${index}`,
-        name: spec.name,
-        key: spec.key,
-        description: spec.description,
-        icon: spec.icon,
-      }));
-  }, [enabledClinicSpecialties]);
+      .filter((spec: YesclinSpecialty) => enabledNames.has(spec.name.toLowerCase().trim()))
+      .map((spec: YesclinSpecialty) => {
+        // Use real DB ID from enabled specialties instead of synthetic ID
+        const dbSpecialty = globalEnabledSpecialties.find(
+          es => es.name.toLowerCase().trim() === spec.name.toLowerCase().trim()
+        );
+        return {
+          id: dbSpecialty?.id || `yesclin-${spec.key}`,
+          name: spec.name,
+          key: spec.key,
+          description: spec.description,
+          icon: spec.icon,
+        };
+      });
+  }, [globalEnabledSpecialties]);
 
   // CRITICAL: Check if specialty is locked (from active appointment)
   const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
-  const isSpecialtyLocked = isFromAppointment; // Cannot change during appointment
+  const isSpecialtyLocked = isFromAppointment;
 
   // Determine the active specialty key
-  // Priority: 1) Active appointment's resolved specialty (LOCKED - from procedure)
-  //           2) Manual selection within prontuário (only when no active appointment)
-  //           3) Global specialty context (header dropdown) — keeps prontuário in sync
-  //           4) First enabled specialty (auto-select)
-  //           5) Default: 'geral'
   const activeSpecialtyKey = useMemo((): SpecialtyKey => {
-    // Priority 1: Active appointment - resolve from name (LOCKED, ignores global)
+    // Priority 1: Active appointment (LOCKED)
     if (activeAppointment?.resolved_specialty_name) {
       const key = resolveSpecialtyKey(activeAppointment.resolved_specialty_name);
-      // Even from appointment, validate it's still enabled
       if (specialties.some(s => s.key === key)) return key;
     }
     
-    // Priority 2: Manual selection within prontuário (validate still enabled)
-    if (manualSpecialtyKey && specialties.some(s => s.key === manualSpecialtyKey)) {
-      return manualSpecialtyKey;
-    }
-    
-    // Priority 3: Global specialty context (header dropdown) (validate still enabled)
+    // Priority 2: Global specialty context (from header dropdown)
+    // This is the SINGLE SOURCE OF TRUTH — already handles:
+    //   - Auto-fallback when active specialty is disabled
+    //   - Auto-select when only 1 specialty enabled
+    //   - Persistence in localStorage
     if (globalSpecialtyName) {
       const key = resolveSpecialtyKey(globalSpecialtyName);
       if (specialties.some(s => s.key === key)) return key;
     }
     
-    // Priority 4: Auto-select first enabled specialty
+    // Priority 3: First enabled specialty
     if (specialties.length > 0) {
       return specialties[0].key;
     }
     
     // Default
     return 'geral';
-  }, [activeAppointment?.resolved_specialty_name, manualSpecialtyKey, globalSpecialtyName, specialties]);
+  }, [activeAppointment?.resolved_specialty_name, globalSpecialtyName, specialties]);
 
-  // Clear stale manual selection when specialties change
-  useEffect(() => {
-    if (manualSpecialtyKey && specialties.length > 0 && !specialties.some(s => s.key === manualSpecialtyKey)) {
-      setManualSpecialtyKey(null);
-    }
-  }, [specialties, manualSpecialtyKey]);
-
-  // Find the active specialty details from the controlled list
+  // Find the active specialty details
   const activeSpecialty = useMemo((): SpecialtyOption | null => {
     return specialties.find(s => s.key === activeSpecialtyKey) || null;
   }, [activeSpecialtyKey, specialties]);
 
-  // Get the active specialty ID (synthetic for system specialties)
   const activeSpecialtyId = useMemo(() => {
     return activeSpecialty?.id || null;
   }, [activeSpecialty]);
 
-  // Set manual specialty by key - BLOCKED during active appointment
+  // Set specialty — delegates to global context (no local state)
   const setActiveSpecialty = useCallback((specialtyIdOrKey: string | null) => {
-    // CRITICAL: Block manual selection during active appointment
     if (isSpecialtyLocked) {
       console.warn('Cannot change specialty during active appointment');
       return;
     }
     
-    if (!specialtyIdOrKey) {
-      setManualSpecialtyKey(null);
-      return;
-    }
+    if (!specialtyIdOrKey) return;
     
-    // Find specialty by ID or key
-    const found = specialties.find(s => 
-      s.id === specialtyIdOrKey || s.key === specialtyIdOrKey
-    );
+    // Find the DB specialty to get its real ID for the global store
+    const foundByKey = specialties.find(s => s.key === specialtyIdOrKey);
+    const foundById = specialties.find(s => s.id === specialtyIdOrKey);
+    const found = foundByKey || foundById;
     
     if (found) {
-      setManualSpecialtyKey(found.key);
+      setActiveSpecialtyId(found.id);
     } else {
-      // Try to resolve as a specialty name
+      // Try resolving as name
       const key = resolveSpecialtyKey(specialtyIdOrKey);
-      setManualSpecialtyKey(key);
+      const resolved = specialties.find(s => s.key === key);
+      if (resolved) {
+        setActiveSpecialtyId(resolved.id);
+      }
     }
-  }, [isSpecialtyLocked, specialties]);
+  }, [isSpecialtyLocked, specialties, setActiveSpecialtyId]);
 
   // Get the reason why selection is blocked
   const selectionBlockedReason = useMemo(() => {
@@ -184,13 +176,13 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     activeSpecialtyId,
     activeSpecialty,
     activeSpecialtyKey,
-    specialties, // Now returns only Yesclin-supported specialties
+    specialties,
     isFromAppointment,
     isSpecialtyLocked,
+    isSingleSpecialty,
     selectionBlockedReason,
     setActiveSpecialty,
-    loading: appointmentLoading || specialtiesLoading,
-    // Expose appointment info for context
+    loading: appointmentLoading,
     activeAppointment,
   };
 }

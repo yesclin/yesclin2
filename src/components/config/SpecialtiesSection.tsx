@@ -174,11 +174,15 @@ export function SpecialtiesSection() {
     enabled: !!clinic?.id,
   });
 
-  // Map of enabled standard specialties by name
+  // Map of enabled standard specialties by name — prioritize active records when duplicates exist
   const enabledStandardMap = useMemo(() => {
     const map: Record<string, ClinicSpecialty> = {};
     clinicStandardSpecialties.forEach((s) => {
-      map[s.name] = s;
+      const existing = map[s.name];
+      // Keep active record over inactive when duplicates exist
+      if (!existing || (s.is_active && !existing.is_active)) {
+        map[s.name] = s;
+      }
     });
     return map;
   }, [clinicStandardSpecialties]);
@@ -451,12 +455,11 @@ export function SpecialtiesSection() {
 
   const isLoading = loadingStandard || loadingCustom;
   
-  // Count ONLY specialties that are active AND in the official whitelist
-  const enabledCount = clinicStandardSpecialties.filter(
-    (s) => s.is_active && OFFICIAL_SPECIALTY_NAMES.some(
-      (official) => official.toLowerCase() === s.name.trim().toLowerCase()
-    )
-  ).length;
+  // Count using deduplicated map — avoids counting duplicate DB records
+  const enabledCount = YESCLIN_SPECIALTIES.filter((ys) => {
+    const existing = enabledStandardMap[ys.name];
+    return existing?.is_active ?? false;
+  }).length;
 
   // Debug: detect counter vs visual inconsistency
   const visualActiveCount = YESCLIN_SPECIALTIES.filter((ys) => {

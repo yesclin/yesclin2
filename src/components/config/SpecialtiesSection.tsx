@@ -260,8 +260,7 @@ export function SpecialtiesSection() {
 
   /**
    * Activate anamnesis templates matching the specialty when it's enabled.
-   * Matches by the `specialty` column using multiple slug formats.
-   * Also links the template to the specialty_id if not already linked.
+   * Matches by slug OR specialty_id, and links the template to the specialty.
    */
   const activateSpecialtyTemplates = async (specialtyId: string, capabilityKey: SpecialtyKey) => {
     if (!clinic?.id) return;
@@ -269,31 +268,28 @@ export function SpecialtiesSection() {
       const capability = SPECIALTY_CAPABILITIES[capabilityKey];
       if (!capability) return;
 
-      // Build all possible slug variants for matching
       const slugVariants = [
-        capabilityKey,                                    // e.g. 'geral', 'psicologia'
-        capability.anamnesisSlug,                         // e.g. 'clinica-geral'
-        capability.anamnesisSlug.replace(/-/g, '_'),      // e.g. 'clinica_geral'
+        capabilityKey,
+        capability.anamnesisSlug,
+        capability.anamnesisSlug.replace(/-/g, '_'),
       ];
-      // Remove duplicates
       const uniqueSlugs = [...new Set(slugVariants)];
 
-      // Find matching templates for this clinic
+      // Match templates by slug (for this clinic) OR by specialty_id
       const { data: templates } = await supabase
         .from("anamnesis_templates")
-        .select("id, name, specialty, is_active")
+        .select("id, name, specialty, is_active, specialty_id")
         .eq("clinic_id", clinic.id)
         .in("specialty", uniqueSlugs);
 
       if (templates && templates.length > 0) {
-        // Activate all matching templates and link specialty_id
         for (const tpl of templates) {
           await supabase
             .from("anamnesis_templates")
             .update({ is_active: true, specialty_id: specialtyId })
             .eq("id", tpl.id);
         }
-        console.log(`[SpecialtiesSection] Activated ${templates.length} template(s) for ${capability.label}: ${templates.map(t => t.name).join(', ')}`);
+        console.log(`[SpecialtiesSection] Activated ${templates.length} template(s) for ${capability.label}`);
       } else {
         console.log(`[SpecialtiesSection] No templates found for ${capability.label} (slugs: ${uniqueSlugs.join(', ')})`);
       }
@@ -304,15 +300,35 @@ export function SpecialtiesSection() {
 
   /**
    * Deactivate anamnesis templates when a specialty is disabled.
+   * Matches by specialty_id AND by slug to catch unlinked templates.
    */
-  const deactivateSpecialtyTemplates = async (specialtyId: string) => {
+  const deactivateSpecialtyTemplates = async (specialtyId: string, capabilityKey?: SpecialtyKey) => {
     if (!clinic?.id) return;
     try {
+      // Deactivate by specialty_id
       await supabase
         .from("anamnesis_templates")
         .update({ is_active: false })
         .eq("clinic_id", clinic.id)
         .eq("specialty_id", specialtyId);
+
+      // Also deactivate by slug match (for templates not yet linked)
+      if (capabilityKey) {
+        const capability = SPECIALTY_CAPABILITIES[capabilityKey];
+        if (capability) {
+          const slugVariants = [
+            capabilityKey,
+            capability.anamnesisSlug,
+            capability.anamnesisSlug.replace(/-/g, '_'),
+          ];
+          const uniqueSlugs = [...new Set(slugVariants)];
+          await supabase
+            .from("anamnesis_templates")
+            .update({ is_active: false })
+            .eq("clinic_id", clinic.id)
+            .in("specialty", uniqueSlugs);
+        }
+      }
     } catch (err) {
       console.error("Error deactivating specialty templates:", err);
     }
@@ -408,8 +424,10 @@ export function SpecialtiesSection() {
         .update({ is_active: false })
         .eq("id", confirmDeactivate.id);
 
-      // Deactivate associated templates
-      await deactivateSpecialtyTemplates(confirmDeactivate.id);
+      // Deactivate associated templates (resolve capability key from name)
+      const yesclinMatch = YESCLIN_SPECIALTIES.find(ys => ys.name === confirmDeactivate.name);
+      const capKey = yesclinMatch ? (CAPABILITY_KEY_MAP[yesclinMatch.key] || 'geral') : undefined;
+      await deactivateSpecialtyTemplates(confirmDeactivate.id, capKey);
 
       toast({
         title: "Especialidade desabilitada",

@@ -47,10 +47,8 @@ interface ProntuarioHeaderProps {
   patientLoading?: boolean;
   activeSpecialty: SpecialtyOption | null;
   activeSpecialtyKey: SpecialtyKey;
-  specialties: SpecialtyOption[];
   isSpecialtyFromAppointment: boolean;
   specialtyLoading?: boolean;
-  onSelectSpecialty: (specialtyId: string | null) => void;
   criticalAlertsCount: number;
   isLgpdPending: boolean;
   hasActiveAppointment: boolean;
@@ -77,10 +75,8 @@ export function ProntuarioHeader({
   patientLoading = false,
   activeSpecialty,
   activeSpecialtyKey,
-  specialties,
   isSpecialtyFromAppointment,
   specialtyLoading = false,
-  onSelectSpecialty,
   criticalAlertsCount,
   isLgpdPending,
   hasActiveAppointment,
@@ -225,9 +221,7 @@ export function ProntuarioHeader({
           <SpecialtySelector
             activeSpecialty={activeSpecialty}
             activeSpecialtyKey={activeSpecialtyKey}
-            specialties={specialties}
             isFromAppointment={isSpecialtyFromAppointment}
-            onSelect={onSelectSpecialty}
             loading={specialtyLoading}
           />
           
@@ -273,9 +267,7 @@ export function ProntuarioHeader({
           <SpecialtySelector
             activeSpecialty={activeSpecialty}
             activeSpecialtyKey={activeSpecialtyKey}
-            specialties={specialties}
             isFromAppointment={isSpecialtyFromAppointment}
-            onSelect={onSelectSpecialty}
             loading={specialtyLoading}
           />
 

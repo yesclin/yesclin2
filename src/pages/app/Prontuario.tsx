@@ -2134,10 +2134,8 @@ export default function Prontuario() {
         patientLoading={patientLoading}
         activeSpecialty={activeSpecialty}
         activeSpecialtyKey={activeSpecialtyKey}
-        specialties={specialties}
         isSpecialtyFromAppointment={isSpecialtyFromAppointment}
         specialtyLoading={specialtyLoading}
-        onSelectSpecialty={setActiveSpecialty}
         criticalAlertsCount={criticalAlerts.length}
         isLgpdPending={isEnforcementEnabled && !hasValidConsent}
         hasActiveAppointment={hasActiveAppointment}

@@ -318,16 +318,19 @@ export default function ConfigClinica() {
       updateData.inscricao_municipal = formData.fiscal_type === "pj" ? formData.inscricao_municipal : null;
     }
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("clinics")
       .update(updateData)
-      .eq("id", clinicId);
+      .eq("id", clinicId)
+      .select("id")
+      .single();
 
     if (error) {
+      console.error("Error saving clinic settings:", error);
       setIsSaving(false);
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível salvar as configurações.",
+        description: error.message || "Não foi possível salvar as configurações.",
         variant: "destructive",
       });
       return;

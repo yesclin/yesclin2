@@ -36,16 +36,11 @@ export function mapSpecialtyNameToKey(name: string): SpecialtyKey {
 }
 
 /**
- * FULLY DERIVED hook — no state, no localStorage, no manual control.
- * 
- * The effective specialty is computed from:
- * 1. Active appointment specialty (if exists)
- * 2. First enabled specialty from clinic config
- * 3. Default: 'geral'
- * 
- * When specialties change in Configurações > Clínica:
- * → React Query cache invalidated → useEnabledSpecialties refetches
- * → GlobalSpecialtyProvider updates → this hook recomputes automatically
+ * Specialty resolution priority:
+ * 1. Active appointment specialty (locked)
+ * 2. User's manual selection (from global context)
+ * 3. First enabled specialty
+ * 4. Default: 'geral'
  */
 export function useActiveSpecialty(patientId: string | null | undefined) {
   const { data: activeAppointment, isLoading: appointmentLoading } = useActiveAppointment(patientId);
@@ -53,6 +48,8 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
   const { 
     enabledSpecialties: globalEnabledSpecialties,
     isSingleSpecialty,
+    selectedSpecialtyId,
+    setSelectedSpecialtyId,
   } = useGlobalSpecialty();
 
   // Map enabled DB specialties to Yesclin SpecialtyOptions
@@ -79,21 +76,26 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
 
   const isFromAppointment = !!(activeAppointment?.resolved_specialty_id);
 
-  // DERIVED — no state, purely computed
   const activeSpecialtyKey = useMemo((): SpecialtyKey => {
-    // Priority 1: appointment specialty
+    // Priority 1: appointment specialty (locked)
     if (activeAppointment?.resolved_specialty_name) {
       const key = resolveSpecialtyKey(activeAppointment.resolved_specialty_name);
       if (specialties.some(s => s.key === key)) return key;
     }
     
-    // Priority 2: first enabled specialty
+    // Priority 2: user manual selection
+    if (selectedSpecialtyId) {
+      const selected = specialties.find(s => s.id === selectedSpecialtyId);
+      if (selected) return selected.key;
+    }
+    
+    // Priority 3: first enabled specialty
     if (specialties.length > 0) {
       return specialties[0].key;
     }
     
     return 'geral';
-  }, [activeAppointment?.resolved_specialty_name, specialties]);
+  }, [activeAppointment?.resolved_specialty_name, selectedSpecialtyId, specialties]);
 
   const activeSpecialty = useMemo((): SpecialtyOption | null => {
     return specialties.find(s => s.key === activeSpecialtyKey) || null;
@@ -112,8 +114,11 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
     selectionBlockedReason: isFromAppointment
       ? `Especialidade bloqueada: ${activeAppointment?.resolved_specialty_name || activeSpecialty?.name || ''} (atendimento em andamento)`
       : null,
-    // No-op — manual selection is not allowed
-    setActiveSpecialty: (_: string | null) => {},
+    setActiveSpecialty: (id: string | null) => {
+      if (!isFromAppointment) {
+        setSelectedSpecialtyId(id);
+      }
+    },
     loading: appointmentLoading,
     activeAppointment,
   };

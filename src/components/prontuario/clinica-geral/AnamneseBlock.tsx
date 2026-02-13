@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { AnamnesisTemplateEditorDialog } from "@/components/configuracoes/AnamnesisTemplateEditorDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +65,8 @@ import {
   UserCircle,
   Calculator,
   Lock,
-  Copy,
+   Copy,
+   Settings,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -193,6 +195,8 @@ export function AnamneseBlock({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(ANAMNESE_CLINICA_GERAL_TEMPLATE.id);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<AnamnesisTemplate | null>(null);
 
   // ─── Fetch clinic templates from DB ─────────────────────────────
   const { templates: dbTemplates, isLoading: loadingTemplates } = useAnamnesisTemplates(true);
@@ -247,6 +251,19 @@ export function AnamneseBlock({
     }
     setShowSwitchConfirm(false);
   }, [pendingTemplateId]);
+
+  // ─── Open template editor ──────────────────────────────────────
+  const handleOpenTemplateEditor = useCallback(() => {
+    if (activeTemplate.is_system) {
+      // System template → open as new (duplicate)
+      setEditingTemplate(null);
+    } else {
+      // DB template → open for editing
+      const dbTpl = dbTemplates.find(t => t.id === activeTemplate.id);
+      setEditingTemplate(dbTpl || null);
+    }
+    setShowTemplateEditor(true);
+  }, [activeTemplate, dbTemplates]);
 
   // ─── IMC calculation ────────────────────────────────────────────
   const imcResult = useMemo(() => {
@@ -477,27 +494,39 @@ export function AnamneseBlock({
 
   // ─── Template selector component ─────────────────────────────────
   const renderTemplateSelector = (size: 'sm' | 'lg' = 'sm') => (
-    <div className={size === 'lg' ? 'w-full max-w-sm mx-auto' : 'w-64'}>
-      <Select value={selectedTemplateId} onValueChange={handleTemplateSwitch}>
-        <SelectTrigger className={`bg-background ${size === 'lg' ? 'h-10' : 'h-8 text-xs'}`}>
-          <div className="flex items-center gap-1.5 truncate">
-            <Stethoscope className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-            <SelectValue placeholder="Selecionar modelo..." />
-          </div>
-        </SelectTrigger>
-        <SelectContent className="bg-background z-50">
-          {allTemplates.map(t => (
-            <SelectItem key={t.id} value={t.id}>
-              <div className="flex items-center gap-2">
-                <span className="truncate">{t.nome}</span>
-                {t.is_system && (
-                  <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                )}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className={`flex items-center gap-2 ${size === 'lg' ? 'w-full max-w-md mx-auto' : ''}`}>
+      <div className={size === 'lg' ? 'flex-1' : 'w-64'}>
+        <Select value={selectedTemplateId} onValueChange={handleTemplateSwitch}>
+          <SelectTrigger className={`bg-background ${size === 'lg' ? 'h-10' : 'h-8 text-xs'}`}>
+            <div className="flex items-center gap-1.5 truncate">
+              <Stethoscope className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <SelectValue placeholder="Selecionar modelo..." />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            {allTemplates.map(t => (
+              <SelectItem key={t.id} value={t.id}>
+                <div className="flex items-center gap-2">
+                  <span className="truncate">{t.nome}</span>
+                  {t.is_system && (
+                    <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Button
+        variant="outline"
+        size={size === 'lg' ? 'default' : 'sm'}
+        onClick={handleOpenTemplateEditor}
+        title={activeTemplate.is_system ? 'Criar modelo personalizado' : 'Editar campos do modelo'}
+        className={size === 'lg' ? '' : 'h-8 px-2'}
+      >
+        <Settings className={`h-4 w-4 ${size === 'lg' ? 'mr-2' : ''}`} />
+        {size === 'lg' && (activeTemplate.is_system ? 'Personalizar' : 'Editar Campos')}
+      </Button>
     </div>
   );
 
@@ -548,6 +577,11 @@ export function AnamneseBlock({
             )}
           </CardContent>
         </Card>
+        <AnamnesisTemplateEditorDialog
+          open={showTemplateEditor}
+          onOpenChange={setShowTemplateEditor}
+          template={editingTemplate}
+        />
       </>
     );
   }
@@ -636,6 +670,11 @@ export function AnamneseBlock({
           </ScrollArea>
         </CardContent>
       </Card>
+      <AnamnesisTemplateEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        template={editingTemplate}
+      />
       </>
     );
   }
@@ -659,6 +698,11 @@ export function AnamneseBlock({
           )}
         </div>
         <div className="flex gap-2">
+          {canEdit && (
+            <Button variant="outline" size="sm" onClick={handleOpenTemplateEditor} title="Editar campos do modelo">
+              <Settings className="h-4 w-4 mr-1" /> Editar Campos
+            </Button>
+          )}
           {anamneseHistory.length > 1 && (
             <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
               <History className="h-4 w-4 mr-1" />
@@ -823,6 +867,13 @@ export function AnamneseBlock({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Template Editor Dialog */}
+      <AnamnesisTemplateEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        template={editingTemplate}
+      />
     </div>
   );
 }

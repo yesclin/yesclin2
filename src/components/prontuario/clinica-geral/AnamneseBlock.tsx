@@ -77,6 +77,8 @@ import {
   type SecaoAnamnese 
 } from "@/hooks/prontuario/clinica-geral/anamneseTemplates";
 import { useAnamnesisTemplates, type AnamnesisTemplate } from "@/hooks/useAnamnesisTemplates";
+import { useInstitutionalPdf } from "@/hooks/useInstitutionalPdf";
+import { FileDown } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -109,6 +111,8 @@ interface AnamneseBlockProps {
   saving?: boolean;
   canEdit?: boolean;
   onSave: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
+  patientName?: string;
+  patientCpf?: string;
 }
 
 // ─── Icon resolver ───────────────────────────────────────────────────
@@ -187,7 +191,10 @@ export function AnamneseBlock({
   saving = false,
   canEdit = false,
   onSave,
+  patientName,
+  patientCpf,
 }: AnamneseBlockProps) {
+  const { generateAnamnesisPdf, generating } = useInstitutionalPdf();
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamneseData | null>(null);
@@ -697,7 +704,24 @@ export function AnamneseBlock({
             </Badge>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {currentAnamnese && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={generating}
+              onClick={() => {
+                generateAnamnesisPdf(
+                  { name: patientName || 'Paciente', cpf: patientCpf },
+                  currentAnamnese,
+                  activeTemplate.secoes,
+                );
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1" />
+              {generating ? 'Gerando...' : 'Gerar PDF Institucional'}
+            </Button>
+          )}
           {canEdit && (
             <Button variant="outline" size="sm" onClick={handleOpenTemplateEditor} title="Editar campos do modelo">
               <Settings className="h-4 w-4 mr-1" /> Editar Campos

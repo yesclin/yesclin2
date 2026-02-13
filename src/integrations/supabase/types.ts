@@ -1164,6 +1164,71 @@ export type Database = {
           },
         ]
       }
+      clinic_document_settings: {
+        Row: {
+          clinic_id: string
+          clinic_name: string | null
+          created_at: string
+          footer_text: string | null
+          header_style: string
+          id: string
+          logo_url: string | null
+          primary_color: string
+          responsible_crm: string | null
+          responsible_name: string | null
+          secondary_color: string
+          show_crm: boolean
+          show_digital_signature: boolean
+          show_footer: boolean
+          signature_image_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          clinic_name?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_style?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          responsible_crm?: string | null
+          responsible_name?: string | null
+          secondary_color?: string
+          show_crm?: boolean
+          show_digital_signature?: boolean
+          show_footer?: boolean
+          signature_image_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          clinic_name?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_style?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          responsible_crm?: string | null
+          responsible_name?: string | null
+          secondary_color?: string
+          show_crm?: boolean
+          show_digital_signature?: boolean
+          show_footer?: boolean
+          signature_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_document_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_schedule_config: {
         Row: {
           clinic_id: string
@@ -5489,6 +5554,60 @@ export type Database = {
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_generated_documents: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          generated_by: string
+          id: string
+          patient_id: string
+          source_record_id: string | null
+          title: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          document_type?: string
+          file_name: string
+          file_path: string
+          generated_by: string
+          id?: string
+          patient_id: string
+          source_record_id?: string | null
+          title: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          generated_by?: string
+          id?: string
+          patient_id?: string
+          source_record_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_generated_documents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_generated_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]

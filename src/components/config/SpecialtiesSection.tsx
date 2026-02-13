@@ -48,6 +48,7 @@ import {
   Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { OFFICIAL_SPECIALTY_NAMES } from "@/constants/officialSpecialties";
 
 // Curated list of Yesclin-supported specialties
 const YESCLIN_SPECIALTIES = [
@@ -270,6 +271,7 @@ export function SpecialtiesSection() {
 
       queryClient.invalidateQueries({ queryKey: ["clinic-standard-specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
     } catch (err) {
       console.error("Error toggling specialty:", err);
       toast({
@@ -300,6 +302,7 @@ export function SpecialtiesSection() {
       queryClient.invalidateQueries({ queryKey: ["clinic-standard-specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["clinic-custom-specialties", clinic.id] });
       queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+      queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
     } catch (err) {
       console.error("Error deactivating:", err);
       toast({
@@ -447,7 +450,24 @@ export function SpecialtiesSection() {
   };
 
   const isLoading = loadingStandard || loadingCustom;
-  const enabledCount = clinicStandardSpecialties.filter((s) => s.is_active).length;
+  
+  // Count ONLY specialties that are active AND in the official whitelist
+  const enabledCount = clinicStandardSpecialties.filter(
+    (s) => s.is_active && OFFICIAL_SPECIALTY_NAMES.some(
+      (official) => official.toLowerCase() === s.name.trim().toLowerCase()
+    )
+  ).length;
+
+  // Debug: detect counter vs visual inconsistency
+  const visualActiveCount = YESCLIN_SPECIALTIES.filter((ys) => {
+    const existing = enabledStandardMap[ys.name];
+    return existing?.is_active ?? false;
+  }).length;
+  if (enabledCount !== visualActiveCount) {
+    console.error(
+      `Inconsistência detectada entre contador (${enabledCount}) e estado visual (${visualActiveCount})`
+    );
+  }
 
   return (
     <>

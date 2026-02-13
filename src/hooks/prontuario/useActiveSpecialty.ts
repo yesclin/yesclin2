@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useActiveAppointment } from './useActiveAppointment';
 import { 
   YESCLIN_SUPPORTED_SPECIALTIES, 
@@ -90,26 +90,42 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
   // Priority: 1) Active appointment's resolved specialty (LOCKED - from procedure)
   //           2) Manual selection within prontuário (only when no active appointment)
   //           3) Global specialty context (header dropdown) — keeps prontuário in sync
-  //           4) Default: 'geral'
+  //           4) First enabled specialty (auto-select)
+  //           5) Default: 'geral'
   const activeSpecialtyKey = useMemo((): SpecialtyKey => {
     // Priority 1: Active appointment - resolve from name (LOCKED, ignores global)
     if (activeAppointment?.resolved_specialty_name) {
-      return resolveSpecialtyKey(activeAppointment.resolved_specialty_name);
+      const key = resolveSpecialtyKey(activeAppointment.resolved_specialty_name);
+      // Even from appointment, validate it's still enabled
+      if (specialties.some(s => s.key === key)) return key;
     }
     
-    // Priority 2: Manual selection within prontuário
-    if (manualSpecialtyKey) {
+    // Priority 2: Manual selection within prontuário (validate still enabled)
+    if (manualSpecialtyKey && specialties.some(s => s.key === manualSpecialtyKey)) {
       return manualSpecialtyKey;
     }
     
-    // Priority 3: Global specialty context (header dropdown)
+    // Priority 3: Global specialty context (header dropdown) (validate still enabled)
     if (globalSpecialtyName) {
-      return resolveSpecialtyKey(globalSpecialtyName);
+      const key = resolveSpecialtyKey(globalSpecialtyName);
+      if (specialties.some(s => s.key === key)) return key;
+    }
+    
+    // Priority 4: Auto-select first enabled specialty
+    if (specialties.length > 0) {
+      return specialties[0].key;
     }
     
     // Default
     return 'geral';
-  }, [activeAppointment?.resolved_specialty_name, manualSpecialtyKey, globalSpecialtyName]);
+  }, [activeAppointment?.resolved_specialty_name, manualSpecialtyKey, globalSpecialtyName, specialties]);
+
+  // Clear stale manual selection when specialties change
+  useEffect(() => {
+    if (manualSpecialtyKey && specialties.length > 0 && !specialties.some(s => s.key === manualSpecialtyKey)) {
+      setManualSpecialtyKey(null);
+    }
+  }, [specialties, manualSpecialtyKey]);
 
   // Find the active specialty details from the controlled list
   const activeSpecialty = useMemo((): SpecialtyOption | null => {

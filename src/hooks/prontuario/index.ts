@@ -49,6 +49,17 @@ export {
   useIsModuleAvailable 
 } from './useActiveMedicalRecordModules';
 
+// Specialty Capabilities (central mapping: blocks + modules + anamnesis)
+export { useSpecialtyCapabilities, type SpecialtyCapabilitiesResult } from './useSpecialtyCapabilities';
+export { 
+  SPECIALTY_CAPABILITIES,
+  getCapabilities,
+  isBlockEnabled,
+  getAnamnesisSlug,
+  getDefaultModules,
+  type SpecialtyCapability,
+} from './specialtyCapabilities';
+
 // Intelligent Medical Record Context (appointment-based context with validations)
 export {
   useIntelligentMedicalRecordContext,

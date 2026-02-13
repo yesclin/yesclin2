@@ -90,7 +90,8 @@ import {
   type ActionKey,
 } from "@/hooks/prontuario";
 import { useActiveSpecialty } from "@/hooks/prontuario/useActiveSpecialty";
-import { isTabVisibleForSpecialty, getClinicalBlockLabel, type ClinicalBlockKey } from "@/hooks/prontuario/specialtyTabsConfig";
+import { getClinicalBlockLabel, type ClinicalBlockKey } from "@/hooks/prontuario/specialtyTabsConfig";
+import { isBlockEnabled } from "@/hooks/prontuario/specialtyCapabilities";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
 import { useProntuarioPrint } from "@/hooks/prontuario/useProntuarioPrint";
 import { useClinicData } from "@/hooks/useClinicData";
@@ -890,7 +891,7 @@ export default function Prontuario() {
         if (!canViewTab(standardKey)) return false;
         
         // Check specialty visibility
-        return isTabVisibleForSpecialty(item.id, activeSpecialtyKey);
+        return isBlockEnabled(item.id as ClinicalBlockKey, activeSpecialtyKey);
       })
       .map(item => ({
         ...item,

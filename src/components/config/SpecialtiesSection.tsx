@@ -258,6 +258,66 @@ export function SpecialtiesSection() {
     }
   };
 
+  /**
+   * Activate anamnesis templates matching the specialty when it's enabled.
+   * Matches by the `specialty` column using multiple slug formats.
+   * Also links the template to the specialty_id if not already linked.
+   */
+  const activateSpecialtyTemplates = async (specialtyId: string, capabilityKey: SpecialtyKey) => {
+    if (!clinic?.id) return;
+    try {
+      const capability = SPECIALTY_CAPABILITIES[capabilityKey];
+      if (!capability) return;
+
+      // Build all possible slug variants for matching
+      const slugVariants = [
+        capabilityKey,                                    // e.g. 'geral', 'psicologia'
+        capability.anamnesisSlug,                         // e.g. 'clinica-geral'
+        capability.anamnesisSlug.replace(/-/g, '_'),      // e.g. 'clinica_geral'
+      ];
+      // Remove duplicates
+      const uniqueSlugs = [...new Set(slugVariants)];
+
+      // Find matching templates for this clinic
+      const { data: templates } = await supabase
+        .from("anamnesis_templates")
+        .select("id, name, specialty, is_active")
+        .eq("clinic_id", clinic.id)
+        .in("specialty", uniqueSlugs);
+
+      if (templates && templates.length > 0) {
+        // Activate all matching templates and link specialty_id
+        for (const tpl of templates) {
+          await supabase
+            .from("anamnesis_templates")
+            .update({ is_active: true, specialty_id: specialtyId })
+            .eq("id", tpl.id);
+        }
+        console.log(`[SpecialtiesSection] Activated ${templates.length} template(s) for ${capability.label}: ${templates.map(t => t.name).join(', ')}`);
+      } else {
+        console.log(`[SpecialtiesSection] No templates found for ${capability.label} (slugs: ${uniqueSlugs.join(', ')})`);
+      }
+    } catch (err) {
+      console.error("Error activating specialty templates:", err);
+    }
+  };
+
+  /**
+   * Deactivate anamnesis templates when a specialty is disabled.
+   */
+  const deactivateSpecialtyTemplates = async (specialtyId: string) => {
+    if (!clinic?.id) return;
+    try {
+      await supabase
+        .from("anamnesis_templates")
+        .update({ is_active: false })
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_id", specialtyId);
+    } catch (err) {
+      console.error("Error deactivating specialty templates:", err);
+    }
+  };
+
   /** Invalidate all specialty-related caches for full sync */
   const invalidateAllSpecialtyCaches = () => {
     if (!clinic?.id) return;
@@ -269,6 +329,8 @@ export function SpecialtiesSection() {
     queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic.id] });
     queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic.id] });
     queryClient.invalidateQueries({ queryKey: ["standard-specialties"] });
+    queryClient.invalidateQueries({ queryKey: ["anamnesis-templates"] });
+    queryClient.invalidateQueries({ queryKey: ["anamnesis_templates"] });
   };
 
   const handleToggleStandard = async (yesclinSpecialty: typeof YESCLIN_SPECIALTIES[0]) => {
@@ -293,8 +355,9 @@ export function SpecialtiesSection() {
           .update({ is_active: true })
           .eq("id", existing.id);
         
-        // Re-provision modules on reactivation
+        // Re-provision modules and activate templates on reactivation
         await provisionSpecialtyModules(existing.id, capabilityKey);
+        await activateSpecialtyTemplates(existing.id, capabilityKey);
       } else {
         // Create new clinic-specific specialty
         const { data: created, error } = await supabase
@@ -313,6 +376,7 @@ export function SpecialtiesSection() {
         if (error) throw error;
         if (created) {
           await provisionSpecialtyModules(created.id, capabilityKey);
+          await activateSpecialtyTemplates(created.id, capabilityKey);
         }
       }
 
@@ -344,9 +408,12 @@ export function SpecialtiesSection() {
         .update({ is_active: false })
         .eq("id", confirmDeactivate.id);
 
+      // Deactivate associated templates
+      await deactivateSpecialtyTemplates(confirmDeactivate.id);
+
       toast({
         title: "Especialidade desabilitada",
-        description: `"${confirmDeactivate.name}" não aparecerá mais em novos cadastros.`,
+        description: `"${confirmDeactivate.name}" e seus modelos de prontuário foram desativados.`,
       });
 
       invalidateAllSpecialtyCaches();

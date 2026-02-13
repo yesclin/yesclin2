@@ -73,6 +73,16 @@ export function SpecialtySelector({
     );
   }
 
+  // Single specialty enabled — show fixed label, no dropdown
+  if (specialties.length <= 1) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 border border-border rounded-lg">
+        <IconComponent className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">{displayLabel}</span>
+      </div>
+    );
+  }
+
   // Manual selection allowed - show dropdown with Yesclin specialties
   return (
     <DropdownMenu>

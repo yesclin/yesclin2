@@ -4,6 +4,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useCustomSpecialties, useCreateSpecialty, useUpdateSpecialty, useToggleSpecialty } from "@/hooks/useEnabledSpecialties";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SPECIALTY_CAPABILITIES } from "@/hooks/prontuario/specialtyCapabilities";
+import type { SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -48,7 +50,20 @@ import {
   Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { OFFICIAL_SPECIALTY_NAMES } from "@/constants/officialSpecialties";
+
+
+/** Maps YESCLIN_SPECIALTIES.key → SpecialtyKey in SPECIALTY_CAPABILITIES */
+const CAPABILITY_KEY_MAP: Record<string, SpecialtyKey> = {
+  "clinica-geral": "geral",
+  "psicologia": "psicologia",
+  "nutricao": "nutricao",
+  "fisioterapia": "fisioterapia",
+  "pilates": "pilates",
+  "estetica": "estetica",
+  "odontologia": "odontologia",
+  "dermatologia": "dermatologia",
+  "pediatria": "pediatria",
+};
 
 // Curated list of Yesclin-supported specialties
 const YESCLIN_SPECIALTIES = [
@@ -202,16 +217,30 @@ export function SpecialtiesSection() {
   const activeCustom = filteredCustom.filter((s) => s.is_active);
   const inactiveCustom = filteredCustom.filter((s) => !s.is_active);
 
-  const enableCoreModules = async (specialtyId: string) => {
+  /**
+   * Provision all default modules for a specialty based on SPECIALTY_CAPABILITIES.
+   * Uses the capability key to get the correct module list from the central matrix.
+   */
+  const provisionSpecialtyModules = async (specialtyId: string, capabilityKey: SpecialtyKey) => {
     if (!clinic?.id) return;
     try {
-      const { data: coreModules } = await supabase
-        .from("clinical_modules")
-        .select("id")
-        .in("key", ["evolucao", "anamnese", "alertas", "files"]);
+      const capability = SPECIALTY_CAPABILITIES[capabilityKey];
+      if (!capability) {
+        console.warn(`No capability found for key: ${capabilityKey}`);
+        return;
+      }
 
-      if (coreModules && coreModules.length > 0) {
-        const moduleInserts = coreModules.map((m) => ({
+      const moduleKeys = capability.defaultModules;
+      if (moduleKeys.length === 0) return;
+
+      // Fetch all matching module IDs from DB
+      const { data: modules } = await supabase
+        .from("clinical_modules")
+        .select("id, key")
+        .in("key", moduleKeys);
+
+      if (modules && modules.length > 0) {
+        const moduleInserts = modules.map((m) => ({
           clinic_id: clinic.id,
           specialty_id: specialtyId,
           module_id: m.id,
@@ -221,16 +250,32 @@ export function SpecialtiesSection() {
         await supabase
           .from("clinic_specialty_modules")
           .upsert(moduleInserts, { onConflict: "clinic_id,specialty_id,module_id" });
+        
+        console.log(`[SpecialtiesSection] Provisioned ${modules.length} modules for ${capability.label}: ${modules.map(m => m.key).join(', ')}`);
       }
     } catch (err) {
-      console.error("Error enabling core modules:", err);
+      console.error("Error provisioning specialty modules:", err);
     }
+  };
+
+  /** Invalidate all specialty-related caches for full sync */
+  const invalidateAllSpecialtyCaches = () => {
+    if (!clinic?.id) return;
+    queryClient.invalidateQueries({ queryKey: ["clinic-standard-specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["clinic-custom-specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["all-specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["custom-specialties", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["specialties-management", clinic.id] });
+    queryClient.invalidateQueries({ queryKey: ["standard-specialties"] });
   };
 
   const handleToggleStandard = async (yesclinSpecialty: typeof YESCLIN_SPECIALTIES[0]) => {
     if (!clinic?.id || !isOwner) return;
 
     const existing = enabledStandardMap[yesclinSpecialty.name];
+    const capabilityKey = CAPABILITY_KEY_MAP[yesclinSpecialty.key] || 'geral';
     setTogglingId(yesclinSpecialty.key);
 
     try {
@@ -247,6 +292,9 @@ export function SpecialtiesSection() {
           .from("specialties")
           .update({ is_active: true })
           .eq("id", existing.id);
+        
+        // Re-provision modules on reactivation
+        await provisionSpecialtyModules(existing.id, capabilityKey);
       } else {
         // Create new clinic-specific specialty
         const { data: created, error } = await supabase
@@ -264,18 +312,16 @@ export function SpecialtiesSection() {
 
         if (error) throw error;
         if (created) {
-          await enableCoreModules(created.id);
+          await provisionSpecialtyModules(created.id, capabilityKey);
         }
       }
 
       toast({
         title: existing ? "Especialidade reativada!" : "Especialidade habilitada!",
-        description: `"${yesclinSpecialty.name}" está disponível para uso.`,
+        description: `"${yesclinSpecialty.name}" está disponível para uso na agenda, prontuário e procedimentos.`,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["clinic-standard-specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
+      invalidateAllSpecialtyCaches();
     } catch (err) {
       console.error("Error toggling specialty:", err);
       toast({
@@ -303,10 +349,7 @@ export function SpecialtiesSection() {
         description: `"${confirmDeactivate.name}" não aparecerá mais em novos cadastros.`,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["clinic-standard-specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["clinic-custom-specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["enabled-specialties", clinic.id] });
+      invalidateAllSpecialtyCaches();
     } catch (err) {
       console.error("Error deactivating:", err);
       toast({
@@ -355,7 +398,7 @@ export function SpecialtiesSection() {
       if (error) throw error;
 
       if (created) {
-        await enableCoreModules(created.id);
+        await provisionSpecialtyModules(created.id, 'custom');
       }
 
       toast({
@@ -366,8 +409,7 @@ export function SpecialtiesSection() {
       setNewName("");
       setNewDescription("");
       setIsCreateDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["clinic-custom-specialties", clinic.id] });
-      queryClient.invalidateQueries({ queryKey: ["specialties", clinic.id] });
+      invalidateAllSpecialtyCaches();
     } catch (err) {
       console.error("Error creating custom specialty:", err);
       toast({
@@ -461,16 +503,6 @@ export function SpecialtiesSection() {
     return existing?.is_active ?? false;
   }).length;
 
-  // Debug: detect counter vs visual inconsistency
-  const visualActiveCount = YESCLIN_SPECIALTIES.filter((ys) => {
-    const existing = enabledStandardMap[ys.name];
-    return existing?.is_active ?? false;
-  }).length;
-  if (enabledCount !== visualActiveCount) {
-    console.error(
-      `Inconsistência detectada entre contador (${enabledCount}) e estado visual (${visualActiveCount})`
-    );
-  }
 
   return (
     <>

@@ -6,6 +6,7 @@ import {
   type YesclinSpecialty 
 } from './yesclinSpecialties';
 import { useEnabledSpecialties } from '@/hooks/useEnabledSpecialties';
+import { useGlobalSpecialty } from '@/hooks/useGlobalSpecialty';
 
 export type SpecialtyKey =
   | 'geral'           // Clínica Geral
@@ -56,6 +57,7 @@ export function mapSpecialtyNameToKey(name: string): SpecialtyKey {
 export function useActiveSpecialty(patientId: string | null | undefined) {
   const { data: activeAppointment, isLoading: appointmentLoading } = useActiveAppointment(patientId);
   const { data: enabledClinicSpecialties = [], isLoading: specialtiesLoading } = useEnabledSpecialties();
+  const { activeSpecialtyName: globalSpecialtyName } = useGlobalSpecialty();
   
   const [manualSpecialtyKey, setManualSpecialtyKey] = useState<SpecialtyKey | null>(null);
 
@@ -86,22 +88,28 @@ export function useActiveSpecialty(patientId: string | null | undefined) {
 
   // Determine the active specialty key
   // Priority: 1) Active appointment's resolved specialty (LOCKED - from procedure)
-  //           2) Manual selection (only when no active appointment)
-  //           3) Default: 'geral'
+  //           2) Manual selection within prontuário (only when no active appointment)
+  //           3) Global specialty context (header dropdown) — keeps prontuário in sync
+  //           4) Default: 'geral'
   const activeSpecialtyKey = useMemo((): SpecialtyKey => {
-    // Priority 1: Active appointment - resolve from name
+    // Priority 1: Active appointment - resolve from name (LOCKED, ignores global)
     if (activeAppointment?.resolved_specialty_name) {
       return resolveSpecialtyKey(activeAppointment.resolved_specialty_name);
     }
     
-    // Priority 2: Manual selection
+    // Priority 2: Manual selection within prontuário
     if (manualSpecialtyKey) {
       return manualSpecialtyKey;
     }
     
+    // Priority 3: Global specialty context (header dropdown)
+    if (globalSpecialtyName) {
+      return resolveSpecialtyKey(globalSpecialtyName);
+    }
+    
     // Default
     return 'geral';
-  }, [activeAppointment?.resolved_specialty_name, manualSpecialtyKey]);
+  }, [activeAppointment?.resolved_specialty_name, manualSpecialtyKey, globalSpecialtyName]);
 
   // Find the active specialty details from the controlled list
   const activeSpecialty = useMemo((): SpecialtyOption | null => {

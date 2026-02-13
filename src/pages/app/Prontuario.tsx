@@ -1112,6 +1112,8 @@ export default function Prontuario() {
             saving={anamneseSaving}
             canEdit={canEditCurrentTab}
             onSave={saveAnamnese}
+            patientName={patient?.full_name}
+            patientCpf={patient?.cpf}
           />
         );
 

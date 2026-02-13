@@ -81,6 +81,7 @@ const ownerAdminConfigMenu: MenuItem[] = [
   { title: "Modelos de Prontuário", url: "/app/config/prontuario", icon: FileText },
   { title: "LGPD & Segurança", url: "/app/config/seguranca", icon: Shield },
   { title: "Integrações", url: "/app/config/integracoes", icon: Plug },
+  { title: "Documentos Institucionais", url: "/app/config/documentos-institucionais", icon: FileText },
 ];
 
 // Profissional de Saúde - Limited menus (own data only)

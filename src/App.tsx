@@ -48,6 +48,7 @@ import ConfigProntuario from "./pages/app/config/Prontuario";
 import ConfigSeguranca from "./pages/app/config/Seguranca";
 import ConfigIntegracoes from "./pages/app/config/Integracoes";
 import ModelosAnamnese from "./pages/configuracoes/ModelosAnamnese";
+import DocumentosInstitucionais from "./pages/app/config/DocumentosInstitucionais";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
             <Route path="config/seguranca" element={<ProtectedRoute module="configuracoes"><ConfigSeguranca /></ProtectedRoute>} />
             <Route path="config/integracoes" element={<ProtectedRoute module="configuracoes"><ConfigIntegracoes /></ProtectedRoute>} />
             <Route path="config/modelos-anamnese" element={<ProtectedRoute module="configuracoes"><ModelosAnamnese /></ProtectedRoute>} />
+            <Route path="config/documentos-institucionais" element={<ProtectedRoute module="configuracoes"><DocumentosInstitucionais /></ProtectedRoute>} />
           </Route>
           
           {/* Catch-all */}

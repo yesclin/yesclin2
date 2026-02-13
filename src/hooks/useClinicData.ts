@@ -26,12 +26,15 @@ export function useClinicData() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchClinicData = async () => {
       try {
         const { data: profile } = await supabase
           .from("profiles")
           .select("clinic_id")
           .maybeSingle();
+
+        if (cancelled) return;
 
         if (!profile?.clinic_id) {
           setIsLoading(false);
@@ -62,6 +65,8 @@ export function useClinicData() {
           .eq("id", profile.clinic_id)
           .maybeSingle();
 
+        if (cancelled) return;
+
         if (clinicData) {
           // Generate signed URL for logo if exists (bucket is now private)
           let signedLogoUrl = clinicData.logo_url;
@@ -73,21 +78,26 @@ export function useClinicData() {
               const { data: signedData } = await supabase.storage
                 .from('clinic-logos')
                 .createSignedUrl(path, 3600); // 1 hour expiration
-              if (signedData?.signedUrl) {
+              if (!cancelled && signedData?.signedUrl) {
                 signedLogoUrl = signedData.signedUrl;
               }
             }
           }
-          setClinic({ ...clinicData, logo_url: signedLogoUrl });
+          if (!cancelled) {
+            setClinic({ ...clinicData, logo_url: signedLogoUrl });
+          }
         }
       } catch (error) {
         console.error("Error fetching clinic data:", error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchClinicData();
+    return () => { cancelled = true; };
   }, []);
 
   const getFormattedAddress = () => {

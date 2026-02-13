@@ -9274,6 +9274,10 @@ export type Database = {
           is_valid: boolean
         }[]
       }
+      validate_specialty_for_clinic: {
+        Args: { _clinic_id: string; _specialty_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_action: "view" | "create" | "edit" | "delete" | "export"

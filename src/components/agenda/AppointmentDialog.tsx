@@ -118,7 +118,8 @@ export function AppointmentDialog({
   lockedPatientId,
   lockedPatientName,
 }: AppointmentDialogProps) {
-  const { activeSpecialtyId: globalSpecialtyId } = useGlobalSpecialty();
+  const { enabledSpecialties } = useGlobalSpecialty();
+  const globalSpecialtyId = enabledSpecialties[0]?.id || null;
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [showConflictConfirm, setShowConflictConfirm] = useState(false);
   

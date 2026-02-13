@@ -36,11 +36,14 @@ export function useEnabledSpecialties() {
     queryKey: ["enabled-specialties", clinic?.id],
     queryFn: async () => {
       // Fetch both global and clinic-specific specialties
+      // ONLY fetch clinic-specific specialties — matches what Config > Clínica manages.
+      // Global specialties (clinic_id IS NULL) are NOT included because
+      // Config creates clinic-specific records when toggling a specialty on.
       const { data, error } = await supabase
         .from("specialties")
         .select("id, name, description, color, area, is_active, specialty_type, clinic_id")
         .eq("is_active", true)
-        .or(`clinic_id.is.null,clinic_id.eq.${clinic?.id}`)
+        .eq("clinic_id", clinic!.id)
         .order("area")
         .order("name");
       

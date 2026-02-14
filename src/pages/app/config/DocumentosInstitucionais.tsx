@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useClinicData } from "@/hooks/useClinicData";
 import {
   useDocumentSettings,
   DOCUMENT_DEFAULTS,
@@ -209,6 +211,133 @@ function DocumentPreview({ form, activeDocType = 'anamnese' }: { form: DocumentS
   );
 }
 
+// ─── Modelos de Documento Section ─────────────────────────────
+function ModelosDocumentoSection() {
+  const { clinic } = useClinicData();
+  const [modelos, setModelos] = useState<any[]>([]);
+  const [loadingModelos, setLoadingModelos] = useState(true);
+  const [savingModelo, setSavingModelo] = useState(false);
+  const [editingModelo, setEditingModelo] = useState<any | null>(null);
+  const [formModelo, setFormModelo] = useState({ nome: '', tipo: 'receituario' as string, cabecalho_personalizado: '', texto_padrao: '', rodape: '', is_default: false });
+
+  const fetchModelos = useCallback(async () => {
+    if (!clinic?.id) return;
+    setLoadingModelos(true);
+    const { data } = await supabase.from('modelos_documento').select('*').eq('clinic_id', clinic.id).order('created_at', { ascending: false });
+    setModelos(data || []);
+    setLoadingModelos(false);
+  }, [clinic?.id]);
+
+  useEffect(() => { fetchModelos(); }, [fetchModelos]);
+
+  const resetForm = () => { setFormModelo({ nome: '', tipo: 'receituario', cabecalho_personalizado: '', texto_padrao: '', rodape: '', is_default: false }); setEditingModelo(null); };
+
+  const handleSaveModelo = async () => {
+    if (!clinic?.id || !formModelo.nome.trim()) return;
+    setSavingModelo(true);
+    try {
+      if (editingModelo) {
+        await supabase.from('modelos_documento').update({ nome: formModelo.nome, tipo: formModelo.tipo, cabecalho_personalizado: formModelo.cabecalho_personalizado || null, texto_padrao: formModelo.texto_padrao || null, rodape: formModelo.rodape || null, is_default: formModelo.is_default } as any).eq('id', editingModelo.id);
+      } else {
+        await supabase.from('modelos_documento').insert({ clinic_id: clinic.id, nome: formModelo.nome, tipo: formModelo.tipo, cabecalho_personalizado: formModelo.cabecalho_personalizado || null, texto_padrao: formModelo.texto_padrao || null, rodape: formModelo.rodape || null, is_default: formModelo.is_default } as any);
+      }
+      toast.success(editingModelo ? 'Modelo atualizado' : 'Modelo criado');
+      resetForm();
+      await fetchModelos();
+    } catch (err: any) { toast.error(err.message); }
+    setSavingModelo(false);
+  };
+
+  const handleEdit = (m: any) => { setEditingModelo(m); setFormModelo({ nome: m.nome, tipo: m.tipo, cabecalho_personalizado: m.cabecalho_personalizado || '', texto_padrao: m.texto_padrao || '', rodape: m.rodape || '', is_default: m.is_default }); };
+  const handleDelete = async (id: string) => { await supabase.from('modelos_documento').delete().eq('id', id); await fetchModelos(); toast.success('Modelo removido'); };
+  const handleToggleActive = async (id: string, active: boolean) => { await supabase.from('modelos_documento').update({ is_active: active } as any).eq('id', id); await fetchModelos(); };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            {editingModelo ? 'Editar Modelo' : 'Novo Modelo de Documento'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Nome do modelo *</Label>
+              <Input placeholder="Ex: Receituário Padrão" value={formModelo.nome} onChange={e => setFormModelo(p => ({ ...p, nome: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Tipo</Label>
+              <Select value={formModelo.tipo} onValueChange={v => setFormModelo(p => ({ ...p, tipo: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receituario">Receituário</SelectItem>
+                  <SelectItem value="atestado">Atestado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Cabeçalho personalizado</Label>
+            <Textarea placeholder="Texto de cabeçalho..." value={formModelo.cabecalho_personalizado} onChange={e => setFormModelo(p => ({ ...p, cabecalho_personalizado: e.target.value }))} rows={2} />
+          </div>
+          <div>
+            <Label className="text-xs">Texto padrão</Label>
+            <Textarea placeholder="Conteúdo padrão do documento..." value={formModelo.texto_padrao} onChange={e => setFormModelo(p => ({ ...p, texto_padrao: e.target.value }))} rows={3} />
+          </div>
+          <div>
+            <Label className="text-xs">Rodapé</Label>
+            <Input placeholder="Rodapé do modelo" value={formModelo.rodape} onChange={e => setFormModelo(p => ({ ...p, rodape: e.target.value }))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={formModelo.is_default} onCheckedChange={v => setFormModelo(p => ({ ...p, is_default: v }))} />
+            <Label className="text-xs">Definir como padrão</Label>
+          </div>
+          <div className="flex gap-2">
+            {editingModelo && <Button variant="outline" size="sm" onClick={resetForm}>Cancelar</Button>}
+            <Button size="sm" onClick={handleSaveModelo} disabled={savingModelo || !formModelo.nome.trim()}>
+              {savingModelo ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+              {editingModelo ? 'Atualizar' : 'Criar Modelo'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Modelos Cadastrados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingModelos ? <Skeleton className="h-20 w-full" /> : modelos.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum modelo cadastrado.</p>
+          ) : (
+            <div className="space-y-2">
+              {modelos.map(m => (
+                <div key={m.id} className="flex items-center justify-between border rounded-lg p-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{m.nome}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{m.tipo === 'receituario' ? 'Receituário' : 'Atestado'}</span>
+                      {m.is_default && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Padrão</span>}
+                      {!m.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Inativo</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Switch checked={m.is_active} onCheckedChange={v => handleToggleActive(m.id, v)} />
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(m)}>Editar</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(m.id)}>Excluir</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────
 export default function DocumentosInstitucionais() {
   const { settings, loading, saving, save, uploadFile, clinicName } = useDocumentSettings();
@@ -315,12 +444,13 @@ export default function DocumentosInstitucionais() {
         {/* Settings */}
         <div className="lg:col-span-2 space-y-4">
           <Tabs defaultValue="identidade" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="identidade" className="text-xs">Identidade</TabsTrigger>
               <TabsTrigger value="estilo" className="text-xs">Estilo</TabsTrigger>
               <TabsTrigger value="documentos" className="text-xs">Documentos</TabsTrigger>
               <TabsTrigger value="profissional" className="text-xs">Profissional</TabsTrigger>
               <TabsTrigger value="rodape" className="text-xs">Rodapé</TabsTrigger>
+              <TabsTrigger value="modelos" className="text-xs">Modelos</TabsTrigger>
             </TabsList>
 
             {/* ─── Tab: Identidade ─── */}
@@ -674,6 +804,11 @@ export default function DocumentosInstitucionais() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* ─── Tab: Modelos ─── */}
+            <TabsContent value="modelos" className="mt-4">
+              <ModelosDocumentoSection />
             </TabsContent>
           </Tabs>
         </div>

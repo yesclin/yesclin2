@@ -6,6 +6,13 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { SecaoAnamnese } from '@/hooks/prontuario/clinica-geral/anamneseTemplates';
+import {
+  generateHash,
+  getNextDocumentNumber,
+  buildDocumentReference,
+  generateValidationQRCode,
+  registerClinicalDocument,
+} from '@/utils/documentControl';
 
 interface PatientInfo {
   name: string;
@@ -30,18 +37,11 @@ interface AnamneseForPdf {
   template_id?: string;
 }
 
-function buildHtml(
-  settings: DocumentSettings | null,
-  patient: PatientInfo,
+function buildContentHtml(
+  pc: string,
   anamnese: AnamneseForPdf,
   sections: SecaoAnamnese[],
 ): string {
-  const s = settings || (DOCUMENT_DEFAULTS as unknown as DocumentSettings);
-  const pc = s.primary_color || '#6366f1';
-  const clinicName = s.clinic_name || 'Clínica';
-  const dateStr = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-
-  // Build content
   let contentHtml = '';
 
   if (anamnese.structured_data && Object.keys(anamnese.structured_data).length > 0) {
@@ -67,7 +67,6 @@ function buildHtml(
       contentHtml += '</div>';
     }
   } else {
-    // Legacy format
     const legacyFields = [
       { label: 'Queixa Principal', value: anamnese.queixa_principal },
       { label: 'História da Doença Atual', value: anamnese.historia_doenca_atual },
@@ -86,6 +85,25 @@ function buildHtml(
       </div>`;
     }
   }
+
+  return contentHtml;
+}
+
+function buildHtml(
+  settings: DocumentSettings | null,
+  patient: PatientInfo,
+  anamnese: AnamneseForPdf,
+  sections: SecaoAnamnese[],
+  docReference?: string,
+  docId?: string,
+  qrCodeDataUrl?: string,
+): string {
+  const s = settings || (DOCUMENT_DEFAULTS as unknown as DocumentSettings);
+  const pc = s.primary_color || '#6366f1';
+  const clinicName = s.clinic_name || 'Clínica';
+  const dateStr = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+
+  const contentHtml = buildContentHtml(pc, anamnese, sections);
 
   // Build header
   let headerHtml = '';
@@ -109,12 +127,30 @@ function buildHtml(
     </div>`;
   }
 
-  // Footer
+  // Footer with document control
   let footerHtml = '';
-  if (s.show_footer) {
+  if (s.show_footer || docReference) {
+    const signatureBlock = s.show_digital_signature && s.signature_image_url
+      ? `<img src="${s.signature_image_url}" style="height:40px;object-fit:contain;" />`
+      : '';
+
+    const controlBlock = docReference
+      ? `<div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+          ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" style="width:60px;height:60px;" />` : ''}
+          <div style="font-size:8px;color:#9ca3af;line-height:1.4;">
+            <div><strong>Nº:</strong> ${docReference}</div>
+            ${docId ? `<div><strong>Código:</strong> ${docId.substring(0, 8)}...</div>` : ''}
+            <div>Documento com validação digital</div>
+          </div>
+        </div>`
+      : '';
+
     footerHtml = `<div style="border-top:1px solid #e5e7eb;padding:10px 20px;display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;">
-      <div style="font-size:9px;color:#9ca3af;">${s.footer_text || ''}<br/>Gerado em: ${dateStr}</div>
-      ${s.show_digital_signature && s.signature_image_url ? `<img src="${s.signature_image_url}" style="height:40px;object-fit:contain;" />` : ''}
+      <div>
+        <div style="font-size:9px;color:#9ca3af;">${s.footer_text || ''}<br/>Gerado em: ${dateStr}</div>
+        ${controlBlock}
+      </div>
+      ${signatureBlock}
     </div>`;
   }
 
@@ -134,6 +170,7 @@ function buildHtml(
       </div>
       <div style="text-align:center;padding:10px;border-bottom:1px solid #e5e7eb;">
         <div style="font-weight:bold;font-size:14px;color:${pc};letter-spacing:1px;">ANAMNESE</div>
+        ${docReference ? `<div style="font-size:9px;color:#9ca3af;margin-top:2px;">${docReference}</div>` : ''}
       </div>
       <div style="padding:16px 20px;flex:1;">
         ${contentHtml}
@@ -149,19 +186,58 @@ export function useInstitutionalPdf() {
   const [generating, setGenerating] = useState(false);
 
   const generateAnamnesisPdf = useCallback(async (
-    patient: PatientInfo,
+    patient: PatientInfo & { id?: string },
     anamnese: AnamneseForPdf,
     sections: SecaoAnamnese[],
   ) => {
     setGenerating(true);
     try {
-      const html = buildHtml(settings, patient, anamnese, sections);
+      let docReference: string | undefined;
+      let docId: string | undefined;
+      let qrCodeDataUrl: string | undefined;
+
+      // Document control: get sequential number and prepare QR code
+      if (clinic?.id && patient.id) {
+        try {
+          const seqNum = await getNextDocumentNumber(clinic.id);
+          docReference = buildDocumentReference('anamnese', seqNum);
+        } catch (err) {
+          console.warn('Could not get sequential number, continuing without:', err);
+        }
+      }
+
+      // Build HTML (first pass without QR to get hash)
+      const htmlForHash = buildHtml(settings, patient, anamnese, sections, docReference);
+      const documentHash = await generateHash(htmlForHash);
+
+      // Register document to get UUID for QR code
+      if (clinic?.id && patient.id && docReference) {
+        try {
+          const registered = await registerClinicalDocument({
+            clinicId: clinic.id,
+            patientId: patient.id,
+            documentType: 'anamnese',
+            documentReference: docReference,
+            documentHash,
+            sourceRecordId: anamnese.id,
+            patientName: patient.name,
+            professionalName: anamnese.created_by_name || settings?.responsible_name || undefined,
+          });
+          docId = registered.id;
+          qrCodeDataUrl = await generateValidationQRCode(docId);
+        } catch (err) {
+          console.warn('Could not register document, continuing without:', err);
+        }
+      }
+
+      // Build final HTML with QR code
+      const html = buildHtml(settings, patient, anamnese, sections, docReference, docId, qrCodeDataUrl);
 
       // Render HTML to canvas
       const container = document.createElement('div');
       container.style.position = 'absolute';
       container.style.left = '-9999px';
-      container.style.width = '794px'; // A4 width in px at 96dpi
+      container.style.width = '794px';
       container.innerHTML = html;
       document.body.appendChild(container);
 
@@ -212,15 +288,28 @@ export function useInstitutionalPdf() {
         console.warn('Storage upload error (saving locally):', uploadErr);
       }
 
+      // Update document record with PDF URL if registered
+      if (docId && !uploadErr) {
+        const { data: urlData } = supabase.storage
+          .from('generated-documents')
+          .getPublicUrl(storagePath);
+        if (urlData?.publicUrl) {
+          await supabase
+            .from('clinical_documents')
+            .update({ pdf_url: urlData.publicUrl })
+            .eq('id', docId);
+        }
+      }
+
       // Register in patient history
       if (clinic?.id) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from('patient_generated_documents').insert({
-            patient_id: anamnese.id, // Will be passed properly
+            patient_id: anamnese.id,
             clinic_id: clinic.id,
             document_type: 'anamnese',
-            title: `Anamnese - ${patient.name}`,
+            title: `Anamnese - ${patient.name}${docReference ? ` (${docReference})` : ''}`,
             file_path: storagePath,
             file_name: fileName,
             generated_by: user.id,
@@ -231,7 +320,7 @@ export function useInstitutionalPdf() {
 
       // Download
       pdf.save(fileName);
-      toast.success('PDF institucional gerado com sucesso!');
+      toast.success(`PDF institucional gerado! ${docReference || ''}`);
     } catch (error) {
       console.error('PDF generation error:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');

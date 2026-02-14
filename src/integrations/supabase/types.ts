@@ -2269,51 +2269,69 @@ export type Database = {
       }
       documentos_clinicos: {
         Row: {
+          assinatura_url: string | null
+          bloqueado: boolean | null
           cancelado_em: string | null
           cancelado_por: string | null
           clinic_id: string
           conteudo_json: Json
           created_at: string
           id: string
+          modelo_id: string | null
           motivo_cancelamento: string | null
+          numero_talonario: string | null
           patient_id: string
           pdf_url: string | null
           professional_id: string
+          qr_hash: string | null
           specialty_id: string | null
           status: string
           tipo: string
+          tipo_receita: string | null
           updated_at: string
         }
         Insert: {
+          assinatura_url?: string | null
+          bloqueado?: boolean | null
           cancelado_em?: string | null
           cancelado_por?: string | null
           clinic_id: string
           conteudo_json?: Json
           created_at?: string
           id?: string
+          modelo_id?: string | null
           motivo_cancelamento?: string | null
+          numero_talonario?: string | null
           patient_id: string
           pdf_url?: string | null
           professional_id: string
+          qr_hash?: string | null
           specialty_id?: string | null
           status?: string
           tipo: string
+          tipo_receita?: string | null
           updated_at?: string
         }
         Update: {
+          assinatura_url?: string | null
+          bloqueado?: boolean | null
           cancelado_em?: string | null
           cancelado_por?: string | null
           clinic_id?: string
           conteudo_json?: Json
           created_at?: string
           id?: string
+          modelo_id?: string | null
           motivo_cancelamento?: string | null
+          numero_talonario?: string | null
           patient_id?: string
           pdf_url?: string | null
           professional_id?: string
+          qr_hash?: string | null
           specialty_id?: string | null
           status?: string
           tipo?: string
+          tipo_receita?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2343,6 +2361,51 @@ export type Database = {
             columns: ["specialty_id"]
             isOneToOne: false
             referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_documentos_clinicos_modelo"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_documento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_log: {
+        Row: {
+          acao: string
+          data_hora: string
+          documento_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          usuario_id: string
+        }
+        Insert: {
+          acao: string
+          data_hora?: string
+          documento_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          usuario_id: string
+        }
+        Update: {
+          acao?: string
+          data_hora?: string
+          documento_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_log_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_clinicos"
             referencedColumns: ["id"]
           },
         ]
@@ -4855,6 +4918,101 @@ export type Database = {
           },
         ]
       }
+      modelos_documento: {
+        Row: {
+          cabecalho_personalizado: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          nome: string
+          rodape: string | null
+          specialty_id: string | null
+          texto_padrao: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cabecalho_personalizado?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          nome: string
+          rodape?: string | null
+          specialty_id?: string | null
+          texto_padrao?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cabecalho_personalizado?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          nome?: string
+          rodape?: string | null
+          specialty_id?: string | null
+          texto_padrao?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_documento_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_documento_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelos_receita_profissional: {
+        Row: {
+          conteudo_json: Json
+          created_at: string
+          id: string
+          nome_modelo: string
+          professional_id: string
+        }
+        Insert: {
+          conteudo_json?: Json
+          created_at?: string
+          id?: string
+          nome_modelo: string
+          professional_id: string
+        }
+        Update: {
+          conteudo_json?: Json
+          created_at?: string
+          id?: string
+          nome_modelo?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_receita_profissional_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_permissions: {
         Row: {
           actions: Database["public"]["Enums"]["app_action"][]
@@ -7306,6 +7464,7 @@ export type Database = {
           is_active: boolean
           phone: string | null
           registration_number: string | null
+          signature_url: string | null
           specialty_id: string | null
           updated_at: string
           user_id: string | null
@@ -7321,6 +7480,7 @@ export type Database = {
           is_active?: boolean
           phone?: string | null
           registration_number?: string | null
+          signature_url?: string | null
           specialty_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -7336,6 +7496,7 @@ export type Database = {
           is_active?: boolean
           phone?: string | null
           registration_number?: string | null
+          signature_url?: string | null
           specialty_id?: string | null
           updated_at?: string
           user_id?: string | null

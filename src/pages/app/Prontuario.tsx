@@ -832,8 +832,15 @@ export default function Prontuario() {
     saving: documentosClinicosSaving,
     currentProfessionalId: docClinicoProfId,
     currentProfessionalName: docClinicoProfName,
+    currentProfessionalRegistration: docClinicoProfReg,
+    currentProfessionalSignatureUrl: docClinicoProfSig,
+    modelosPessoais: docModelosPessoais,
+    modelosDocumento: docModelosDocumento,
+    medicamentoSuggestions: docMedSuggestions,
     saveDocumento: saveDocumentoClinico,
     cancelDocumento: cancelDocumentoClinico,
+    saveModeloPessoal: saveModeloPessoalClinico,
+    deleteModeloPessoal: deleteModeloPessoalClinico,
   } = useDocumentosClinicosData(patientId);
 
 
@@ -1449,10 +1456,18 @@ export default function Prontuario() {
             saving={documentosClinicosSaving}
             canEdit={canEditCurrentTab}
             currentProfessionalName={docClinicoProfName || undefined}
+            currentProfessionalRegistration={docClinicoProfReg || undefined}
+            currentProfessionalSignatureUrl={docClinicoProfSig || undefined}
+            modelosPessoais={docModelosPessoais}
+            modelosDocumento={docModelosDocumento}
+            medicamentoSuggestions={docMedSuggestions}
+            activeSpecialtyId={activeSpecialtyId || undefined}
             patientName={patient?.full_name}
-            onSaveReceituario={(conteudo) => saveDocumentoClinico('receituario', conteudo, activeSpecialtyId || undefined)}
-            onSaveAtestado={(conteudo) => saveDocumentoClinico('atestado', conteudo, activeSpecialtyId || undefined)}
+            onSaveReceituario={(conteudo, options) => saveDocumentoClinico('receituario', conteudo, activeSpecialtyId || undefined, options)}
+            onSaveAtestado={(conteudo, options) => saveDocumentoClinico('atestado', conteudo, activeSpecialtyId || undefined, options)}
             onCancel={cancelDocumentoClinico}
+            onSaveModeloPessoal={saveModeloPessoalClinico}
+            onDeleteModeloPessoal={deleteModeloPessoalClinico}
           />
         );
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +10,18 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -26,6 +34,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import {
   FileText,
   Plus,
   Trash2,
@@ -35,9 +51,14 @@ import {
   Calendar,
   User,
   Clock,
-  XCircle,
   ScrollText,
   Ban,
+  Bookmark,
+  FolderOpen,
+  Shield,
+  Hash,
+  MoreVertical,
+  PenLine,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,6 +67,10 @@ import type {
   ConteudoReceituario,
   ConteudoAtestado,
   MedicamentoItem,
+  TipoReceita,
+  ModeloReceitaProfissional,
+  ModeloDocumento,
+  SaveDocumentoOptions,
 } from '@/hooks/prontuario/clinica-geral/useDocumentosClinicosData';
 
 // ─── Types ──────────────────────────────────────────
@@ -57,37 +82,68 @@ interface DocumentosClinicosBlockProps {
   saving: boolean;
   canEdit: boolean;
   currentProfessionalName?: string;
-  onSaveReceituario: (conteudo: ConteudoReceituario) => Promise<string | null>;
-  onSaveAtestado: (conteudo: ConteudoAtestado) => Promise<string | null>;
+  currentProfessionalRegistration?: string;
+  currentProfessionalSignatureUrl?: string;
+  modelosPessoais: ModeloReceitaProfissional[];
+  modelosDocumento: ModeloDocumento[];
+  medicamentoSuggestions: string[];
+  activeSpecialtyId?: string;
+  onSaveReceituario: (conteudo: ConteudoReceituario, options?: SaveDocumentoOptions) => Promise<string | null>;
+  onSaveAtestado: (conteudo: ConteudoAtestado, options?: SaveDocumentoOptions) => Promise<string | null>;
   onCancel: (id: string, motivo: string) => Promise<boolean>;
+  onSaveModeloPessoal: (nome: string, conteudo: ConteudoReceituario) => Promise<boolean>;
+  onDeleteModeloPessoal: (id: string) => Promise<boolean>;
   patientName?: string;
 }
 
-// ─── Empty States ──────────────────────────────────
 const EMPTY_MED: MedicamentoItem = { nome: '', dosagem: '', frequencia: '', duracao: '' };
 
-// ─── Component ─────────────────────────────────────
+const TIPO_RECEITA_LABELS: Record<TipoReceita, string> = {
+  simples: 'Simples',
+  controlada: 'Controlada',
+  especial: 'Especial',
+};
+
+const TIPO_RECEITA_COLORS: Record<TipoReceita, string> = {
+  simples: 'bg-muted text-muted-foreground',
+  controlada: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  especial: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
 export function DocumentosClinicosBlock({
   documentos,
   loading,
   saving,
   canEdit,
   currentProfessionalName,
+  currentProfessionalRegistration,
+  currentProfessionalSignatureUrl,
+  modelosPessoais,
+  modelosDocumento,
+  medicamentoSuggestions,
+  activeSpecialtyId,
   onSaveReceituario,
   onSaveAtestado,
   onCancel,
+  onSaveModeloPessoal,
+  onDeleteModeloPessoal,
   patientName,
 }: DocumentosClinicosBlockProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [viewingDoc, setViewingDoc] = useState<DocumentoClinico | null>(null);
   const [cancelDocId, setCancelDocId] = useState<string | null>(null);
   const [cancelMotivo, setCancelMotivo] = useState('');
+  const [saveModeloOpen, setSaveModeloOpen] = useState(false);
+  const [modeloNome, setModeloNome] = useState('');
 
-  // ── Receituário Form State ──
+  // ── Receituário Form ──
   const [medicamentos, setMedicamentos] = useState<MedicamentoItem[]>([{ ...EMPTY_MED }]);
   const [obsGerais, setObsGerais] = useState('');
+  const [tipoReceita, setTipoReceita] = useState<TipoReceita>('simples');
+  const [numeroTalonario, setNumeroTalonario] = useState('');
+  const [selectedModeloId, setSelectedModeloId] = useState<string | null>(null);
 
-  // ── Atestado Form State ──
+  // ── Atestado Form ──
   const [tipoAfastamento, setTipoAfastamento] = useState<'dias' | 'periodo'>('dias');
   const [diasAfastamento, setDiasAfastamento] = useState('');
   const [dataInicio, setDataInicio] = useState('');
@@ -95,9 +151,25 @@ export function DocumentosClinicosBlock({
   const [cid, setCid] = useState('');
   const [obsAtestado, setObsAtestado] = useState('');
 
+  // ── Autocomplete ──
+  const [activeMedIdx, setActiveMedIdx] = useState<number | null>(null);
+
+  // Filter modelos for active specialty
+  const receituarioModelos = useMemo(() =>
+    modelosDocumento.filter(m => m.tipo === 'receituario' && (!m.specialty_id || m.specialty_id === activeSpecialtyId)),
+    [modelosDocumento, activeSpecialtyId]
+  );
+  const atestadoModelos = useMemo(() =>
+    modelosDocumento.filter(m => m.tipo === 'atestado' && (!m.specialty_id || m.specialty_id === activeSpecialtyId)),
+    [modelosDocumento, activeSpecialtyId]
+  );
+
   const resetReceituario = () => {
     setMedicamentos([{ ...EMPTY_MED }]);
     setObsGerais('');
+    setTipoReceita('simples');
+    setNumeroTalonario('');
+    setSelectedModeloId(null);
   };
 
   const resetAtestado = () => {
@@ -110,23 +182,33 @@ export function DocumentosClinicosBlock({
   };
 
   const addMedicamento = () => setMedicamentos(prev => [...prev, { ...EMPTY_MED }]);
-  const removeMedicamento = (index: number) => {
+  const removeMedicamento = (idx: number) => {
     if (medicamentos.length <= 1) return;
-    setMedicamentos(prev => prev.filter((_, i) => i !== index));
+    setMedicamentos(prev => prev.filter((_, i) => i !== idx));
   };
-  const updateMedicamento = (index: number, field: keyof MedicamentoItem, value: string) => {
-    setMedicamentos(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+  const updateMedicamento = (idx: number, field: keyof MedicamentoItem, value: string) => {
+    setMedicamentos(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m));
+  };
+
+  const loadModeloPessoal = (modelo: ModeloReceitaProfissional) => {
+    const c = typeof modelo.conteudo_json === 'string' ? JSON.parse(modelo.conteudo_json) : modelo.conteudo_json;
+    if (c?.medicamentos) {
+      setMedicamentos(c.medicamentos);
+      setObsGerais(c.observacoes_gerais || '');
+    }
   };
 
   const handleSaveReceituario = async () => {
     const validMeds = medicamentos.filter(m => m.nome.trim());
     if (validMeds.length === 0) return;
     const conteudo: ConteudoReceituario = { medicamentos: validMeds, observacoes_gerais: obsGerais || undefined };
-    const id = await onSaveReceituario(conteudo);
-    if (id) {
-      resetReceituario();
-      setViewMode('list');
-    }
+    const options: SaveDocumentoOptions = {
+      tipo_receita: tipoReceita,
+      numero_talonario: tipoReceita !== 'simples' ? numeroTalonario : undefined,
+      modelo_id: selectedModeloId || undefined,
+    };
+    const id = await onSaveReceituario(conteudo, options);
+    if (id) { resetReceituario(); setViewMode('list'); }
   };
 
   const handleSaveAtestado = async () => {
@@ -137,10 +219,7 @@ export function DocumentosClinicosBlock({
       observacao: obsAtestado || undefined,
     };
     const id = await onSaveAtestado(conteudo);
-    if (id) {
-      resetAtestado();
-      setViewMode('list');
-    }
+    if (id) { resetAtestado(); setViewMode('list'); }
   };
 
   const handleCancel = async () => {
@@ -148,6 +227,21 @@ export function DocumentosClinicosBlock({
     await onCancel(cancelDocId, cancelMotivo);
     setCancelDocId(null);
     setCancelMotivo('');
+  };
+
+  const handleSaveModelo = async () => {
+    if (!modeloNome.trim()) return;
+    const validMeds = medicamentos.filter(m => m.nome.trim());
+    if (validMeds.length === 0) return;
+    await onSaveModeloPessoal(modeloNome, { medicamentos: validMeds, observacoes_gerais: obsGerais || undefined });
+    setSaveModeloOpen(false);
+    setModeloNome('');
+  };
+
+  const getSuggestions = (query: string) => {
+    if (!query || query.length < 2) return [];
+    const lower = query.toLowerCase();
+    return medicamentoSuggestions.filter(s => s.toLowerCase().includes(lower)).slice(0, 6);
   };
 
   if (loading) {
@@ -172,7 +266,6 @@ export function DocumentosClinicosBlock({
           <Badge variant="secondary">{documentos.length} documento{documentos.length !== 1 ? 's' : ''}</Badge>
         </div>
 
-        {/* Action Cards */}
         {canEdit && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all" onClick={() => setViewMode('receituario')}>
@@ -200,7 +293,7 @@ export function DocumentosClinicosBlock({
           </div>
         )}
 
-        {/* Document History */}
+        {/* History */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Histórico de Documentos Emitidos</CardTitle>
@@ -230,6 +323,12 @@ export function DocumentosClinicosBlock({
                             <Badge variant={doc.status === 'emitido' ? 'default' : 'destructive'} className="text-[10px]">
                               {doc.status === 'emitido' ? 'Emitido' : 'Cancelado'}
                             </Badge>
+                            {doc.tipo === 'receituario' && doc.tipo_receita && doc.tipo_receita !== 'simples' && (
+                              <Badge className={`text-[10px] ${TIPO_RECEITA_COLORS[doc.tipo_receita]}`}>
+                                <Shield className="h-2.5 w-2.5 mr-0.5" />
+                                {TIPO_RECEITA_LABELS[doc.tipo_receita]}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                             <span className="flex items-center gap-1">
@@ -267,7 +366,7 @@ export function DocumentosClinicosBlock({
           </CardContent>
         </Card>
 
-        {/* View Document Dialog */}
+        {/* View Dialog */}
         <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
@@ -284,7 +383,16 @@ export function DocumentosClinicosBlock({
                 <div className="text-sm space-y-1">
                   <p><span className="font-medium">Paciente:</span> {patientName || '—'}</p>
                   <p><span className="font-medium">Profissional:</span> {viewingDoc.profissional_nome || '—'}</p>
+                  {viewingDoc.profissional_registro && (
+                    <p><span className="font-medium">Registro:</span> {viewingDoc.profissional_registro}</p>
+                  )}
                   <p><span className="font-medium">Data:</span> {format(parseISO(viewingDoc.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                  {viewingDoc.tipo_receita && viewingDoc.tipo_receita !== 'simples' && (
+                    <p><span className="font-medium">Tipo:</span> Receita {TIPO_RECEITA_LABELS[viewingDoc.tipo_receita]}</p>
+                  )}
+                  {viewingDoc.numero_talonario && (
+                    <p><span className="font-medium">Talonário:</span> {viewingDoc.numero_talonario}</p>
+                  )}
                 </div>
                 <Separator />
                 {viewingDoc.tipo === 'receituario' ? (
@@ -292,25 +400,31 @@ export function DocumentosClinicosBlock({
                 ) : (
                   <AtestadoView conteudo={viewingDoc.conteudo_json as ConteudoAtestado} />
                 )}
+                {/* Signature */}
+                {viewingDoc.profissional_nome && (
+                  <div className="pt-4 border-t text-center text-sm">
+                    {(viewingDoc as any).assinatura_url && (
+                      <img src={(viewingDoc as any).assinatura_url} alt="Assinatura" className="h-12 mx-auto mb-1 opacity-80" />
+                    )}
+                    <p className="font-medium">{viewingDoc.profissional_nome}</p>
+                    {viewingDoc.profissional_registro && <p className="text-xs text-muted-foreground">{viewingDoc.profissional_registro}</p>}
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Cancel Confirmation */}
+        {/* Cancel Dialog */}
         <AlertDialog open={!!cancelDocId} onOpenChange={() => { setCancelDocId(null); setCancelMotivo(''); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Cancelar Documento</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta ação não pode ser desfeita. Informe o motivo do cancelamento.
+                Esta ação não pode ser desfeita. O documento será cancelado logicamente e um registro será criado no log jurídico.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <Textarea
-              placeholder="Motivo do cancelamento..."
-              value={cancelMotivo}
-              onChange={e => setCancelMotivo(e.target.value)}
-            />
+            <Textarea placeholder="Motivo do cancelamento (obrigatório)..." value={cancelMotivo} onChange={e => setCancelMotivo(e.target.value)} />
             <AlertDialogFooter>
               <AlertDialogCancel>Voltar</AlertDialogCancel>
               <AlertDialogAction onClick={handleCancel} disabled={!cancelMotivo.trim() || saving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
@@ -332,17 +446,82 @@ export function DocumentosClinicosBlock({
             <Pill className="h-5 w-5 text-blue-600" />
             Novo Receituário
           </h2>
-          <Button variant="outline" size="sm" onClick={() => { resetReceituario(); setViewMode('list'); }}>
-            Voltar
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => { resetReceituario(); setViewMode('list'); }}>Voltar</Button>
         </div>
 
-        {/* Header Info */}
+        {/* Header */}
         <Card>
           <CardContent className="p-4 text-sm space-y-1 bg-muted/30">
             <p><span className="font-medium">Paciente:</span> {patientName || '—'}</p>
             <p><span className="font-medium">Profissional:</span> {currentProfessionalName || '—'}</p>
+            {currentProfessionalRegistration && <p><span className="font-medium">Registro:</span> {currentProfessionalRegistration}</p>}
             <p><span className="font-medium">Data:</span> {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+          </CardContent>
+        </Card>
+
+        {/* Tipo de Receita + Modelos */}
+        <Card>
+          <CardContent className="pt-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-medium">Tipo de Receita</Label>
+                <Select value={tipoReceita} onValueChange={v => setTipoReceita(v as TipoReceita)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="simples">Simples</SelectItem>
+                    <SelectItem value="controlada">Controlada</SelectItem>
+                    <SelectItem value="especial">Especial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {tipoReceita !== 'simples' && (
+                <div>
+                  <Label className="text-xs font-medium">Nº Talonário</Label>
+                  <Input placeholder="Número do talonário" value={numeroTalonario} onChange={e => setNumeroTalonario(e.target.value)} />
+                </div>
+              )}
+            </div>
+
+            {/* Load model */}
+            {(modelosPessoais.length > 0 || receituarioModelos.length > 0) && (
+              <div>
+                <Label className="text-xs font-medium mb-1 block">Carregar Modelo</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Inserir Modelo
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    {receituarioModelos.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-xs">Modelos Institucionais</DropdownMenuLabel>
+                        {receituarioModelos.map(m => (
+                          <DropdownMenuItem key={m.id} onClick={() => setSelectedModeloId(m.id)}>
+                            {m.nome} {m.is_default && <Badge variant="secondary" className="ml-2 text-[9px]">Padrão</Badge>}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {modelosPessoais.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-xs">Meus Modelos</DropdownMenuLabel>
+                        {modelosPessoais.map(m => (
+                          <DropdownMenuItem key={m.id} className="flex items-center justify-between" onClick={() => loadModeloPessoal(m)}>
+                            <span className="truncate">{m.nome_modelo}</span>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 ml-2 flex-shrink-0" onClick={e => { e.stopPropagation(); onDeleteModeloPessoal(m.id); }}>
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -352,40 +531,63 @@ export function DocumentosClinicosBlock({
             <CardTitle className="text-base">Medicamentos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {medicamentos.map((med, idx) => (
-              <div key={idx} className="border rounded-lg p-4 space-y-3 relative">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Medicamento {idx + 1}</span>
-                  {medicamentos.length > 1 && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeMedicamento(idx)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+            {medicamentos.map((med, idx) => {
+              const suggestions = activeMedIdx === idx ? getSuggestions(med.nome) : [];
+              return (
+                <div key={idx} className="border rounded-lg p-4 space-y-3 relative">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Medicamento {idx + 1}</span>
+                    {medicamentos.length > 1 && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeMedicamento(idx)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2 relative">
+                      <Label className="text-xs">Nome do Medicamento *</Label>
+                      <Input
+                        placeholder="Ex: Amoxicilina 500mg"
+                        value={med.nome}
+                        onChange={e => { updateMedicamento(idx, 'nome', e.target.value); setActiveMedIdx(idx); }}
+                        onFocus={() => setActiveMedIdx(idx)}
+                        onBlur={() => setTimeout(() => setActiveMedIdx(null), 200)}
+                      />
+                      {suggestions.length > 0 && (
+                        <div className="absolute z-10 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 max-h-40 overflow-y-auto">
+                          {suggestions.map((s, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent truncate"
+                              onMouseDown={() => updateMedicamento(idx, 'nome', s)}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs">Dosagem *</Label>
+                      <Input placeholder="Ex: 500mg" value={med.dosagem} onChange={e => updateMedicamento(idx, 'dosagem', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Frequência *</Label>
+                      <Input placeholder="Ex: 8/8h" value={med.frequencia} onChange={e => updateMedicamento(idx, 'frequencia', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Duração *</Label>
+                      <Input placeholder="Ex: 7 dias" value={med.duracao} onChange={e => updateMedicamento(idx, 'duracao', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Observações</Label>
+                      <Input placeholder="Tomar após refeição" value={med.observacoes || ''} onChange={e => updateMedicamento(idx, 'observacoes', e.target.value)} />
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="sm:col-span-2">
-                    <Label className="text-xs">Nome do Medicamento *</Label>
-                    <Input placeholder="Ex: Amoxicilina 500mg" value={med.nome} onChange={e => updateMedicamento(idx, 'nome', e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Dosagem *</Label>
-                    <Input placeholder="Ex: 500mg" value={med.dosagem} onChange={e => updateMedicamento(idx, 'dosagem', e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Frequência *</Label>
-                    <Input placeholder="Ex: 8/8h" value={med.frequencia} onChange={e => updateMedicamento(idx, 'frequencia', e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Duração *</Label>
-                    <Input placeholder="Ex: 7 dias" value={med.duracao} onChange={e => updateMedicamento(idx, 'duracao', e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Observações</Label>
-                    <Input placeholder="Tomar após refeição" value={med.observacoes || ''} onChange={e => updateMedicamento(idx, 'observacoes', e.target.value)} />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <Button variant="outline" size="sm" onClick={addMedicamento} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Medicamento
@@ -393,7 +595,6 @@ export function DocumentosClinicosBlock({
           </CardContent>
         </Card>
 
-        {/* Observações Gerais */}
         <Card>
           <CardContent className="pt-5">
             <Label className="text-xs">Observações Gerais</Label>
@@ -402,13 +603,38 @@ export function DocumentosClinicosBlock({
         </Card>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => { resetReceituario(); setViewMode('list'); }}>Cancelar</Button>
-          <Button onClick={handleSaveReceituario} disabled={saving || !medicamentos.some(m => m.nome.trim())}>
-            <Printer className="h-4 w-4 mr-2" />
-            {saving ? 'Emitindo...' : 'Emitir Receituário'}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setSaveModeloOpen(true)} disabled={!medicamentos.some(m => m.nome.trim())}>
+            <Bookmark className="h-4 w-4 mr-2" />
+            Salvar como Modelo
           </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => { resetReceituario(); setViewMode('list'); }}>Cancelar</Button>
+            <Button onClick={handleSaveReceituario} disabled={saving || !medicamentos.some(m => m.nome.trim())}>
+              <Printer className="h-4 w-4 mr-2" />
+              {saving ? 'Emitindo...' : 'Emitir Receituário'}
+            </Button>
+          </div>
         </div>
+
+        {/* Save Model Dialog */}
+        <Dialog open={saveModeloOpen} onOpenChange={setSaveModeloOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Salvar Modelo Pessoal</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Nome do modelo *</Label>
+                <Input placeholder="Ex: Antibiótico padrão" value={modeloNome} onChange={e => setModeloNome(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSaveModeloOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveModelo} disabled={!modeloNome.trim()}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -421,23 +647,20 @@ export function DocumentosClinicosBlock({
           <FileText className="h-5 w-5 text-emerald-600" />
           Novo Atestado
         </h2>
-        <Button variant="outline" size="sm" onClick={() => { resetAtestado(); setViewMode('list'); }}>
-          Voltar
-        </Button>
+        <Button variant="outline" size="sm" onClick={() => { resetAtestado(); setViewMode('list'); }}>Voltar</Button>
       </div>
 
-      {/* Header Info */}
       <Card>
         <CardContent className="p-4 text-sm space-y-1 bg-muted/30">
           <p><span className="font-medium">Paciente:</span> {patientName || '—'}</p>
           <p><span className="font-medium">Profissional:</span> {currentProfessionalName || '—'}</p>
+          {currentProfessionalRegistration && <p><span className="font-medium">Registro:</span> {currentProfessionalRegistration}</p>}
           <p><span className="font-medium">Data:</span> {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="pt-5 space-y-5">
-          {/* Tipo de Afastamento */}
           <div>
             <Label className="text-sm font-medium mb-2 block">Tipo de Afastamento</Label>
             <RadioGroup value={tipoAfastamento} onValueChange={v => setTipoAfastamento(v as 'dias' | 'periodo')} className="flex gap-6">
@@ -482,13 +705,9 @@ export function DocumentosClinicosBlock({
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => { resetAtestado(); setViewMode('list'); }}>Cancelar</Button>
-        <Button
-          onClick={handleSaveAtestado}
-          disabled={saving || (tipoAfastamento === 'dias' ? !diasAfastamento : !dataInicio || !dataFim)}
-        >
+        <Button onClick={handleSaveAtestado} disabled={saving || (tipoAfastamento === 'dias' ? !diasAfastamento : !dataInicio || !dataFim)}>
           <Printer className="h-4 w-4 mr-2" />
           {saving ? 'Emitindo...' : 'Emitir Atestado'}
         </Button>

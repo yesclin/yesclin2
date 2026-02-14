@@ -26,8 +26,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate clinic_id is a valid UUID to prevent injection
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(clinicId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid clinic_id" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify that the clinic exists and has an active WhatsApp integration
+    const { data: integration, error: integrationError } = await supabase
+      .from("clinic_channel_integrations")
+      .select("id, access_token")
+      .eq("clinic_id", clinicId)
+      .eq("channel", "whatsapp")
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (integrationError || !integration) {
+      console.warn("Webhook rejected: no active integration for clinic", clinicId);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify webhook token if provided via apikey header
+    const providedApiKey = req.headers.get("apikey") || url.searchParams.get("apikey");
+    if (providedApiKey && integration.access_token) {
+      if (providedApiKey !== integration.access_token) {
+        console.warn("Webhook rejected: invalid apikey for clinic", clinicId);
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const payload = await req.json();
-    console.log("Evolution API Webhook received for clinic:", clinicId, JSON.stringify(payload));
+    console.log("Evolution API Webhook received for clinic:", clinicId);
 
     // Evolution API webhook events
     // Message status: { event: "messages.update", data: { key: { id }, status } }
@@ -106,7 +144,7 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     console.error("webhook-whatsapp error:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

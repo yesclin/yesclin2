@@ -43,7 +43,7 @@ export const SPECIALTY_CAPABILITIES: Record<SpecialtyKey, SpecialtyCapability> =
     anamnesisSlug: 'clinica-geral',
     enabledBlocks: [
       'resumo', 'anamnese', 'evolucao', 'exame_fisico', 'diagnostico',
-      'conduta', 'prescricoes', 'exames', 'alertas', 'timeline',
+      'conduta', 'documentos_clinicos', 'prescricoes', 'exames', 'alertas', 'timeline',
     ],
     defaultModules: [...CORE_MODULES, 'procedures_module'],
     icon: 'Stethoscope',

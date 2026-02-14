@@ -24,6 +24,7 @@ export type ClinicalBlockKey =
   | 'diagnostico'
   | 'prescricoes'
   | 'conduta'
+  | 'documentos_clinicos'      // Receituário e Atestado
   | 'exames'
   | 'timeline'
   | 'alertas'
@@ -93,10 +94,11 @@ const CLINICA_GERAL_BLOCKS: ClinicalBlockKey[] = [
   'exame_fisico',     // 4. Exame Físico
   'diagnostico',      // 5. Hipóteses Diagnósticas (CID-10)
   'conduta',          // 6. Plano / Conduta
-  'prescricoes',      // 7. Prescrições
-  'exames',           // 8. Exames / Documentos
-  'alertas',          // 9. Alertas Clínicos
-  'timeline',         // 10. Histórico / Linha do Tempo
+  'documentos_clinicos', // 7. Documentos Clínicos (Receituário / Atestado)
+  'prescricoes',      // 8. Prescrições
+  'exames',           // 9. Exames / Documentos
+  'alertas',          // 10. Alertas Clínicos
+  'timeline',         // 11. Histórico / Linha do Tempo
 ];
 
 export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [

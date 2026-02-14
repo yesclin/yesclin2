@@ -43,6 +43,7 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
         examesFisicosRes,
         condutasRes,
         documentosRes,
+        docClinicosRes,
       ] = await Promise.all([
         // Anamneses
         supabase
@@ -83,6 +84,14 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
           .eq('patient_id', patientId)
           .eq('clinic_id', clinic.id)
           .order('created_at', { ascending: false }),
+
+        // Documentos Clínicos (receituário/atestado)
+        supabase
+          .from('documentos_clinicos')
+          .select('id, tipo, conteudo_json, status, professional_id, created_at')
+          .eq('patient_id', patientId)
+          .eq('clinic_id', clinic.id)
+          .order('created_at', { ascending: false }),
       ]);
 
       // Collect all professional IDs to fetch names
@@ -93,6 +102,7 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
       (examesFisicosRes.data || []).forEach(e => e.profissional_id && allProfessionalIds.add(e.profissional_id));
       (condutasRes.data || []).forEach(c => c.profissional_id && allProfessionalIds.add(c.profissional_id));
       (documentosRes.data || []).forEach(d => d.profissional_id && allProfessionalIds.add(d.profissional_id));
+      (docClinicosRes.data || []).forEach(d => d.professional_id && allProfessionalIds.add(d.professional_id));
 
       // Fetch professional names
       let profiles: Record<string, string> = {};
@@ -263,6 +273,27 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
             observacoes: doc.observacoes,
           },
           profissional_nome: doc.profissional_id ? profiles[doc.profissional_id] : undefined,
+          created_at: doc.created_at,
+        });
+      });
+
+      // Documentos Clínicos (Receituário / Atestado)
+      (docClinicosRes.data || []).forEach(doc => {
+        const isReceituario = doc.tipo === 'receituario';
+        const conteudo = typeof doc.conteudo_json === 'string' ? JSON.parse(doc.conteudo_json) : doc.conteudo_json;
+        let resumo: string | undefined;
+        if (isReceituario && conteudo?.medicamentos?.length) {
+          resumo = conteudo.medicamentos.map((m: any) => m.nome).join(', ');
+        } else if (!isReceituario && conteudo?.dias) {
+          resumo = `${conteudo.dias} dia(s) de afastamento`;
+        }
+        timelineEvents.push({
+          id: `doc-clinico-${doc.id}`,
+          tipo: isReceituario ? 'receituario' : 'atestado',
+          titulo: isReceituario ? 'Receituário emitido' : 'Atestado emitido',
+          resumo,
+          detalhes: { status: doc.status },
+          profissional_nome: doc.professional_id ? profiles[doc.professional_id] : undefined,
           created_at: doc.created_at,
         });
       });

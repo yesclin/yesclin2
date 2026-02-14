@@ -17,6 +17,7 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import AceitarConvite from "./pages/AceitarConvite";
 
 import NotFound from "./pages/NotFound";
+import ValidarDocumento from "./pages/ValidarDocumento";
 
 // Layout do App
 import { AppLayout } from "./components/app/AppLayout";
@@ -67,6 +68,7 @@ const App = () => (
           <Route path="/criar-conta" element={<CriarConta />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+          <Route path="/validar/:id" element={<ValidarDocumento />} />
           
           <Route path="/aceitar-convite" element={<AceitarConvite />} />
           

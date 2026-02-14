@@ -1164,6 +1164,35 @@ export type Database = {
           },
         ]
       }
+      clinic_document_counter: {
+        Row: {
+          clinic_id: string
+          id: string
+          last_number: number
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          id?: string
+          last_number?: number
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          id?: string
+          last_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_document_counter_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_document_settings: {
         Row: {
           clinic_id: string
@@ -1388,6 +1417,75 @@ export type Database = {
           },
           {
             foreignKeyName: "clinical_alerts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_documents: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          document_hash: string
+          document_reference: string
+          document_type: Database["public"]["Enums"]["clinical_document_type"]
+          id: string
+          is_revoked: boolean
+          patient_id: string
+          patient_name: string | null
+          pdf_url: string | null
+          professional_name: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          document_hash: string
+          document_reference: string
+          document_type: Database["public"]["Enums"]["clinical_document_type"]
+          id?: string
+          is_revoked?: boolean
+          patient_id: string
+          patient_name?: string | null
+          pdf_url?: string | null
+          professional_name?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_hash?: string
+          document_reference?: string
+          document_type?: Database["public"]["Enums"]["clinical_document_type"]
+          id?: string
+          is_revoked?: boolean
+          patient_id?: string
+          patient_name?: string | null
+          pdf_url?: string | null
+          professional_name?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_documents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_documents_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -9265,6 +9363,10 @@ export type Database = {
         Args: { _appointment_id: string }
         Returns: string
       }
+      get_next_document_number: {
+        Args: { p_clinic_id: string }
+        Returns: number
+      }
       get_professional_primary_specialty: {
         Args: { _professional_id: string }
         Returns: string
@@ -9421,6 +9523,12 @@ export type Database = {
         | "cancelado"
         | "faltou"
       appointment_type: "consulta" | "retorno" | "procedimento"
+      clinical_document_type:
+        | "anamnese"
+        | "receita"
+        | "atestado"
+        | "evolucao"
+        | "relatorio"
       clinical_module_category:
         | "clinical_record"
         | "documentation"
@@ -9611,6 +9719,13 @@ export const Constants = {
         "faltou",
       ],
       appointment_type: ["consulta", "retorno", "procedimento"],
+      clinical_document_type: [
+        "anamnese",
+        "receita",
+        "atestado",
+        "evolucao",
+        "relatorio",
+      ],
       clinical_module_category: [
         "clinical_record",
         "documentation",

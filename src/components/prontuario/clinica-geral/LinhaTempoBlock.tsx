@@ -39,7 +39,9 @@ export type TipoEventoTimeline =
   | 'conduta' 
   | 'documento'
   | 'receituario'
-  | 'atestado';
+  | 'atestado'
+  | 'declaracao'
+  | 'relatorio';
 
 export const tipoEventoConfig: Record<TipoEventoTimeline, {
   label: string;
@@ -88,6 +90,18 @@ export const tipoEventoConfig: Record<TipoEventoTimeline, {
     icon: <FileText className="h-4 w-4" />,
     color: 'text-emerald-600 dark:text-emerald-400',
     bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+  },
+  declaracao: {
+    label: 'Declaração',
+    icon: <FileText className="h-4 w-4" />,
+    color: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-violet-100 dark:bg-violet-900/30',
+  },
+  relatorio: {
+    label: 'Relatório',
+    icon: <FileText className="h-4 w-4" />,
+    color: 'text-orange-600 dark:text-orange-400',
+    bgColor: 'bg-orange-100 dark:bg-orange-900/30',
   },
 };
 

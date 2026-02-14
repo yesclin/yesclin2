@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
 
-export type TipoDocumentoClinico = 'receituario' | 'atestado';
-export type StatusDocumentoClinico = 'emitido' | 'cancelado';
+export type TipoDocumentoClinico = 'receituario' | 'atestado' | 'declaracao' | 'relatorio';
+export type StatusDocumentoClinico = 'rascunho' | 'emitido' | 'cancelado';
 export type TipoReceita = 'simples' | 'controlada' | 'especial';
 
 export interface MedicamentoItem {
@@ -29,6 +29,21 @@ export interface ConteudoAtestado {
   observacao?: string;
 }
 
+export interface ConteudoDeclaracao {
+  texto: string;
+}
+
+export interface ConteudoRelatorio {
+  titulo_relatorio: string;
+  objetivo?: string;
+  historico_clinico?: string;
+  descricao_detalhada: string;
+  conclusao?: string;
+  recomendacoes?: string;
+}
+
+export type ConteudoDocumento = ConteudoReceituario | ConteudoAtestado | ConteudoDeclaracao | ConteudoRelatorio;
+
 export interface DocumentoClinico {
   id: string;
   clinic_id: string;
@@ -36,7 +51,7 @@ export interface DocumentoClinico {
   professional_id: string;
   specialty_id: string | null;
   tipo: TipoDocumentoClinico;
-  conteudo_json: ConteudoReceituario | ConteudoAtestado;
+  conteudo_json: ConteudoDocumento;
   status: StatusDocumentoClinico;
   pdf_url: string | null;
   created_at: string;
@@ -76,7 +91,15 @@ export interface SaveDocumentoOptions {
   tipo_receita?: TipoReceita;
   numero_talonario?: string;
   modelo_id?: string;
+  status?: StatusDocumentoClinico;
 }
+
+export const TIPO_DOC_LABELS: Record<TipoDocumentoClinico, string> = {
+  receituario: 'Receituário',
+  atestado: 'Atestado',
+  declaracao: 'Declaração',
+  relatorio: 'Relatório',
+};
 
 interface UseDocumentosClinicosDataResult {
   documentos: DocumentoClinico[];
@@ -89,7 +112,7 @@ interface UseDocumentosClinicosDataResult {
   modelosPessoais: ModeloReceitaProfissional[];
   modelosDocumento: ModeloDocumento[];
   medicamentoSuggestions: string[];
-  saveDocumento: (tipo: TipoDocumentoClinico, conteudo: ConteudoReceituario | ConteudoAtestado, specialtyId?: string, options?: SaveDocumentoOptions) => Promise<string | null>;
+  saveDocumento: (tipo: TipoDocumentoClinico, conteudo: ConteudoDocumento, specialtyId?: string, options?: SaveDocumentoOptions) => Promise<string | null>;
   cancelDocumento: (id: string, motivo: string) => Promise<boolean>;
   saveModeloPessoal: (nome: string, conteudo: ConteudoReceituario) => Promise<boolean>;
   deleteModeloPessoal: (id: string) => Promise<boolean>;
@@ -232,7 +255,7 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
         professional_id: d.professional_id,
         specialty_id: d.specialty_id,
         tipo: d.tipo as TipoDocumentoClinico,
-        conteudo_json: (typeof d.conteudo_json === 'string' ? JSON.parse(d.conteudo_json) : d.conteudo_json) as ConteudoReceituario | ConteudoAtestado,
+        conteudo_json: (typeof d.conteudo_json === 'string' ? JSON.parse(d.conteudo_json) : d.conteudo_json) as ConteudoDocumento,
         status: d.status as StatusDocumentoClinico,
         pdf_url: d.pdf_url,
         created_at: d.created_at,
@@ -271,7 +294,7 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
 
   const saveDocumento = useCallback(async (
     tipo: TipoDocumentoClinico,
-    conteudo: ConteudoReceituario | ConteudoAtestado,
+    conteudo: ConteudoDocumento,
     specialtyId?: string,
     options?: SaveDocumentoOptions,
   ): Promise<string | null> => {
@@ -282,6 +305,7 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
     setSaving(true);
     try {
       const qrHash = crypto.randomUUID();
+      const status = options?.status || 'emitido';
       const insertPayload: Record<string, unknown> = {
         clinic_id: clinic.id,
         patient_id: patientId,
@@ -289,8 +313,8 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
         specialty_id: specialtyId || null,
         tipo,
         conteudo_json: conteudo,
-        status: 'emitido',
-        bloqueado: true,
+        status,
+        bloqueado: status === 'emitido',
         qr_hash: qrHash,
         tipo_receita: options?.tipo_receita || 'simples',
         numero_talonario: options?.numero_talonario || null,
@@ -306,11 +330,12 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
 
       if (error) throw error;
 
-      // Log: criado + emitido
       await logDocumentAction(data.id, 'criado');
-      await logDocumentAction(data.id, 'emitido');
+      if (status === 'emitido') {
+        await logDocumentAction(data.id, 'emitido');
+      }
 
-      toast.success(tipo === 'receituario' ? 'Receituário emitido com sucesso' : 'Atestado emitido com sucesso');
+      toast.success(`${TIPO_DOC_LABELS[tipo]} ${status === 'rascunho' ? 'salvo como rascunho' : 'emitido com sucesso'}`);
       await fetchDocumentos();
       return data.id;
     } catch (err: any) {
@@ -357,7 +382,6 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
         conteudo_json: conteudo as any,
       } as any);
       if (error) throw error;
-      // Refresh
       const { data: modelos } = await supabase
         .from('modelos_receita_profissional')
         .select('*')

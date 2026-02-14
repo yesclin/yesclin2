@@ -1245,7 +1245,10 @@ export type Database = {
           clinic_id: string
           clinic_name: string | null
           created_at: string
+          doc_type_config: Json | null
+          font_family: string | null
           footer_text: string | null
+          header_layout: string | null
           header_style: string
           id: string
           logo_url: string | null
@@ -1258,12 +1261,18 @@ export type Database = {
           show_footer: boolean
           signature_image_url: string | null
           updated_at: string
+          use_professional_from_doc: boolean | null
+          watermark_text: string | null
+          watermark_type: string | null
         }
         Insert: {
           clinic_id: string
           clinic_name?: string | null
           created_at?: string
+          doc_type_config?: Json | null
+          font_family?: string | null
           footer_text?: string | null
+          header_layout?: string | null
           header_style?: string
           id?: string
           logo_url?: string | null
@@ -1276,12 +1285,18 @@ export type Database = {
           show_footer?: boolean
           signature_image_url?: string | null
           updated_at?: string
+          use_professional_from_doc?: boolean | null
+          watermark_text?: string | null
+          watermark_type?: string | null
         }
         Update: {
           clinic_id?: string
           clinic_name?: string | null
           created_at?: string
+          doc_type_config?: Json | null
+          font_family?: string | null
           footer_text?: string | null
+          header_layout?: string | null
           header_style?: string
           id?: string
           logo_url?: string | null
@@ -1294,6 +1309,9 @@ export type Database = {
           show_footer?: boolean
           signature_image_url?: string | null
           updated_at?: string
+          use_professional_from_doc?: boolean | null
+          watermark_text?: string | null
+          watermark_type?: string | null
         }
         Relationships: [
           {

@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
 
+export interface DocTypeConfig {
+  title?: string;
+  show_cpf?: boolean;
+  show_address?: boolean;
+}
+
 export interface DocumentSettings {
   id: string;
   clinic_id: string;
@@ -18,6 +24,12 @@ export interface DocumentSettings {
   header_style: 'simple' | 'stripe';
   show_digital_signature: boolean;
   signature_image_url: string | null;
+  font_family: string;
+  header_layout: string;
+  watermark_type: string;
+  watermark_text: string | null;
+  use_professional_from_doc: boolean;
+  doc_type_config: Record<string, DocTypeConfig>;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +47,12 @@ export interface DocumentSettingsInput {
   header_style: 'simple' | 'stripe';
   show_digital_signature: boolean;
   signature_image_url?: string | null;
+  font_family: string;
+  header_layout: string;
+  watermark_type: string;
+  watermark_text?: string | null;
+  use_professional_from_doc: boolean;
+  doc_type_config: Record<string, DocTypeConfig>;
 }
 
 export const DOCUMENT_DEFAULTS: DocumentSettingsInput = {
@@ -50,7 +68,45 @@ export const DOCUMENT_DEFAULTS: DocumentSettingsInput = {
   show_digital_signature: false,
   logo_url: null,
   signature_image_url: null,
+  font_family: 'Inter',
+  header_layout: 'left',
+  watermark_type: 'none',
+  watermark_text: null,
+  use_professional_from_doc: false,
+  doc_type_config: {
+    anamnese: { title: 'ANAMNESE', show_cpf: true, show_address: false },
+    receita: { title: 'RECEITUÁRIO', show_cpf: true, show_address: true },
+    atestado: { title: 'ATESTADO', show_cpf: true, show_address: false },
+    evolucao: { title: 'EVOLUÇÃO CLÍNICA', show_cpf: true, show_address: false },
+  },
 };
+
+export const DOC_TYPES = [
+  { key: 'anamnese', label: 'Anamnese' },
+  { key: 'receita', label: 'Receita' },
+  { key: 'atestado', label: 'Atestado' },
+  { key: 'evolucao', label: 'Evolução' },
+] as const;
+
+export const FONT_OPTIONS = [
+  { value: 'Inter', label: 'Inter (Sans-serif)' },
+  { value: 'Lato', label: 'Lato (Sans-serif)' },
+  { value: 'Roboto', label: 'Roboto (Sans-serif)' },
+  { value: 'Georgia, serif', label: 'Serif (Georgia)' },
+] as const;
+
+export const HEADER_LAYOUTS = [
+  { value: 'left', label: 'Logo à Esquerda' },
+  { value: 'center', label: 'Logo Centralizada' },
+  { value: 'horizontal', label: 'Horizontal (lado a lado)' },
+] as const;
+
+export const WATERMARK_OPTIONS = [
+  { value: 'none', label: 'Sem marca d\'água' },
+  { value: 'clinic_name', label: 'Nome da clínica' },
+  { value: 'logo', label: 'Logo opaca' },
+  { value: 'custom_text', label: 'Texto personalizado' },
+] as const;
 
 export function useDocumentSettings() {
   const { clinic, isLoading: clinicLoading } = useClinicData();
@@ -68,7 +124,22 @@ export function useDocumentSettings() {
         .eq('clinic_id', clinic.id)
         .maybeSingle();
       if (error) throw error;
-      setSettings(data as DocumentSettings | null);
+      if (data) {
+        const raw = data as any;
+        setSettings({
+          ...raw,
+          font_family: raw.font_family || 'Inter',
+          header_layout: raw.header_layout || 'left',
+          watermark_type: raw.watermark_type || 'none',
+          watermark_text: raw.watermark_text || null,
+          use_professional_from_doc: raw.use_professional_from_doc || false,
+          doc_type_config: (typeof raw.doc_type_config === 'object' && raw.doc_type_config !== null)
+            ? raw.doc_type_config
+            : DOCUMENT_DEFAULTS.doc_type_config,
+        } as DocumentSettings);
+      } else {
+        setSettings(null);
+      }
     } catch (err) {
       console.error('Error fetching document settings:', err);
     } finally {
@@ -94,13 +165,13 @@ export function useDocumentSettings() {
       if (settings?.id) {
         const { error } = await supabase
           .from('clinic_document_settings')
-          .update(payload)
+          .update(payload as any)
           .eq('id', settings.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('clinic_document_settings')
-          .insert(payload);
+          .insert(payload as any);
         if (error) throw error;
       }
 

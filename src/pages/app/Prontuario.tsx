@@ -1448,7 +1448,7 @@ export default function Prontuario() {
         );
 
       case 'documentos_clinicos':
-        // Documentos Clínicos (Receituário / Atestado)
+        // Documentos Clínicos (Receituário / Atestado / Declaração / Relatório)
         return (
           <DocumentosClinicosBlock
             documentos={documentosClinicos}
@@ -1463,8 +1463,7 @@ export default function Prontuario() {
             medicamentoSuggestions={docMedSuggestions}
             activeSpecialtyId={activeSpecialtyId || undefined}
             patientName={patient?.full_name}
-            onSaveReceituario={(conteudo, options) => saveDocumentoClinico('receituario', conteudo, activeSpecialtyId || undefined, options)}
-            onSaveAtestado={(conteudo, options) => saveDocumentoClinico('atestado', conteudo, activeSpecialtyId || undefined, options)}
+            onSave={(tipo, conteudo, options) => saveDocumentoClinico(tipo, conteudo, activeSpecialtyId || undefined, options)}
             onCancel={cancelDocumentoClinico}
             onSaveModeloPessoal={saveModeloPessoalClinico}
             onDeleteModeloPessoal={deleteModeloPessoalClinico}

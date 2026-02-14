@@ -277,20 +277,23 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
         });
       });
 
-      // Documentos Clínicos (Receituário / Atestado)
+      // Documentos Clínicos (Receituário / Atestado / Declaração / Relatório)
+      const tipoLabels: Record<string, string> = { receituario: 'Receituário', atestado: 'Atestado', declaracao: 'Declaração', relatorio: 'Relatório' };
       (docClinicosRes.data || []).forEach(doc => {
-        const isReceituario = doc.tipo === 'receituario';
         const conteudo = typeof doc.conteudo_json === 'string' ? JSON.parse(doc.conteudo_json) : doc.conteudo_json;
         let resumo: string | undefined;
-        if (isReceituario && conteudo?.medicamentos?.length) {
+        if (doc.tipo === 'receituario' && conteudo?.medicamentos?.length) {
           resumo = conteudo.medicamentos.map((m: any) => m.nome).join(', ');
-        } else if (!isReceituario && conteudo?.dias) {
+        } else if (doc.tipo === 'atestado' && conteudo?.dias) {
           resumo = `${conteudo.dias} dia(s) de afastamento`;
+        } else if (doc.tipo === 'relatorio' && conteudo?.titulo_relatorio) {
+          resumo = conteudo.titulo_relatorio;
         }
+        const tipoTimeline = (['receituario','atestado','declaracao','relatorio'].includes(doc.tipo) ? doc.tipo : 'receituario') as any;
         timelineEvents.push({
           id: `doc-clinico-${doc.id}`,
-          tipo: isReceituario ? 'receituario' : 'atestado',
-          titulo: isReceituario ? 'Receituário emitido' : 'Atestado emitido',
+          tipo: tipoTimeline,
+          titulo: `${tipoLabels[doc.tipo] || doc.tipo} ${doc.status === 'emitido' ? 'emitido' : doc.status === 'rascunho' ? '(rascunho)' : 'cancelado'}`,
           resumo,
           detalhes: { status: doc.status },
           profissional_nome: doc.professional_id ? profiles[doc.professional_id] : undefined,

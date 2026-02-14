@@ -1438,6 +1438,8 @@ export type Database = {
           patient_name: string | null
           pdf_url: string | null
           professional_name: string | null
+          replaced_by_document_id: string | null
+          replaces_document_id: string | null
           revoked_at: string | null
           revoked_by: string | null
           revoked_reason: string | null
@@ -1456,6 +1458,8 @@ export type Database = {
           patient_name?: string | null
           pdf_url?: string | null
           professional_name?: string | null
+          replaced_by_document_id?: string | null
+          replaces_document_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           revoked_reason?: string | null
@@ -1474,6 +1478,8 @@ export type Database = {
           patient_name?: string | null
           pdf_url?: string | null
           professional_name?: string | null
+          replaced_by_document_id?: string | null
+          replaces_document_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           revoked_reason?: string | null
@@ -1492,6 +1498,20 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_documents_replaced_by_document_id_fkey"
+            columns: ["replaced_by_document_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_documents_replaces_document_id_fkey"
+            columns: ["replaces_document_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_documents"
             referencedColumns: ["id"]
           },
         ]

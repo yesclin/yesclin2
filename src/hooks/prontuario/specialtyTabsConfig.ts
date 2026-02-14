@@ -24,6 +24,7 @@ export const YESCLIN_CLINICAL_BLOCKS: Record<ClinicalBlockKey, string> = {
   diagnostico: 'Hipóteses Diagnósticas',
   prescricoes: 'Prescrições',
   conduta: 'Plano / Conduta',
+  documentos_clinicos: 'Documentos Clínicos',
   exames: 'Exames / Documentos',
   timeline: 'Linha do Tempo',
   alertas: 'Alertas',

@@ -44,3 +44,5 @@ export type { Diagnostico, TipoDiagnostico, StatusDiagnostico } from './Diagnost
 
 export { PrescricoesBlock } from './PrescricoesBlock';
 export type { Prescricao, TipoReceita, StatusPrescricao, ViaAdministracao } from './PrescricoesBlock';
+
+export { DocumentosClinicosBlock } from './DocumentosClinicosBlock';

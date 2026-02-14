@@ -2267,6 +2267,86 @@ export type Database = {
           },
         ]
       }
+      documentos_clinicos: {
+        Row: {
+          cancelado_em: string | null
+          cancelado_por: string | null
+          clinic_id: string
+          conteudo_json: Json
+          created_at: string
+          id: string
+          motivo_cancelamento: string | null
+          patient_id: string
+          pdf_url: string | null
+          professional_id: string
+          specialty_id: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          clinic_id: string
+          conteudo_json?: Json
+          created_at?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          patient_id: string
+          pdf_url?: string | null
+          professional_id: string
+          specialty_id?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          clinic_id?: string
+          conteudo_json?: Json
+          created_at?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          patient_id?: string
+          pdf_url?: string | null
+          professional_id?: string
+          specialty_id?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_clinicos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_clinicos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_clinicos_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_clinicos_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facial_map_applications: {
         Row: {
           appointment_id: string | null

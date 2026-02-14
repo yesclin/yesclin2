@@ -37,7 +37,9 @@ export type TipoEventoTimeline =
   | 'evolucao' 
   | 'exame_fisico'
   | 'conduta' 
-  | 'documento';
+  | 'documento'
+  | 'receituario'
+  | 'atestado';
 
 export const tipoEventoConfig: Record<TipoEventoTimeline, {
   label: string;
@@ -74,6 +76,18 @@ export const tipoEventoConfig: Record<TipoEventoTimeline, {
     icon: <FileUp className="h-4 w-4" />,
     color: 'text-teal-600 dark:text-teal-400',
     bgColor: 'bg-teal-100 dark:bg-teal-900/30',
+  },
+  receituario: {
+    label: 'Receituário',
+    icon: <FileText className="h-4 w-4" />,
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
+  },
+  atestado: {
+    label: 'Atestado',
+    icon: <FileText className="h-4 w-4" />,
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
   },
 };
 
@@ -278,6 +292,8 @@ export function LinhaTempoBlock({
               <SelectItem value="exame_fisico">Exames Físicos</SelectItem>
               <SelectItem value="conduta">Planos / Condutas</SelectItem>
               <SelectItem value="documento">Documentos</SelectItem>
+              <SelectItem value="receituario">Receituários</SelectItem>
+              <SelectItem value="atestado">Atestados</SelectItem>
             </SelectContent>
           </Select>
         </div>

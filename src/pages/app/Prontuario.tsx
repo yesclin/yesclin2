@@ -62,6 +62,7 @@ import {
   Move,
   Dumbbell,
   BarChart3,
+  ScrollText,
   // Pediatrics icons
   Baby,
   Ruler,
@@ -118,9 +119,10 @@ import {
   AlertasEsteticaBlock,
   TimelineEsteticaBlock,
 } from "@/components/prontuario/aesthetics";
-import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock } from "@/components/prontuario/clinica-geral";
+import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock, DocumentosClinicosBlock } from "@/components/prontuario/clinica-geral";
 import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
+import { useDocumentosClinicosData } from "@/hooks/prontuario/clinica-geral/useDocumentosClinicosData";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { 
   EvolucoesNutricaoBlock, 
@@ -252,6 +254,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Move,
   Dumbbell,
   BarChart3,
+  ScrollText,
   // Pediatrics icons
   Baby,
   Ruler,
@@ -282,6 +285,7 @@ const TAB_KEY_MAP: Record<string, TabKey> = {
   exames_solicitacao: 'exames', // Map exam requests to exames
   conduta: 'evolucao', // Map conduct to evolucao for permissions
   procedimentos: 'procedimentos',
+  documentos_clinicos: 'prescricoes', // Map documentos clínicos to prescricoes for permissions
   prescricoes: 'prescricoes',
   exames: 'exames',
   documentos: 'documentos',
@@ -371,6 +375,7 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'diagnostico', label: 'Diagnóstico (CID)', icon: Stethoscope },
   { id: 'exames_solicitacao', label: 'Solicitar Exames', icon: ClipboardList },
   { id: 'conduta', label: 'Plano/Conduta', icon: Target },
+  { id: 'documentos_clinicos', label: 'Documentos Clínicos', icon: ScrollText },
   { id: 'fotos_intraorais', label: 'Fotos Intraorais', icon: Camera },
   { id: 'exames', label: 'Exames / Documentos', icon: Paperclip },
   { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },
@@ -819,6 +824,17 @@ export default function Prontuario() {
   });
 
   // Pilates hooks are NOT needed here - components use hooks internally
+
+  // Documentos Clínicos (Receituário / Atestado)
+  const {
+    documentos: documentosClinicos,
+    loading: documentosClinicosLoading,
+    saving: documentosClinicosSaving,
+    currentProfessionalId: docClinicoProfId,
+    currentProfessionalName: docClinicoProfName,
+    saveDocumento: saveDocumentoClinico,
+    cancelDocumento: cancelDocumentoClinico,
+  } = useDocumentosClinicosData(patientId);
 
 
   // Wrap permission checks to respect the enable_tab_permissions setting
@@ -1424,7 +1440,23 @@ export default function Prontuario() {
           />
         );
 
-      case 'plano_alimentar':
+      case 'documentos_clinicos':
+        // Documentos Clínicos (Receituário / Atestado)
+        return (
+          <DocumentosClinicosBlock
+            documentos={documentosClinicos}
+            loading={documentosClinicosLoading}
+            saving={documentosClinicosSaving}
+            canEdit={canEditCurrentTab}
+            currentProfessionalName={docClinicoProfName || undefined}
+            patientName={patient?.full_name}
+            onSaveReceituario={(conteudo) => saveDocumentoClinico('receituario', conteudo, activeSpecialtyId || undefined)}
+            onSaveAtestado={(conteudo) => saveDocumentoClinico('atestado', conteudo, activeSpecialtyId || undefined)}
+            onCancel={cancelDocumentoClinico}
+          />
+        );
+
+
         // Nutrição - Plano Alimentar
         return (
           <PlanoAlimentarBlock

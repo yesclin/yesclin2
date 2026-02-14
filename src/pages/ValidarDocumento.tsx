@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, FileText, ArrowRight, Link2 } from 'lucide-react';
 
 interface DocumentInfo {
   id: string;
@@ -14,6 +14,10 @@ interface DocumentInfo {
   is_revoked: boolean;
   revoked_at: string | null;
   revoked_reason: string | null;
+  replaced_by_document_id: string | null;
+  replaced_by_reference: string | null;
+  replaces_document_id: string | null;
+  replaces_reference: string | null;
   created_at: string;
   clinic_id: string;
   clinic_name?: string;
@@ -39,20 +43,9 @@ export default function ValidarDocumento() {
 
       const { data, error } = await supabase
         .from('clinical_documents')
-        .select('id, document_type, document_reference, patient_name, professional_name, is_revoked, revoked_at, created_at, clinic_id')
+        .select('id, document_type, document_reference, patient_name, professional_name, is_revoked, revoked_at, created_at, clinic_id, revoked_reason, replaced_by_document_id, replaces_document_id' as any)
         .eq('id', id)
         .maybeSingle();
-
-      // Fetch revoked_reason separately (may not be in generated types yet)
-      let revoked_reason: string | null = null;
-      if (data?.is_revoked) {
-        const { data: extra } = await supabase
-          .from('clinical_documents')
-          .select('revoked_reason' as any)
-          .eq('id', id)
-          .maybeSingle();
-        revoked_reason = (extra as any)?.revoked_reason || null;
-      }
 
       if (error || !data) {
         setNotFound(true);
@@ -60,14 +53,48 @@ export default function ValidarDocumento() {
         return;
       }
 
+      const raw = data as any;
+
+      // Resolve linked document references
+      const linkedIds: string[] = [];
+      if (raw.replaced_by_document_id) linkedIds.push(raw.replaced_by_document_id);
+      if (raw.replaces_document_id) linkedIds.push(raw.replaces_document_id);
+
+      let refMap: Record<string, string> = {};
+      if (linkedIds.length > 0) {
+        const { data: linked } = await supabase
+          .from('clinical_documents')
+          .select('id, document_reference')
+          .in('id', linkedIds);
+        if (linked) {
+          linked.forEach((l) => { refMap[l.id] = l.document_reference; });
+        }
+      }
+
       // Get clinic name
       const { data: clinic } = await supabase
         .from('clinics')
         .select('name')
-        .eq('id', data.clinic_id)
+        .eq('id', raw.clinic_id)
         .maybeSingle();
 
-      setDoc({ ...data, revoked_reason, clinic_name: clinic?.name || 'Clínica' });
+      setDoc({
+        id: raw.id,
+        document_type: raw.document_type,
+        document_reference: raw.document_reference,
+        patient_name: raw.patient_name,
+        professional_name: raw.professional_name,
+        is_revoked: raw.is_revoked,
+        revoked_at: raw.revoked_at,
+        revoked_reason: raw.revoked_reason || null,
+        replaced_by_document_id: raw.replaced_by_document_id || null,
+        replaced_by_reference: raw.replaced_by_document_id ? refMap[raw.replaced_by_document_id] || null : null,
+        replaces_document_id: raw.replaces_document_id || null,
+        replaces_reference: raw.replaces_document_id ? refMap[raw.replaces_document_id] || null : null,
+        created_at: raw.created_at,
+        clinic_id: raw.clinic_id,
+        clinic_name: clinic?.name || 'Clínica',
+      });
       setLoading(false);
     }
     fetchDocument();
@@ -160,6 +187,25 @@ export default function ValidarDocumento() {
             </div>
           )}
 
+          {/* Replacement chain - valid doc that replaces another */}
+          {!doc!.is_revoked && doc!.replaces_reference && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700 flex items-center gap-1">
+                <Link2 className="h-4 w-4" />
+                Este documento substitui: <strong>{doc!.replaces_reference}</strong>
+              </p>
+              {doc!.replaces_document_id && (
+                <Link
+                  to={`/validar/${doc!.replaces_document_id}`}
+                  className="text-xs text-blue-600 underline mt-1 inline-block"
+                >
+                  Ver documento original
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* Revoked doc info */}
           {doc!.is_revoked && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
               <p className="text-sm font-semibold text-red-700 flex items-center gap-1">
@@ -174,6 +220,24 @@ export default function ValidarDocumento() {
                 <p className="text-xs text-red-600">
                   Motivo: {doc!.revoked_reason}
                 </p>
+              )}
+
+              {/* Link to replacement document */}
+              {doc!.replaced_by_reference && (
+                <div className="pt-2 border-t border-red-200">
+                  <p className="text-sm text-amber-700 flex items-center gap-1">
+                    <ArrowRight className="h-4 w-4" />
+                    Substituído por: <strong>{doc!.replaced_by_reference}</strong>
+                  </p>
+                  {doc!.replaced_by_document_id && (
+                    <Link
+                      to={`/validar/${doc!.replaced_by_document_id}`}
+                      className="text-xs text-blue-600 underline mt-1 inline-block"
+                    >
+                      Validar documento substituto
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           )}

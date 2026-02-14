@@ -9,7 +9,10 @@ import {
   ShieldCheck,
   ShieldX,
   Ban,
+  RefreshCw,
   Loader2,
+  ArrowRight,
+  Link2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { replaceDocument } from "@/utils/documentControl";
 
 interface ClinicalDoc {
   id: string;
@@ -35,6 +39,11 @@ interface ClinicalDoc {
   is_revoked: boolean;
   revoked_at: string | null;
   revoked_reason: string | null;
+  replaced_by_document_id: string | null;
+  replaced_by_reference: string | null;
+  replaces_document_id: string | null;
+  replaces_reference: string | null;
+  source_record_id: string | null;
   created_at: string;
 }
 
@@ -55,42 +64,69 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
   const [docs, setDocs] = useState<ClinicalDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Revoke modal
   const [revokeTarget, setRevokeTarget] = useState<ClinicalDoc | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
   const [revoking, setRevoking] = useState(false);
+
+  // Replace modal
+  const [replaceTarget, setReplaceTarget] = useState<ClinicalDoc | null>(null);
+  const [replaceReason, setReplaceReason] = useState("");
+  const [replacing, setReplacing] = useState(false);
 
   const fetchDocs = useCallback(async () => {
     if (!patientId || !clinic?.id) return;
     setLoading(true);
     try {
+      // Fetch all docs with extra columns via any cast
       const { data, error } = await supabase
         .from("clinical_documents")
-        .select("id, document_type, document_reference, patient_name, professional_name, is_revoked, revoked_at, created_at")
+        .select("id, document_type, document_reference, patient_name, professional_name, is_revoked, revoked_at, created_at, source_record_id, revoked_reason, replaced_by_document_id, replaces_document_id" as any)
         .eq("patient_id", patientId)
         .eq("clinic_id", clinic.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // We need revoked_reason too - fetch separately since it may not be in generated types yet
-      const ids = (data || []).map((d) => d.id);
-      let reasonMap: Record<string, string | null> = {};
-      if (ids.length > 0) {
-        const { data: reasonData } = await supabase
+      const rawDocs = (data || []) as any[];
+
+      // Resolve references for replaced_by and replaces links
+      const linkedIds = new Set<string>();
+      rawDocs.forEach((d) => {
+        if (d.replaced_by_document_id) linkedIds.add(d.replaced_by_document_id);
+        if (d.replaces_document_id) linkedIds.add(d.replaces_document_id);
+      });
+
+      let refMap: Record<string, string> = {};
+      if (linkedIds.size > 0) {
+        const { data: linked } = await supabase
           .from("clinical_documents")
-          .select("id, revoked_reason" as any)
-          .in("id", ids);
-        if (reasonData) {
-          (reasonData as any[]).forEach((r: any) => {
-            reasonMap[r.id] = r.revoked_reason || null;
+          .select("id, document_reference")
+          .in("id", Array.from(linkedIds));
+        if (linked) {
+          linked.forEach((l) => {
+            refMap[l.id] = l.document_reference;
           });
         }
       }
 
       setDocs(
-        (data || []).map((d) => ({
-          ...d,
-          revoked_reason: reasonMap[d.id] || null,
+        rawDocs.map((d) => ({
+          id: d.id,
+          document_type: d.document_type,
+          document_reference: d.document_reference,
+          patient_name: d.patient_name,
+          professional_name: d.professional_name,
+          is_revoked: d.is_revoked,
+          revoked_at: d.revoked_at,
+          revoked_reason: d.revoked_reason || null,
+          replaced_by_document_id: d.replaced_by_document_id || null,
+          replaced_by_reference: d.replaced_by_document_id ? refMap[d.replaced_by_document_id] || null : null,
+          replaces_document_id: d.replaces_document_id || null,
+          replaces_reference: d.replaces_document_id ? refMap[d.replaces_document_id] || null : null,
+          source_record_id: d.source_record_id || null,
+          created_at: d.created_at,
         }))
       );
     } catch (err) {
@@ -100,22 +136,17 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
     }
   }, [patientId, clinic?.id]);
 
-  // Check if current user is admin/owner
   useEffect(() => {
     async function checkRole() {
       if (!clinic?.id) return;
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .eq("clinic_id", clinic.id)
         .maybeSingle();
-
       if (roleData && ["admin", "owner"].includes(roleData.role)) {
         setIsAdmin(true);
       }
@@ -127,17 +158,15 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
     fetchDocs();
   }, [fetchDocs]);
 
+  // Simple revocation (no replacement)
   const handleRevoke = async () => {
     if (!revokeTarget || !revokeReason.trim() || !clinic?.id) return;
-
     setRevoking(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
 
-      const { error } = await supabase
+      await supabase
         .from("clinical_documents")
         .update({
           is_revoked: true,
@@ -147,9 +176,6 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
         } as any)
         .eq("id", revokeTarget.id);
 
-      if (error) throw error;
-
-      // Audit log
       await supabase.from("clinic_audit_logs").insert({
         clinic_id: clinic.id,
         user_id: user.id,
@@ -171,6 +197,34 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
       toast.error("Erro ao revogar documento.");
     } finally {
       setRevoking(false);
+    }
+  };
+
+  // Replace: revoke old + create new linked document
+  const handleReplace = async () => {
+    if (!replaceTarget || !replaceReason.trim() || !clinic?.id) return;
+    setReplacing(true);
+    try {
+      const result = await replaceDocument({
+        oldDocumentId: replaceTarget.id,
+        clinicId: clinic.id,
+        patientId,
+        documentType: replaceTarget.document_type,
+        reason: replaceReason.trim(),
+        patientName: replaceTarget.patient_name || undefined,
+        professionalName: replaceTarget.professional_name || undefined,
+        sourceRecordId: replaceTarget.source_record_id || undefined,
+      });
+
+      toast.success(`Documento substituído. Novo: ${result.newReference}`);
+      setReplaceTarget(null);
+      setReplaceReason("");
+      await fetchDocs();
+    } catch (err) {
+      console.error("Error replacing document:", err);
+      toast.error("Erro ao substituir documento.");
+    } finally {
+      setReplacing(false);
     }
   };
 
@@ -227,7 +281,7 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
                       <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
                     )}
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono text-sm font-medium truncate">
                           {doc.document_reference}
                         </span>
@@ -240,28 +294,56 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {TYPE_LABELS[doc.document_type] || doc.document_type} •{" "}
-                        {format(new Date(doc.created_at), "dd/MM/yyyy HH:mm", {
-                          locale: ptBR,
-                        })}
+                        {format(new Date(doc.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       </p>
-                      {doc.is_revoked && doc.revoked_reason && (
+
+                      {/* Replacement chain info */}
+                      {doc.replaces_reference && (
+                        <p className="text-xs text-blue-600 mt-0.5 flex items-center gap-1">
+                          <Link2 className="h-3 w-3" />
+                          Substitui: {doc.replaces_reference}
+                        </p>
+                      )}
+                      {doc.is_revoked && doc.replaced_by_reference && (
+                        <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                          <ArrowRight className="h-3 w-3" />
+                          Substituído por: {doc.replaced_by_reference}
+                        </p>
+                      )}
+                      {doc.is_revoked && doc.revoked_reason && !doc.replaced_by_document_id && (
                         <p className="text-xs text-destructive mt-0.5">
                           Motivo: {doc.revoked_reason}
+                        </p>
+                      )}
+                      {doc.is_revoked && doc.revoked_reason && doc.replaced_by_document_id && (
+                        <p className="text-xs text-destructive mt-0.5">
+                          Motivo substituição: {doc.revoked_reason}
                         </p>
                       )}
                     </div>
                   </div>
 
                   {isAdmin && !doc.is_revoked && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive shrink-0"
-                      onClick={() => setRevokeTarget(doc)}
-                    >
-                      <Ban className="h-4 w-4 mr-1" />
-                      Revogar
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700"
+                        onClick={() => setReplaceTarget(doc)}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Substituir
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setRevokeTarget(doc)}
+                      >
+                        <Ban className="h-4 w-4 mr-1" />
+                        Revogar
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -274,10 +356,7 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
       <Dialog
         open={!!revokeTarget}
         onOpenChange={(open) => {
-          if (!open) {
-            setRevokeTarget(null);
-            setRevokeReason("");
-          }
+          if (!open) { setRevokeTarget(null); setRevokeReason(""); }
         }}
       >
         <DialogContent>
@@ -288,15 +367,11 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
             </DialogTitle>
             <DialogDescription>
               Você está prestes a revogar o documento{" "}
-              <strong>{revokeTarget?.document_reference}</strong>. Esta ação é
-              irreversível.
+              <strong>{revokeTarget?.document_reference}</strong>. Esta ação é irreversível.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-3 py-2">
-            <Label htmlFor="revoke-reason">
-              Motivo da revogação <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="revoke-reason">Motivo da revogação <span className="text-destructive">*</span></Label>
             <Textarea
               id="revoke-reason"
               placeholder="Descreva o motivo da revogação..."
@@ -305,24 +380,49 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
               rows={3}
             />
           </div>
-
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setRevokeTarget(null);
-                setRevokeReason("");
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={!revokeReason.trim() || revoking}
-              onClick={handleRevoke}
-            >
+            <Button variant="outline" onClick={() => { setRevokeTarget(null); setRevokeReason(""); }}>Cancelar</Button>
+            <Button variant="destructive" disabled={!revokeReason.trim() || revoking} onClick={handleRevoke}>
               {revoking && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
               Confirmar Revogação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Replacement Modal */}
+      <Dialog
+        open={!!replaceTarget}
+        onOpenChange={(open) => {
+          if (!open) { setReplaceTarget(null); setReplaceReason(""); }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-blue-600" />
+              Substituir Documento
+            </DialogTitle>
+            <DialogDescription>
+              O documento <strong>{replaceTarget?.document_reference}</strong> será revogado e um
+              novo documento substituto será gerado automaticamente com novo número sequencial e QR Code.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label htmlFor="replace-reason">Motivo da substituição <span className="text-destructive">*</span></Label>
+            <Textarea
+              id="replace-reason"
+              placeholder="Descreva o motivo da substituição..."
+              value={replaceReason}
+              onChange={(e) => setReplaceReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReplaceTarget(null); setReplaceReason(""); }}>Cancelar</Button>
+            <Button disabled={!replaceReason.trim() || replacing} onClick={handleReplace}>
+              {replacing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Confirmar Substituição
             </Button>
           </DialogFooter>
         </DialogContent>

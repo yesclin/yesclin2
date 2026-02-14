@@ -64,6 +64,7 @@ interface RegisterDocumentParams {
   sourceRecordId?: string;
   patientName?: string;
   professionalName?: string;
+  replacesDocumentId?: string;
 }
 
 /**
@@ -74,23 +75,100 @@ export async function registerClinicalDocument(params: RegisterDocumentParams) {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData?.user?.id;
 
+  const insertPayload: Record<string, unknown> = {
+    clinic_id: params.clinicId,
+    patient_id: params.patientId,
+    document_type: params.documentType,
+    document_reference: params.documentReference,
+    document_hash: params.documentHash,
+    pdf_url: params.pdfUrl || null,
+    source_record_id: params.sourceRecordId || null,
+    patient_name: params.patientName || null,
+    professional_name: params.professionalName || null,
+    created_by: userId || null,
+  };
+
+  if (params.replacesDocumentId) {
+    insertPayload.replaces_document_id = params.replacesDocumentId;
+  }
+
   const { data, error } = await supabase
     .from('clinical_documents')
-    .insert({
-      clinic_id: params.clinicId,
-      patient_id: params.patientId,
-      document_type: params.documentType,
-      document_reference: params.documentReference,
-      document_hash: params.documentHash,
-      pdf_url: params.pdfUrl || null,
-      source_record_id: params.sourceRecordId || null,
-      patient_name: params.patientName || null,
-      professional_name: params.professionalName || null,
-      created_by: userId || null,
-    })
+    .insert(insertPayload as any)
     .select('id')
     .single();
 
   if (error) throw new Error(`Failed to register document: ${error.message}`);
   return data;
+}
+
+/**
+ * Replace a clinical document: revoke the old one, create a new one, and link them.
+ */
+export async function replaceDocument(params: {
+  oldDocumentId: string;
+  clinicId: string;
+  patientId: string;
+  documentType: string;
+  reason: string;
+  patientName?: string;
+  professionalName?: string;
+  sourceRecordId?: string;
+}): Promise<{ newDocId: string; newReference: string }> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData?.user?.id;
+  if (!userId) throw new Error('Não autenticado');
+
+  // 1) Get next sequential number
+  const seqNum = await getNextDocumentNumber(params.clinicId);
+  const newReference = buildDocumentReference(params.documentType, seqNum);
+
+  // 2) Build a simple hash for the replacement doc
+  const hashContent = `replacement:${params.oldDocumentId}:${newReference}:${Date.now()}`;
+  const newHash = await generateHash(hashContent);
+
+  // 3) Register new document linked to old
+  const registered = await registerClinicalDocument({
+    clinicId: params.clinicId,
+    patientId: params.patientId,
+    documentType: params.documentType as any,
+    documentReference: newReference,
+    documentHash: newHash,
+    patientName: params.patientName || null,
+    professionalName: params.professionalName || null,
+    sourceRecordId: params.sourceRecordId || null,
+    replacesDocumentId: params.oldDocumentId,
+  });
+
+  const newDocId = registered.id;
+
+  // 4) Revoke old document and set replaced_by link
+  await supabase
+    .from('clinical_documents')
+    .update({
+      is_revoked: true,
+      revoked_at: new Date().toISOString(),
+      revoked_by: userId,
+      revoked_reason: params.reason,
+      replaced_by_document_id: newDocId,
+    } as any)
+    .eq('id', params.oldDocumentId);
+
+  // 5) Generate QR code for the new document
+  const qrCodeDataUrl = await generateValidationQRCode(newDocId);
+
+  // 6) Audit log
+  await supabase.from('clinic_audit_logs').insert({
+    clinic_id: params.clinicId,
+    user_id: userId,
+    action: 'document_replaced',
+    changes: {
+      old_document_id: params.oldDocumentId,
+      new_document_id: newDocId,
+      new_reference: newReference,
+      reason: params.reason,
+    },
+  });
+
+  return { newDocId, newReference };
 }

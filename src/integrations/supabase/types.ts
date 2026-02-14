@@ -1440,6 +1440,7 @@ export type Database = {
           professional_name: string | null
           revoked_at: string | null
           revoked_by: string | null
+          revoked_reason: string | null
           source_record_id: string | null
         }
         Insert: {
@@ -1457,6 +1458,7 @@ export type Database = {
           professional_name?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
+          revoked_reason?: string | null
           source_record_id?: string | null
         }
         Update: {
@@ -1474,6 +1476,7 @@ export type Database = {
           professional_name?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
+          revoked_reason?: string | null
           source_record_id?: string | null
         }
         Relationships: [

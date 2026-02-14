@@ -12,6 +12,8 @@ interface DocumentInfo {
   patient_name: string | null;
   professional_name: string | null;
   is_revoked: boolean;
+  revoked_at: string | null;
+  revoked_reason: string | null;
   created_at: string;
   clinic_id: string;
   clinic_name?: string;
@@ -37,9 +39,20 @@ export default function ValidarDocumento() {
 
       const { data, error } = await supabase
         .from('clinical_documents')
-        .select('id, document_type, document_reference, patient_name, professional_name, is_revoked, created_at, clinic_id')
+        .select('id, document_type, document_reference, patient_name, professional_name, is_revoked, revoked_at, created_at, clinic_id')
         .eq('id', id)
         .maybeSingle();
+
+      // Fetch revoked_reason separately (may not be in generated types yet)
+      let revoked_reason: string | null = null;
+      if (data?.is_revoked) {
+        const { data: extra } = await supabase
+          .from('clinical_documents')
+          .select('revoked_reason' as any)
+          .eq('id', id)
+          .maybeSingle();
+        revoked_reason = (extra as any)?.revoked_reason || null;
+      }
 
       if (error || !data) {
         setNotFound(true);
@@ -54,7 +67,7 @@ export default function ValidarDocumento() {
         .eq('id', data.clinic_id)
         .maybeSingle();
 
-      setDoc({ ...data, clinic_name: clinic?.name || 'Clínica' });
+      setDoc({ ...data, revoked_reason, clinic_name: clinic?.name || 'Clínica' });
       setLoading(false);
     }
     fetchDocument();
@@ -144,6 +157,24 @@ export default function ValidarDocumento() {
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500">Profissional Responsável</p>
               <p className="font-medium text-gray-900">{doc!.professional_name}</p>
+            </div>
+          )}
+
+          {doc!.is_revoked && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
+              <p className="text-sm font-semibold text-red-700 flex items-center gap-1">
+                <XCircle className="h-4 w-4" /> DOCUMENTO REVOGADO
+              </p>
+              {doc!.revoked_at && (
+                <p className="text-xs text-red-600">
+                  Data da revogação: {format(new Date(doc!.revoked_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </p>
+              )}
+              {doc!.revoked_reason && (
+                <p className="text-xs text-red-600">
+                  Motivo: {doc!.revoked_reason}
+                </p>
+              )}
             </div>
           )}
 

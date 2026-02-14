@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import QRCode from 'qrcode';
+import { logAudit } from '@/utils/auditLog';
 
 const DOCUMENT_TYPE_PREFIX: Record<string, string> = {
   anamnese: 'AN',
@@ -157,12 +158,26 @@ export async function replaceDocument(params: {
   // 5) Generate QR code for the new document
   const qrCodeDataUrl = await generateValidationQRCode(newDocId);
 
-  // 6) Audit log
+  // 6) Audit log (legacy)
   await supabase.from('clinic_audit_logs').insert({
     clinic_id: params.clinicId,
     user_id: userId,
     action: 'document_replaced',
     changes: {
+      old_document_id: params.oldDocumentId,
+      new_document_id: newDocId,
+      new_reference: newReference,
+      reason: params.reason,
+    },
+  });
+
+  // 7) Audit log (new system)
+  await logAudit({
+    clinicId: params.clinicId,
+    action: 'document_replaced',
+    entityType: 'clinical_document',
+    entityId: newDocId,
+    metadata: {
       old_document_id: params.oldDocumentId,
       new_document_id: newDocId,
       new_reference: newReference,

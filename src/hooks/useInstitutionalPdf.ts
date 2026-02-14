@@ -13,6 +13,7 @@ import {
   generateValidationQRCode,
   registerClinicalDocument,
 } from '@/utils/documentControl';
+import { logAudit } from '@/utils/auditLog';
 
 interface PatientInfo {
   name: string;
@@ -225,6 +226,19 @@ export function useInstitutionalPdf() {
           });
           docId = registered.id;
           qrCodeDataUrl = await generateValidationQRCode(docId);
+          
+          // Audit log for document creation
+          await logAudit({
+            clinicId: clinic.id,
+            action: 'document_created',
+            entityType: 'clinical_document',
+            entityId: docId,
+            metadata: {
+              document_reference: docReference,
+              document_type: 'anamnese',
+              patient_name: patient.name,
+            },
+          });
         } catch (err) {
           console.warn('Could not register document, continuing without:', err);
         }

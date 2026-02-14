@@ -9,6 +9,7 @@ import {
   DollarSign,
   Package,
   BarChart3,
+  ShieldAlert,
   Building,
   UserCog,
   ListChecks,
@@ -69,6 +70,7 @@ const ownerAdminGestaoMenu: MenuItem[] = [
   { title: "Finanças", url: "/app/gestao/financas", icon: DollarSign },
   { title: "Convênios", url: "/app/gestao/convenios", icon: Building2 },
   { title: "Relatórios", url: "/app/gestao/relatorios", icon: BarChart3 },
+  { title: "Auditoria", url: "/app/gestao/auditoria", icon: ShieldAlert },
 ];
 
 const ownerAdminConfigMenu: MenuItem[] = [

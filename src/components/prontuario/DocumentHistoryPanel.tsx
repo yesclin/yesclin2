@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { replaceDocument } from "@/utils/documentControl";
+import { logAudit } from "@/utils/auditLog";
 
 interface ClinicalDoc {
   id: string;
@@ -182,6 +183,19 @@ export function DocumentHistoryPanel({ patientId }: DocumentHistoryPanelProps) {
         action: "document_revoked",
         changes: {
           document_id: revokeTarget.id,
+          document_reference: revokeTarget.document_reference,
+          document_type: revokeTarget.document_type,
+          reason: revokeReason.trim(),
+        },
+      });
+
+      // Also log to new audit_logs table
+      await logAudit({
+        clinicId: clinic.id,
+        action: 'document_revoked',
+        entityType: 'clinical_document',
+        entityId: revokeTarget.id,
+        metadata: {
           document_reference: revokeTarget.document_reference,
           document_type: revokeTarget.document_type,
           reason: revokeReason.trim(),

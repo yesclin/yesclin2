@@ -34,11 +34,11 @@ import {
 import { toast } from "sonner";
 
 // ─── Document Preview ────────────────────────────────────────
-function DocumentPreview({ form }: { form: DocumentSettingsInput }) {
+function DocumentPreview({ form, activeDocType = 'anamnese' }: { form: DocumentSettingsInput; activeDocType?: string }) {
   const fontFamily = form.font_family || 'Inter';
-  const activeDocType = 'anamnese';
   const docConfig = form.doc_type_config?.[activeDocType] || {};
-  const docTitle = docConfig.title || 'ANAMNESE';
+  const defaultTitle = DOC_TYPES.find(d => d.key === activeDocType)?.label?.toUpperCase() || 'ANAMNESE';
+  const docTitle = docConfig.title || defaultTitle;
   const showCpf = docConfig.show_cpf !== false;
   const showAddress = docConfig.show_address === true;
 
@@ -216,6 +216,7 @@ export default function DocumentosInstitucionais() {
   const [form, setForm] = useState<DocumentSettingsInput>({ ...DOCUMENT_DEFAULTS });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
+  const [activeDocType, setActiveDocType] = useState('anamnese');
 
   useEffect(() => {
     if (settings) {
@@ -510,7 +511,7 @@ export default function DocumentosInstitucionais() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="anamnese">
+                  <Tabs value={activeDocType} onValueChange={setActiveDocType}>
                     <TabsList className="grid w-full grid-cols-4">
                       {DOC_TYPES.map(dt => (
                         <TabsTrigger key={dt.key} value={dt.key} className="text-xs">{dt.label}</TabsTrigger>
@@ -684,7 +685,7 @@ export default function DocumentosInstitucionais() {
             Preview em Tempo Real
           </div>
           <div className="sticky top-6">
-            <DocumentPreview form={form} />
+            <DocumentPreview form={form} activeDocType={activeDocType} />
           </div>
         </div>
       </div>

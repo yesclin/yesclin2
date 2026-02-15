@@ -341,6 +341,7 @@ export type Database = {
           id: string
           patient_id: string
           responses: Json
+          structure_snapshot: Json | null
           template_id: string
           template_version_id: string
           updated_at: string
@@ -353,6 +354,7 @@ export type Database = {
           id?: string
           patient_id: string
           responses?: Json
+          structure_snapshot?: Json | null
           template_id: string
           template_version_id: string
           updated_at?: string
@@ -365,6 +367,7 @@ export type Database = {
           id?: string
           patient_id?: string
           responses?: Json
+          structure_snapshot?: Json | null
           template_id?: string
           template_version_id?: string
           updated_at?: string
@@ -444,6 +447,9 @@ export type Database = {
       }
       anamnesis_templates: {
         Row: {
+          archived: boolean
+          archived_at: string | null
+          archived_by: string | null
           campos: Json
           clinic_id: string | null
           created_at: string
@@ -463,6 +469,9 @@ export type Database = {
           usage_count: number
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
           campos?: Json
           clinic_id?: string | null
           created_at?: string
@@ -482,6 +491,9 @@ export type Database = {
           usage_count?: number
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
           campos?: Json
           clinic_id?: string | null
           created_at?: string

@@ -2,10 +2,11 @@
  * Página de Configurações > Modelos de Anamnese (V2 – Builder Profissional)
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -18,7 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Plus, MoreHorizontal, Pencil, Trash2, ClipboardList, Copy, ArrowLeft, Lock, Star, Stethoscope, FileText,
+  Plus, MoreHorizontal, Pencil, Trash2, ClipboardList, Copy, ArrowLeft, Lock, Star, Stethoscope, FileText, AlertTriangle,
 } from 'lucide-react';
 import { useAnamnesisTemplatesV2, type AnamnesisTemplateV2 } from '@/hooks/useAnamnesisTemplatesV2';
 import { AnamnesisTemplateBuilderDialog } from '@/components/configuracoes/AnamnesisTemplateBuilderDialog';
@@ -27,13 +28,15 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function ModelosAnamnese() {
-  const { templates, isLoading, updateTemplate, deleteTemplate, cloneTemplate, isDeleting, isCloning } = useAnamnesisTemplatesV2();
+  const { templates, isLoading, updateTemplate, deleteTemplate, cloneTemplate, archiveAllTemplates, isDeleting, isCloning, isArchiving } = useAnamnesisTemplatesV2();
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<AnamnesisTemplateV2 | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<AnamnesisTemplateV2 | null>(null);
   const [systemCloneDialogOpen, setSystemCloneDialogOpen] = useState(false);
   const [systemTemplateToClone, setSystemTemplateToClone] = useState<AnamnesisTemplateV2 | null>(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
 
   const handleNameClick = (template: AnamnesisTemplateV2) => {
     if (template.is_system) {
@@ -112,7 +115,11 @@ export default function ModelosAnamnese() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <Button variant="destructive" size="sm" onClick={() => setResetDialogOpen(true)} disabled={templates.length === 0}>
+          <Trash2 className="h-4 w-4 mr-2" />
+          Resetar Modelos
+        </Button>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Modelo
@@ -132,9 +139,13 @@ export default function ModelosAnamnese() {
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum modelo cadastrado</p>
+            <div className="text-center py-12 space-y-4">
+              <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground">Nenhum modelo disponível.</p>
+              <Button onClick={handleCreate} variant="default">
+                <Plus className="h-4 w-4 mr-2" />
+                Criar novos modelos por especialidade
+              </Button>
             </div>
           ) : (
             <Table>
@@ -290,6 +301,43 @@ export default function ModelosAnamnese() {
             >
               <Copy className="h-4 w-4 mr-2" />
               {isCloning ? 'Clonando...' : 'Clonar e editar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset all templates dialog */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setResetConfirmText(''); }}>
+        <AlertDialogContent className="bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Resetar todos os modelos de anamnese
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>Isso arquiva todos os modelos atuais. <strong>Não afeta anamneses já registradas.</strong></p>
+              <p>Os modelos não aparecerão mais para seleção no prontuário. Você poderá criar novos modelos por especialidade após o reset.</p>
+              <p className="font-medium">Digite <span className="font-bold text-destructive">RESETAR</span> para confirmar:</p>
+              <Input
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="Digite RESETAR"
+                className="mt-2"
+              />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setResetConfirmText('')}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await archiveAllTemplates();
+                setResetDialogOpen(false);
+                setResetConfirmText('');
+              }}
+              disabled={resetConfirmText !== 'RESETAR' || isArchiving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isArchiving ? 'Resetando...' : 'Confirmar Reset'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

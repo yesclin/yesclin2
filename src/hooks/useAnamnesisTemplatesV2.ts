@@ -80,26 +80,27 @@ export function useAnamnesisTemplatesV2(options?: {
       if (!clinic?.id) return [];
 
       // Fetch templates (own clinic + global)
-      let q = supabase
+      const { data: templates, error } = await supabase
         .from('anamnesis_templates')
         .select('*, specialties(name)')
         .or(`clinic_id.is.null,clinic_id.eq.${clinic.id}`)
+        .eq('archived', false)
         .order('is_system', { ascending: false })
-        .order('name');
+        .order('name') as any;
 
-      if (specialtyId) {
-        q = q.eq('specialty_id', specialtyId);
-      }
-      if (activeOnly) {
-        q = q.eq('is_active', true);
-      }
-
-      const { data: templates, error } = await q;
       if (error) throw error;
 
+      let q_filter = templates || [];
+      if (specialtyId) {
+        q_filter = q_filter.filter((t: any) => t.specialty_id === specialtyId);
+      }
+      if (activeOnly) {
+        q_filter = q_filter.filter((t: any) => t.is_active === true);
+      }
+
       // Fetch current versions for all templates
-      const versionIds = (templates || [])
-        .map(t => (t as any).current_version_id)
+      const versionIds = q_filter
+        .map((t: any) => t.current_version_id)
         .filter(Boolean);
 
       let versionsMap: Record<string, { structure: Json; version_number: number }> = {};
@@ -117,8 +118,8 @@ export function useAnamnesisTemplatesV2(options?: {
         }
       }
 
-      return (templates || []).map(t => {
-        const tmpl = t as any;
+      return q_filter.map((t: any) => {
+        const tmpl = t;
         const version = tmpl.current_version_id ? versionsMap[tmpl.current_version_id] : null;
 
         // Build structure: prefer versioned structure, fallback to legacy campos
@@ -390,6 +391,49 @@ export function useAnamnesisTemplatesV2(options?: {
     },
   });
 
+  // ─── Archive all templates (reset) ──────────────────────────
+  const archiveAllMutation = useMutation({
+    mutationFn: async () => {
+      if (!clinic?.id) throw new Error('Clínica não selecionada');
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Usuário não autenticado');
+
+      // Archive all templates visible to this clinic (own + system)
+      const { error } = await supabase
+        .from('anamnesis_templates')
+        .update({
+          is_active: false,
+          archived: true,
+          archived_at: new Date().toISOString(),
+          archived_by: userData.user.id,
+          is_default: false,
+        } as any)
+        .or(`clinic_id.is.null,clinic_id.eq.${clinic.id}`)
+        .eq('archived', false);
+      if (error) throw error;
+
+      // Log audit
+      await supabase.from('audit_logs').insert({
+        clinic_id: clinic.id,
+        user_id: userData.user.id,
+        action: 'reset_anamnesis_templates',
+        entity_type: 'anamnesis_templates',
+        metadata: { reset_at: new Date().toISOString() },
+        user_agent: navigator.userAgent,
+      } as any);
+
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['anamnesis-templates-v2'] });
+      toast.success('Todos os modelos foram arquivados com sucesso');
+    },
+    onError: (e: Error) => {
+      console.error('Erro ao resetar modelos:', e);
+      toast.error('Erro ao resetar modelos');
+    },
+  });
+
   return {
     templates: templatesQuery.data || [],
     isLoading: templatesQuery.isLoading,
@@ -398,10 +442,12 @@ export function useAnamnesisTemplatesV2(options?: {
     updateTemplate: updateMutation.mutateAsync,
     cloneTemplate: cloneMutation.mutateAsync,
     deleteTemplate: deleteMutation.mutateAsync,
+    archiveAllTemplates: archiveAllMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isCloning: cloneMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isArchiving: archiveAllMutation.isPending,
   };
 }
 

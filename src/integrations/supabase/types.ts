@@ -4981,63 +4981,6 @@ export type Database = {
           },
         ]
       }
-      modelos_prontuario: {
-        Row: {
-          ativo: boolean
-          clinic_id: string
-          created_at: string
-          created_by: string | null
-          especialidade_id: string | null
-          estrutura_json: Json
-          id: string
-          is_padrao: boolean
-          is_sistema: boolean
-          nome: string
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          clinic_id: string
-          created_at?: string
-          created_by?: string | null
-          especialidade_id?: string | null
-          estrutura_json?: Json
-          id?: string
-          is_padrao?: boolean
-          is_sistema?: boolean
-          nome: string
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          clinic_id?: string
-          created_at?: string
-          created_by?: string | null
-          especialidade_id?: string | null
-          estrutura_json?: Json
-          id?: string
-          is_padrao?: boolean
-          is_sistema?: boolean
-          nome?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "modelos_prontuario_clinic_id_fkey"
-            columns: ["clinic_id"]
-            isOneToOne: false
-            referencedRelation: "clinics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "modelos_prontuario_especialidade_id_fkey"
-            columns: ["especialidade_id"]
-            isOneToOne: false
-            referencedRelation: "specialties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       modelos_receita_profissional: {
         Row: {
           conteudo_json: Json

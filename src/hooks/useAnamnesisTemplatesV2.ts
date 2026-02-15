@@ -120,6 +120,37 @@ export function useAnamnesisTemplatesV2(options?: {
       return (templates || []).map(t => {
         const tmpl = t as any;
         const version = tmpl.current_version_id ? versionsMap[tmpl.current_version_id] : null;
+
+        // Build structure: prefer versioned structure, fallback to legacy campos
+        let structure: TemplateSection[] = [];
+        if (version?.structure) {
+          structure = version.structure as unknown as TemplateSection[];
+        } else if (Array.isArray(tmpl.campos) && tmpl.campos.length > 0) {
+          // Convert legacy flat campos (with section property) into grouped sections
+          const sectionMap = new Map<string, TemplateField[]>();
+          for (const campo of tmpl.campos) {
+            const sectionTitle = campo.section || 'Geral';
+            if (!sectionMap.has(sectionTitle)) sectionMap.set(sectionTitle, []);
+            sectionMap.get(sectionTitle)!.push({
+              id: campo.id,
+              type: campo.type || 'textarea',
+              label: campo.label || '',
+              required: campo.required || false,
+              placeholder: campo.placeholder,
+              options: campo.options,
+            });
+          }
+          let idx = 0;
+          for (const [title, fields] of sectionMap) {
+            structure.push({
+              id: `section_legacy_${idx++}`,
+              type: 'section',
+              title,
+              fields,
+            });
+          }
+        }
+
         return {
           id: tmpl.id,
           clinic_id: tmpl.clinic_id,
@@ -133,7 +164,7 @@ export function useAnamnesisTemplatesV2(options?: {
           is_active: tmpl.is_active ?? true,
           current_version_id: tmpl.current_version_id,
           current_version_number: version?.version_number,
-          structure: (version?.structure as unknown as TemplateSection[]) || [],
+          structure,
           usage_count: tmpl.usage_count ?? 0,
           created_at: tmpl.created_at,
           updated_at: tmpl.updated_at,

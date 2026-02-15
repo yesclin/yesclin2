@@ -32,10 +32,30 @@ export default function ModelosAnamnese() {
   const [selectedTemplate, setSelectedTemplate] = useState<AnamnesisTemplateV2 | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<AnamnesisTemplateV2 | null>(null);
+  const [systemCloneDialogOpen, setSystemCloneDialogOpen] = useState(false);
+  const [systemTemplateToClone, setSystemTemplateToClone] = useState<AnamnesisTemplateV2 | null>(null);
+
+  const handleNameClick = (template: AnamnesisTemplateV2) => {
+    if (template.is_system) {
+      setSystemTemplateToClone(template);
+      setSystemCloneDialogOpen(true);
+    } else {
+      setSelectedTemplate(template);
+      setEditorOpen(true);
+    }
+  };
+
+  const handleCloneAndEdit = async () => {
+    if (!systemTemplateToClone) return;
+    const cloned = await cloneTemplate({ sourceId: systemTemplateToClone.id, newName: `${systemTemplateToClone.name} (Cópia)` });
+    setSystemCloneDialogOpen(false);
+    setSystemTemplateToClone(null);
+  };
 
   const handleEdit = (template: AnamnesisTemplateV2) => {
     if (template.is_system) {
-      toast.error('Modelos do sistema não podem ser editados. Use "Clonar" para criar uma cópia editável.');
+      setSystemTemplateToClone(template);
+      setSystemCloneDialogOpen(true);
       return;
     }
     setSelectedTemplate(template);
@@ -140,13 +160,19 @@ export default function ModelosAnamnese() {
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center gap-3 cursor-pointer group"
+                        onClick={() => handleNameClick(template)}
+                      >
                         <div className="p-2 bg-primary/10 rounded-lg">
                           <Stethoscope className="h-4 w-4" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <p className="font-medium">{template.name}</p>
+                            <p className="font-medium group-hover:underline group-hover:text-primary transition-colors">
+                              {template.name}
+                            </p>
+                            <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                             {template.is_system && <Lock className="h-3 w-3 text-muted-foreground" />}
                             {template.is_default && (
                               <Badge variant="default" className="text-[10px] h-4 px-1">
@@ -156,6 +182,11 @@ export default function ModelosAnamnese() {
                           </div>
                           {template.description && (
                             <p className="text-sm text-muted-foreground line-clamp-1">{template.description}</p>
+                          )}
+                          {!template.is_system && template.usage_count > 0 && (
+                            <p className="text-xs text-destructive/80 mt-0.5">
+                              Em uso em {template.usage_count} prontuário{template.usage_count > 1 ? 's' : ''}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -233,6 +264,32 @@ export default function ModelosAnamnese() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* System template clone dialog */}
+      <AlertDialog open={systemCloneDialogOpen} onOpenChange={setSystemCloneDialogOpen}>
+        <AlertDialogContent className="bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-muted-foreground" />
+              Modelo padrão do sistema
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Este é um modelo padrão do sistema e não pode ser editado diretamente.
+              Para personalizar, clone o modelo e edite a cópia.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSystemTemplateToClone(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCloneAndEdit}
+              disabled={isCloning}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              {isCloning ? 'Clonando...' : 'Clonar e editar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -9860,6 +9860,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reset_anamnesis_templates: {
+        Args: { p_clinic_id: string; p_user_id: string }
+        Returns: undefined
+      }
       user_clinic_id: { Args: { _user_id: string }; Returns: string }
       user_has_module_permission: {
         Args: {

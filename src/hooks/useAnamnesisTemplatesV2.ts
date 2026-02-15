@@ -20,7 +20,7 @@ export interface TemplateSection {
 
 export interface TemplateField {
   id: string;
-  type: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'scale' | 'calculated' | 'section';
+  type: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'scale' | 'calculated' | 'section';
   label: string;
   required?: boolean;
   placeholder?: string;

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { AnamnesisTemplateEditorDialog } from "@/components/configuracoes/AnamnesisTemplateEditorDialog";
+import { AnamnesisTemplateBuilderDialog } from "@/components/configuracoes/AnamnesisTemplateBuilderDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +76,7 @@ import {
   mapStructuredToLegacy,
   type SecaoAnamnese 
 } from "@/hooks/prontuario/clinica-geral/anamneseTemplates";
-import { useAnamnesisTemplates, type AnamnesisTemplate } from "@/hooks/useAnamnesisTemplates";
+import { useAnamnesisTemplatesV2, type AnamnesisTemplateV2, type TemplateSection } from "@/hooks/useAnamnesisTemplatesV2";
 import { useInstitutionalPdf } from "@/hooks/useInstitutionalPdf";
 import { FileDown } from "lucide-react";
 
@@ -167,20 +167,28 @@ interface UnifiedTemplate {
   secoes: SecaoAnamnese[];
 }
 
-/** Convert a DB template to the unified format */
-function dbTemplateToUnified(t: AnamnesisTemplate): UnifiedTemplate {
+/** Convert a V2 template to the unified format */
+function v2TemplateToUnified(t: AnamnesisTemplateV2): UnifiedTemplate {
   return {
     id: t.id,
     nome: t.name,
     descricao: t.description || '',
     icon: t.icon || 'Stethoscope',
-    is_system: false,
-    secoes: [{
-      id: 'campos_personalizados',
-      titulo: t.name,
-      icon: t.icon || 'Stethoscope',
-      campos: t.campos,
-    }],
+    is_system: t.is_system,
+    secoes: t.structure.map(section => ({
+      id: section.id,
+      titulo: section.title,
+      icon: 'Stethoscope',
+      campos: section.fields.map(f => ({
+        id: f.id,
+        label: f.label,
+        type: f.type as any,
+        placeholder: f.placeholder,
+        options: f.options,
+        required: f.required,
+        section: section.title,
+      })),
+    })),
   };
 }
 
@@ -203,10 +211,10 @@ export function AnamneseBlock({
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<AnamnesisTemplate | null>(null);
+  const [editingV2Template, setEditingV2Template] = useState<AnamnesisTemplateV2 | null>(null);
 
-  // ─── Fetch clinic templates from DB ─────────────────────────────
-  const { templates: dbTemplates, isLoading: loadingTemplates } = useAnamnesisTemplates(true);
+  // ─── Fetch clinic templates from DB (V2) ────────────────────────
+  const { templates: v2Templates, isLoading: loadingTemplates } = useAnamnesisTemplatesV2({ activeOnly: true });
 
   // ─── Build unified template list ────────────────────────────────
   const systemTemplate: UnifiedTemplate = useMemo(() => ({
@@ -219,10 +227,10 @@ export function AnamneseBlock({
   }), []);
 
   const clinicTemplates: UnifiedTemplate[] = useMemo(() => {
-    return dbTemplates
-      .filter(t => t.specialty === 'clinica_geral' || t.specialty === 'geral')
-      .map(dbTemplateToUnified);
-  }, [dbTemplates]);
+    return v2Templates
+      .filter(t => !t.is_system)
+      .map(v2TemplateToUnified);
+  }, [v2Templates]);
 
   const allTemplates = useMemo(() => [systemTemplate, ...clinicTemplates], [systemTemplate, clinicTemplates]);
 
@@ -259,18 +267,18 @@ export function AnamneseBlock({
     setShowSwitchConfirm(false);
   }, [pendingTemplateId]);
 
-  // ─── Open template editor ──────────────────────────────────────
+  // ─── Open template editor (V2 Builder) ──────────────────────────
   const handleOpenTemplateEditor = useCallback(() => {
     if (activeTemplate.is_system) {
-      // System template → open as new (duplicate)
-      setEditingTemplate(null);
+      // System template → open builder as new (will clone)
+      setEditingV2Template(null);
     } else {
-      // DB template → open for editing
-      const dbTpl = dbTemplates.find(t => t.id === activeTemplate.id);
-      setEditingTemplate(dbTpl || null);
+      // DB template → find V2 template for editing
+      const v2Tpl = v2Templates.find(t => t.id === activeTemplate.id);
+      setEditingV2Template(v2Tpl || null);
     }
     setShowTemplateEditor(true);
-  }, [activeTemplate, dbTemplates]);
+  }, [activeTemplate, v2Templates]);
 
   // ─── IMC calculation ────────────────────────────────────────────
   const imcResult = useMemo(() => {
@@ -584,10 +592,10 @@ export function AnamneseBlock({
             )}
           </CardContent>
         </Card>
-        <AnamnesisTemplateEditorDialog
+        <AnamnesisTemplateBuilderDialog
           open={showTemplateEditor}
           onOpenChange={setShowTemplateEditor}
-          template={editingTemplate}
+          template={editingV2Template}
         />
       </>
     );
@@ -677,10 +685,10 @@ export function AnamneseBlock({
           </ScrollArea>
         </CardContent>
       </Card>
-      <AnamnesisTemplateEditorDialog
+      <AnamnesisTemplateBuilderDialog
         open={showTemplateEditor}
         onOpenChange={setShowTemplateEditor}
-        template={editingTemplate}
+        template={editingV2Template}
       />
       </>
     );
@@ -893,10 +901,10 @@ export function AnamneseBlock({
       </Dialog>
 
       {/* Template Editor Dialog */}
-      <AnamnesisTemplateEditorDialog
+      <AnamnesisTemplateBuilderDialog
         open={showTemplateEditor}
         onOpenChange={setShowTemplateEditor}
-        template={editingTemplate}
+        template={editingV2Template}
       />
     </div>
   );

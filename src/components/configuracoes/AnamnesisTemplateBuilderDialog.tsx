@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Plus, Trash2, ChevronUp, ChevronDown, ClipboardList, Stethoscope, FolderPlus,
+  Plus, Trash2, ChevronUp, ChevronDown, ClipboardList, Stethoscope, FolderPlus, Copy,
 } from 'lucide-react';
 import { useAnamnesisTemplatesV2, type AnamnesisTemplateV2, type TemplateSection, type TemplateField } from '@/hooks/useAnamnesisTemplatesV2';
 import { useQuery } from '@tanstack/react-query';
@@ -35,10 +35,12 @@ const FIELD_TYPES = [
   { value: 'textarea', label: 'Texto longo' },
   { value: 'number', label: 'Número' },
   { value: 'date', label: 'Data' },
-  { value: 'select', label: 'Seleção única' },
+  { value: 'select', label: 'Lista suspensa' },
+  { value: 'multiselect', label: 'Múltipla escolha' },
   { value: 'radio', label: 'Opções (radio)' },
   { value: 'checkbox', label: 'Checkbox' },
   { value: 'scale', label: 'Escala' },
+  { value: 'calculated', label: 'Campo automático' },
 ];
 
 export function AnamnesisTemplateBuilderDialog({ open, onOpenChange, template }: Props) {
@@ -132,6 +134,14 @@ export function AnamnesisTemplateBuilderDialog({ open, onOpenChange, template }:
   const removeField = (sIdx: number, fIdx: number) => {
     const next = [...sections];
     next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== fIdx);
+    setSections(next);
+  };
+
+  const duplicateField = (sIdx: number, fIdx: number) => {
+    const next = [...sections];
+    const original = next[sIdx].fields[fIdx];
+    const clone = { ...original, id: `field_${Date.now()}`, label: `${original.label} (cópia)` };
+    next[sIdx].fields.splice(fIdx + 1, 0, clone);
     setSections(next);
   };
 
@@ -304,12 +314,15 @@ export function AnamnesisTemplateBuilderDialog({ open, onOpenChange, template }:
                               />
                               <span className="text-xs text-muted-foreground">Obrig.</span>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateField(sIdx, fIdx)} title="Duplicar campo">
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeField(sIdx, fIdx)}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
-                            {['select', 'radio', 'checkbox'].includes(field.type) && (
+                            {['select', 'multiselect', 'radio', 'checkbox'].includes(field.type) && (
                               <div className="col-span-6">
                                 <Input
                                   value={field.options?.join(', ') || ''}

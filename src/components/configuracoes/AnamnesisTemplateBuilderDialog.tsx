@@ -195,6 +195,11 @@ export function AnamnesisTemplateBuilderDialog({ open, onOpenChange, template }:
           <DialogDescription>
             Configure seções e campos. Ao salvar edições, uma nova versão é criada automaticamente.
           </DialogDescription>
+          {isEditing && template && (template as any).usage_count > 0 && (
+            <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+              ⚠️ Este modelo já foi utilizado em {(template as any).usage_count} prontuário{(template as any).usage_count > 1 ? 's' : ''}. As alterações afetarão apenas novos registros.
+            </div>
+          )}
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-200px)]">

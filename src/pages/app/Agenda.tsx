@@ -27,6 +27,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { AgendaFilters as FiltersType, ViewMode, Appointment, AppointmentStatus } from "@/types/agenda";
 import { toast } from "sonner";
 import { validateProcedureStock, StockValidationResult } from "@/hooks/useProcedureStockValidation";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Agenda() {
   const navigate = useNavigate();
@@ -189,9 +190,58 @@ export default function Agenda() {
   }, [navigate]);
 
   // Handle status change with stock validation and material consumption
+  // Resolve specialty for an appointment: appointment.specialty_id → procedure.specialty_id → professional's specialty
+  const resolveSpecialtyId = useCallback(async (apt: Appointment): Promise<string | null> => {
+    // 1. Direct specialty on appointment
+    if (apt.specialty_id) return apt.specialty_id;
+
+    // 2. From procedure
+    if (apt.procedure_id) {
+      const { data } = await supabase
+        .from('procedures')
+        .select('specialty_id')
+        .eq('id', apt.procedure_id)
+        .single();
+      if (data?.specialty_id) return data.specialty_id;
+    }
+
+    // 3. From professional
+    const { data: prof } = await supabase
+      .from('professionals')
+      .select('specialty_id')
+      .eq('id', apt.professional_id)
+      .single();
+    if (prof?.specialty_id) return prof.specialty_id;
+
+    return null;
+  }, []);
+
+  // Handle status change with stock validation and material consumption
   const handleStatusChange = useCallback(async (appointmentId: string, newStatus: AppointmentStatus) => {
     const apt = appointments.find(a => a.id === appointmentId);
     if (!apt) return;
+
+    // ── Specialty validation before starting appointment ──
+    if (newStatus === 'em_atendimento') {
+      const resolvedSpecialtyId = await resolveSpecialtyId(apt);
+      if (!resolvedSpecialtyId) {
+        toast.error('Especialidade não definida para este atendimento. Defina uma especialidade no agendamento, procedimento ou profissional antes de iniciar.');
+        return;
+      }
+
+      // Save specialty_id on the appointment if not already set
+      if (!apt.specialty_id) {
+        const { error: specError } = await supabase
+          .from('appointments')
+          .update({ specialty_id: resolvedSpecialtyId })
+          .eq('id', appointmentId);
+        if (specError) {
+          console.error('Error saving specialty on appointment:', specError);
+          toast.error('Erro ao vincular especialidade ao atendimento');
+          return;
+        }
+      }
+    }
     
     if (newStatus === 'em_atendimento' && apt.procedure_id) {
       try {
@@ -224,7 +274,7 @@ export default function Agenda() {
     } else {
       updateStatusMutation.mutate({ id: appointmentId, status: newStatus });
     }
-  }, [appointments, navigateToProntuario, updateStatusMutation]);
+  }, [appointments, navigateToProntuario, updateStatusMutation, resolveSpecialtyId]);
 
   // Stock validation handlers
   const handleStockValidationConfirm = useCallback(async () => {

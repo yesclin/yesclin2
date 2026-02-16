@@ -80,6 +80,7 @@ export function useAlertasData(patientId: string | null): UseAlertasDataResult {
     setError(null);
 
     try {
+      // Fetch from clinical_alerts table
       const { data, error: fetchError } = await supabase
         .from('clinical_alerts')
         .select('*')
@@ -91,6 +92,14 @@ export function useAlertasData(patientId: string | null): UseAlertasDataResult {
       if (fetchError) {
         throw fetchError;
       }
+
+      // Fetch from patient_clinical_data table
+      const { data: clinicalData } = await supabase
+        .from('patient_clinical_data')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .maybeSingle();
 
       // Get creator names
       const creatorIds = [...new Set((data || []).map(a => a.created_by).filter(Boolean))];
@@ -125,6 +134,79 @@ export function useAlertasData(patientId: string | null): UseAlertasDataResult {
         expires_at: item.expires_at || undefined,
         created_at: item.created_at,
       }));
+
+      // Generate alerts from patient_clinical_data
+      if (clinicalData) {
+        const allergies = clinicalData.allergies || [];
+        const chronicDiseases = clinicalData.chronic_diseases || [];
+        const medications = clinicalData.current_medications || [];
+        const restrictionsRaw = clinicalData.clinical_restrictions;
+        const restrictions: string[] = Array.isArray(restrictionsRaw) ? restrictionsRaw : (restrictionsRaw ? [restrictionsRaw] : []);
+
+        allergies.forEach((a, i) => {
+          const exists = mapped.some(m => m.alert_type === 'allergy' && m.title.toLowerCase().includes(a.toLowerCase()));
+          if (!exists) {
+            mapped.push({
+              id: `pcd-allergy-${i}`,
+              patient_id: patientId,
+              clinic_id: clinic.id,
+              alert_type: 'allergy',
+              severity: 'critical',
+              title: `Alergia: ${a}`,
+              is_active: true,
+              created_at: clinicalData.updated_at || clinicalData.created_at || new Date().toISOString(),
+            });
+          }
+        });
+
+        chronicDiseases.forEach((d, i) => {
+          const exists = mapped.some(m => m.alert_type === 'disease' && m.title.toLowerCase().includes(d.toLowerCase()));
+          if (!exists) {
+            mapped.push({
+              id: `pcd-disease-${i}`,
+              patient_id: patientId,
+              clinic_id: clinic.id,
+              alert_type: 'disease',
+              severity: 'warning',
+              title: `Doença Crônica: ${d}`,
+              is_active: true,
+              created_at: clinicalData.updated_at || clinicalData.created_at || new Date().toISOString(),
+            });
+          }
+        });
+
+        medications.forEach((m, i) => {
+          const exists = mapped.some(al => al.title.toLowerCase().includes(m.toLowerCase()));
+          if (!exists) {
+            mapped.push({
+              id: `pcd-med-${i}`,
+              patient_id: patientId,
+              clinic_id: clinic.id,
+              alert_type: 'other',
+              severity: 'info',
+              title: `Medicamento contínuo: ${m}`,
+              is_active: true,
+              created_at: clinicalData.updated_at || clinicalData.created_at || new Date().toISOString(),
+            });
+          }
+        });
+
+        restrictions.forEach((r, i) => {
+          const exists = mapped.some(al => al.title.toLowerCase().includes(r.toLowerCase()));
+          if (!exists) {
+            mapped.push({
+              id: `pcd-restriction-${i}`,
+              patient_id: patientId,
+              clinic_id: clinic.id,
+              alert_type: 'risk',
+              severity: 'warning',
+              title: `Restrição: ${r}`,
+              is_active: true,
+              created_at: clinicalData.updated_at || clinicalData.created_at || new Date().toISOString(),
+            });
+          }
+        });
+      }
 
       setAlertas(mapped);
 

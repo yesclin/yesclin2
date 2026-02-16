@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter, Download, Syringe } from 'lucide-react';
+import { Plus, FileText, Copy, Trash2, Edit, Star, Power, PowerOff, ChevronDown, Filter, Download, Syringe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -304,6 +304,7 @@ export function TemplatesSection({ specialtyId }: { specialtyId?: string | null 
                       <span className="font-medium">{t.name}</span>
                       <Badge className={TYPE_COLORS[t.type]}>{TYPES.find(x => x.value === t.type)?.label}</Badge>
                       {t.is_default && <Badge variant="outline"><Star className="h-3 w-3 mr-1" />Padrão</Badge>}
+                      {t.is_system && <Badge variant="secondary"><Lock className="h-3 w-3 mr-1" />Sistema</Badge>}
                       {!t.is_active && <Badge variant="destructive">Inativo</Badge>}
                     </div>
                     <p className="text-sm text-muted-foreground">{t.fields_count || 0} campos</p>

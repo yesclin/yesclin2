@@ -4925,6 +4925,33 @@ export type Database = {
           },
         ]
       }
+      medication_api_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          provider: string
+          query_normalizada: string
+          response_json: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+          query_normalizada: string
+          response_json?: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+          query_normalizada?: string
+          response_json?: Json
+        }
+        Relationships: []
+      }
       message_logs: {
         Row: {
           appointment_id: string | null

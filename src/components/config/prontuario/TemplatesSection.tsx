@@ -179,7 +179,7 @@ const TYPE_COLORS: Record<TemplateType, string> = {
   custom_notes: 'bg-stone-100 text-stone-800',
 };
 
-export function TemplatesSection() {
+export function TemplatesSection({ specialtyId }: { specialtyId?: string | null }) {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Template | null>(null);

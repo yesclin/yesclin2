@@ -60,6 +60,7 @@ import {
   FileBarChart,
   Save,
 } from 'lucide-react';
+import { MedicationAutocomplete, type MedicationResult } from './MedicationAutocomplete';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type {
@@ -185,8 +186,7 @@ export function DocumentosClinicosBlock({
   const [relConclusao, setRelConclusao] = useState('');
   const [relRecomendacoes, setRelRecomendacoes] = useState('');
 
-  // ── Autocomplete ──
-  const [activeMedIdx, setActiveMedIdx] = useState<number | null>(null);
+  // (autocomplete now handled by MedicationAutocomplete component)
 
   // Filter modelos for active specialty
   const receituarioModelos = useMemo(() =>
@@ -300,11 +300,6 @@ export function DocumentosClinicosBlock({
     setModeloNome('');
   };
 
-  const getSuggestions = (query: string) => {
-    if (!query || query.length < 2) return [];
-    const lower = query.toLowerCase();
-    return medicamentoSuggestions.filter(s => s.toLowerCase().includes(lower)).slice(0, 6);
-  };
 
   // ── Header component ──
   const ProfessionalHeader = () => (
@@ -594,7 +589,6 @@ export function DocumentosClinicosBlock({
           </CardHeader>
           <CardContent className="space-y-4">
             {medicamentos.map((med, idx) => {
-              const suggestions = activeMedIdx === idx ? getSuggestions(med.nome) : [];
               return (
                 <div key={idx} className="border rounded-lg p-4 space-y-3 relative">
                   <div className="flex items-center justify-between">
@@ -606,29 +600,15 @@ export function DocumentosClinicosBlock({
                     )}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2 relative">
-                      <Label className="text-xs">Nome do Medicamento *</Label>
-                      <Input
-                        placeholder="Ex: Amoxicilina 500mg"
+                    <div className="sm:col-span-2">
+                      <MedicationAutocomplete
                         value={med.nome}
-                        onChange={e => { updateMedicamento(idx, 'nome', e.target.value); setActiveMedIdx(idx); }}
-                        onFocus={() => setActiveMedIdx(idx)}
-                        onBlur={() => setTimeout(() => setActiveMedIdx(null), 200)}
+                        onChange={(v) => updateMedicamento(idx, 'nome', v)}
+                        onInsert={(result: MedicationResult) => {
+                          updateMedicamento(idx, 'nome', result.nome_comercial);
+                          updateMedicamento(idx, 'dosagem', result.concentracao);
+                        }}
                       />
-                      {suggestions.length > 0 && (
-                        <div className="absolute z-10 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 max-h-40 overflow-y-auto">
-                          {suggestions.map((s, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent truncate"
-                              onMouseDown={() => updateMedicamento(idx, 'nome', s)}
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                     <div>
                       <Label className="text-xs">Dosagem *</Label>

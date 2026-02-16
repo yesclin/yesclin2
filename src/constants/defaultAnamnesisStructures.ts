@@ -28,21 +28,19 @@ export interface DefaultSectionDef {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const CLINICA_GERAL_STRUCTURE: DefaultSectionDef[] = [
-  // 1. Identificação
+  // 1. Identificação Complementar (dados básicos vêm do cadastro do paciente)
   {
     id: 'section_identificacao',
     type: 'section',
-    title: 'Identificação',
+    title: 'Identificação Complementar',
     fields: [
-      { id: 'f_nome', type: 'text', label: 'Nome do paciente', required: true, placeholder: 'Nome completo' },
-      { id: 'f_idade', type: 'number', label: 'Idade', required: true, placeholder: 'Ex: 45' },
       { id: 'f_data_atendimento', type: 'date', label: 'Data do atendimento', required: true },
       { id: 'f_profissional', type: 'text', label: 'Profissional responsável', required: true },
-      { id: 'f_sexo', type: 'select', label: 'Sexo', required: true, options: ['Masculino', 'Feminino', 'Outro'] },
       { id: 'f_estado_civil', type: 'select', label: 'Estado civil', required: false, options: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União estável'] },
       { id: 'f_profissao', type: 'text', label: 'Profissão', required: false, placeholder: 'Ex: Engenheiro' },
       { id: 'f_naturalidade', type: 'text', label: 'Naturalidade', required: false },
       { id: 'f_escolaridade', type: 'select', label: 'Escolaridade', required: false, options: ['Fundamental incompleto', 'Fundamental completo', 'Médio incompleto', 'Médio completo', 'Superior incompleto', 'Superior completo', 'Pós-graduação'] },
+      { id: 'f_informacoes_complementares', type: 'textarea', label: 'Informações complementares', required: false, placeholder: 'Outras informações relevantes para o atendimento...' },
     ],
   },
 

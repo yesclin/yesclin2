@@ -104,6 +104,16 @@ export interface AnamneseData {
   is_current: boolean;
 }
 
+interface PatientHeaderData {
+  full_name?: string;
+  birth_date?: string | null;
+  gender?: 'M' | 'F' | 'O' | null;
+  cpf?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  insurance_name?: string | null;
+}
+
 interface AnamneseBlockProps {
   currentAnamnese: AnamneseData | null;
   anamneseHistory: AnamneseData[];
@@ -113,6 +123,7 @@ interface AnamneseBlockProps {
   onSave: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
   patientName?: string;
   patientCpf?: string;
+  patientData?: PatientHeaderData;
   specialtyId?: string | null;
   specialtyName?: string | null;
 }
@@ -203,11 +214,29 @@ export function AnamneseBlock({
   onSave,
   patientName,
   patientCpf,
+  patientData,
   specialtyId,
   specialtyName,
 }: AnamneseBlockProps) {
   const navigate = useNavigate();
   const { generateAnamnesisPdf, generating } = useInstitutionalPdf();
+
+  // ─── Calculate age from birth_date ──────────────────────────────
+  const patientAge = useMemo(() => {
+    if (!patientData?.birth_date) return null;
+    const birth = new Date(patientData.birth_date);
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+    return age;
+  }, [patientData?.birth_date]);
+
+  const genderLabel = useMemo(() => {
+    if (!patientData?.gender) return null;
+    const map: Record<string, string> = { M: 'Masculino', F: 'Feminino', O: 'Outro' };
+    return map[patientData.gender] || null;
+  }, [patientData?.gender]);
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamneseData | null>(null);
@@ -757,11 +786,43 @@ export function AnamneseBlock({
     );
   }
 
+  // ─── Patient info header (reusable) ──────────────────────────────
+  const renderPatientHeader = () => {
+    if (!patientData && !patientName) return null;
+    const name = patientData?.full_name || patientName || '';
+    const items: { label: string; value: string }[] = [];
+    if (patientAge !== null) items.push({ label: 'Idade', value: `${patientAge} anos` });
+    if (genderLabel) items.push({ label: 'Sexo', value: genderLabel });
+    if (patientData?.birth_date) items.push({ label: 'Nascimento', value: format(new Date(patientData.birth_date), 'dd/MM/yyyy') });
+    if (patientCpf || patientData?.cpf) items.push({ label: 'CPF', value: (patientCpf || patientData?.cpf)! });
+    if (patientData?.phone) items.push({ label: 'Telefone', value: patientData.phone });
+    if (patientData?.insurance_name) items.push({ label: 'Convênio', value: patientData.insurance_name });
+
+    return (
+      <div className="bg-muted/40 border rounded-lg p-4 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <User className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-base">{name}</h3>
+        </div>
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+            {items.map(item => (
+              <span key={item.label}>
+                <span className="font-medium text-foreground">{item.label}:</span> {item.value}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ─── Editing mode ───────────────────────────────────────────────
   if (isEditing) {
     return (
       <>
       {renderSwitchConfirmDialog()}
+      {renderPatientHeader()}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -855,6 +916,8 @@ export function AnamneseBlock({
 
   return (
     <div className="space-y-4">
+      {/* Patient header */}
+      {renderPatientHeader()}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

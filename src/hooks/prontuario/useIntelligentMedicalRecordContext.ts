@@ -140,7 +140,11 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
         validationError = "A especialidade do procedimento não está habilitada na clínica";
       } else if (!dbContext.can_professional_access) {
         validationError = "Profissional não está autorizado para esta especialidade";
+      } else if (!templateLoading && !resolvedTemplate) {
+        validationError = "Nenhum modelo de anamnese encontrado para esta especialidade. Configure um modelo antes de prosseguir.";
       }
+
+      const canEdit = hasValidContext && canAccessClinicalContent && !templateLoading && !!resolvedTemplate;
       
       return {
         appointmentId: dbContext.appointment_id,
@@ -156,13 +160,18 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
         canProfessionalAccess: dbContext.can_professional_access || false,
         hasActiveAppointment: true,
         isContextLocked: true,
-        canEditRecords: hasValidContext && canAccessClinicalContent,
+        canEditRecords: canEdit,
         ...templateFields,
         validationError,
       };
     }
 
     // Fallback to basic appointment data
+    let fallbackError: string | null = null;
+    if (!templateLoading && !resolvedTemplate) {
+      fallbackError = "Nenhum modelo de anamnese encontrado para esta especialidade. Configure um modelo antes de prosseguir.";
+    }
+
     return {
       appointmentId: activeAppointment.id,
       professionalId: activeAppointment.professional_id,
@@ -177,9 +186,9 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
       canProfessionalAccess: true,
       hasActiveAppointment: true,
       isContextLocked: true,
-      canEditRecords: canAccessClinicalContent,
+      canEditRecords: canAccessClinicalContent && !templateLoading && !!resolvedTemplate,
       ...templateFields,
-      validationError: null,
+      validationError: fallbackError,
     };
   }, [activeAppointment, dbContext, patientId, userProfessionalId, canAccessClinicalContent, resolvedTemplate, templateLoading]);
 

@@ -68,6 +68,7 @@ import {
    Copy,
    Settings,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -205,6 +206,7 @@ export function AnamneseBlock({
   specialtyId,
   specialtyName,
 }: AnamneseBlockProps) {
+  const navigate = useNavigate();
   const { generateAnamnesisPdf, generating } = useInstitutionalPdf();
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -598,25 +600,22 @@ export function AnamneseBlock({
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button 
-              onClick={handleCreateDefaultTemplate} 
-              disabled={creatingDefault || !specialtyId}
+              onClick={() => {
+                if (!specialtyId) return;
+                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create_default&return=prontuario`);
+              }} 
+              disabled={!specialtyId}
               size="lg"
             >
-              {creatingDefault ? (
-                <>Criando...</>
-              ) : (
-                <>
-                  <Stethoscope className="h-4 w-4 mr-2" />
-                  Criar modelo padrão do YesClin
-                </>
-              )}
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Criar modelo padrão do YesClin
             </Button>
             <Button
               variant="outline"
               size="lg"
               onClick={() => {
-                setEditingV2Template(null);
-                setShowTemplateEditor(true);
+                if (!specialtyId) return;
+                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create&return=prontuario`);
               }}
             >
               <Edit3 className="h-4 w-4 mr-2" />

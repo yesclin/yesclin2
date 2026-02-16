@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Settings, LayoutList, FileText, Palette, Shield, Lock, FormInput, AlertTriangle, Stethoscope, ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -19,9 +20,38 @@ const TABS = [
 ];
 
 export default function ConfigProntuario() {
-  const [activeTab, setActiveTab] = useState('tabs');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Read query params for deep-link from prontuario
+  const qsSpecialtyId = searchParams.get('especialidade_id');
+  const qsTipo = searchParams.get('tipo');
+  const qsAction = searchParams.get('action');
+  const qsReturn = searchParams.get('return');
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (qsTipo === 'anamnese') return 'anamnesis';
+    return 'tabs';
+  });
   const { data: specialties = [], isLoading: loadingSpecialties } = useEnabledSpecialties();
-  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string | null>(null);
+  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string | null>(qsSpecialtyId);
+
+  // Sync specialty from query param when specialties load
+  useEffect(() => {
+    if (qsSpecialtyId && specialties.length > 0) {
+      const exists = specialties.some(s => s.id === qsSpecialtyId);
+      if (exists) {
+        setSelectedSpecialtyId(qsSpecialtyId);
+      }
+    }
+  }, [qsSpecialtyId, specialties]);
+
+  // Callback for AnamnesisModelsSection to signal creation complete → return to prontuario
+  const handleModelCreated = useCallback(() => {
+    if (qsReturn === 'prontuario' && qsSpecialtyId) {
+      navigate(`/app/prontuario?especialidade_id=${qsSpecialtyId}`);
+    }
+  }, [qsReturn, qsSpecialtyId, navigate]);
 
   // Auto-select first specialty when loaded
   const effectiveSpecialtyId = selectedSpecialtyId && specialties.some(s => s.id === selectedSpecialtyId)
@@ -144,7 +174,11 @@ export default function ConfigProntuario() {
           </TabsContent>
 
           <TabsContent value="anamnesis" className="m-0">
-            <AnamnesisModelsSection specialtyId={effectiveSpecialtyId || undefined} />
+            <AnamnesisModelsSection 
+              specialtyId={effectiveSpecialtyId || undefined} 
+              initialAction={qsTipo === 'anamnese' ? (qsAction as any) : undefined}
+              onModelCreated={handleModelCreated}
+            />
           </TabsContent>
 
           <TabsContent value="custom-fields" className="m-0">

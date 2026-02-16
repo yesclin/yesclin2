@@ -103,15 +103,37 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
       setAlerts(mappedAlerts);
 
       // Extract allergies, chronic diseases, medications from alerts
-      const allergies = mappedAlerts
+      let allergies = mappedAlerts
         .filter(a => a.alert_type === 'allergy')
         .map(a => a.title);
-      const chronicDiseases = mappedAlerts
+      let chronicDiseases = mappedAlerts
         .filter(a => a.alert_type === 'chronic_disease' || a.alert_type === 'condition')
         .map(a => a.title);
-      const medications = mappedAlerts
+      let medications = mappedAlerts
         .filter(a => a.alert_type === 'medication' || a.alert_type === 'continuous_medication')
         .map(a => a.title);
+
+      // Also fetch from patient_clinical_data table
+      let bloodType: string | null = null;
+      const { data: pcdData, error: pcdError } = await supabase
+        .from('patient_clinical_data')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .maybeSingle();
+
+      if (!pcdError && pcdData) {
+        if (pcdData.allergies?.length) {
+          allergies = [...allergies, ...(pcdData.allergies as string[])];
+        }
+        if (pcdData.chronic_diseases?.length) {
+          chronicDiseases = [...chronicDiseases, ...(pcdData.chronic_diseases as string[])];
+        }
+        if (pcdData.current_medications?.length) {
+          medications = [...medications, ...(pcdData.current_medications as string[])];
+        }
+        bloodType = pcdData.blood_type as string | null;
+      }
 
       // Fetch evolutions count and last date
       const { data: evolutionsData, error: evolutionsError } = await supabase
@@ -135,10 +157,10 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
         allergies,
         chronic_diseases: chronicDiseases,
         current_medications: medications,
-        blood_type: null,
+        blood_type: bloodType,
         total_evolutions: totalEvolutions,
         last_evolution_date: lastEvolutionDate,
-        pending_prescriptions: 0, // TODO: implement when prescriptions have status
+        pending_prescriptions: 0,
         total_exams: examsCount ?? 0,
       });
 

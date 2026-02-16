@@ -17,6 +17,20 @@ export interface PatientRecord {
   cpf: string | null;
 }
 
+export interface PatientClinicalData {
+  id: string;
+  patient_id: string;
+  clinic_id: string;
+  allergies: string[] | null;
+  chronic_diseases: string[] | null;
+  current_medications: string[] | null;
+  family_history: string | null;
+  clinical_restrictions: string | null;
+  blood_type: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClinicalAlert {
   id: string;
   patient_id: string;
@@ -40,6 +54,7 @@ export function useProntuarioData(patientId: string | null) {
 
   const [patient, setPatient] = useState<PatientRecord | null>(null);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [clinicalData, setClinicalData] = useState<PatientClinicalData | null>(null);
   const [patientLoading, setPatientLoading] = useState(false);
 
   // Fetch patient data
@@ -64,7 +79,7 @@ export function useProntuarioData(patientId: string | null) {
     }
   }, [patientId, clinic?.id]);
 
-  // Fetch clinical alerts
+  // Fetch clinical alerts from clinical_alerts table
   const fetchAlerts = useCallback(async () => {
     if (!patientId || !clinic?.id) return;
     try {
@@ -82,11 +97,30 @@ export function useProntuarioData(patientId: string | null) {
     }
   }, [patientId, clinic?.id]);
 
+  // Fetch patient clinical data (allergies, chronic diseases, medications, etc.)
+  const fetchClinicalData = useCallback(async () => {
+    if (!patientId || !clinic?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('patient_clinical_data')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('clinic_id', clinic.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setClinicalData(data as PatientClinicalData | null);
+    } catch (err) {
+      console.error('Error fetching clinical data:', err);
+    }
+  }, [patientId, clinic?.id]);
+
   // Load all data when patient or clinic changes
   useEffect(() => {
     if (patientId && clinic?.id) {
       fetchPatient();
       fetchAlerts();
+      fetchClinicalData();
       entriesHook.fetchEntriesForPatient(patientId);
       filesHook.fetchFilesForPatient(patientId);
     }
@@ -163,8 +197,72 @@ export function useProntuarioData(patientId: string | null) {
     return filesHook.files.filter((f) => categories.includes(f.category));
   }, [filesHook.files]);
 
-  // Active alerts
-  const activeAlerts = alerts.filter((a) => a.is_active);
+  // Active alerts — combine clinical_alerts table + auto-generated from patient_clinical_data
+  const allAlerts: ClinicalAlert[] = (() => {
+    const combined = [...alerts];
+    const now = new Date().toISOString();
+    
+    // Generate alerts from patient_clinical_data
+    if (clinicalData) {
+      if (clinicalData.allergies?.length) {
+        clinicalData.allergies.forEach((a, i) => {
+          combined.push({
+            id: `pcd-allergy-${i}`,
+            patient_id: clinicalData.patient_id,
+            alert_type: 'allergy',
+            severity: 'critical',
+            title: `⚠ Alergia: ${a.split('\n')[0]}`,
+            description: a,
+            is_active: true,
+            created_at: clinicalData.created_at || now,
+          });
+        });
+      }
+      if (clinicalData.chronic_diseases?.length) {
+        clinicalData.chronic_diseases.forEach((d, i) => {
+          combined.push({
+            id: `pcd-disease-${i}`,
+            patient_id: clinicalData.patient_id,
+            alert_type: 'disease',
+            severity: 'warning',
+            title: `❤️ ${d.split('\n')[0]}`,
+            description: d,
+            is_active: true,
+            created_at: clinicalData.created_at || now,
+          });
+        });
+      }
+      if (clinicalData.current_medications?.length) {
+        clinicalData.current_medications.forEach((m, i) => {
+          combined.push({
+            id: `pcd-med-${i}`,
+            patient_id: clinicalData.patient_id,
+            alert_type: 'other',
+            severity: 'info',
+            title: `💊 ${m.split('\n')[0]}`,
+            description: m,
+            is_active: true,
+            created_at: clinicalData.created_at || now,
+          });
+        });
+      }
+      if (clinicalData.clinical_restrictions) {
+        combined.push({
+          id: `pcd-restrictions`,
+          patient_id: clinicalData.patient_id,
+          alert_type: 'risk',
+          severity: 'warning',
+          title: `🚫 Restrições Clínicas`,
+          description: clinicalData.clinical_restrictions,
+          is_active: true,
+          created_at: clinicalData.created_at || now,
+        });
+      }
+    }
+    return combined;
+  })();
+
+  const activeAlerts = allAlerts.filter((a) => a.is_active);
   const criticalAlerts = activeAlerts.filter((a) => a.severity === 'critical');
 
   return {
@@ -172,6 +270,10 @@ export function useProntuarioData(patientId: string | null) {
     patient,
     patientLoading,
     fetchPatient,
+
+    // Clinical data from patient_clinical_data
+    clinicalData,
+    fetchClinicalData,
 
     // Configuration
     config,
@@ -199,8 +301,8 @@ export function useProntuarioData(patientId: string | null) {
     getImages: filesHook.getImages,
     getDocuments: filesHook.getDocuments,
 
-    // Alerts
-    alerts,
+    // Alerts (combined: clinical_alerts + patient_clinical_data)
+    alerts: allAlerts,
     activeAlerts,
     criticalAlerts,
     fetchAlerts,

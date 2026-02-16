@@ -30,9 +30,13 @@ import { ptBR } from 'date-fns/locale';
 
 interface Props {
   specialtyId?: string | null;
+  /** Action triggered via deep-link from Prontuário: 'create' opens dialog, 'create_default' creates YesClin default */
+  initialAction?: 'create' | 'create_default' | null;
+  /** Called after a model is successfully created (used to navigate back to Prontuário) */
+  onModelCreated?: () => void;
 }
 
-export function AnamnesisModelsSection({ specialtyId }: Props) {
+export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCreated }: Props) {
   const { clinic } = useClinicData();
   const {
     models, loading, saving, createModel, updateModel, duplicateModel,
@@ -63,6 +67,28 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
       .order('name')
       .then(({ data }) => setProcedures(data || []));
   }, [clinic?.id]);
+
+  // Handle deep-link actions from Prontuário
+  const [actionHandled, setActionHandled] = useState(false);
+  useEffect(() => {
+    if (actionHandled || !initialAction || !specialtyId || loading) return;
+    setActionHandled(true);
+    if (initialAction === 'create') {
+      openCreate();
+    }
+    // create_default is handled by creating a model with default name directly
+    if (initialAction === 'create_default') {
+      (async () => {
+        const name = `Anamnese Padrão (YesClin)`;
+        await createModel({
+          name,
+          description: 'Modelo padrão criado automaticamente pelo YesClin',
+          procedure_id: null,
+        });
+        onModelCreated?.();
+      })();
+    }
+  }, [initialAction, specialtyId, loading, actionHandled]);
 
   const openCreate = () => {
     setEditing(null);
@@ -105,6 +131,7 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
       });
     }
     setDialogOpen(false);
+    onModelCreated?.();
   };
 
   if (!specialtyId) {

@@ -462,6 +462,7 @@ export type Database = {
           is_default: boolean
           is_system: boolean
           name: string
+          procedure_id: string | null
           specialty: string | null
           specialty_id: string | null
           template_type: string
@@ -484,6 +485,7 @@ export type Database = {
           is_default?: boolean
           is_system?: boolean
           name: string
+          procedure_id?: string | null
           specialty?: string | null
           specialty_id?: string | null
           template_type: string
@@ -506,6 +508,7 @@ export type Database = {
           is_default?: boolean
           is_system?: boolean
           name?: string
+          procedure_id?: string | null
           specialty?: string | null
           specialty_id?: string | null
           template_type?: string
@@ -525,6 +528,13 @@ export type Database = {
             columns: ["current_version_id"]
             isOneToOne: false
             referencedRelation: "anamnesis_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_templates_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
             referencedColumns: ["id"]
           },
           {

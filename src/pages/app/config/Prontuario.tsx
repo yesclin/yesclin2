@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Settings, LayoutList, FileText, Palette, Shield, Lock, FormInput, AlertTriangle, Stethoscope } from 'lucide-react';
+import { Settings, LayoutList, FileText, Palette, Shield, Lock, FormInput, AlertTriangle, Stethoscope, ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEnabledSpecialties } from '@/hooks/useEnabledSpecialties';
 import { TabsSection, TemplatesSection, VisualSection, SecuritySection, PermissionsSection, CustomFieldsSection } from '@/components/config/prontuario';
+import { AnamnesisModelsSection } from '@/components/config/prontuario/AnamnesisModelsSection';
 
 const TABS = [
   { id: 'tabs', label: 'Abas', icon: LayoutList, description: 'Visibilidade e ordem' },
   { id: 'templates', label: 'Modelos', icon: FileText, description: 'Anamnese, evolução, etc.' },
+  { id: 'anamnesis', label: 'Anamnese', icon: ClipboardList, description: 'Modelos de anamnese' },
   { id: 'custom-fields', label: 'Campos', icon: FormInput, description: 'Campos personalizados', badge: 'Novo' },
   { id: 'visual', label: 'Visual', icon: Palette, description: 'Cores e layout' },
   { id: 'permissions', label: 'Permissões', icon: Lock, description: 'Acesso por perfil', badge: 'RBAC' },
@@ -101,7 +103,7 @@ export default function ConfigProntuario() {
         </Card>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 lg:grid-cols-6 h-auto gap-2 bg-transparent p-0">
+          <TabsList className="grid grid-cols-2 lg:grid-cols-7 h-auto gap-2 bg-transparent p-0">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -139,6 +141,10 @@ export default function ConfigProntuario() {
 
           <TabsContent value="templates" className="m-0">
             <TemplatesSection specialtyId={effectiveSpecialtyId || undefined} />
+          </TabsContent>
+
+          <TabsContent value="anamnesis" className="m-0">
+            <AnamnesisModelsSection specialtyId={effectiveSpecialtyId || undefined} />
           </TabsContent>
 
           <TabsContent value="custom-fields" className="m-0">

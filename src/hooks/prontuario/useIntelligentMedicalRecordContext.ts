@@ -88,6 +88,27 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
       };
     }
 
+    // Block if appointment has no resolved specialty
+    if (!activeAppointment.resolved_specialty_id) {
+      return {
+        appointmentId: activeAppointment.id,
+        professionalId: activeAppointment.professional_id,
+        professionalName: activeAppointment.professional_name,
+        patientId: patientId || null,
+        procedureId: activeAppointment.procedure_id,
+        procedureName: activeAppointment.procedure_name,
+        specialtyId: null,
+        specialtyName: null,
+        specialtyKey: null,
+        isSpecialtyEnabled: false,
+        canProfessionalAccess: false,
+        hasActiveAppointment: true,
+        isContextLocked: true,
+        canEditRecords: false,
+        validationError: "Especialidade não definida para este atendimento. Defina uma especialidade no agendamento antes de prosseguir.",
+      };
+    }
+
     // Use database context if available
     if (dbContext) {
       const hasValidContext = dbContext.is_specialty_enabled && dbContext.can_professional_access;

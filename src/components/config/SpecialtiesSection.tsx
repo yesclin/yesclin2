@@ -259,6 +259,94 @@ export function SpecialtiesSection() {
   };
 
   /**
+   * Auto-create default Prontuário and Anamnese templates for a specialty.
+   * Rules:
+   * - Creates "Modelo de Prontuário - {Especialidade}" (medical_record_templates)
+   * - Creates "Anamnese Padrão - {Especialidade} (YesClin)" (anamnesis_templates)
+   * - Both are is_system=true, is_default=true (cannot be permanently deleted)
+   * - Skips creation if a default template already exists for that specialty
+   * - On deactivation: templates become hidden (is_active=false), never deleted
+   */
+  const provisionDefaultTemplates = async (specialtyId: string, specialtyName: string, capabilityKey: SpecialtyKey) => {
+    if (!clinic?.id) return;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id || null;
+
+      // 1. Auto-create Prontuário template (medical_record_templates)
+      const { data: existingProntuario } = await supabase
+        .from("medical_record_templates")
+        .select("id")
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_id", specialtyId)
+        .eq("is_system", true)
+        .limit(1);
+
+      if (!existingProntuario || existingProntuario.length === 0) {
+        await supabase
+          .from("medical_record_templates")
+          .insert({
+            clinic_id: clinic.id,
+            name: `Modelo de Prontuário - ${specialtyName}`,
+            type: "evolution",
+            scope: "specialty",
+            specialty_id: specialtyId,
+            description: `Modelo padrão de prontuário para ${specialtyName}`,
+            is_default: true,
+            is_active: true,
+            is_system: true,
+          });
+        console.log(`[SpecialtiesSection] Created default Prontuário template for ${specialtyName}`);
+      } else {
+        // Reactivate existing
+        await supabase
+          .from("medical_record_templates")
+          .update({ is_active: true })
+          .eq("id", existingProntuario[0].id);
+      }
+
+      // 2. Auto-create Anamnese template (anamnesis_templates)
+      const { data: existingAnamnese } = await supabase
+        .from("anamnesis_templates")
+        .select("id")
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_id", specialtyId)
+        .eq("is_system", true)
+        .limit(1);
+
+      if (!existingAnamnese || existingAnamnese.length === 0) {
+        const capability = SPECIALTY_CAPABILITIES[capabilityKey];
+        const slug = capability?.anamnesisSlug || capabilityKey;
+
+        await supabase
+          .from("anamnesis_templates")
+          .insert({
+            clinic_id: clinic.id,
+            name: `Anamnese Padrão - ${specialtyName} (YesClin)`,
+            template_type: "anamnese",
+            specialty: slug,
+            specialty_id: specialtyId,
+            description: `Modelo padrão de anamnese para ${specialtyName}`,
+            campos: [],
+            is_default: true,
+            is_active: true,
+            is_system: true,
+            created_by: userId,
+          });
+        console.log(`[SpecialtiesSection] Created default Anamnese template for ${specialtyName}`);
+      } else {
+        // Reactivate existing
+        await supabase
+          .from("anamnesis_templates")
+          .update({ is_active: true, archived: false })
+          .eq("id", existingAnamnese[0].id);
+      }
+    } catch (err) {
+      console.error("Error provisioning default templates:", err);
+    }
+  };
+
+  /**
    * Activate anamnesis templates matching the specialty when it's enabled.
    * Matches by slug OR specialty_id, and links the template to the specialty.
    */
@@ -286,13 +374,19 @@ export function SpecialtiesSection() {
         for (const tpl of templates) {
           await supabase
             .from("anamnesis_templates")
-            .update({ is_active: true, specialty_id: specialtyId })
+            .update({ is_active: true, specialty_id: specialtyId, archived: false })
             .eq("id", tpl.id);
         }
         console.log(`[SpecialtiesSection] Activated ${templates.length} template(s) for ${capability.label}`);
-      } else {
-        console.log(`[SpecialtiesSection] No templates found for ${capability.label} (slugs: ${uniqueSlugs.join(', ')})`);
       }
+
+      // Also reactivate medical_record_templates for this specialty
+      await supabase
+        .from("medical_record_templates")
+        .update({ is_active: true })
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_id", specialtyId);
+
     } catch (err) {
       console.error("Error activating specialty templates:", err);
     }
@@ -305,7 +399,7 @@ export function SpecialtiesSection() {
   const deactivateSpecialtyTemplates = async (specialtyId: string, capabilityKey?: SpecialtyKey) => {
     if (!clinic?.id) return;
     try {
-      // Deactivate by specialty_id
+      // Deactivate anamnesis_templates by specialty_id
       await supabase
         .from("anamnesis_templates")
         .update({ is_active: false })
@@ -329,6 +423,14 @@ export function SpecialtiesSection() {
             .in("specialty", uniqueSlugs);
         }
       }
+
+      // Deactivate medical_record_templates (never delete)
+      await supabase
+        .from("medical_record_templates")
+        .update({ is_active: false })
+        .eq("clinic_id", clinic.id)
+        .eq("specialty_id", specialtyId);
+
     } catch (err) {
       console.error("Error deactivating specialty templates:", err);
     }
@@ -371,8 +473,9 @@ export function SpecialtiesSection() {
           .update({ is_active: true })
           .eq("id", existing.id);
         
-        // Re-provision modules and activate templates on reactivation
+        // Re-provision modules, templates and default models on reactivation
         await provisionSpecialtyModules(existing.id, capabilityKey);
+        await provisionDefaultTemplates(existing.id, yesclinSpecialty.name, capabilityKey);
         await activateSpecialtyTemplates(existing.id, capabilityKey);
       } else {
         // Create new clinic-specific specialty
@@ -392,6 +495,7 @@ export function SpecialtiesSection() {
         if (error) throw error;
         if (created) {
           await provisionSpecialtyModules(created.id, capabilityKey);
+          await provisionDefaultTemplates(created.id, yesclinSpecialty.name, capabilityKey);
           await activateSpecialtyTemplates(created.id, capabilityKey);
         }
       }
@@ -484,6 +588,7 @@ export function SpecialtiesSection() {
 
       if (created) {
         await provisionSpecialtyModules(created.id, 'custom');
+        await provisionDefaultTemplates(created.id, newName.trim(), 'custom');
       }
 
       toast({

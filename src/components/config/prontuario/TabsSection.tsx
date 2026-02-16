@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip, Smile, Crosshair, Camera, Pencil, Trash2, User, AlertTriangle } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip, Smile, Crosshair, Camera, Pencil, Trash2, User, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSpecialtyTabs, type SpecialtyTab } from '@/hooks/prontuario/useSpecialtyTabs';
+import { TabFieldsBuilder } from './TabFieldsBuilder';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip, Smile, Crosshair, Camera, User,
@@ -65,6 +66,7 @@ export function TabsSection({ specialtyId }: { specialtyId?: string | null }) {
   const [localTabs, setLocalTabs] = useState<SpecialtyTab[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [expandedTabId, setExpandedTabId] = useState<string | null>(null);
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -228,48 +230,58 @@ export function TabsSection({ specialtyId }: { specialtyId?: string | null }) {
         <CardContent className="space-y-2">
           {localTabs.map((tab, idx) => {
             const Icon = getIcon(tab.icon);
+            const isExpanded = expandedTabId === tab.id;
             return (
-              <div
-                key={tab.id}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-                className={`flex items-center gap-4 p-4 rounded-lg border cursor-move transition-all ${
-                  dragIdx === idx ? 'opacity-50 border-primary' : 'hover:bg-muted/50'
-                } ${!tab.is_active ? 'opacity-60 bg-muted/30' : 'bg-card'}`}
-              >
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
-                <div className={`p-2 rounded-md ${tab.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
-                  <Icon className={`h-4 w-4 ${tab.is_active ? 'text-primary' : 'text-muted-foreground'}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{tab.name}</p>
-                  <p className="text-xs text-muted-foreground">Chave: {tab.key}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {tab.is_system && <Badge variant="secondary" className="text-xs">Padrão</Badge>}
-                  <div className="flex items-center gap-2">
-                    {tab.is_active ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                    <Switch
-                      checked={tab.is_active}
-                      onCheckedChange={() => handleToggle(tab.id, tab.is_active)}
-                    />
+              <div key={tab.id} className="space-y-0">
+                <div
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center gap-4 p-4 rounded-lg border cursor-move transition-all ${
+                    dragIdx === idx ? 'opacity-50 border-primary' : 'hover:bg-muted/50'
+                  } ${!tab.is_active ? 'opacity-60 bg-muted/30' : 'bg-card'} ${isExpanded ? 'rounded-b-none border-b-0' : ''}`}
+                >
+                  <GripVertical className="h-5 w-5 text-muted-foreground" />
+                  <div className={`p-2 rounded-md ${tab.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Icon className={`h-4 w-4 ${tab.is_active ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(tab)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  {!tab.is_system && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => { setToDelete(tab); setDeleteOpen(true); }}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedTabId(isExpanded ? null : tab.id)}>
+                    <p className="font-medium">{tab.name}</p>
+                    <p className="text-xs text-muted-foreground">Clique para gerenciar campos</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {tab.is_system && <Badge variant="secondary" className="text-xs">Padrão</Badge>}
+                    <div className="flex items-center gap-2">
+                      {tab.is_active ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                      <Switch
+                        checked={tab.is_active}
+                        onCheckedChange={() => handleToggle(tab.id, tab.is_active)}
+                      />
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(tab)}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                  )}
+                    {!tab.is_system && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => { setToDelete(tab); setDeleteOpen(true); }}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => setExpandedTabId(isExpanded ? null : tab.id)}>
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
+                {isExpanded && specialtyId && (
+                  <div className="border border-t-0 rounded-b-lg p-4 bg-muted/10">
+                    <TabFieldsBuilder tabId={tab.id} tabName={tab.name} specialtyId={specialtyId} />
+                  </div>
+                )}
               </div>
             );
           })}

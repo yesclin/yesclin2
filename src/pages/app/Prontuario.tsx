@@ -1138,6 +1138,15 @@ export default function Prontuario() {
             onSave={saveAnamnese}
             patientName={patient?.full_name}
             patientCpf={patient?.cpf}
+            patientData={{
+              full_name: patient?.full_name,
+              birth_date: patient?.birth_date,
+              gender: patient?.gender as 'M' | 'F' | 'O' | null | undefined,
+              cpf: patient?.cpf,
+              phone: patient?.phone,
+              email: patient?.email,
+              insurance_name: (patient as any)?.insurance?.insurance_name || null,
+            }}
             specialtyId={activeSpecialtyId}
             specialtyName={activeSpecialty?.name}
           />

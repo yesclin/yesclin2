@@ -1545,6 +1545,8 @@ export type Database = {
           id: string
           patient_id: string
           taken_at: string
+          template_id: string | null
+          template_version_id: string | null
           updated_at: string
           uploaded_by: string | null
         }
@@ -1561,6 +1563,8 @@ export type Database = {
           id?: string
           patient_id: string
           taken_at?: string
+          template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
           uploaded_by?: string | null
         }
@@ -1577,6 +1581,8 @@ export type Database = {
           id?: string
           patient_id?: string
           taken_at?: string
+          template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
           uploaded_by?: string | null
         }
@@ -1607,6 +1613,20 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_appointment_images_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_appointment_images_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_template_versions"
             referencedColumns: ["id"]
           },
         ]

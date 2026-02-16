@@ -18,6 +18,8 @@ export interface AppointmentImage {
   classification: ImageClassification;
   taken_at: string;
   uploaded_by: string | null;
+  template_id: string | null;
+  template_version_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +64,8 @@ export function useAppointmentImages(appointmentId: string | null, patientId: st
       fieldId?: string;
       classification: ImageClassification;
       caption?: string;
+      templateId?: string;
+      templateVersionId?: string;
     }
   ) => {
     if (!clinic?.id || !appointmentId || !patientId) {
@@ -125,6 +129,8 @@ export function useAppointmentImages(appointmentId: string | null, patientId: st
             classification: options.classification,
             taken_at: new Date().toISOString(),
             uploaded_by: userId || null,
+            template_id: options.templateId || null,
+            template_version_id: options.templateVersionId || null,
           })
           .select()
           .single();

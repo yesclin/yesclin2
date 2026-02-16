@@ -33,9 +33,11 @@ interface ImageGalleryFieldProps {
   patientId: string | null;
   fieldId?: string;
   readOnly?: boolean;
+  templateId?: string;
+  templateVersionId?: string;
 }
 
-export function ImageGalleryField({ appointmentId, patientId, fieldId, readOnly }: ImageGalleryFieldProps) {
+export function ImageGalleryField({ appointmentId, patientId, fieldId, readOnly, templateId, templateVersionId }: ImageGalleryFieldProps) {
   const {
     images, loading, uploading, fetchImages, uploadImages, updateImage, deleteImage,
   } = useAppointmentImages(appointmentId, patientId);
@@ -65,6 +67,8 @@ export function ImageGalleryField({ appointmentId, patientId, fieldId, readOnly 
     await uploadImages(files, {
       fieldId,
       classification: uploadClassification,
+      templateId,
+      templateVersionId,
     });
 
     // Reset input

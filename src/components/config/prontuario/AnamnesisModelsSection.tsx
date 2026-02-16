@@ -81,6 +81,19 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     }
   }, [initialAction, specialtyId, loading, actionHandled]);
 
+  // Auto-provision default model when list is empty after loading
+  const [autoProvisionAttempted, setAutoProvisionAttempted] = useState(false);
+  useEffect(() => {
+    if (loading || !specialtyId || !clinic?.id || autoProvisionAttempted || models.length > 0 || saving) return;
+    setAutoProvisionAttempted(true);
+    handleProvisionDefault();
+  }, [loading, specialtyId, clinic?.id, models.length, autoProvisionAttempted, saving]);
+
+  // Reset auto-provision flag when specialty changes
+  useEffect(() => {
+    setAutoProvisionAttempted(false);
+  }, [specialtyId]);
+
   const openHistory = async (m: AnamnesisModel) => {
     setHistoryModelName(m.name);
     setHistoryDialogOpen(true);

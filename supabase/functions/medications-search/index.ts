@@ -50,10 +50,117 @@ class MockMedicationProvider implements MedicationProviderInterface {
   }
 }
 
+// ── External Provider ─────────────────────────────────────────────
+const EXTERNAL_TIMEOUT_MS = 3000;
+
+class ExternalMedicationProvider implements MedicationProviderInterface {
+  private apiUrl: string;
+  private apiKey: string;
+  private fallback: MockMedicationProvider;
+
+  constructor() {
+    this.apiUrl = Deno.env.get("MEDICATION_API_URL") ?? "";
+    this.apiKey = Deno.env.get("MEDICATION_API_KEY") ?? "";
+    this.fallback = new MockMedicationProvider();
+  }
+
+  async search(query: string): Promise<MedicationSearchResponse> {
+    if (!this.apiUrl) {
+      console.warn("MEDICATION_API_URL not configured, using fallback");
+      return this.fallback.search(query);
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), EXTERNAL_TIMEOUT_MS);
+
+      const res = await fetch(
+        `${this.apiUrl}?q=${encodeURIComponent(query)}`,
+        {
+          method: "GET",
+          headers: {
+            ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        },
+      );
+
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        const status = res.status;
+        const body = await res.text().catch(() => "");
+        if (status >= 400 && status < 500) {
+          console.error(`External API client error [${status}]: ${body}`);
+        } else {
+          console.error(`External API server error [${status}]: ${body}`);
+        }
+        return this.fallbackResponse(query, `HTTP ${status}`);
+      }
+
+      const raw = await res.json();
+      return this.normalize(raw);
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        console.error(`External API timeout after ${EXTERNAL_TIMEOUT_MS}ms for query: ${query}`);
+        return this.fallbackResponse(query, "timeout");
+      }
+      console.error("External API unexpected error:", err);
+      return this.fallbackResponse(query, "network_error");
+    }
+  }
+
+  private fallbackResponse(query: string, reason: string): MedicationSearchResponse {
+    console.warn(`Using fallback for query "${query}" due to: ${reason}`);
+    return {
+      results: [],
+      total: 0,
+      provider: `external_fallback(${reason})`,
+    };
+  }
+
+  private normalize(raw: unknown): MedicationSearchResponse {
+    try {
+      // Accept array at root or nested in .data / .results / .items
+      const obj = raw as Record<string, unknown>;
+      const items: unknown[] = Array.isArray(raw)
+        ? (raw as unknown[])
+        : Array.isArray(obj?.data)
+          ? (obj.data as unknown[])
+          : Array.isArray(obj?.results)
+            ? (obj.results as unknown[])
+            : Array.isArray(obj?.items)
+              ? (obj.items as unknown[])
+              : [];
+
+      const results: MedicationResult[] = items.map((item) => {
+        const r = item as Record<string, unknown>;
+        return {
+          nome_comercial: String(r.nome_comercial ?? r.name ?? r.product_name ?? ""),
+          principio_ativo: String(r.principio_ativo ?? r.active_ingredient ?? r.substance ?? ""),
+          forma_farmaceutica: String(r.forma_farmaceutica ?? r.dosage_form ?? r.form ?? ""),
+          concentracao: String(r.concentracao ?? r.concentration ?? r.strength ?? ""),
+          fabricante: String(r.fabricante ?? r.manufacturer ?? r.company ?? ""),
+          registro_anvisa: r.registro_anvisa ? String(r.registro_anvisa) : undefined,
+          categoria: r.categoria ? String(r.categoria) : undefined,
+        };
+      });
+
+      return { results, total: results.length, provider: "external" };
+    } catch (err) {
+      console.error("Failed to normalize external API response:", err);
+      return { results: [], total: 0, provider: "external_parse_error" };
+    }
+  }
+}
+
 // ── Service ────────────────────────────────────────────────────────
 function resolveProvider(): MedicationProviderInterface {
   const provider = Deno.env.get("MEDICATION_PROVIDER") ?? "mock";
   switch (provider) {
+    case "external":
+      return new ExternalMedicationProvider();
     case "mock":
     default:
       return new MockMedicationProvider();

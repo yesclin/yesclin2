@@ -254,20 +254,47 @@ Deno.serve(async (req) => {
 
     // 2) Use MedicationService (provider pattern)
     const service = new MedicationService();
-    const searchResult = await service.search(queryNorm);
+    const startTime = Date.now();
+    let searchStatus = "success";
+    let searchResult: MedicationSearchResponse;
 
-    // 3) Write to cache
-    await supabase.from("medication_api_cache").insert({
-      query_normalizada: queryNorm,
+    try {
+      searchResult = await service.search(queryNorm);
+      if (searchResult.provider.includes("fallback") || searchResult.provider.includes("error")) {
+        searchStatus = "fallback";
+      }
+    } catch (searchErr) {
+      searchStatus = "error";
+      searchResult = { results: [], total: 0, provider: "error" };
+      console.error("MedicationService search error:", searchErr);
+    }
+
+    const responseTimeMs = Date.now() - startTime;
+
+    // 3) Log the request
+    await supabase.from("medication_api_logs").insert({
+      clinic_id: clinicId,
+      user_id: user.id,
+      query: queryNorm,
       provider: searchResult.provider,
-      response_json: searchResult.results,
+      response_time_ms: responseTimeMs,
+      status: searchStatus,
     });
+
+    // 4) Write to cache (only on success)
+    if (searchStatus === "success" && searchResult.results.length > 0) {
+      await supabase.from("medication_api_cache").insert({
+        query_normalizada: queryNorm,
+        provider: searchResult.provider,
+        response_json: searchResult.results,
+      });
+    }
 
     return new Response(
       JSON.stringify({
         data: searchResult.results,
         source: searchResult.provider,
-        meta: { query: q, clinic_id: clinicId, user_id: user.id, total: searchResult.total },
+        meta: { query: q, clinic_id: clinicId, user_id: user.id, total: searchResult.total, response_time_ms: responseTimeMs },
         legal_notice: LEGAL_NOTICE,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },

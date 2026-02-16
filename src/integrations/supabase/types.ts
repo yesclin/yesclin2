@@ -4952,6 +4952,47 @@ export type Database = {
         }
         Relationships: []
       }
+      medication_api_logs: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          id: string
+          provider: string
+          query: string
+          response_time_ms: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          provider: string
+          query: string
+          response_time_ms?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          provider?: string
+          query?: string
+          response_time_ms?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_api_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_logs: {
         Row: {
           appointment_id: string | null

@@ -82,15 +82,15 @@ export function useProntuarioData(patientId: string | null) {
     }
   }, [patientId, clinic?.id]);
 
-  // Load all data when patient changes
+  // Load all data when patient or clinic changes
   useEffect(() => {
-    if (patientId) {
+    if (patientId && clinic?.id) {
       fetchPatient();
       fetchAlerts();
       entriesHook.fetchEntriesForPatient(patientId);
       filesHook.fetchFilesForPatient(patientId);
     }
-  }, [patientId]);
+  }, [patientId, clinic?.id]);
 
   // Get active tabs from configuration
   const getActiveTabs = useCallback((): TabConfig[] => {

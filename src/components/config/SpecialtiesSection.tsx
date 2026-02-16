@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SPECIALTY_CAPABILITIES } from "@/hooks/prontuario/specialtyCapabilities";
 import type { SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
+import { getDefaultAnamnesisStructure } from "@/constants/defaultAnamnesisStructures";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -318,22 +319,54 @@ export function SpecialtiesSection() {
         const capability = SPECIALTY_CAPABILITIES[capabilityKey];
         const slug = capability?.anamnesisSlug || capabilityKey;
 
-        await supabase
+        // Get default structure for this specialty (if available)
+        const defaultStructure = getDefaultAnamnesisStructure(slug);
+
+        const { data: newTemplate } = await supabase
           .from("anamnesis_templates")
           .insert({
             clinic_id: clinic.id,
-            name: `Anamnese Padrão - ${specialtyName} (YesClin)`,
+            name: slug === 'clinica-geral' || slug === 'geral'
+              ? 'Anamnese Padrão – Clínica Geral (YesClin)'
+              : `Anamnese Padrão - ${specialtyName} (YesClin)`,
             template_type: "anamnese",
             specialty: slug,
             specialty_id: specialtyId,
-            description: `Modelo padrão de anamnese para ${specialtyName}`,
-            campos: [],
+            description: slug === 'clinica-geral' || slug === 'geral'
+              ? 'Modelo padrão completo com 10 seções clínicas estruturadas. Editável e versionado.'
+              : `Modelo padrão de anamnese para ${specialtyName}`,
+            campos: defaultStructure as any,
             is_default: true,
             is_active: true,
             is_system: true,
             created_by: userId,
-          });
-        console.log(`[SpecialtiesSection] Created default Anamnese template for ${specialtyName}`);
+          })
+          .select("id")
+          .single();
+
+        // Create version 1 with the full structure
+        if (newTemplate?.id && defaultStructure.length > 0) {
+          const { data: ver } = await supabase
+            .from("anamnesis_template_versions")
+            .insert({
+              template_id: newTemplate.id,
+              version_number: 1,
+              structure: defaultStructure as any,
+              created_by: userId,
+            })
+            .select("id")
+            .single();
+
+          // Link version to template
+          if (ver?.id) {
+            await supabase
+              .from("anamnesis_templates")
+              .update({ current_version_id: ver.id } as any)
+              .eq("id", newTemplate.id);
+          }
+        }
+
+        console.log(`[SpecialtiesSection] Created default Anamnese template for ${specialtyName} with ${defaultStructure.length} sections`);
       } else {
         // Reactivate existing
         await supabase

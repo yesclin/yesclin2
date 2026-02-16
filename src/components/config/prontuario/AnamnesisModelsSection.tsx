@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   Plus, FileText, Copy, Edit, Star, Power, PowerOff, ChevronDown,
-  AlertTriangle, Lock, ClipboardList, Stethoscope, Syringe,
+  AlertTriangle, Lock, ClipboardList, Stethoscope, Syringe, History,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -21,7 +24,9 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
-import { useAnamnesisModels, type AnamnesisModel } from '@/hooks/prontuario/useAnamnesisModels';
+import { useAnamnesisModels, type AnamnesisModel, type AnamnesisModelVersion } from '@/hooks/prontuario/useAnamnesisModels';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Props {
   specialtyId?: string | null;
@@ -29,7 +34,10 @@ interface Props {
 
 export function AnamnesisModelsSection({ specialtyId }: Props) {
   const { clinic } = useClinicData();
-  const { models, loading, saving, createModel, updateModel, duplicateModel, setAsDefault, toggleActive } = useAnamnesisModels(specialtyId || null);
+  const {
+    models, loading, saving, createModel, updateModel, duplicateModel,
+    setAsDefault, toggleActive, fetchVersionHistory,
+  } = useAnamnesisModels(specialtyId || null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AnamnesisModel | null>(null);
@@ -37,6 +45,12 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
   const [formDesc, setFormDesc] = useState('');
   const [formProcedureId, setFormProcedureId] = useState<string>('');
   const [procedures, setProcedures] = useState<{ id: string; name: string }[]>([]);
+
+  // Version history state
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyModelName, setHistoryModelName] = useState('');
+  const [versions, setVersions] = useState<AnamnesisModelVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
 
   // Load procedures for this clinic
   useEffect(() => {
@@ -64,6 +78,15 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
     setFormDesc(m.description || '');
     setFormProcedureId(m.procedure_id || '');
     setDialogOpen(true);
+  };
+
+  const openHistory = async (m: AnamnesisModel) => {
+    setHistoryModelName(m.name);
+    setHistoryDialogOpen(true);
+    setLoadingVersions(true);
+    const data = await fetchVersionHistory(m.id);
+    setVersions(data);
+    setLoadingVersions(false);
   };
 
   const handleSubmit = async () => {
@@ -161,6 +184,11 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
                         </Badge>
                       )}
                       {!m.is_active && <Badge variant="destructive" className="text-xs">Inativo</Badge>}
+                      {m.current_version_number && (
+                        <Badge variant="secondary" className="text-xs font-mono">
+                          v{m.current_version_number}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       {m.description && <span className="truncate max-w-[200px]">{m.description}</span>}
@@ -195,6 +223,10 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => openHistory(m)}>
+                        <History className="h-4 w-4 mr-2" />Histórico de Versões
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => toggleActive(m.id, !m.is_active)} disabled={saving}>
                         {m.is_active ? (
                           <><PowerOff className="h-4 w-4 mr-2" />Desativar</>
@@ -207,9 +239,11 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
                 </div>
               ))}
 
-              {/* Resolution info */}
               <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground">
                 <strong>Resolução:</strong> Se existir modelo vinculado ao procedimento → será usado. Caso contrário → modelo padrão da especialidade.
+              </div>
+              <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground">
+                <strong>Versionamento:</strong> Cada edição de estrutura cria uma nova versão. Atendimentos anteriores permanecem vinculados à versão original — nunca são sobrescritos.
               </div>
             </div>
           )}
@@ -222,7 +256,9 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
           <DialogHeader>
             <DialogTitle>{editing ? 'Editar Modelo' : 'Novo Modelo de Anamnese'}</DialogTitle>
             <DialogDescription>
-              {editing ? 'Altere as propriedades do modelo.' : 'Defina o nome e vínculo do novo modelo.'}
+              {editing
+                ? 'Alterações na estrutura criam uma nova versão automaticamente. Registros anteriores não são afetados.'
+                : 'Defina o nome e vínculo do novo modelo.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -265,6 +301,70 @@ export function AnamnesisModelsSection({ specialtyId }: Props) {
             <Button onClick={handleSubmit} disabled={saving || !formName.trim()}>
               {saving ? 'Salvando...' : editing ? 'Salvar' : 'Criar'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Versões
+            </DialogTitle>
+            <DialogDescription>
+              Versões do modelo "{historyModelName}". Atendimentos antigos permanecem vinculados à versão em que foram preenchidos.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingVersions ? (
+            <div className="space-y-3 py-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+            </div>
+          ) : versions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhuma versão registrada ainda.</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2 pr-3">
+                {versions.map((v, idx) => {
+                  const isLatest = idx === 0;
+                  const fieldCount = Array.isArray(v.structure) ? (v.structure as any[]).length : 0;
+
+                  return (
+                    <div
+                      key={v.id}
+                      className={`p-3 rounded-lg border ${isLatest ? 'border-primary/30 bg-primary/5' : 'bg-muted/30'}`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={isLatest ? 'default' : 'secondary'} className="text-xs font-mono">
+                            v{v.version_number}
+                          </Badge>
+                          {isLatest && (
+                            <Badge variant="outline" className="text-xs">Atual</Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {fieldCount} seção(ões)
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {format(new Date(v.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryDialogOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

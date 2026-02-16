@@ -4,6 +4,15 @@ import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
+export interface AnamnesisModelVersion {
+  id: string;
+  template_id: string;
+  version_number: number;
+  structure: Json;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface AnamnesisModel {
   id: string;
   clinic_id: string | null;
@@ -18,6 +27,8 @@ export interface AnamnesisModel {
   is_default: boolean;
   is_system: boolean;
   usage_count: number;
+  current_version_id: string | null;
+  current_version_number: number | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -49,9 +60,31 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
 
       if (error) throw error;
 
+      // Fetch current version numbers
+      const versionIds = (data || [])
+        .map((d: any) => d.current_version_id)
+        .filter(Boolean);
+
+      let versionsMap: Record<string, number> = {};
+      if (versionIds.length > 0) {
+        const { data: versions } = await supabase
+          .from('anamnesis_template_versions')
+          .select('id, version_number')
+          .in('id', versionIds);
+        if (versions) {
+          versionsMap = versions.reduce((acc, v) => {
+            acc[v.id] = v.version_number;
+            return acc;
+          }, {} as Record<string, number>);
+        }
+      }
+
       const parsed: AnamnesisModel[] = (data || []).map((d: any) => ({
         ...d,
         procedure_name: d.procedures?.name || null,
+        current_version_number: d.current_version_id
+          ? versionsMap[d.current_version_id] ?? null
+          : null,
       }));
 
       setModels(parsed);
@@ -66,6 +99,42 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
   useEffect(() => {
     if (!clinicLoading) fetchModels();
   }, [clinicLoading, fetchModels]);
+
+  // Helper: create a new version for a template
+  const createVersion = async (templateId: string, structure: Json): Promise<string | null> => {
+    const { data: user } = await supabase.auth.getUser();
+
+    // Get current max version
+    const { data: versions } = await supabase
+      .from('anamnesis_template_versions')
+      .select('version_number')
+      .eq('template_id', templateId)
+      .order('version_number', { ascending: false })
+      .limit(1);
+
+    const nextVersion = (versions?.[0]?.version_number || 0) + 1;
+
+    const { data: ver, error } = await supabase
+      .from('anamnesis_template_versions')
+      .insert({
+        template_id: templateId,
+        version_number: nextVersion,
+        structure: structure,
+        created_by: user?.user?.id || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update template pointer
+    await supabase
+      .from('anamnesis_templates')
+      .update({ current_version_id: ver.id } as any)
+      .eq('id', templateId);
+
+    return ver.id;
+  };
 
   const createModel = async (input: {
     name: string;
@@ -98,6 +167,10 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
         .single();
 
       if (error) throw error;
+
+      // Create version 1 with empty structure
+      await createVersion(data.id, []);
+
       toast.success('Modelo criado');
       await fetchModels();
       return data;
@@ -115,6 +188,7 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
     description?: string;
     procedure_id?: string | null;
     icon?: string;
+    campos?: Json;
   }) => {
     setSaving(true);
     try {
@@ -123,13 +197,21 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
       if (input.description !== undefined) updateData.description = input.description?.trim() || null;
       if (input.procedure_id !== undefined) updateData.procedure_id = input.procedure_id || null;
       if (input.icon !== undefined) updateData.icon = input.icon;
+      if (input.campos !== undefined) updateData.campos = input.campos;
 
-      const { error } = await supabase
-        .from('anamnesis_templates')
-        .update(updateData)
-        .eq('id', id);
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('anamnesis_templates')
+          .update(updateData)
+          .eq('id', id);
+        if (error) throw error;
+      }
 
-      if (error) throw error;
+      // If campos/structure changed, create a new version automatically
+      if (input.campos !== undefined) {
+        await createVersion(id, input.campos);
+      }
+
       toast.success('Modelo atualizado');
       await fetchModels();
       return true;
@@ -150,6 +232,18 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
       if (!original) throw new Error('Model not found');
 
       const { data: user } = await supabase.auth.getUser();
+
+      // Get current version structure if exists
+      let structure: Json = original.campos || [];
+      if (original.current_version_id) {
+        const { data: ver } = await supabase
+          .from('anamnesis_template_versions')
+          .select('structure')
+          .eq('id', original.current_version_id)
+          .single();
+        if (ver?.structure) structure = ver.structure;
+      }
+
       const { data, error } = await supabase
         .from('anamnesis_templates')
         .insert({
@@ -170,6 +264,10 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
         .single();
 
       if (error) throw error;
+
+      // Create version 1 for clone with original structure
+      await createVersion(data.id, structure);
+
       toast.success('Modelo duplicado');
       await fetchModels();
       return data;
@@ -182,18 +280,40 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
     }
   };
 
+  // Fetch version history for a specific template
+  const fetchVersionHistory = async (templateId: string): Promise<AnamnesisModelVersion[]> => {
+    const { data, error } = await supabase
+      .from('anamnesis_template_versions')
+      .select('*')
+      .eq('template_id', templateId)
+      .order('version_number', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching version history:', error);
+      toast.error('Erro ao carregar histórico de versões');
+      return [];
+    }
+
+    return (data || []).map(v => ({
+      id: v.id,
+      template_id: v.template_id,
+      version_number: v.version_number,
+      structure: v.structure,
+      created_by: v.created_by,
+      created_at: v.created_at,
+    }));
+  };
+
   const setAsDefault = async (id: string) => {
     if (!clinic?.id || !specialtyId) return false;
     setSaving(true);
     try {
-      // Remove default from all others in this specialty
       await supabase
         .from('anamnesis_templates')
         .update({ is_default: false })
         .eq('specialty_id', specialtyId)
         .or(`clinic_id.eq.${clinic.id},clinic_id.is.null`);
 
-      // Set new default
       const { error } = await supabase
         .from('anamnesis_templates')
         .update({ is_default: true })
@@ -213,7 +333,6 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    // Prevent deactivating if it's the last active model
     if (!active) {
       const activeModels = models.filter(m => m.is_active && m.id !== id);
       if (activeModels.length === 0) {
@@ -251,5 +370,6 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
     duplicateModel,
     setAsDefault,
     toggleActive,
+    fetchVersionHistory,
   };
 }

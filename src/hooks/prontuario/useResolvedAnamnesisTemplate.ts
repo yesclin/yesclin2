@@ -3,6 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClinicData } from "@/hooks/useClinicData";
 import type { Json } from "@/integrations/supabase/types";
 
+export interface TemplateOption {
+  id: string;
+  name: string;
+  description: string | null;
+  procedure_id: string | null;
+  is_default: boolean;
+  is_system: boolean;
+  current_version_id: string | null;
+}
+
 export interface ResolvedTemplate {
   id: string;
   name: string;
@@ -20,6 +30,11 @@ export interface ResolvedTemplate {
   resolution: "procedure" | "default" | "fallback";
 }
 
+interface ResolvedResult {
+  resolved: ResolvedTemplate;
+  allTemplates: TemplateOption[];
+}
+
 /**
  * Resolves the correct anamnesis template for an active appointment.
  *
@@ -28,8 +43,8 @@ export interface ResolvedTemplate {
  * 2. Default template for the specialty (is_default = true)
  * 3. First active template for the specialty (fallback)
  *
- * Returns null only if no template exists at all for the specialty.
- * This hook ensures the medical record never opens empty.
+ * Also returns the full list of active templates so a selector can be shown
+ * when multiple templates exist.
  */
 export function useResolvedAnamnesisTemplate(
   specialtyId: string | null | undefined,
@@ -37,12 +52,11 @@ export function useResolvedAnamnesisTemplate(
 ) {
   const { clinic } = useClinicData();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["resolved-anamnesis-template", clinic?.id, specialtyId, procedureId],
-    queryFn: async (): Promise<ResolvedTemplate | null> => {
+    queryFn: async (): Promise<ResolvedResult | null> => {
       if (!clinic?.id || !specialtyId) return null;
 
-      // Fetch all active templates for this specialty in one query
       const { data: templates, error } = await supabase
         .from("anamnesis_templates")
         .select("id, name, description, specialty_id, procedure_id, is_default, is_system, current_version_id, campos")
@@ -60,25 +74,34 @@ export function useResolvedAnamnesisTemplate(
 
       if (!templates || templates.length === 0) return null;
 
-      // 1. Procedure-specific template
+      // Build options list
+      const allTemplates: TemplateOption[] = templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        procedure_id: t.procedure_id,
+        is_default: t.is_default,
+        is_system: t.is_system,
+        current_version_id: t.current_version_id,
+      }));
+
+      // Resolve priority
       let resolved = procedureId
         ? templates.find((t) => t.procedure_id === procedureId)
         : undefined;
       let resolution: ResolvedTemplate["resolution"] = "procedure";
 
-      // 2. Default template for specialty
       if (!resolved) {
         resolved = templates.find((t) => t.is_default);
         resolution = "default";
       }
 
-      // 3. Fallback: first active template
       if (!resolved) {
         resolved = templates[0];
         resolution = "fallback";
       }
 
-      // Load the version structure
+      // Load version structure
       let structure: Json = resolved.campos || [];
       let versionNumber: number | null = null;
 
@@ -96,21 +119,76 @@ export function useResolvedAnamnesisTemplate(
       }
 
       return {
-        id: resolved.id,
-        name: resolved.name,
-        description: resolved.description,
-        specialty_id: resolved.specialty_id,
-        procedure_id: resolved.procedure_id,
-        is_default: resolved.is_default,
-        is_system: resolved.is_system,
-        current_version_id: resolved.current_version_id,
-        campos: resolved.campos,
-        structure,
-        version_number: versionNumber,
-        resolution,
+        resolved: {
+          id: resolved.id,
+          name: resolved.name,
+          description: resolved.description,
+          specialty_id: resolved.specialty_id,
+          procedure_id: resolved.procedure_id,
+          is_default: resolved.is_default,
+          is_system: resolved.is_system,
+          current_version_id: resolved.current_version_id,
+          campos: resolved.campos,
+          structure,
+          version_number: versionNumber,
+          resolution,
+        },
+        allTemplates,
       };
     },
     enabled: !!clinic?.id && !!specialtyId,
     staleTime: 60_000,
   });
+
+  return {
+    data: query.data?.resolved || null,
+    allTemplates: query.data?.allTemplates || [],
+    hasMultipleTemplates: (query.data?.allTemplates?.length || 0) > 1,
+    isLoading: query.isLoading,
+    /** Load a specific template by ID (for manual selection) */
+    loadTemplateById: async (templateId: string): Promise<ResolvedTemplate | null> => {
+      const template = query.data?.allTemplates.find((t) => t.id === templateId);
+      if (!template) return null;
+
+      // Fetch full data
+      const { data: full } = await supabase
+        .from("anamnesis_templates")
+        .select("*")
+        .eq("id", templateId)
+        .single();
+
+      if (!full) return null;
+
+      let structure: Json = full.campos || [];
+      let versionNumber: number | null = null;
+
+      if (full.current_version_id) {
+        const { data: ver } = await supabase
+          .from("anamnesis_template_versions")
+          .select("structure, version_number")
+          .eq("id", full.current_version_id)
+          .single();
+
+        if (ver) {
+          structure = ver.structure;
+          versionNumber = ver.version_number;
+        }
+      }
+
+      return {
+        id: full.id,
+        name: full.name,
+        description: full.description,
+        specialty_id: full.specialty_id,
+        procedure_id: full.procedure_id,
+        is_default: full.is_default,
+        is_system: full.is_system,
+        current_version_id: full.current_version_id,
+        campos: full.campos,
+        structure,
+        version_number: versionNumber,
+        resolution: "default",
+      };
+    },
+  };
 }

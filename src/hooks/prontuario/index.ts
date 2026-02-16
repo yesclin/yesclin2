@@ -65,7 +65,7 @@ export {
 } from './specialtyCapabilities';
 
 // Resolved Anamnesis Template (procedure → default → fallback)
-export { useResolvedAnamnesisTemplate, type ResolvedTemplate } from './useResolvedAnamnesisTemplate';
+export { useResolvedAnamnesisTemplate, type ResolvedTemplate, type TemplateOption } from './useResolvedAnamnesisTemplate';
 
 // Intelligent Medical Record Context (appointment-based context with validations)
 export {

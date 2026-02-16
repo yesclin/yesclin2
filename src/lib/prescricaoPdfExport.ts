@@ -280,6 +280,12 @@ export function generatePrescricaoPDF(
           Validade: ${prescricao.validade_dias} dias a partir da data de emissão
         </div>
       </div>
+
+      <div style="margin-top: 40px; padding: 10px; border-top: 1px solid #ccc; text-align: center;">
+        <p style="font-size: 8pt; color: #666; font-style: italic; margin: 0;">
+          As informações exibidas são apenas auxiliares. A prescrição é de responsabilidade exclusiva do profissional de saúde.
+        </p>
+      </div>
     </body>
     </html>
   `;

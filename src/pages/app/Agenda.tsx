@@ -186,7 +186,7 @@ export default function Agenda() {
 
   // Navigate to prontuário when starting an appointment
   const navigateToProntuario = useCallback((patientId: string) => {
-    navigate(`/app/prontuario?paciente=${patientId}`);
+    navigate(`/app/prontuario/${patientId}`);
   }, [navigate]);
 
   // Handle status change with stock validation and material consumption

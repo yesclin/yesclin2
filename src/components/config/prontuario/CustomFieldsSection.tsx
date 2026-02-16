@@ -31,7 +31,7 @@ const FIELD_TYPE_COLORS: Record<string, string> = {
   multiselect: 'bg-indigo-100 text-indigo-800',
 };
 
-export function CustomFieldsSection() {
+export function CustomFieldsSection({ specialtyId }: { specialtyId?: string | null }) {
   const { fields, loading, saving, remove, toggleActive } = useCustomProntuarioFields();
   const { isOwner } = usePermissions();
   const [dialogOpen, setDialogOpen] = useState(false);

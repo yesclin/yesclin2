@@ -11,7 +11,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, FileText, Activity, Stethoscope, Pill, Image, FolderOpen, History, Heart, ClipboardList, Target, Paperclip, Smile, Crosshair, Camera,
 };
 
-export function TabsSection() {
+export function TabsSection({ specialtyId }: { specialtyId?: string | null }) {
   const { tabs, loading, saving, initializeDefaults, toggleActive, reorder } = useTabs();
   const [localTabs, setLocalTabs] = useState<TabConfig[]>([]);
   const [hasChanges, setHasChanges] = useState(false);

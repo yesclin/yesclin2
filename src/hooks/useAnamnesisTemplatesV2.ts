@@ -485,35 +485,44 @@ export function useAnamnesisRecords(patientId: string | null, appointmentId?: st
       template_id: string;
       template_version_id: string;
       responses: Record<string, unknown>;
+      specialty_id?: string | null;
+      procedure_id?: string | null;
+      structure_snapshot?: unknown;
     }) => {
       if (!clinic?.id) throw new Error('Clínica não identificada');
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Usuário não autenticado');
 
       if (input.id) {
-        // Update existing record
+        // Update existing record — only responses change, structure is immutable
         const { error } = await supabase
           .from('anamnesis_records')
           .update({
             responses: input.responses as unknown as Json,
-            template_id: input.template_id,
-            template_version_id: input.template_version_id,
           })
           .eq('id', input.id);
         if (error) throw error;
       } else {
-        // Create new record
+        // Create new record with immutable context snapshot
+        const insertData: Record<string, unknown> = {
+          appointment_id: input.appointment_id || null,
+          patient_id: input.patient_id,
+          clinic_id: clinic.id,
+          template_id: input.template_id,
+          template_version_id: input.template_version_id,
+          responses: input.responses as unknown as Json,
+          created_by: userData.user.id,
+        };
+
+        // Persist immutable context
+        if (input.specialty_id) insertData.specialty_id = input.specialty_id;
+        if (input.procedure_id) insertData.procedure_id = input.procedure_id;
+        if (input.structure_snapshot) insertData.structure_snapshot = input.structure_snapshot as unknown as Json;
+
         const { error } = await supabase
           .from('anamnesis_records')
-          .insert({
-            appointment_id: input.appointment_id || null,
-            patient_id: input.patient_id,
-            clinic_id: clinic.id,
-            template_id: input.template_id,
-            template_version_id: input.template_version_id,
-            responses: input.responses as unknown as Json,
-            created_by: userData.user.id,
-          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(insertData as any);
         if (error) throw error;
       }
     },

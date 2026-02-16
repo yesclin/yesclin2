@@ -21,6 +21,9 @@ export { useClinicalTimeline } from './useClinicalTimeline';
 // Active Appointment (for edit control)
 export { useActiveAppointment, useCanEditMedicalRecord, type ActiveAppointment } from './useActiveAppointment';
 
+// Appointment Images (multi-upload gallery)
+export { useAppointmentImages, type AppointmentImage, type ImageClassification } from './useAppointmentImages';
+
 // Active Specialty (for tab filtering by specialty)
 export { useActiveSpecialty, mapSpecialtyNameToKey, type SpecialtyKey, type SpecialtyOption } from './useActiveSpecialty';
 export { 

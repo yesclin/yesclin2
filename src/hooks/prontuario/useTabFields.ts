@@ -12,6 +12,7 @@ export type TabFieldType =
   | 'multiselect'
   | 'checkbox'
   | 'image_upload'
+  | 'image_gallery'
   | 'document_upload'
   | 'signature'
   | 'auto_date';

@@ -373,9 +373,23 @@ export function useAnamnesisTemplatesV2(options?: {
     },
   });
 
-  // ─── Delete template ────────────────────────────────────────
+  // ─── Delete template (blocked if linked to records) ──────────
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Pre-check: verify no linked records exist (friendlier UX than DB error)
+      const { count, error: countErr } = await supabase
+        .from('anamnesis_records')
+        .select('id', { count: 'exact', head: true })
+        .eq('template_id', id);
+
+      if (countErr) throw countErr;
+
+      if (count && count > 0) {
+        throw new Error(
+          `Este modelo possui ${count} atendimento(s) vinculado(s) e não pode ser excluído. Desative-o em vez de excluir.`
+        );
+      }
+
       const { error } = await supabase
         .from('anamnesis_templates')
         .delete()

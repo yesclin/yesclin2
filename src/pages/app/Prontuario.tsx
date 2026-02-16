@@ -376,6 +376,7 @@ const DEFAULT_NAV_ITEMS = [
   { id: 'exames_solicitacao', label: 'Solicitar Exames', icon: ClipboardList },
   { id: 'conduta', label: 'Plano/Conduta', icon: Target },
   { id: 'documentos_clinicos', label: 'Documentos Clínicos', icon: ScrollText },
+  { id: 'prescricoes', label: 'Prescrições', icon: Pill },
   { id: 'fotos_intraorais', label: 'Fotos Intraorais', icon: Camera },
   { id: 'exames', label: 'Exames / Documentos', icon: Paperclip },
   { id: 'timeline', label: 'Linha do Tempo', icon: GitBranch },

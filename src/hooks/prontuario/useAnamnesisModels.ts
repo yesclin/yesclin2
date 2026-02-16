@@ -127,11 +127,16 @@ export function useAnamnesisModels(specialtyId: string | null | undefined) {
 
     if (error) throw error;
 
-    // Update template pointer
-    await supabase
+    // Update template pointer — use select().single() to catch RLS/silent failures
+    const { error: ptrError } = await supabase
       .from('anamnesis_templates')
       .update({ current_version_id: ver.id } as any)
-      .eq('id', templateId);
+      .eq('id', templateId)
+      .select()
+      .single();
+    if (ptrError) {
+      console.error('Error updating current_version_id:', ptrError);
+    }
 
     return ver.id;
   };

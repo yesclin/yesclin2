@@ -627,6 +627,42 @@ export function AnamneseBlock({
     );
   }
 
+  // ─── Template exists but has no structure ───────────────────────
+  if (activeTemplate && activeTemplate.secoes.length === 0 && !currentAnamnese) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-10 text-center">
+          <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <h3 className="text-lg font-semibold mb-2">
+            Este modelo não possui estrutura configurada.
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+            O modelo "{activeTemplate.nome}" não possui abas e campos definidos. Edite o modelo para adicionar a estrutura.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => {
+                if (!specialtyId) return;
+                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`);
+              }}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Editar modelo
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleCreateDefaultTemplate}
+              disabled={creatingDefault}
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              {creatingDefault ? 'Criando...' : 'Criar modelo padrão YesClin'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // ─── Template selector component ─────────────────────────────────
   const renderTemplateSelector = (size: 'sm' | 'lg' = 'sm') => (
     <div className={`flex items-center gap-2 ${size === 'lg' ? 'w-full max-w-md mx-auto' : ''}`}>

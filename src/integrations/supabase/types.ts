@@ -4358,6 +4358,101 @@ export type Database = {
           },
         ]
       }
+      medical_record_tab_fields: {
+        Row: {
+          clinic_id: string
+          condition_field_id: string | null
+          condition_operator: string | null
+          condition_value: string | null
+          created_at: string
+          default_value: string | null
+          field_order: number
+          field_type: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          is_system: boolean
+          label: string
+          options: Json | null
+          placeholder: string | null
+          specialty_id: string
+          tab_id: string
+          updated_at: string
+          visible_to_roles: string[] | null
+        }
+        Insert: {
+          clinic_id: string
+          condition_field_id?: string | null
+          condition_operator?: string | null
+          condition_value?: string | null
+          created_at?: string
+          default_value?: string | null
+          field_order?: number
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          is_system?: boolean
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          specialty_id: string
+          tab_id: string
+          updated_at?: string
+          visible_to_roles?: string[] | null
+        }
+        Update: {
+          clinic_id?: string
+          condition_field_id?: string | null
+          condition_operator?: string | null
+          condition_value?: string | null
+          created_at?: string
+          default_value?: string | null
+          field_order?: number
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          is_system?: boolean
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          specialty_id?: string
+          tab_id?: string
+          updated_at?: string
+          visible_to_roles?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_record_tab_fields_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_record_tab_fields_condition_field_id_fkey"
+            columns: ["condition_field_id"]
+            isOneToOne: false
+            referencedRelation: "medical_record_tab_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_record_tab_fields_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_record_tab_fields_tab_id_fkey"
+            columns: ["tab_id"]
+            isOneToOne: false
+            referencedRelation: "medical_record_tabs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_record_tab_permissions: {
         Row: {
           can_edit: boolean

@@ -84,7 +84,7 @@ export function MedicationAutocomplete({
       setShowDropdown(meds.length > 0);
     } catch (err) {
       console.error('Medication search error:', err);
-      setError('Erro ao buscar. Digite manualmente.');
+      setError('Base externa indisponível no momento. Digite manualmente.');
       setResults([]);
       setShowDropdown(false);
     } finally {

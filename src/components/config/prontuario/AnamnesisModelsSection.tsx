@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Plus, FileText, Copy, Star, Power, PowerOff, ChevronDown,
   AlertTriangle, Lock, ClipboardList, Stethoscope, Syringe, History,
-  Clock, Sparkles,
+  Clock, Sparkles, Edit3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { NewAnamnesisModelDialog, generateStructureFromConfig, type CreateModelConfig } from './NewAnamnesisModelDialog';
 import { getDefaultAnamnesisStructure } from '@/constants/defaultAnamnesisStructures';
 import { toast } from 'sonner';
+import { AnamnesisModelEditorDialog } from './AnamnesisModelEditorDialog';
 
 interface Props {
   specialtyId?: string | null;
@@ -40,6 +41,8 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
   } = useAnamnesisModels(specialtyId || null);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingModel, setEditingModel] = useState<AnamnesisModel | null>(null);
   const [procedures, setProcedures] = useState<{ id: string; name: string }[]>([]);
 
   // Version history state
@@ -261,14 +264,20 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
                       )}
                     </div>
                   </div>
+                  {/* Primary Edit button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setEditingModel(m); setEditorOpen(true); }}
+                    disabled={saving}
+                  >
+                    <Edit3 className="h-4 w-4 mr-1" />Editar
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">Ações<ChevronDown className="h-4 w-4 ml-1" /></Button>
+                      <Button variant="ghost" size="sm"><ChevronDown className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => duplicateModel(m.id)} disabled={saving}>
-                        <Copy className="h-4 w-4 mr-2" />Duplicar e Editar
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => duplicateModel(m.id)} disabled={saving}>
                         <Copy className="h-4 w-4 mr-2" />Duplicar
                       </DropdownMenuItem>
@@ -313,6 +322,18 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
         procedures={procedures}
         saving={saving}
         onCreateModel={handleCreateModel}
+      />
+
+      {/* Editor Dialog */}
+      <AnamnesisModelEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        model={editingModel}
+        onSave={async (id, data) => {
+          const result = await updateModel(id, data);
+          return !!result;
+        }}
+        saving={saving}
       />
 
       {/* Version History Dialog */}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, FileText, Copy, Edit, Star, Power, PowerOff, ChevronDown,
+  Plus, FileText, Copy, Star, Power, PowerOff, ChevronDown,
   AlertTriangle, Lock, ClipboardList, Stethoscope, Syringe, History,
   Clock,
 } from 'lucide-react';
@@ -8,25 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { useAnamnesisModels, type AnamnesisModel, type AnamnesisModelVersion } from '@/hooks/prontuario/useAnamnesisModels';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { NewAnamnesisModelDialog, generateStructureFromConfig, type CreateModelConfig } from './NewAnamnesisModelDialog';
 
 interface Props {
   specialtyId?: string | null;
@@ -43,11 +37,7 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     setAsDefault, toggleActive, fetchVersionHistory,
   } = useAnamnesisModels(specialtyId || null);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<AnamnesisModel | null>(null);
-  const [formName, setFormName] = useState('');
-  const [formDesc, setFormDesc] = useState('');
-  const [formProcedureId, setFormProcedureId] = useState<string>('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [procedures, setProcedures] = useState<{ id: string; name: string }[]>([]);
 
   // Version history state
@@ -74,9 +64,8 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     if (actionHandled || !initialAction || !specialtyId || loading) return;
     setActionHandled(true);
     if (initialAction === 'create') {
-      openCreate();
+      setCreateDialogOpen(true);
     }
-    // create_default is handled by creating a model with default name directly
     if (initialAction === 'create_default') {
       (async () => {
         const name = `Anamnese Padrão (YesClin)`;
@@ -90,22 +79,6 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     }
   }, [initialAction, specialtyId, loading, actionHandled]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormName('');
-    setFormDesc('');
-    setFormProcedureId('');
-    setDialogOpen(true);
-  };
-
-  const openEdit = (m: AnamnesisModel) => {
-    setEditing(m);
-    setFormName(m.name);
-    setFormDesc(m.description || '');
-    setFormProcedureId(m.procedure_id || '');
-    setDialogOpen(true);
-  };
-
   const openHistory = async (m: AnamnesisModel) => {
     setHistoryModelName(m.name);
     setHistoryDialogOpen(true);
@@ -115,22 +88,26 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     setLoadingVersions(false);
   };
 
-  const handleSubmit = async () => {
-    if (!formName.trim()) return;
-    if (editing) {
-      await updateModel(editing.id, {
-        name: formName,
-        description: formDesc,
-        procedure_id: formProcedureId || null,
+  const handleCreateModel = async (config: CreateModelConfig) => {
+    const structure = generateStructureFromConfig(config);
+    const result = await createModel({
+      name: config.name,
+      description: config.description,
+      procedure_id: config.procedureId,
+    });
+    if (result) {
+      // Update model with structure (creates version with content)
+      await updateModel(result.id, {
+        campos: structure as any,
       });
-    } else {
-      await createModel({
-        name: formName,
-        description: formDesc,
-        procedure_id: formProcedureId || null,
-      });
+      // Apply settings
+      if (config.settings.padrao) {
+        await setAsDefault(result.id);
+      }
+      if (!config.settings.ativo) {
+        await toggleActive(result.id, false);
+      }
     }
-    setDialogOpen(false);
     onModelCreated?.();
   };
 
@@ -173,7 +150,7 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
                 )}
               </CardDescription>
             </div>
-            <Button onClick={openCreate} disabled={saving}>
+            <Button onClick={() => setCreateDialogOpen(true)} disabled={saving}>
               <Plus className="h-4 w-4 mr-2" />Novo Modelo
             </Button>
           </div>
@@ -238,8 +215,8 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
                       <Button variant="ghost" size="sm">Ações<ChevronDown className="h-4 w-4 ml-1" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(m)}>
-                        <Edit className="h-4 w-4 mr-2" />Editar
+                      <DropdownMenuItem onClick={() => duplicateModel(m.id)} disabled={saving}>
+                        <Copy className="h-4 w-4 mr-2" />Duplicar e Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => duplicateModel(m.id)} disabled={saving}>
                         <Copy className="h-4 w-4 mr-2" />Duplicar
@@ -277,60 +254,15 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Editar Modelo' : 'Novo Modelo de Anamnese'}</DialogTitle>
-            <DialogDescription>
-              {editing
-                ? 'Alterações na estrutura criam uma nova versão automaticamente. Registros anteriores não são afetados.'
-                : 'Defina o nome e vínculo do novo modelo.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Nome *</Label>
-              <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Anamnese Completa" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Descrição</Label>
-              <Textarea value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Descrição opcional" rows={2} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Vínculo</Label>
-              <Select value={formProcedureId || '_specialty'} onValueChange={v => setFormProcedureId(v === '_specialty' ? '' : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Especialidade inteira" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_specialty">
-                    <span className="flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4" />Especialidade inteira (padrão)
-                    </span>
-                  </SelectItem>
-                  {procedures.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      <span className="flex items-center gap-2">
-                        <Syringe className="h-4 w-4" />{p.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Modelos vinculados a procedimentos específicos terão prioridade sobre o modelo padrão da especialidade.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saving || !formName.trim()}>
-              {saving ? 'Salvando...' : editing ? 'Salvar' : 'Criar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* New Advanced Create Dialog */}
+      <NewAnamnesisModelDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        specialtyId={specialtyId}
+        procedures={procedures}
+        saving={saving}
+        onCreateModel={handleCreateModel}
+      />
 
       {/* Version History Dialog */}
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>

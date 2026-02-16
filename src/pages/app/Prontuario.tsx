@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ProntuarioTabNav, type TabNavItem } from "@/components/prontuario/ProntuarioTabNav";
+import { ProntuarioSideNav, type SideNavItem } from "@/components/prontuario/ProntuarioSideNav";
+import { ClinicalHeaderFixed } from "@/components/prontuario/ClinicalHeaderFixed";
+import { ProntuarioFooterBar } from "@/components/prontuario/ProntuarioFooterBar";
+import { useAutoSave } from "@/hooks/prontuario/useAutoSave";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -96,8 +99,6 @@ import { isBlockEnabled } from "@/hooks/prontuario/specialtyCapabilities";
 import { useLgpdEnforcement } from "@/hooks/lgpd";
 import { useProntuarioPrint } from "@/hooks/prontuario/useProntuarioPrint";
 import { useClinicData } from "@/hooks/useClinicData";
-import { PatientHeader } from "@/components/prontuario/PatientHeader";
-import { ProntuarioHeader } from "@/components/prontuario/ProntuarioHeader";
 import { ProntuarioSearchBar, type SearchResult } from "@/components/prontuario/ProntuarioSearchBar";
 import { LgpdBlockingOverlay } from "@/components/prontuario/LgpdBlockingOverlay";
 import { ConsentCollectionDialog } from "@/components/prontuario/ConsentCollectionDialog";
@@ -871,7 +872,17 @@ export default function Prontuario() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [selectedEntryForSignature, setSelectedEntryForSignature] = useState<MedicalRecordEntry | null>(null);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-save
+  const { lastSavedAt, isSaving: autoSaving, saveNow, saveOnLeave } = useAutoSave({
+    intervalSeconds: 30,
+    enabled: hasActiveAppointment || isAdmin,
+    onSave: async () => {
+      // Auto-save is a no-op placeholder; individual blocks handle their own saves
+    },
+  });
   
   // Track previous specialty to detect changes
   const previousSpecialtyKeyRef = useRef<string | null>(null);
@@ -2138,8 +2149,8 @@ export default function Prontuario() {
 
   return (
     <ClinicalAccessGuard>
-    <div className="flex flex-col h-full relative">
-      {/* LGPD Blocking Overlay - shown when consent is required but not granted */}
+    <div className={cn("flex flex-col h-full relative", isFocusMode && "fixed inset-0 z-50 bg-background")}>
+      {/* LGPD Blocking Overlay */}
       {!lgpdLoading && isEnforcementEnabled && !hasValidConsent && patient && (
         <LgpdBlockingOverlay
           patientName={patient.full_name}
@@ -2176,100 +2187,85 @@ export default function Prontuario() {
         />
       )}
 
-      {/* Header Unificado */}
-      <ProntuarioHeader
+      {/* ═══ PREMIUM CLINICAL HEADER ═══ */}
+      <ClinicalHeaderFixed
         patient={patient}
         patientLoading={patientLoading}
         activeSpecialty={activeSpecialty}
         activeSpecialtyKey={activeSpecialtyKey}
-        allSpecialties={specialties}
-        onSelectSpecialty={(id) => setActiveSpecialty(id)}
-        isSpecialtyFromAppointment={isSpecialtyFromAppointment}
-        specialtyLoading={specialtyLoading}
-        criticalAlertsCount={criticalAlerts.length}
-        isLgpdPending={isEnforcementEnabled && !hasValidConsent}
         hasActiveAppointment={hasActiveAppointment}
-        activeAppointment={activeAppointment}
+        activeAppointment={activeAppointment ? {
+          ...activeAppointment,
+          professional_name: currentProfessionalName,
+          scheduled_date: (activeAppointment as any)?.scheduled_date,
+          start_time: (activeAppointment as any)?.start_time,
+        } : null}
         appointmentLoading={appointmentLoading}
         appointmentReason={appointmentReason}
         isAdmin={isAdmin}
+        criticalAlertsCount={criticalAlerts.length}
+        isLgpdPending={isEnforcementEnabled && !hasValidConsent}
+        lastSavedAt={lastSavedAt}
+        isSaving={autoSaving}
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
         canPrint={canPerformAction('print_record')}
         canExport={canPerformAction('export_pdf')}
         onPrint={onPrintClick}
         onExport={onExportClick}
+        onSave={saveNow}
         exporting={exporting}
       />
 
-      {/* Barra de Pesquisa Global */}
-      {patientId && (
-        <div className="px-4 py-2 border-b bg-background">
-          <ProntuarioSearchBar
-            entries={entries}
-            files={files}
-            alerts={activeAlerts}
-            onResultClick={handleSearchResultClick}
-            onNavigateToTab={handleNavigateToTab}
-            className="max-w-2xl"
-          />
-        </div>
-      )}
-
-      {/* Main Content with Responsive Tab Navigation */}
-      <div id="print-area" className="flex flex-col flex-1 overflow-hidden">
-        {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
-        <ProntuarioTabNav
-          items={navItems.map((item) => {
-            // Primary tabs (always visible): Visão Geral, Anamnese, Evoluções/Sessões, Plano
-            const primaryTabIds = [
-              'resumo',           // Visão Geral
-              'anamnese',         // Anamnese
-              'evolucao',         // Evoluções / Sessões
-              'conduta',          // Plano / Conduta
-              'plano_alimentar',  // Plano Alimentar (Nutrição)
-              'plano_terapeutico', // Plano Terapêutico (Psicologia/Fisioterapia)
-            ];
-            
-            const isPrimaryTab = primaryTabIds.includes(item.id);
-            
-            return {
-              id: item.id,
-              label: item.label,
-              icon: item.icon,
-              badge: item.id === 'alertas' ? activeAlerts.length : undefined,
-              badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" : "secondary",
-              // Secondary tabs go to "More" menu on mobile
-              secondary: !isPrimaryTab,
-            } as TabNavItem;
-          })}
+      {/* ═══ MAIN LAYOUT: Side Nav + Content ═══ */}
+      <div id="print-area" className="flex flex-1 overflow-hidden">
+        {/* Side Navigation (replaces horizontal tabs) */}
+        <ProntuarioSideNav
+          items={navItems.map((item) => ({
+            id: item.id,
+            label: item.label,
+            icon: item.icon,
+            badge: item.id === 'alertas' ? activeAlerts.length : undefined,
+            badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" as const : "secondary" as const,
+          }))}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
-          criticalAlerts={criticalAlerts.length}
+          onTabChange={(tabId) => {
+            saveOnLeave();
+            setActiveTab(tabId);
+          }}
         />
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-4 md:p-6">
-            {/* Alerts Banner - shown at top when there are active alerts */}
-            {/* Psychology specialty uses specialized banner with risk indicators */}
+        {/* Content Area with scrollable content */}
+        <main className="flex-1 overflow-auto flex flex-col">
+          <div className="flex-1 p-4 md:p-6 space-y-4">
+            {/* Alerts Banner */}
             {activeSpecialtyKey === 'psicologia' && activeAlertasPsico.length > 0 && activeTab !== 'alertas' && (
               <AlertasBannerPsicologia 
                 alertas={alertasPsico} 
                 onViewAlerts={() => setActiveTab('alertas')}
               />
             )}
-            {/* Nutrition specialty uses specialized banner with dietary alerts */}
             {activeSpecialtyKey === 'nutricao' && activeAlertasNutricao.length > 0 && activeTab !== 'alertas' && (
               <AlertasBannerNutricao 
                 alertas={activeAlertasNutricao} 
                 onViewAlerts={() => setActiveTab('alertas')}
               />
             )}
-            {/* Other specialties use standard banner */}
             {activeSpecialtyKey !== 'psicologia' && activeSpecialtyKey !== 'nutricao' && activeAlertas.length > 0 && activeTab !== 'alertas' && (
               <AlertasBanner alertas={activeAlertas} />
             )}
+
+            {/* Tab Content */}
             {renderTabContent()}
           </div>
+
+          {/* ═══ FOOTER ACTION BAR ═══ */}
+          <ProntuarioFooterBar
+            canEdit={canEditCurrentTab}
+            onCancel={() => navigate('/app/pacientes')}
+            onSave={saveNow}
+            saving={autoSaving}
+          />
         </main>
       </div>
     </div>

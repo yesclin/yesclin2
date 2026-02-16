@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveAppointment } from "./useActiveAppointment";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useMemo } from "react";
+import { useResolvedAnamnesisTemplate, type ResolvedTemplate } from "./useResolvedAnamnesisTemplate";
 
 export interface MedicalRecordContext {
   // Appointment info
@@ -24,9 +25,13 @@ export interface MedicalRecordContext {
   
   // Context state
   hasActiveAppointment: boolean;
-  isContextLocked: boolean; // True when specialty is from appointment (cannot change)
+  isContextLocked: boolean;
   canEditRecords: boolean;
   
+  // Resolved template
+  resolvedTemplate: ResolvedTemplate | null;
+  templateLoading: boolean;
+
   // Error messages
   validationError: string | null;
 }
@@ -36,6 +41,7 @@ export interface MedicalRecordContext {
  * 1. Active appointment (if in progress)
  * 2. Professional logged in
  * 3. Procedure and specialty validation
+ * 4. Resolved anamnesis template (procedure → default → fallback)
  * 
  * CRITICAL RULE: When there's an active appointment, the specialty is LOCKED
  * and cannot be manually changed.
@@ -65,8 +71,22 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
     enabled: !!activeAppointment?.id,
   });
 
+  // Resolve the anamnesis template based on specialty + procedure
+  const resolvedSpecialtyId = dbContext?.specialty_id || activeAppointment?.resolved_specialty_id || null;
+  const resolvedProcedureId = activeAppointment?.procedure_id || null;
+
+  const { data: resolvedTemplate, isLoading: templateLoading } = useResolvedAnamnesisTemplate(
+    resolvedSpecialtyId,
+    resolvedProcedureId
+  );
+
   // Build the context object
   const context = useMemo((): MedicalRecordContext => {
+    const templateFields = {
+      resolvedTemplate: resolvedTemplate || null,
+      templateLoading,
+    };
+
     // Base state when no active appointment
     if (!activeAppointment) {
       return {
@@ -84,6 +104,7 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
         hasActiveAppointment: false,
         isContextLocked: false,
         canEditRecords: false,
+        ...templateFields,
         validationError: "Nenhum atendimento ativo. Inicie um atendimento pela agenda para editar o prontuário.",
       };
     }
@@ -105,6 +126,7 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
         hasActiveAppointment: true,
         isContextLocked: true,
         canEditRecords: false,
+        ...templateFields,
         validationError: "Especialidade não definida para este atendimento. Defina uma especialidade no agendamento antes de prosseguir.",
       };
     }
@@ -133,8 +155,9 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
         isSpecialtyEnabled: dbContext.is_specialty_enabled || false,
         canProfessionalAccess: dbContext.can_professional_access || false,
         hasActiveAppointment: true,
-        isContextLocked: true, // CRITICAL: Specialty is locked during appointment
+        isContextLocked: true,
         canEditRecords: hasValidContext && canAccessClinicalContent,
+        ...templateFields,
         validationError,
       };
     }
@@ -150,14 +173,15 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
       specialtyId: activeAppointment.resolved_specialty_id,
       specialtyName: activeAppointment.resolved_specialty_name,
       specialtyKey: null,
-      isSpecialtyEnabled: true, // Assume enabled if we got here
-      canProfessionalAccess: true, // Assume access if we got here
+      isSpecialtyEnabled: true,
+      canProfessionalAccess: true,
       hasActiveAppointment: true,
-      isContextLocked: true, // CRITICAL: Specialty is locked during appointment
+      isContextLocked: true,
       canEditRecords: canAccessClinicalContent,
+      ...templateFields,
       validationError: null,
     };
-  }, [activeAppointment, dbContext, patientId, userProfessionalId, canAccessClinicalContent]);
+  }, [activeAppointment, dbContext, patientId, userProfessionalId, canAccessClinicalContent, resolvedTemplate, templateLoading]);
 
   return {
     ...context,
@@ -172,7 +196,6 @@ export function useIntelligentMedicalRecordContext(patientId: string | null | un
 export function useCanSelectSpecialty(patientId: string | null | undefined): boolean {
   const { isContextLocked, hasActiveAppointment } = useIntelligentMedicalRecordContext(patientId);
   
-  // Cannot select specialty when context is locked (active appointment)
   if (isContextLocked || hasActiveAppointment) {
     return false;
   }

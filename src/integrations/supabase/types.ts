@@ -340,7 +340,9 @@ export type Database = {
           created_by: string | null
           id: string
           patient_id: string
+          procedure_id: string | null
           responses: Json
+          specialty_id: string | null
           structure_snapshot: Json | null
           template_id: string
           template_version_id: string
@@ -353,7 +355,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           patient_id: string
+          procedure_id?: string | null
           responses?: Json
+          specialty_id?: string | null
           structure_snapshot?: Json | null
           template_id: string
           template_version_id: string
@@ -366,7 +370,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           patient_id?: string
+          procedure_id?: string | null
           responses?: Json
+          specialty_id?: string | null
           structure_snapshot?: Json | null
           template_id?: string
           template_version_id?: string
@@ -392,6 +398,20 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
             referencedColumns: ["id"]
           },
           {
@@ -1694,12 +1714,16 @@ export type Database = {
           next_steps: string | null
           notes: string | null
           patient_id: string
+          procedure_id: string | null
           professional_id: string
           signed_at: string | null
           signed_by: string | null
           specialty: string | null
+          specialty_id: string | null
           status: string
+          structure_snapshot: Json | null
           template_id: string | null
+          template_version_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1712,12 +1736,16 @@ export type Database = {
           next_steps?: string | null
           notes?: string | null
           patient_id: string
+          procedure_id?: string | null
           professional_id: string
           signed_at?: string | null
           signed_by?: string | null
           specialty?: string | null
+          specialty_id?: string | null
           status?: string
+          structure_snapshot?: Json | null
           template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1730,12 +1758,16 @@ export type Database = {
           next_steps?: string | null
           notes?: string | null
           patient_id?: string
+          procedure_id?: string | null
           professional_id?: string
           signed_at?: string | null
           signed_by?: string | null
           specialty?: string | null
+          specialty_id?: string | null
           status?: string
+          structure_snapshot?: Json | null
           template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1761,10 +1793,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "clinical_evolutions_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "clinical_evolutions_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_evolutions_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_evolutions_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_template_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -4019,11 +4072,15 @@ export type Database = {
           next_steps: string | null
           notes: string | null
           patient_id: string
+          procedure_id: string | null
           professional_id: string
           signed_at: string | null
           signed_by: string | null
+          specialty_id: string | null
           status: string
+          structure_snapshot: Json | null
           template_id: string | null
+          template_version_id: string | null
           updated_at: string
         }
         Insert: {
@@ -4037,11 +4094,15 @@ export type Database = {
           next_steps?: string | null
           notes?: string | null
           patient_id: string
+          procedure_id?: string | null
           professional_id: string
           signed_at?: string | null
           signed_by?: string | null
+          specialty_id?: string | null
           status?: string
+          structure_snapshot?: Json | null
           template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -4055,11 +4116,15 @@ export type Database = {
           next_steps?: string | null
           notes?: string | null
           patient_id?: string
+          procedure_id?: string | null
           professional_id?: string
           signed_at?: string | null
           signed_by?: string | null
+          specialty_id?: string | null
           status?: string
+          structure_snapshot?: Json | null
           template_id?: string | null
+          template_version_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -4092,6 +4157,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "medical_record_entries_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "medical_record_entries_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
@@ -4106,10 +4178,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "medical_record_entries_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "medical_record_entries_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "medical_record_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_record_entries_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_template_versions"
             referencedColumns: ["id"]
           },
         ]

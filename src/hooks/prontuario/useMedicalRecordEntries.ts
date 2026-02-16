@@ -35,6 +35,11 @@ export interface EntryInput {
   content: Record<string, unknown>;
   notes?: string;
   next_steps?: string;
+  // Immutable context (saved once, never overwritten)
+  specialty_id?: string | null;
+  procedure_id?: string | null;
+  template_version_id?: string | null;
+  structure_snapshot?: unknown;
 }
 
 export function useMedicalRecordEntries() {
@@ -78,21 +83,30 @@ export function useMedicalRecordEntries() {
     try {
       const { data: userData } = await supabase.auth.getUser();
 
+      const insertData: Record<string, unknown> = {
+        clinic_id: clinic.id,
+        patient_id: input.patient_id,
+        professional_id: input.professional_id,
+        template_id: input.template_id || null,
+        appointment_id: input.appointment_id || null,
+        entry_type: input.entry_type,
+        status: 'draft',
+        content: input.content as unknown as Json,
+        notes: input.notes || null,
+        next_steps: input.next_steps || null,
+        created_by: userData?.user?.id || null,
+      };
+
+      // Persist immutable context
+      if (input.specialty_id) insertData.specialty_id = input.specialty_id;
+      if (input.procedure_id) insertData.procedure_id = input.procedure_id;
+      if (input.template_version_id) insertData.template_version_id = input.template_version_id;
+      if (input.structure_snapshot) insertData.structure_snapshot = input.structure_snapshot as unknown as Json;
+
       const { data, error } = await supabase
         .from('medical_record_entries')
-        .insert({
-          clinic_id: clinic.id,
-          patient_id: input.patient_id,
-          professional_id: input.professional_id,
-          template_id: input.template_id || null,
-          appointment_id: input.appointment_id || null,
-          entry_type: input.entry_type,
-          status: 'draft',
-          content: input.content as unknown as Json,
-          notes: input.notes || null,
-          next_steps: input.next_steps || null,
-          created_by: userData?.user?.id || null,
-        })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(insertData as any)
         .select()
         .single();
 

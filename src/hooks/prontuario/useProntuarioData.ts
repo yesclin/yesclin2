@@ -107,7 +107,13 @@ export function useProntuarioData(patientId: string | null) {
     templateId: string,
     professionalId: string,
     content: Record<string, unknown>,
-    appointmentId?: string
+    appointmentId?: string,
+    context?: {
+      specialty_id?: string | null;
+      procedure_id?: string | null;
+      template_version_id?: string | null;
+      structure_snapshot?: unknown;
+    }
   ): Promise<string | null> => {
     if (!patientId) return null;
 
@@ -120,6 +126,10 @@ export function useProntuarioData(patientId: string | null) {
       appointment_id: appointmentId || null,
       entry_type: template?.type || 'evolution',
       content,
+      specialty_id: context?.specialty_id,
+      procedure_id: context?.procedure_id,
+      template_version_id: context?.template_version_id,
+      structure_snapshot: context?.structure_snapshot,
     });
   }, [patientId, config.templates, entriesHook]);
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Plus, FileText, Copy, Star, Power, PowerOff, ChevronDown,
   AlertTriangle, Lock, ClipboardList, Stethoscope, Syringe, History,
-  Clock,
+  Clock, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,8 @@ import { useAnamnesisModels, type AnamnesisModel, type AnamnesisModelVersion } f
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { NewAnamnesisModelDialog, generateStructureFromConfig, type CreateModelConfig } from './NewAnamnesisModelDialog';
+import { getDefaultAnamnesisStructure } from '@/constants/defaultAnamnesisStructures';
+import { toast } from 'sonner';
 
 interface Props {
   specialtyId?: string | null;
@@ -111,6 +113,24 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
     onModelCreated?.();
   };
 
+  const handleProvisionDefault = async () => {
+    if (!specialtyId) return;
+    // Try to detect specialty slug from enabled specialties
+    const defaultStructure = getDefaultAnamnesisStructure('clinica-geral');
+    const structure = defaultStructure.length > 0 ? defaultStructure : getDefaultAnamnesisStructure('geral');
+
+    const result = await createModel({
+      name: 'Anamnese Padrão – Clínica Geral (YesClin)',
+      description: 'Modelo padrão completo com 10 seções clínicas estruturadas. Editável e versionado.',
+      procedure_id: null,
+    });
+    if (result) {
+      await updateModel(result.id, { campos: structure as any });
+      await setAsDefault(result.id);
+      toast.success('Modelo padrão YesClin criado com sucesso!');
+    }
+  };
+
   if (!specialtyId) {
     return (
       <Card>
@@ -160,7 +180,25 @@ export function AnamnesisModelsSection({ specialtyId, initialAction, onModelCrea
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-1">Nenhum modelo de anamnese encontrado.</p>
-              <p className="text-sm text-muted-foreground">Crie um modelo ou ative a especialidade para gerar automaticamente.</p>
+              <p className="text-sm text-muted-foreground mb-4">Crie um modelo ou gere o padrão YesClin automaticamente.</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  variant="default"
+                  disabled={saving}
+                  onClick={handleProvisionDefault}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Criar modelo padrão YesClin
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => setCreateDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar do zero
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

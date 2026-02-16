@@ -388,6 +388,12 @@ export function PrescricoesBlock({
               </Accordion>
             </ScrollArea>
           )}
+          {/* Disclaimer - always visible, cannot be hidden */}
+          <div className="mt-4 p-3 bg-muted/60 border border-border rounded-md">
+            <p className="text-xs text-muted-foreground text-center italic">
+              As informações exibidas são apenas auxiliares. A prescrição é de responsabilidade exclusiva do profissional de saúde.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -593,6 +599,13 @@ export function PrescricoesBlock({
                 rows={2}
               />
             </div>
+          </div>
+
+          {/* Disclaimer - always visible in dialog */}
+          <div className="p-3 bg-muted/60 border border-border rounded-md">
+            <p className="text-xs text-muted-foreground text-center italic">
+              As informações exibidas são apenas auxiliares. A prescrição é de responsabilidade exclusiva do profissional de saúde.
+            </p>
           </div>
 
           <DialogFooter>

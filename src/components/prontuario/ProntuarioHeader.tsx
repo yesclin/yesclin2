@@ -14,6 +14,12 @@ import {
   Activity,
   AlertTriangle,
   MoreVertical,
+  Droplet,
+  Heart,
+  Pill,
+  ShieldAlert,
+  Phone,
+  CreditCard,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { differenceInYears, parseISO } from "date-fns";
@@ -29,12 +35,21 @@ import {
 import type { SpecialtyOption, SpecialtyKey } from "@/hooks/prontuario/useActiveSpecialty";
 import { YESCLIN_SPECIALTY_LABELS } from "@/hooks/prontuario/yesclinSpecialties";
 
+export interface ClinicalSummaryForHeader {
+  allergies: string[];
+  chronic_diseases: string[];
+  current_medications: string[];
+  blood_type?: string | null;
+  restrictions?: string[];
+}
+
 interface PatientInfo {
   id: string;
   full_name: string;
   birth_date: string | null;
   gender: string | null;
   phone?: string | null;
+  cpf?: string | null;
 }
 
 interface ActiveAppointmentInfo {
@@ -63,6 +78,7 @@ interface ProntuarioHeaderProps {
   onPrint?: () => void;
   onExport?: () => void;
   exporting?: boolean;
+  clinicalSummary?: ClinicalSummaryForHeader | null;
   className?: string;
 }
 
@@ -93,6 +109,7 @@ export function ProntuarioHeader({
   onPrint,
   onExport,
   exporting = false,
+  clinicalSummary,
   className,
 }: ProntuarioHeaderProps) {
   const isMobile = useIsMobile();
@@ -245,12 +262,22 @@ export function ProntuarioHeader({
   // Desktop/Tablet Layout - Completo
   const displaySpecialtyName = activeSpecialty?.name || YESCLIN_SPECIALTY_LABELS[activeSpecialtyKey] || 'Clínica Geral';
 
-  return (
-    <div className={cn(
-      "flex flex-col gap-3 p-4 border-b bg-background/95 backdrop-blur sticky top-0 z-20",
-      className
-    )}>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+    // Check if clinical summary has any data
+    const hasClinicalData = clinicalSummary && (
+      clinicalSummary.allergies.length > 0 ||
+      clinicalSummary.chronic_diseases.length > 0 ||
+      clinicalSummary.current_medications.length > 0 ||
+      clinicalSummary.blood_type ||
+      (clinicalSummary.restrictions && clinicalSummary.restrictions.length > 0)
+    );
+
+    return (
+      <div className={cn(
+        "flex flex-col border-b bg-background/95 backdrop-blur sticky top-0 z-20",
+        className
+      )}>
+      {/* Linha principal */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4">
         {/* Lado esquerdo: Voltar + Título com Especialidade */}
         <div className="flex items-center gap-3 flex-wrap">
           <Link to="/app/pacientes">
@@ -281,11 +308,23 @@ export function ProntuarioHeader({
 
           {/* Info do Paciente */}
           {patient && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground border-l pl-3 ml-1">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground border-l pl-3 ml-1">
               <span className="font-medium text-foreground">{patient.full_name}</span>
               {(age !== null || gender) && (
                 <span>
                   ({[age !== null ? `${age}a` : null, gender].filter(Boolean).join(', ')})
+                </span>
+              )}
+              {patient.phone && (
+                <span className="flex items-center gap-1 border-l pl-2">
+                  <Phone className="h-3 w-3" />
+                  {patient.phone}
+                </span>
+              )}
+              {patient.cpf && (
+                <span className="flex items-center gap-1 border-l pl-2">
+                  <CreditCard className="h-3 w-3" />
+                  {patient.cpf}
                 </span>
               )}
             </div>
@@ -293,31 +332,24 @@ export function ProntuarioHeader({
 
           {/* Badges de Status */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Alertas Críticos */}
             {criticalAlertsCount > 0 && (
               <Badge variant="destructive" className="animate-pulse gap-1 h-6">
                 <AlertTriangle className="h-3 w-3" />
                 {criticalAlertsCount}
               </Badge>
             )}
-
-            {/* LGPD Pendente */}
             {isLgpdPending && (
               <Badge variant="outline" className="gap-1 text-destructive border-destructive h-6">
                 <Lock className="h-3 w-3" />
                 LGPD
               </Badge>
             )}
-
-            {/* Status de Atendimento */}
             {hasActiveAppointment && activeAppointment && (
               <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white h-6">
                 <Activity className="h-3 w-3" />
                 Ativo
               </Badge>
             )}
-
-            {/* Modo Admin */}
             {!hasActiveAppointment && !appointmentLoading && isAdmin && (
               <TooltipProvider>
                 <Tooltip>
@@ -331,8 +363,6 @@ export function ProntuarioHeader({
                 </Tooltip>
               </TooltipProvider>
             )}
-
-            {/* Somente Leitura */}
             {!hasActiveAppointment && !appointmentLoading && !isAdmin && (
               <TooltipProvider>
                 <Tooltip>
@@ -399,6 +429,48 @@ export function ProntuarioHeader({
           </Link>
         </div>
       </div>
+
+      {/* Resumo Clínico do Paciente */}
+      {patient && hasClinicalData && (
+        <div className="px-4 pb-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-semibold text-muted-foreground uppercase tracking-wide mr-1">Resumo Clínico:</span>
+          
+          {clinicalSummary!.blood_type && (
+            <Badge variant="outline" className="gap-1 h-5 text-[10px]">
+              <Droplet className="h-3 w-3 text-red-500" />
+              {clinicalSummary!.blood_type}
+            </Badge>
+          )}
+          
+          {clinicalSummary!.allergies.map((a, i) => (
+            <Badge key={`allergy-${i}`} variant="destructive" className="gap-1 h-5 text-[10px]">
+              <AlertTriangle className="h-3 w-3" />
+              {a}
+            </Badge>
+          ))}
+          
+          {clinicalSummary!.chronic_diseases.map((d, i) => (
+            <Badge key={`disease-${i}`} variant="secondary" className="gap-1 h-5 text-[10px]">
+              <Heart className="h-3 w-3" />
+              {d}
+            </Badge>
+          ))}
+          
+          {clinicalSummary!.current_medications.map((m, i) => (
+            <Badge key={`med-${i}`} variant="outline" className="gap-1 h-5 text-[10px]">
+              <Pill className="h-3 w-3" />
+              {m}
+            </Badge>
+          ))}
+          
+          {clinicalSummary!.restrictions?.map((r, i) => (
+            <Badge key={`restriction-${i}`} variant="destructive" className="gap-1 h-5 text-[10px]">
+              <ShieldAlert className="h-3 w-3" />
+              {r}
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -11,28 +11,17 @@ import {
 import type { ResolvedTemplate, TemplateOption } from "@/hooks/prontuario/useResolvedAnamnesisTemplate";
 
 interface AnamnesisTemplatePickerProps {
-  /** The auto-resolved template (procedure → default → fallback) */
   resolvedTemplate: ResolvedTemplate | null;
-  /** All active templates for the specialty */
   allTemplates: TemplateOption[];
-  /** Whether multiple templates are available */
   hasMultipleTemplates: boolean;
-  /** Loading state */
   isLoading: boolean;
-  /** Whether the user has started filling the form */
   hasStartedFilling: boolean;
-  /** Callback when a template is selected */
   onTemplateChange: (templateId: string) => void;
-  /** Currently selected template ID */
   selectedTemplateId: string | null;
+  /** Version number of the currently active/selected template */
+  versionNumber?: number | null;
 }
 
-/**
- * Smart template picker for anamnesis:
- * - If only 1 template exists: auto-loads, no selector shown
- * - If multiple exist: shows a dropdown, pre-selects the resolved default
- * - After filling starts: locks selection with a visual indicator
- */
 export function AnamnesisTemplatePicker({
   resolvedTemplate,
   allTemplates,
@@ -41,8 +30,8 @@ export function AnamnesisTemplatePicker({
   hasStartedFilling,
   onTemplateChange,
   selectedTemplateId,
+  versionNumber,
 }: AnamnesisTemplatePickerProps) {
-  // Auto-select on mount when only 1 template or resolved template available
   useEffect(() => {
     if (!selectedTemplateId && resolvedTemplate?.id) {
       onTemplateChange(resolvedTemplate.id);
@@ -67,22 +56,34 @@ export function AnamnesisTemplatePicker({
     );
   }
 
+  const displayVersion = versionNumber ?? resolvedTemplate?.version_number ?? null;
+
+  const VersionBadge = () =>
+    displayVersion ? (
+      <Badge variant="outline" className="text-[10px] font-mono">
+        v{displayVersion}.0
+      </Badge>
+    ) : null;
+
   // Single template — no selector needed
   if (!hasMultipleTemplates) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <FileText className="h-4 w-4" />
-        <span className="font-medium">{resolvedTemplate.name}</span>
-        {resolvedTemplate.version_number && (
-          <Badge variant="outline" className="text-[10px]">
-            v{resolvedTemplate.version_number}
-          </Badge>
-        )}
+      <div className="flex items-center gap-2 text-sm">
+        <FileText className="h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{resolvedTemplate.name}</span>
+            <VersionBadge />
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            Modelo carregado automaticamente
+          </span>
+        </div>
       </div>
     );
   }
 
-  // Multiple templates — show selector or locked indicator
+  // Multiple templates — locked after filling starts
   if (hasStartedFilling) {
     const selectedName =
       allTemplates.find((t) => t.id === selectedTemplateId)?.name ||
@@ -91,14 +92,23 @@ export function AnamnesisTemplatePicker({
     return (
       <div className="flex items-center gap-2 text-sm">
         <Lock className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{selectedName}</span>
-        <Badge variant="secondary" className="text-[10px]">
-          Bloqueado
-        </Badge>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{selectedName}</span>
+            <VersionBadge />
+            <Badge variant="secondary" className="text-[10px]">
+              Bloqueado
+            </Badge>
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            Modelo fixado após início do preenchimento
+          </span>
+        </div>
       </div>
     );
   }
 
+  // Multiple templates — selector open
   return (
     <div className="flex items-center gap-2">
       <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -124,6 +134,7 @@ export function AnamnesisTemplatePicker({
           ))}
         </SelectContent>
       </Select>
+      <VersionBadge />
     </div>
   );
 }

@@ -2212,6 +2212,12 @@ export default function Prontuario() {
         onPrint={onPrintClick}
         onExport={onExportClick}
         exporting={exporting}
+        clinicalSummary={visaoGeralClinicalData ? {
+          allergies: visaoGeralClinicalData.allergies,
+          chronic_diseases: visaoGeralClinicalData.chronic_diseases,
+          current_medications: visaoGeralClinicalData.current_medications,
+          blood_type: visaoGeralClinicalData.blood_type,
+        } : null}
       />
 
       {/* Barra de Pesquisa Global */}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { AnamnesisTemplateBuilderDialog } from "@/components/configuracoes/AnamnesisTemplateBuilderDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,6 @@ import {
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
-  ANAMNESE_CLINICA_GERAL_TEMPLATE, 
   calculateIMC, 
   mapStructuredToLegacy,
   type SecaoAnamnese 
@@ -113,6 +112,8 @@ interface AnamneseBlockProps {
   onSave: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
   patientName?: string;
   patientCpf?: string;
+  specialtyId?: string | null;
+  specialtyName?: string | null;
 }
 
 // ─── Icon resolver ───────────────────────────────────────────────────
@@ -201,42 +202,50 @@ export function AnamneseBlock({
   onSave,
   patientName,
   patientCpf,
+  specialtyId,
+  specialtyName,
 }: AnamneseBlockProps) {
   const { generateAnamnesisPdf, generating } = useInstitutionalPdf();
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamneseData | null>(null);
   const [structuredData, setStructuredData] = useState<Record<string, unknown>>({});
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(ANAMNESE_CLINICA_GERAL_TEMPLATE.id);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [editingV2Template, setEditingV2Template] = useState<AnamnesisTemplateV2 | null>(null);
+  const [creatingDefault, setCreatingDefault] = useState(false);
 
-  // ─── Fetch clinic templates from DB (V2) ────────────────────────
-  const { templates: v2Templates, isLoading: loadingTemplates } = useAnamnesisTemplatesV2({ activeOnly: true });
+  // ─── Fetch clinic templates from DB (V2) — ONLY real DB templates ──
+  const { templates: v2Templates, isLoading: loadingTemplates, createTemplate } = useAnamnesisTemplatesV2({ 
+    specialtyId: specialtyId,
+    activeOnly: true 
+  });
 
-  // ─── Build unified template list ────────────────────────────────
-  const systemTemplate: UnifiedTemplate = useMemo(() => ({
-    id: ANAMNESE_CLINICA_GERAL_TEMPLATE.id,
-    nome: ANAMNESE_CLINICA_GERAL_TEMPLATE.nome,
-    descricao: ANAMNESE_CLINICA_GERAL_TEMPLATE.descricao,
-    icon: ANAMNESE_CLINICA_GERAL_TEMPLATE.icon,
-    is_system: true,
-    secoes: ANAMNESE_CLINICA_GERAL_TEMPLATE.secoes,
-  }), []);
-
-  const clinicTemplates: UnifiedTemplate[] = useMemo(() => {
-    return v2Templates
-      .filter(t => !t.is_system)
-      .map(v2TemplateToUnified);
+  // ─── Build unified template list (DB only, no hardcoded) ─────────
+  const allTemplates: UnifiedTemplate[] = useMemo(() => {
+    return v2Templates.map(v2TemplateToUnified);
   }, [v2Templates]);
 
-  const allTemplates = useMemo(() => [systemTemplate, ...clinicTemplates], [systemTemplate, clinicTemplates]);
-
+  // Auto-select first/default template when templates load
   const activeTemplate = useMemo(() => {
-    return allTemplates.find(t => t.id === selectedTemplateId) || systemTemplate;
-  }, [allTemplates, selectedTemplateId, systemTemplate]);
+    if (!allTemplates.length) return null;
+    if (selectedTemplateId) {
+      const found = allTemplates.find(t => t.id === selectedTemplateId);
+      if (found) return found;
+    }
+    // Pick default or first
+    const defaultTpl = allTemplates.find(t => allTemplates.length === 1 || t.is_system);
+    return defaultTpl || allTemplates[0];
+  }, [allTemplates, selectedTemplateId]);
+
+  // Sync selectedTemplateId when activeTemplate resolves
+  useEffect(() => {
+    if (activeTemplate && !selectedTemplateId) {
+      setSelectedTemplateId(activeTemplate.id);
+    }
+  }, [activeTemplate, selectedTemplateId]);
 
   // ─── Check if form has data ─────────────────────────────────────
   const hasFilledData = useCallback(() => {
@@ -269,16 +278,84 @@ export function AnamneseBlock({
 
   // ─── Open template editor (V2 Builder) ──────────────────────────
   const handleOpenTemplateEditor = useCallback(() => {
-    if (activeTemplate.is_system) {
-      // System template → open builder as new (will clone)
+    if (!activeTemplate || activeTemplate.is_system) {
       setEditingV2Template(null);
     } else {
-      // DB template → find V2 template for editing
       const v2Tpl = v2Templates.find(t => t.id === activeTemplate.id);
       setEditingV2Template(v2Tpl || null);
     }
     setShowTemplateEditor(true);
   }, [activeTemplate, v2Templates]);
+
+  // ─── Create default YesClin template ─────────────────────────────
+  const handleCreateDefaultTemplate = useCallback(async () => {
+    if (!specialtyId || creatingDefault) return;
+    setCreatingDefault(true);
+    try {
+      const defaultStructure: TemplateSection[] = [
+        {
+          id: 'queixa_principal', type: 'section', title: '1. Queixa Principal (QP)',
+          fields: [
+            { id: 'qp_descricao', type: 'textarea', label: 'Motivo da consulta (nas palavras do paciente)', required: true, placeholder: 'Ex: "Dor no peito há 2 dias"' },
+          ],
+        },
+        {
+          id: 'historia_doenca_atual', type: 'section', title: '2. História da Doença Atual (HDA)',
+          fields: [
+            { id: 'hda_evolucao', type: 'textarea', label: 'Evolução', placeholder: 'Como evoluiu desde o início?' },
+            { id: 'hda_sintomas_associados', type: 'textarea', label: 'Sintomas associados', placeholder: 'Outros sintomas relacionados' },
+          ],
+        },
+        {
+          id: 'antecedentes_pessoais', type: 'section', title: '3. Antecedentes Pessoais (HPP)',
+          fields: [
+            { id: 'hpp_doencas_previas', type: 'textarea', label: 'Doenças prévias', placeholder: 'HAS, DM, dislipidemia, etc.' },
+            { id: 'hpp_cirurgias', type: 'textarea', label: 'Cirurgias', placeholder: 'Procedimentos cirúrgicos realizados' },
+          ],
+        },
+        {
+          id: 'antecedentes_familiares', type: 'section', title: '4. História Familiar (HF)',
+          fields: [
+            { id: 'hf_detalhes', type: 'textarea', label: 'Antecedentes familiares', placeholder: 'Doenças hereditárias na família' },
+          ],
+        },
+        {
+          id: 'medicamentos', type: 'section', title: '5. Medicamentos em Uso',
+          fields: [
+            { id: 'med_lista', type: 'textarea', label: 'Medicamentos', placeholder: 'Nome / Dose / Frequência', required: true },
+          ],
+        },
+        {
+          id: 'alergias', type: 'section', title: '6. Alergias',
+          fields: [
+            { id: 'alergias_medicamentosas', type: 'textarea', label: 'Alergias', placeholder: 'Medicamentosas, alimentares, ambientais' },
+          ],
+        },
+        {
+          id: 'habitos_vida', type: 'section', title: '7. Hábitos de Vida',
+          fields: [
+            { id: 'hab_tabagismo', type: 'text', label: 'Tabagismo', placeholder: 'Ex: nunca fumou' },
+            { id: 'hab_etilismo', type: 'text', label: 'Etilismo', placeholder: 'Frequência/quantidade' },
+            { id: 'hab_atividade_fisica', type: 'textarea', label: 'Atividade física', placeholder: 'Tipo, frequência' },
+          ],
+        },
+      ];
+      
+      const name = `Anamnese Padrão - ${specialtyName || 'Geral'} (YesClin)`;
+      await createTemplate({
+        name,
+        description: 'Modelo padrão criado automaticamente pelo YesClin',
+        specialty_id: specialtyId,
+        icon: 'Stethoscope',
+        is_default: true,
+        structure: defaultStructure,
+      });
+    } catch (err) {
+      console.error('Erro ao criar modelo padrão:', err);
+    } finally {
+      setCreatingDefault(false);
+    }
+  }, [specialtyId, specialtyName, createTemplate, creatingDefault]);
 
   // ─── IMC calculation ────────────────────────────────────────────
   const imcResult = useMemo(() => {
@@ -326,7 +403,7 @@ export function AnamneseBlock({
       alergias: legacy.alergias || '',
       comorbidades: currentAnamnese?.comorbidades || '',
       structured_data: structuredData,
-      template_id: activeTemplate.id,
+      template_id: activeTemplate?.id || '',
     });
     setIsEditing(false);
     setStructuredData({});
@@ -498,7 +575,7 @@ export function AnamneseBlock({
   };
 
   // ─── Loading ────────────────────────────────────────────────────
-  if (loading) {
+  if (loading || loadingTemplates) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -507,11 +584,55 @@ export function AnamneseBlock({
     );
   }
 
+  // ─── No templates exist — show CTA empty state ──────────────────
+  if (allTemplates.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-10 text-center">
+          <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <h3 className="text-lg font-semibold mb-2">
+            Nenhum modelo de anamnese cadastrado para esta especialidade.
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+            Para registrar anamneses, é necessário ter pelo menos um modelo ativo configurado.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button 
+              onClick={handleCreateDefaultTemplate} 
+              disabled={creatingDefault || !specialtyId}
+              size="lg"
+            >
+              {creatingDefault ? (
+                <>Criando...</>
+              ) : (
+                <>
+                  <Stethoscope className="h-4 w-4 mr-2" />
+                  Criar modelo padrão do YesClin
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                setEditingV2Template(null);
+                setShowTemplateEditor(true);
+              }}
+            >
+              <Edit3 className="h-4 w-4 mr-2" />
+              Criar modelo do zero
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // ─── Template selector component ─────────────────────────────────
   const renderTemplateSelector = (size: 'sm' | 'lg' = 'sm') => (
     <div className={`flex items-center gap-2 ${size === 'lg' ? 'w-full max-w-md mx-auto' : ''}`}>
       <div className={size === 'lg' ? 'flex-1' : 'w-64'}>
-        <Select value={selectedTemplateId} onValueChange={handleTemplateSwitch}>
+        <Select value={selectedTemplateId || ''} onValueChange={handleTemplateSwitch}>
           <SelectTrigger className={`bg-background ${size === 'lg' ? 'h-10' : 'h-8 text-xs'}`}>
             <div className="flex items-center gap-1.5 truncate">
               <Stethoscope className="h-3.5 w-3.5 text-primary flex-shrink-0" />
@@ -536,11 +657,11 @@ export function AnamneseBlock({
         variant="outline"
         size={size === 'lg' ? 'default' : 'sm'}
         onClick={handleOpenTemplateEditor}
-        title={activeTemplate.is_system ? 'Criar modelo personalizado' : 'Editar campos do modelo'}
+        title={activeTemplate?.is_system ? 'Criar modelo personalizado' : 'Editar campos do modelo'}
         className={size === 'lg' ? '' : 'h-8 px-2'}
       >
         <Settings className={`h-4 w-4 ${size === 'lg' ? 'mr-2' : ''}`} />
-        {size === 'lg' && (activeTemplate.is_system ? 'Personalizar' : 'Editar Campos')}
+        {size === 'lg' && (activeTemplate?.is_system ? 'Personalizar' : 'Editar Campos')}
       </Button>
     </div>
   );
@@ -568,7 +689,7 @@ export function AnamneseBlock({
     </AlertDialog>
   );
 
-  // ─── Empty state ────────────────────────────────────────────────
+  // ─── Empty state (no anamnese yet, but templates exist) ─────────
   if (!currentAnamnese && !isEditing) {
     return (
       <>
@@ -581,10 +702,10 @@ export function AnamneseBlock({
               <p className="text-sm text-muted-foreground">Selecione o modelo:</p>
               {renderTemplateSelector('lg')}
               <p className="text-xs text-muted-foreground">
-                {activeTemplate.descricao}
+                {activeTemplate?.descricao || ''}
               </p>
             </div>
-            {canEdit && (
+            {canEdit && activeTemplate && (
               <Button onClick={() => setIsEditing(true)}>
                 <Edit3 className="h-4 w-4 mr-2" />
                 Registrar Anamnese
@@ -624,7 +745,7 @@ export function AnamneseBlock({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {renderTemplateSelector()}
-            {activeTemplate.is_system && (
+            {activeTemplate?.is_system && (
               <Badge variant="outline" className="text-[10px]">
                 <Lock className="h-2.5 w-2.5 mr-1" /> Sistema
               </Badge>
@@ -639,7 +760,7 @@ export function AnamneseBlock({
         <CardContent>
           <ScrollArea className="h-[650px] pr-4">
             <Accordion type="multiple" defaultValue={['queixa_principal', 'historia_doenca_atual']} className="w-full space-y-1">
-              {activeTemplate.secoes.map(secao => (
+              {(activeTemplate?.secoes || []).map(secao => (
                 <AccordionItem key={secao.id} value={secao.id} className="border rounded-lg px-1 mb-2">
                   <AccordionTrigger className="px-3 hover:no-underline">
                     <div className="flex items-center gap-2">
@@ -722,7 +843,7 @@ export function AnamneseBlock({
                 generateAnamnesisPdf(
                   { name: patientName || 'Paciente', cpf: patientCpf },
                   currentAnamnese,
-                  activeTemplate.secoes,
+                  activeTemplate?.secoes || [],
                 );
               }}
             >
@@ -767,10 +888,10 @@ export function AnamneseBlock({
           {hasStructuredData ? (
             <Accordion 
               type="multiple" 
-              defaultValue={activeTemplate.secoes.slice(0, 3).map(s => s.id)} 
+              defaultValue={(activeTemplate?.secoes || []).slice(0, 3).map(s => s.id)} 
               className="w-full"
             >
-              {activeTemplate.secoes.map(secao => 
+              {(activeTemplate?.secoes || []).map(secao => 
                 renderViewSection(secao, currentAnamnese!.structured_data!)
               )}
             </Accordion>
@@ -811,7 +932,9 @@ export function AnamneseBlock({
                         <Badge variant="secondary" className="text-xs">Atual</Badge>
                       )}
                       {anamnese.template_id && (
-                        <Badge variant="outline" className="text-[10px]">Padrão Médico</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {allTemplates.find(t => t.id === anamnese.template_id)?.nome || 'Modelo'}
+                        </Badge>
                       )}
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -844,7 +967,7 @@ export function AnamneseBlock({
             {selectedVersion && (
               selectedVersion.structured_data && Object.keys(selectedVersion.structured_data).length > 0 ? (
                 <div className="space-y-4 pr-4">
-                  {activeTemplate.secoes.map(secao => {
+                  {(activeTemplate?.secoes || []).map(secao => {
                     const filledFields = secao.campos.filter(c => {
                       const v = selectedVersion.structured_data?.[c.id];
                       if (Array.isArray(v)) return v.length > 0;

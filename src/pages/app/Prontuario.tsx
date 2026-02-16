@@ -1137,6 +1137,8 @@ export default function Prontuario() {
             onSave={saveAnamnese}
             patientName={patient?.full_name}
             patientCpf={patient?.cpf}
+            specialtyId={activeSpecialtyId}
+            specialtyName={activeSpecialty?.name}
           />
         );
 

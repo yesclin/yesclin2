@@ -113,7 +113,7 @@ export function AgendaToday({ appointments, stats, period = 'today' }: AgendaTod
                   ${appointment.status === 'em_atendimento' ? 'bg-purple-50/50 border-purple-200' : ''}
                   ${appointment.status === 'faltou' ? 'opacity-60' : ''}
                 `}
-                onClick={() => navigate(`/app/prontuario?patient=${appointment.patient_id}`)}
+                onClick={() => navigate(`/app/prontuario/${appointment.patient_id}`)}
               >
                 <div className="flex items-start justify-between gap-3">
                   {/* Time Column */}

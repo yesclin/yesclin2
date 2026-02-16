@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProntuarioTabNav, type TabNavItem } from "@/components/prontuario/ProntuarioTabNav";
@@ -444,7 +444,9 @@ const DEFAULT_NAV_ITEMS = [
 export default function Prontuario() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const patientId = searchParams.get('paciente');
+  const params = useParams<{ patientId: string }>();
+  // Support both /app/prontuario/:patientId (path) and ?paciente=ID (legacy query param)
+  const patientId = params.patientId || searchParams.get('paciente');
   
   const {
     patient,
@@ -2108,7 +2110,7 @@ export default function Prontuario() {
   // No patient selected - show patient selector
   if (!patientId) {
     const handleSelectPatient = (selectedPatientId: string) => {
-      setSearchParams({ paciente: selectedPatientId });
+      navigate(`/app/prontuario/${selectedPatientId}`);
     };
 
     return <PatientSelector onSelectPatient={handleSelectPatient} />;

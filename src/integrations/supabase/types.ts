@@ -1511,6 +1511,86 @@ export type Database = {
           },
         ]
       }
+      clinical_appointment_images: {
+        Row: {
+          appointment_id: string
+          caption: string | null
+          classification: string
+          clinic_id: string
+          created_at: string
+          field_id: string | null
+          file_name: string
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          patient_id: string
+          taken_at: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          appointment_id: string
+          caption?: string | null
+          classification?: string
+          clinic_id: string
+          created_at?: string
+          field_id?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          patient_id: string
+          taken_at?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          caption?: string | null
+          classification?: string
+          clinic_id?: string
+          created_at?: string
+          field_id?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          patient_id?: string
+          taken_at?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_appointment_images_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_appointment_images_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_appointment_images_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "medical_record_tab_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_appointment_images_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_documents: {
         Row: {
           clinic_id: string

@@ -2196,10 +2196,9 @@ export default function Prontuario() {
       <ProntuarioHeader
         patient={patient}
         patientLoading={patientLoading}
-        activeSpecialty={activeSpecialty}
         activeSpecialtyKey={activeSpecialtyKey}
-        allSpecialties={specialties}
-        onSelectSpecialty={(id) => setActiveSpecialty(id)}
+        activeSpecialtyName={activeSpecialty?.name}
+        professionalName={currentProfessionalName}
         isSpecialtyFromAppointment={isSpecialtyFromAppointment}
         specialtyLoading={specialtyLoading}
         criticalAlertsCount={criticalAlerts.length}
@@ -2214,6 +2213,7 @@ export default function Prontuario() {
         onPrint={onPrintClick}
         onExport={onExportClick}
         exporting={exporting}
+        insuranceName={(patient as any)?.insurance?.insurance_name || null}
         clinicalSummary={clinicalDataLoading ? undefined : (prontuarioClinicalData ? {
           allergies: (prontuarioClinicalData.allergies || []).map(a => a.split('\n')[0].substring(0, 40)),
           chronic_diseases: (prontuarioClinicalData.chronic_diseases || []).map(d => d.split('\n')[0].substring(0, 40)),

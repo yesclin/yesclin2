@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, User, Phone, MapPin, Building2, AlertTriangle, Users, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,55 +78,62 @@ export function PatientFormDialog({
   onSave,
   isSaving = false,
 }: PatientFormDialogProps) {
-  const [formData, setFormData] = useState<PatientFormData>(() => {
-    if (patient) {
-      // Support both singular (typed) and array (from hook) shapes
-      const p = patient as any;
-      const insurance = p.insurance || (p.patient_insurances && p.patient_insurances[0]) || null;
-      const guardian = p.guardian || (p.patient_guardians && p.patient_guardians[0]) || null;
-      const clinical = p.clinical_data || (p.patient_clinical_data && p.patient_clinical_data[0]) || null;
+  const buildFormData = (p: Patient | null | undefined): PatientFormData => {
+    if (!p) return initialFormData;
+    const pa = p as any;
+    const insurance = pa.insurance || (pa.patient_insurances && pa.patient_insurances[0]) || null;
+    const guardian = pa.guardian || (pa.patient_guardians && pa.patient_guardians[0]) || null;
+    const clinical = pa.clinical_data || (pa.patient_clinical_data && pa.patient_clinical_data[0]) || null;
 
-      return {
-        ...initialFormData,
-        full_name: patient.full_name,
-        birth_date: patient.birth_date || '',
-        gender: patient.gender || '',
-        cpf: patient.cpf || '',
-        rg: p.rg || '',
-        marital_status: p.marital_status || '',
-        phone: patient.phone || '',
-        email: patient.email || '',
-        address_street: patient.address_street || '',
-        address_number: patient.address_number || '',
-        address_complement: patient.address_complement || '',
-        address_neighborhood: patient.address_neighborhood || '',
-        address_city: patient.address_city || '',
-        address_state: patient.address_state || '',
-        address_zip: patient.address_zip || '',
-        notes: patient.notes || '',
-        payment_type: insurance ? 'insurance' : 'particular',
-        insurance_id: insurance?.insurance_id || '',
-        card_number: insurance?.card_number || '',
-        valid_until: insurance?.valid_until || '',
-        plan_name: insurance?.plan_name || '',
-        has_guardian: !!guardian,
-        guardian_name: guardian?.full_name || '',
-        guardian_relationship: guardian?.relationship || '',
-        guardian_cpf: guardian?.cpf || '',
-        guardian_rg: guardian?.rg || '',
-        guardian_phone: guardian?.phone || '',
-        guardian_email: guardian?.email || '',
-        allergies: clinical?.allergies?.join?.(', ') || '',
-        chronic_diseases: clinical?.chronic_diseases?.join?.(', ') || '',
-        current_medications: clinical?.current_medications?.join?.(', ') || '',
-        clinical_restrictions: clinical?.clinical_restrictions || '',
-      };
-    }
-    return initialFormData;
-  });
+    return {
+      ...initialFormData,
+      full_name: p.full_name,
+      birth_date: p.birth_date || '',
+      gender: p.gender || '',
+      cpf: p.cpf || '',
+      rg: pa.rg || '',
+      marital_status: pa.marital_status || '',
+      phone: p.phone || '',
+      email: p.email || '',
+      address_street: p.address_street || '',
+      address_number: p.address_number || '',
+      address_complement: p.address_complement || '',
+      address_neighborhood: p.address_neighborhood || '',
+      address_city: p.address_city || '',
+      address_state: p.address_state || '',
+      address_zip: p.address_zip || '',
+      notes: p.notes || '',
+      payment_type: insurance ? 'insurance' : 'particular',
+      insurance_id: insurance?.insurance_id || '',
+      card_number: insurance?.card_number || '',
+      valid_until: insurance?.valid_until || '',
+      plan_name: insurance?.plan_name || '',
+      has_guardian: !!guardian,
+      guardian_name: guardian?.full_name || '',
+      guardian_relationship: guardian?.relationship || '',
+      guardian_cpf: guardian?.cpf || '',
+      guardian_rg: guardian?.rg || '',
+      guardian_phone: guardian?.phone || '',
+      guardian_email: guardian?.email || '',
+      allergies: clinical?.allergies?.join?.(', ') || '',
+      chronic_diseases: clinical?.chronic_diseases?.join?.(', ') || '',
+      current_medications: clinical?.current_medications?.join?.(', ') || '',
+      clinical_restrictions: clinical?.clinical_restrictions || '',
+    };
+  };
+
+  const [formData, setFormData] = useState<PatientFormData>(() => buildFormData(patient));
 
   const [activeTab, setActiveTab] = useState('identification');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+
+  // Sync form data when dialog opens or patient prop changes
+  useEffect(() => {
+    if (open) {
+      setFormData(buildFormData(patient));
+      setActiveTab('identification');
+    }
+  }, [open, patient]);
 
   const handleChange = (field: keyof PatientFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));

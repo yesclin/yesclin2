@@ -73,10 +73,11 @@ export default function Pacientes() {
   const [sortOrder, setSortOrder] = useState<PatientSortOrder>('asc');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
 
-  // Selected patient data
+  // Selected patient data — single source of truth from React Query
   const { data: selectedPatient } = usePatient(selectedPatientId);
+  const { data: editingPatientData } = usePatient(editingPatientId);
   const { data: patientHistory = [] } = usePatientAppointments(selectedPatientId);
 
   // Filter patients based on role and then apply filters
@@ -158,12 +159,11 @@ export default function Pacientes() {
   };
 
   const handleEditPatient = (patient: Patient) => {
-    setEditingPatient(patient);
+    setEditingPatientId(patient.id);
     setShowForm(true);
   };
 
   const handleScheduleAppointment = (patient: Patient) => {
-    // Navigate to agenda with patient pre-selected
     navigate('/app/agenda', { state: { patientId: patient.id, patientName: patient.full_name } });
   };
 
@@ -207,23 +207,22 @@ export default function Pacientes() {
     };
 
     try {
-      if (editingPatient) {
-        await updatePatient.mutateAsync({ id: editingPatient.id, data: formData });
+      if (editingPatientId) {
+        await updatePatient.mutateAsync({ id: editingPatientId, data: formData });
       } else {
         await createPatient.mutateAsync(formData);
       }
-      // Only close after success
       setShowForm(false);
-      setEditingPatient(null);
+      setEditingPatientId(null);
     } catch {
-      // Error toast is already handled by the mutation's onError
+      // Error toast handled by mutation's onError
     }
   };
 
   const handleCloseForm = () => {
     if (updatePatient.isPending || createPatient.isPending) return;
     setShowForm(false);
-    setEditingPatient(null);
+    setEditingPatientId(null);
   };
 
   // If viewing a patient profile
@@ -279,10 +278,10 @@ export default function Pacientes() {
           onOpenProntuario={() => handleOpenProntuario(selectedPatient as any)}
         />
         <PatientFormDialog
-          key={editingPatient?.id || 'new'}
+          key={editingPatientId || 'new'}
           open={showForm}
           onOpenChange={handleCloseForm}
-          patient={editingPatient as any}
+          patient={editingPatientData as any}
           insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
           onSave={handleSavePatient}
           isSaving={updatePatient.isPending || createPatient.isPending}
@@ -370,10 +369,10 @@ export default function Pacientes() {
 
       {/* Patient Form Dialog */}
       <PatientFormDialog
-        key={editingPatient?.id || 'new'}
+        key={editingPatientId || 'new'}
         open={showForm}
         onOpenChange={handleCloseForm}
-        patient={editingPatient as any}
+        patient={editingPatientData as any}
         insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
         onSave={handleSavePatient}
         isSaving={updatePatient.isPending || createPatient.isPending}

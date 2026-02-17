@@ -56,6 +56,7 @@ export function useProntuarioData(patientId: string | null) {
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
   const [clinicalData, setClinicalData] = useState<PatientClinicalData | null>(null);
   const [patientLoading, setPatientLoading] = useState(false);
+  const [clinicalDataLoading, setClinicalDataLoading] = useState(false);
 
   // Fetch patient data
   const fetchPatient = useCallback(async () => {
@@ -100,6 +101,7 @@ export function useProntuarioData(patientId: string | null) {
   // Fetch patient clinical data (allergies, chronic diseases, medications, etc.)
   const fetchClinicalData = useCallback(async () => {
     if (!patientId || !clinic?.id) return;
+    setClinicalDataLoading(true);
     try {
       const { data, error } = await supabase
         .from('patient_clinical_data')
@@ -112,6 +114,8 @@ export function useProntuarioData(patientId: string | null) {
       setClinicalData(data as PatientClinicalData | null);
     } catch (err) {
       console.error('Error fetching clinical data:', err);
+    } finally {
+      setClinicalDataLoading(false);
     }
   }, [patientId, clinic?.id]);
 
@@ -280,6 +284,7 @@ export function useProntuarioData(patientId: string | null) {
 
     // Clinical data from patient_clinical_data
     clinicalData,
+    clinicalDataLoading,
     fetchClinicalData,
 
     // Configuration

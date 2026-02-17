@@ -452,6 +452,7 @@ export default function Prontuario() {
     patient,
     patientLoading,
     clinicalData: prontuarioClinicalData,
+    clinicalDataLoading,
     config,
     getActiveTabs,
     entries,
@@ -2213,15 +2214,16 @@ export default function Prontuario() {
         onPrint={onPrintClick}
         onExport={onExportClick}
         exporting={exporting}
-        clinicalSummary={visaoGeralClinicalData ? {
-          allergies: visaoGeralClinicalData.allergies,
-          chronic_diseases: visaoGeralClinicalData.chronic_diseases,
-          current_medications: visaoGeralClinicalData.current_medications,
-          blood_type: visaoGeralClinicalData.blood_type,
-          restrictions: prontuarioClinicalData?.clinical_restrictions 
+        clinicalSummary={clinicalDataLoading ? undefined : (prontuarioClinicalData ? {
+          allergies: prontuarioClinicalData.allergies || [],
+          chronic_diseases: prontuarioClinicalData.chronic_diseases || [],
+          current_medications: prontuarioClinicalData.current_medications || [],
+          blood_type: prontuarioClinicalData.blood_type,
+          restrictions: prontuarioClinicalData.clinical_restrictions 
             ? [prontuarioClinicalData.clinical_restrictions] 
             : undefined,
-        } : null}
+        } : null)}
+        clinicalDataLoading={clinicalDataLoading}
       />
 
       {/* Barra de Pesquisa Global */}

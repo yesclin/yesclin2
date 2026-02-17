@@ -79,6 +79,7 @@ interface ProntuarioHeaderProps {
   onExport?: () => void;
   exporting?: boolean;
   clinicalSummary?: ClinicalSummaryForHeader | null;
+  clinicalDataLoading?: boolean;
   className?: string;
 }
 
@@ -110,6 +111,7 @@ export function ProntuarioHeader({
   onExport,
   exporting = false,
   clinicalSummary,
+  clinicalDataLoading = false,
   className,
 }: ProntuarioHeaderProps) {
   const isMobile = useIsMobile();
@@ -431,7 +433,15 @@ export function ProntuarioHeader({
       </div>
 
       {/* Resumo Clínico do Paciente */}
-      {patient && hasClinicalData && (
+      {patient && clinicalDataLoading && (
+        <div className="px-4 pb-3 flex items-center gap-2 text-xs">
+          <span className="font-semibold text-muted-foreground uppercase tracking-wide mr-1">Resumo Clínico:</span>
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-16" />
+        </div>
+      )}
+      {patient && !clinicalDataLoading && hasClinicalData && (
         <div className="px-4 pb-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="font-semibold text-muted-foreground uppercase tracking-wide mr-1">Resumo Clínico:</span>
           

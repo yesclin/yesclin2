@@ -2215,12 +2215,12 @@ export default function Prontuario() {
         onExport={onExportClick}
         exporting={exporting}
         clinicalSummary={clinicalDataLoading ? undefined : (prontuarioClinicalData ? {
-          allergies: prontuarioClinicalData.allergies || [],
-          chronic_diseases: prontuarioClinicalData.chronic_diseases || [],
-          current_medications: prontuarioClinicalData.current_medications || [],
+          allergies: (prontuarioClinicalData.allergies || []).map(a => a.split('\n')[0].substring(0, 40)),
+          chronic_diseases: (prontuarioClinicalData.chronic_diseases || []).map(d => d.split('\n')[0].substring(0, 40)),
+          current_medications: (prontuarioClinicalData.current_medications || []).map(m => m.split('\n')[0].substring(0, 40)),
           blood_type: prontuarioClinicalData.blood_type,
           restrictions: prontuarioClinicalData.clinical_restrictions 
-            ? [prontuarioClinicalData.clinical_restrictions] 
+            ? [prontuarioClinicalData.clinical_restrictions.split('\n')[0].substring(0, 40)] 
             : undefined,
         } : null)}
         clinicalDataLoading={clinicalDataLoading}
@@ -2290,10 +2290,7 @@ export default function Prontuario() {
                 onViewAlerts={() => setActiveTab('alertas')}
               />
             )}
-            {/* Other specialties use standard banner */}
-            {activeSpecialtyKey !== 'psicologia' && activeSpecialtyKey !== 'nutricao' && activeAlertas.length > 0 && activeTab !== 'alertas' && (
-              <AlertasBanner alertas={activeAlertas} />
-            )}
+            {/* Standard alert banner removed - clinical summary in header is sufficient */}
             {renderTabContent()}
           </div>
         </main>

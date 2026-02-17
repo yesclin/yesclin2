@@ -308,25 +308,13 @@ export function ProntuarioHeader({
             />
           </div>
 
-          {/* Info do Paciente - inline */}
+          {/* Info do Paciente - inline, conciso */}
           {patient && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-shrink-0">
               <span className="font-medium text-foreground whitespace-nowrap">{patient.full_name}</span>
               {(age !== null || gender) && (
                 <span className="whitespace-nowrap">
                   ({[age !== null ? `${age}a` : null, gender].filter(Boolean).join(', ')})
-                </span>
-              )}
-              {patient.phone && (
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <Phone className="h-3 w-3" />
-                  {patient.phone}
-                </span>
-              )}
-              {patient.cpf && (
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <CreditCard className="h-3 w-3" />
-                  {patient.cpf}
                 </span>
               )}
             </div>

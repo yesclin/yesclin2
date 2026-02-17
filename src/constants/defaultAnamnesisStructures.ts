@@ -28,14 +28,13 @@ export interface DefaultSectionDef {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const CLINICA_GERAL_STRUCTURE: DefaultSectionDef[] = [
-  // 1. Identificação Complementar (dados básicos vêm do cadastro do paciente)
+  // 1. Identificação Complementar (apenas dados que NÃO existem no cadastro do paciente)
+  // Nota: Nome, idade, sexo, data do atendimento e profissional são obtidos automaticamente
   {
     id: 'section_identificacao',
     type: 'section',
     title: 'Identificação Complementar',
     fields: [
-      { id: 'f_data_atendimento', type: 'date', label: 'Data do atendimento', required: true },
-      { id: 'f_profissional', type: 'text', label: 'Profissional responsável', required: true },
       { id: 'f_estado_civil', type: 'select', label: 'Estado civil', required: false, options: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União estável'] },
       { id: 'f_profissao', type: 'text', label: 'Profissão', required: false, placeholder: 'Ex: Engenheiro' },
       { id: 'f_naturalidade', type: 'text', label: 'Naturalidade', required: false },

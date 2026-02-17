@@ -141,6 +141,15 @@ interface UnifiedTemplate {
   secoes: SecaoAnamnese[];
 }
 
+// Fields that duplicate patient/appointment data and must be excluded
+const IDENTIFICATION_FIELD_IDS = new Set([
+  'f_nome', 'f_idade', 'f_data_atendimento', 'f_profissional', 'f_sexo',
+]);
+
+const IDENTIFICATION_SECTION_IDS = new Set([
+  'section_identificacao', 'identificacao', 'identificacao_complementar',
+]);
+
 function v2TemplateToUnified(t: AnamnesisTemplateV2): UnifiedTemplate {
   return {
     id: t.id,
@@ -148,20 +157,28 @@ function v2TemplateToUnified(t: AnamnesisTemplateV2): UnifiedTemplate {
     descricao: t.description || '',
     icon: t.icon || 'Stethoscope',
     is_system: t.is_system,
-    secoes: t.structure.map(section => ({
-      id: section.id,
-      titulo: section.title,
-      icon: 'Stethoscope',
-      campos: section.fields.map(f => ({
-        id: f.id,
-        label: f.label,
-        type: f.type as any,
-        placeholder: f.placeholder,
-        options: f.options,
-        required: f.required,
-        section: section.title,
-      })),
-    })),
+    secoes: t.structure
+      .map(section => {
+        // Filter out identification fields from any section
+        const filteredFields = section.fields.filter(f => !IDENTIFICATION_FIELD_IDS.has(f.id));
+        return {
+          id: section.id,
+          titulo: section.title,
+          icon: 'Stethoscope',
+          campos: filteredFields.map(f => ({
+            id: f.id,
+            label: f.label,
+            type: f.type as any,
+            placeholder: f.placeholder,
+            options: f.options,
+            required: f.required,
+            section: section.title,
+          })),
+        };
+      })
+      // Remove sections that are now empty OR are pure identification sections
+      .filter(s => s.campos.length > 0 || !IDENTIFICATION_SECTION_IDS.has(s.id))
+      .filter(s => s.campos.length > 0),
   };
 }
 

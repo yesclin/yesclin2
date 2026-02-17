@@ -32,6 +32,7 @@ interface PatientFormDialogProps {
   patient?: Patient | null;
   insurances: { id: string; name: string }[];
   onSave: (data: PatientFormData) => void;
+  isSaving?: boolean;
 }
 
 const initialFormData: PatientFormData = {
@@ -75,6 +76,7 @@ export function PatientFormDialog({
   patient,
   insurances,
   onSave,
+  isSaving = false,
 }: PatientFormDialogProps) {
   const [formData, setFormData] = useState<PatientFormData>(() => {
     if (patient) {
@@ -176,8 +178,6 @@ export function PatientFormDialog({
       return;
     }
     onSave(formData);
-    onOpenChange(false);
-    toast.success(patient ? 'Paciente atualizado!' : 'Paciente cadastrado!');
   };
 
   const isEditing = !!patient;
@@ -650,8 +650,15 @@ export function PatientFormDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>
-            {isEditing ? 'Salvar Alterações' : 'Cadastrar Paciente'}
+          <Button onClick={handleSubmit} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <span className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Salvando...
+              </>
+            ) : (
+              isEditing ? 'Salvar Alterações' : 'Cadastrar Paciente'
+            )}
           </Button>
         </div>
       </DialogContent>

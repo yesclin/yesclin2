@@ -296,7 +296,7 @@ export function useUpdatePatient() {
     mutationFn: async ({ id, data }: { id: string; data: PatientFormData }) => {
       const clinicId = await getClinicId();
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("patients")
         .update({
           full_name: data.full_name,
@@ -317,7 +317,10 @@ export function useUpdatePatient() {
           notes: data.notes || null,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("clinic_id", clinicId)
+        .select()
+        .single();
       
       if (error) throw error;
 
@@ -367,6 +370,9 @@ export function useUpdatePatient() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       queryClient.invalidateQueries({ queryKey: ["patients", result.id] });
+      queryClient.invalidateQueries({ queryKey: ["patients-list"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-clinical-data"] });
+      queryClient.invalidateQueries({ queryKey: ["attended-patients"] });
       toast.success("Paciente atualizado com sucesso!");
     },
     onError: (error: Error) => {

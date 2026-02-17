@@ -451,6 +451,7 @@ export default function Prontuario() {
   const {
     patient,
     patientLoading,
+    clinicalData: prontuarioClinicalData,
     config,
     getActiveTabs,
     entries,
@@ -2217,6 +2218,9 @@ export default function Prontuario() {
           chronic_diseases: visaoGeralClinicalData.chronic_diseases,
           current_medications: visaoGeralClinicalData.current_medications,
           blood_type: visaoGeralClinicalData.blood_type,
+          restrictions: prontuarioClinicalData?.clinical_restrictions 
+            ? [prontuarioClinicalData.clinical_restrictions] 
+            : undefined,
         } : null}
       />
 

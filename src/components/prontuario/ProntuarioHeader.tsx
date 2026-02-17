@@ -276,53 +276,53 @@ export function ProntuarioHeader({
         "flex flex-col border-b bg-background/95 backdrop-blur sticky top-0 z-20",
         className
       )}>
-      {/* Linha principal */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4">
-        {/* Lado esquerdo: Voltar + Título com Especialidade */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <Link to="/app/pacientes">
+      {/* Linha principal - compacta */}
+      <div className="flex items-center justify-between gap-2 px-4 py-2">
+        {/* Lado esquerdo: Voltar + Título + Especialidade + Paciente + Badges - tudo inline */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto">
+          <Link to="/app/pacientes" className="flex-shrink-0">
             <Button variant="ghost" size="sm" className="h-8 px-2">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <FileText className="h-5 w-5 text-primary" />
-            
-            {/* Título: Prontuário — Especialidade */}
-            <h1 className="text-lg font-semibold text-foreground">
+            <h1 className="text-base font-semibold text-foreground whitespace-nowrap">
               Prontuário <span className="text-muted-foreground font-normal">—</span>{" "}
               <span className="text-primary">{displaySpecialtyName}</span>
             </h1>
           </div>
 
-          {/* Seletor de Especialidade (sempre visível) */}
-          <SpecialtySelector
-            activeSpecialty={activeSpecialty}
-            activeSpecialtyKey={activeSpecialtyKey}
-            isFromAppointment={isSpecialtyFromAppointment}
-            loading={specialtyLoading}
-            allSpecialties={allSpecialties}
-            onSelect={onSelectSpecialty}
-          />
+          {/* Seletor de Especialidade */}
+          <div className="flex-shrink-0">
+            <SpecialtySelector
+              activeSpecialty={activeSpecialty}
+              activeSpecialtyKey={activeSpecialtyKey}
+              isFromAppointment={isSpecialtyFromAppointment}
+              loading={specialtyLoading}
+              allSpecialties={allSpecialties}
+              onSelect={onSelectSpecialty}
+            />
+          </div>
 
-          {/* Info do Paciente */}
+          {/* Info do Paciente - inline */}
           {patient && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground border-l pl-3 ml-1">
-              <span className="font-medium text-foreground">{patient.full_name}</span>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-shrink-0">
+              <span className="font-medium text-foreground whitespace-nowrap">{patient.full_name}</span>
               {(age !== null || gender) && (
-                <span>
+                <span className="whitespace-nowrap">
                   ({[age !== null ? `${age}a` : null, gender].filter(Boolean).join(', ')})
                 </span>
               )}
               {patient.phone && (
-                <span className="flex items-center gap-1 border-l pl-2">
+                <span className="flex items-center gap-1 whitespace-nowrap">
                   <Phone className="h-3 w-3" />
                   {patient.phone}
                 </span>
               )}
               {patient.cpf && (
-                <span className="flex items-center gap-1 border-l pl-2">
+                <span className="flex items-center gap-1 whitespace-nowrap">
                   <CreditCard className="h-3 w-3" />
                   {patient.cpf}
                 </span>
@@ -331,21 +331,21 @@ export function ProntuarioHeader({
           )}
 
           {/* Badges de Status */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {criticalAlertsCount > 0 && (
-              <Badge variant="destructive" className="animate-pulse gap-1 h-6">
+              <Badge variant="destructive" className="animate-pulse gap-0.5 h-5 text-[10px] px-1.5">
                 <AlertTriangle className="h-3 w-3" />
                 {criticalAlertsCount}
               </Badge>
             )}
             {isLgpdPending && (
-              <Badge variant="outline" className="gap-1 text-destructive border-destructive h-6">
+              <Badge variant="outline" className="gap-0.5 text-destructive border-destructive h-5 text-[10px] px-1.5">
                 <Lock className="h-3 w-3" />
                 LGPD
               </Badge>
             )}
             {hasActiveAppointment && activeAppointment && (
-              <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white h-6">
+              <Badge className="gap-0.5 bg-emerald-600 hover:bg-emerald-700 text-white h-5 text-[10px] px-1.5">
                 <Activity className="h-3 w-3" />
                 Ativo
               </Badge>
@@ -354,7 +354,7 @@ export function ProntuarioHeader({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge className="gap-1 bg-amber-600 hover:bg-amber-700 text-white h-6">
+                    <Badge className="gap-0.5 bg-amber-600 hover:bg-amber-700 text-white h-5 text-[10px] px-1.5">
                       <Shield className="h-3 w-3" />
                       Admin
                     </Badge>
@@ -367,7 +367,7 @@ export function ProntuarioHeader({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="gap-1 text-muted-foreground h-6">
+                    <Badge variant="outline" className="gap-0.5 text-muted-foreground h-5 text-[10px] px-1.5">
                       <ShieldX className="h-3 w-3" />
                       Leitura
                     </Badge>

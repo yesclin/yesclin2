@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -36,41 +35,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
+import {
   FileText,
   Edit3,
   Save,
   X,
   Clock,
-  User,
   History,
   AlertTriangle,
-  Pill,
-  Heart,
-  Activity,
-  Users,
   Stethoscope,
   ChevronRight,
-  ChevronLeft,
-  MessageSquare,
-  BookOpen,
-  Baby,
-  LayoutList,
-  Ruler,
-  UserCircle,
-  Calculator,
   Lock,
   Settings,
   Check,
-  Circle,
+  CheckCircle2,
+  Calculator,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  calculateIMC, 
+import {
+  calculateIMC,
   mapStructuredToLegacy,
-  type SecaoAnamnese 
+  type SecaoAnamnese,
 } from "@/hooks/prontuario/clinica-geral/anamneseTemplates";
 import { useAnamnesisTemplatesV2, type AnamnesisTemplateV2, type TemplateSection } from "@/hooks/useAnamnesisTemplatesV2";
 import { useInstitutionalPdf } from "@/hooks/useInstitutionalPdf";
@@ -102,16 +89,6 @@ export interface AnamneseData {
   is_current: boolean;
 }
 
-interface PatientHeaderData {
-  full_name?: string;
-  birth_date?: string | null;
-  gender?: 'M' | 'F' | 'O' | null;
-  cpf?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  insurance_name?: string | null;
-}
-
 interface AnamneseBlockProps {
   currentAnamnese: AnamneseData | null;
   anamneseHistory: AnamneseData[];
@@ -121,21 +98,9 @@ interface AnamneseBlockProps {
   onSave: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
   patientName?: string;
   patientCpf?: string;
-  patientData?: PatientHeaderData;
+  patientData?: any;
   specialtyId?: string | null;
   specialtyName?: string | null;
-}
-
-// ─── Icon resolver ───────────────────────────────────────────────────
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  UserCircle, MessageSquare, Clock, BookOpen, Users, Pill, AlertTriangle,
-  Activity, Baby, LayoutList, Ruler, Stethoscope, Heart, User,
-};
-
-function SectionIcon({ name, className }: { name: string; className?: string }) {
-  const Icon = ICON_MAP[name] || Stethoscope;
-  return <Icon className={className} />;
 }
 
 // ─── Multi-select badge component ────────────────────────────────────
@@ -176,7 +141,6 @@ interface UnifiedTemplate {
   secoes: SecaoAnamnese[];
 }
 
-/** Convert a V2 template to the unified format */
 function v2TemplateToUnified(t: AnamnesisTemplateV2): UnifiedTemplate {
   return {
     id: t.id,
@@ -229,16 +193,16 @@ export function AnamneseBlock({
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [editingV2Template, setEditingV2Template] = useState<AnamnesisTemplateV2 | null>(null);
   const [creatingDefault, setCreatingDefault] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
 
   // Auto-save refs
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedData = useRef<string>('');
 
   // ─── Fetch clinic templates from DB (V2) ──────────────────────────
-  const { templates: v2Templates, isLoading: loadingTemplates, createTemplate } = useAnamnesisTemplatesV2({ 
+  const { templates: v2Templates, isLoading: loadingTemplates, createTemplate } = useAnamnesisTemplatesV2({
     specialtyId: specialtyId,
-    activeOnly: true 
+    activeOnly: true
   });
 
   const allTemplates: UnifiedTemplate[] = useMemo(() => {
@@ -261,33 +225,6 @@ export function AnamneseBlock({
     }
   }, [activeTemplate, selectedTemplateId]);
 
-  // ─── Progress calculation ──────────────────────────────────────────
-  const progressInfo = useMemo(() => {
-    if (!activeTemplate) return { percent: 0, filled: 0, total: 0 };
-    const allFields = activeTemplate.secoes.flatMap(s => s.campos);
-    const total = allFields.length;
-    const filled = allFields.filter(f => {
-      const v = structuredData[f.id];
-      if (Array.isArray(v)) return v.length > 0;
-      return v !== undefined && v !== null && v !== '';
-    }).length;
-    return { percent: total > 0 ? Math.round((filled / total) * 100) : 0, filled, total };
-  }, [activeTemplate, structuredData]);
-
-  // ─── Section completion status ─────────────────────────────────────
-  const sectionStatus = useMemo(() => {
-    if (!activeTemplate) return [];
-    return activeTemplate.secoes.map(secao => {
-      const total = secao.campos.length;
-      const filled = secao.campos.filter(c => {
-        const v = structuredData[c.id];
-        if (Array.isArray(v)) return v.length > 0;
-        return v !== undefined && v !== null && v !== '';
-      }).length;
-      return { id: secao.id, filled, total, complete: filled === total && total > 0, hasData: filled > 0 };
-    });
-  }, [activeTemplate, structuredData]);
-
   // ─── Auto-save ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!isEditing) return;
@@ -297,13 +234,20 @@ export function AnamneseBlock({
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       lastSavedData.current = currentDataStr;
-      toast.info('Rascunho salvo automaticamente', { duration: 1500 });
+      setLastAutoSave(new Date());
     }, 3000);
 
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, [structuredData, isEditing]);
+
+  // ─── IMC calculation ────────────────────────────────────────────
+  const imcResult = useMemo(() => {
+    const peso = structuredData.peso_kg as number | null;
+    const altura = structuredData.altura_cm as number | null;
+    return calculateIMC(peso ?? null, altura ?? null);
+  }, [structuredData.peso_kg, structuredData.altura_cm]);
 
   // ─── Check if form has data ─────────────────────────────────────
   const hasFilledData = useCallback(() => {
@@ -334,7 +278,7 @@ export function AnamneseBlock({
     setShowSwitchConfirm(false);
   }, [pendingTemplateId]);
 
-  // ─── Open template editor (V2 Builder) ──────────────────────────
+  // ─── Open template editor ──────────────────────────────────────
   const handleOpenTemplateEditor = useCallback(() => {
     if (!activeTemplate || activeTemplate.is_system) {
       setEditingV2Template(null);
@@ -345,52 +289,52 @@ export function AnamneseBlock({
     setShowTemplateEditor(true);
   }, [activeTemplate, v2Templates]);
 
-  // ─── Create default YesClin template ─────────────────────────────
+  // ─── Create default template ─────────────────────────────────
   const handleCreateDefaultTemplate = useCallback(async () => {
     if (!specialtyId || creatingDefault) return;
     setCreatingDefault(true);
     try {
       const defaultStructure: TemplateSection[] = [
         {
-          id: 'queixa_principal', type: 'section', title: '1. Queixa Principal (QP)',
+          id: 'queixa_principal', type: 'section', title: 'Queixa Principal',
           fields: [
             { id: 'qp_descricao', type: 'textarea', label: 'Motivo da consulta (nas palavras do paciente)', required: true, placeholder: 'Ex: "Dor no peito há 2 dias"' },
           ],
         },
         {
-          id: 'historia_doenca_atual', type: 'section', title: '2. História da Doença Atual (HDA)',
+          id: 'historia_doenca_atual', type: 'section', title: 'História da Doença Atual',
           fields: [
             { id: 'hda_evolucao', type: 'textarea', label: 'Evolução', placeholder: 'Como evoluiu desde o início?' },
             { id: 'hda_sintomas_associados', type: 'textarea', label: 'Sintomas associados', placeholder: 'Outros sintomas relacionados' },
           ],
         },
         {
-          id: 'antecedentes_pessoais', type: 'section', title: '3. Antecedentes Pessoais (HPP)',
+          id: 'antecedentes_pessoais', type: 'section', title: 'Antecedentes Pessoais',
           fields: [
             { id: 'hpp_doencas_previas', type: 'textarea', label: 'Doenças prévias', placeholder: 'HAS, DM, dislipidemia, etc.' },
             { id: 'hpp_cirurgias', type: 'textarea', label: 'Cirurgias', placeholder: 'Procedimentos cirúrgicos realizados' },
           ],
         },
         {
-          id: 'antecedentes_familiares', type: 'section', title: '4. História Familiar (HF)',
+          id: 'antecedentes_familiares', type: 'section', title: 'História Familiar',
           fields: [
             { id: 'hf_detalhes', type: 'textarea', label: 'Antecedentes familiares', placeholder: 'Doenças hereditárias na família' },
           ],
         },
         {
-          id: 'medicamentos', type: 'section', title: '5. Medicamentos em Uso',
+          id: 'medicamentos', type: 'section', title: 'Medicamentos em Uso',
           fields: [
             { id: 'med_lista', type: 'textarea', label: 'Medicamentos', placeholder: 'Nome / Dose / Frequência', required: true },
           ],
         },
         {
-          id: 'alergias', type: 'section', title: '6. Alergias',
+          id: 'alergias', type: 'section', title: 'Alergias',
           fields: [
             { id: 'alergias_medicamentosas', type: 'textarea', label: 'Alergias', placeholder: 'Medicamentosas, alimentares, ambientais' },
           ],
         },
         {
-          id: 'habitos_vida', type: 'section', title: '7. Hábitos de Vida',
+          id: 'habitos_vida', type: 'section', title: 'Hábitos de Vida',
           fields: [
             { id: 'hab_tabagismo', type: 'text', label: 'Tabagismo', placeholder: 'Ex: nunca fumou' },
             { id: 'hab_etilismo', type: 'text', label: 'Etilismo', placeholder: 'Frequência/quantidade' },
@@ -398,7 +342,7 @@ export function AnamneseBlock({
           ],
         },
       ];
-      
+
       const name = `Anamnese Padrão - ${specialtyName || 'Geral'} (YesClin)`;
       await createTemplate({
         name,
@@ -414,13 +358,6 @@ export function AnamneseBlock({
       setCreatingDefault(false);
     }
   }, [specialtyId, specialtyName, createTemplate, creatingDefault]);
-
-  // ─── IMC calculation ────────────────────────────────────────────
-  const imcResult = useMemo(() => {
-    const peso = structuredData.peso_kg as number | null;
-    const altura = structuredData.altura_cm as number | null;
-    return calculateIMC(peso ?? null, altura ?? null);
-  }, [structuredData.peso_kg, structuredData.altura_cm]);
 
   // ─── Handlers ───────────────────────────────────────────────────
   const handleStartEdit = () => {
@@ -440,14 +377,14 @@ export function AnamneseBlock({
         hab_alimentacao: currentAnamnese.habitos_vida || '',
       });
     }
-    setActiveStep(0);
+    setLastAutoSave(null);
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setStructuredData({});
-    setActiveStep(0);
+    setLastAutoSave(null);
   };
 
   const handleSave = async () => {
@@ -466,7 +403,7 @@ export function AnamneseBlock({
     });
     setIsEditing(false);
     setStructuredData({});
-    setActiveStep(0);
+    setLastAutoSave(null);
   };
 
   const updateField = (fieldId: string, value: unknown) => {
@@ -484,6 +421,7 @@ export function AnamneseBlock({
             value={(value as string) || ''}
             onChange={e => updateField(campo.id, e.target.value)}
             placeholder={campo.placeholder}
+            className="bg-background"
           />
         );
       case 'textarea':
@@ -492,7 +430,8 @@ export function AnamneseBlock({
             value={(value as string) || ''}
             onChange={e => updateField(campo.id, e.target.value)}
             placeholder={campo.placeholder}
-            rows={3}
+            rows={4}
+            className="bg-background resize-none"
           />
         );
       case 'number':
@@ -502,6 +441,7 @@ export function AnamneseBlock({
             value={(value as number) ?? ''}
             onChange={e => updateField(campo.id, e.target.value ? parseFloat(e.target.value) : null)}
             placeholder={campo.placeholder}
+            className="bg-background"
           />
         );
       case 'date':
@@ -510,13 +450,14 @@ export function AnamneseBlock({
             type="date"
             value={(value as string) || ''}
             onChange={e => updateField(campo.id, e.target.value)}
+            className="bg-background"
           />
         );
       case 'select':
         return (
           <Select value={(value as string) || ''} onValueChange={v => updateField(campo.id, v)}>
-            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-            <SelectContent>
+            <SelectTrigger className="bg-background"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+            <SelectContent className="bg-background z-50">
               {campo.options?.map(opt => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
               ))}
@@ -548,6 +489,7 @@ export function AnamneseBlock({
             value={(value as string) || ''}
             onChange={e => updateField(campo.id, e.target.value)}
             placeholder={campo.placeholder}
+            className="bg-background"
           />
         );
     }
@@ -563,18 +505,14 @@ export function AnamneseBlock({
     if (filledFields.length === 0) return null;
 
     return (
-      <div key={secao.id} className="space-y-3 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <SectionIcon name={secao.icon} className="h-4 w-4 text-primary" />
-          <h4 className="font-semibold text-sm">{secao.titulo}</h4>
-          <Badge variant="outline" className="text-[10px] ml-1">{filledFields.length} campos</Badge>
-        </div>
+      <div key={secao.id} className="space-y-3 p-5">
+        <h4 className="font-semibold text-sm text-foreground">{secao.titulo}</h4>
         <div className="grid gap-3">
           {filledFields.map(campo => {
             const val = data[campo.id];
             const display = Array.isArray(val) ? val.join(', ') : String(val);
             return (
-              <div key={campo.id} className="bg-muted/30 rounded-lg p-3">
+              <div key={campo.id}>
                 <Label className="text-xs text-muted-foreground">{campo.label}</Label>
                 <p className="text-sm whitespace-pre-wrap mt-0.5">{display}</p>
               </div>
@@ -600,24 +538,21 @@ export function AnamneseBlock({
   // ─── Legacy view ─────────────────────────────────────────────────
   const renderLegacyView = (anamnese: AnamneseData) => {
     const sections = [
-      { key: 'queixa_principal', label: 'Queixa Principal', icon: 'Stethoscope', value: anamnese.queixa_principal },
-      { key: 'historia_doenca_atual', label: 'HDA', icon: 'Clock', value: anamnese.historia_doenca_atual },
-      { key: 'antecedentes_pessoais', label: 'Antecedentes Pessoais', icon: 'User', value: anamnese.antecedentes_pessoais },
-      { key: 'antecedentes_familiares', label: 'Antecedentes Familiares', icon: 'Users', value: anamnese.antecedentes_familiares },
-      { key: 'habitos_vida', label: 'Hábitos de Vida', icon: 'Activity', value: anamnese.habitos_vida },
-      { key: 'medicamentos', label: 'Medicamentos', icon: 'Pill', value: anamnese.medicamentos_uso_continuo },
-      { key: 'alergias', label: 'Alergias', icon: 'AlertTriangle', value: anamnese.alergias },
-      { key: 'comorbidades', label: 'Comorbidades', icon: 'Heart', value: anamnese.comorbidades },
+      { key: 'queixa_principal', label: 'Queixa Principal', value: anamnese.queixa_principal },
+      { key: 'historia_doenca_atual', label: 'HDA', value: anamnese.historia_doenca_atual },
+      { key: 'antecedentes_pessoais', label: 'Antecedentes Pessoais', value: anamnese.antecedentes_pessoais },
+      { key: 'antecedentes_familiares', label: 'Antecedentes Familiares', value: anamnese.antecedentes_familiares },
+      { key: 'habitos_vida', label: 'Hábitos de Vida', value: anamnese.habitos_vida },
+      { key: 'medicamentos', label: 'Medicamentos', value: anamnese.medicamentos_uso_continuo },
+      { key: 'alergias', label: 'Alergias', value: anamnese.alergias },
+      { key: 'comorbidades', label: 'Comorbidades', value: anamnese.comorbidades },
     ].filter(s => s.value);
 
     return (
       <div className="divide-y">
         {sections.map(s => (
-          <div key={s.key} className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <SectionIcon name={s.icon} className="h-4 w-4 text-primary" />
-              <h4 className="font-semibold text-sm">{s.label}</h4>
-            </div>
+          <div key={s.key} className="p-5">
+            <h4 className="font-semibold text-sm mb-1.5">{s.label}</h4>
             <p className="text-sm whitespace-pre-wrap text-muted-foreground">{s.value}</p>
           </div>
         ))}
@@ -640,7 +575,7 @@ export function AnamneseBlock({
     return (
       <Card className="border-dashed">
         <CardContent className="p-10 text-center">
-          <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-40" />
           <h3 className="text-lg font-semibold mb-2">
             Nenhum modelo de anamnese cadastrado para esta especialidade.
           </h3>
@@ -648,20 +583,18 @@ export function AnamneseBlock({
             Para registrar anamneses, é necessário ter pelo menos um modelo ativo configurado.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button 
+            <Button
               onClick={() => {
                 if (!specialtyId) return;
                 navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create_default&return=prontuario`);
-              }} 
+              }}
               disabled={!specialtyId}
-              size="lg"
             >
               <Stethoscope className="h-4 w-4 mr-2" />
-              Criar modelo padrão do YesClin
+              Criar modelo padrão
             </Button>
             <Button
               variant="outline"
-              size="lg"
               onClick={() => {
                 if (!specialtyId) return;
                 navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create&return=prontuario`);
@@ -681,30 +614,21 @@ export function AnamneseBlock({
     return (
       <Card className="border-dashed">
         <CardContent className="p-10 text-center">
-          <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-40" />
           <h3 className="text-lg font-semibold mb-2">
             Este modelo não possui estrutura configurada.
           </h3>
           <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-            O modelo "{activeTemplate.nome}" não possui abas e campos definidos. Edite o modelo para adicionar a estrutura.
+            O modelo "{activeTemplate.nome}" não possui campos definidos.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              onClick={() => {
-                if (!specialtyId) return;
-                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`);
-              }}
-            >
+            <Button onClick={() => specialtyId && navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}>
               <Settings className="h-4 w-4 mr-2" />
               Editar modelo
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleCreateDefaultTemplate}
-              disabled={creatingDefault}
-            >
+            <Button variant="outline" onClick={handleCreateDefaultTemplate} disabled={creatingDefault}>
               <Stethoscope className="h-4 w-4 mr-2" />
-              {creatingDefault ? 'Criando...' : 'Criar modelo padrão YesClin'}
+              {creatingDefault ? 'Criando...' : 'Criar modelo padrão'}
             </Button>
           </div>
         </CardContent>
@@ -712,38 +636,28 @@ export function AnamneseBlock({
     );
   }
 
-  // ─── Template selector ──────────────────────────────────────────
-  const renderTemplateSelector = (size: 'sm' | 'lg' = 'sm') => (
-    <div className={`flex items-center gap-2 ${size === 'lg' ? 'w-full max-w-md mx-auto' : ''}`}>
-      <div className={size === 'lg' ? 'flex-1' : 'w-64'}>
-        <Select value={selectedTemplateId || ''} onValueChange={handleTemplateSwitch}>
-          <SelectTrigger className={`bg-background ${size === 'lg' ? 'h-10' : 'h-8 text-xs'}`}>
-            <div className="flex items-center gap-1.5 truncate">
-              <Stethoscope className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <SelectValue placeholder="Selecionar modelo..." />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="bg-background z-50">
-            {allTemplates.map(t => (
-              <SelectItem key={t.id} value={t.id}>
-                <div className="flex items-center gap-2">
-                  <span className="truncate">{t.nome}</span>
-                  {t.is_system && <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <Button
-        variant="outline"
-        size={size === 'lg' ? 'default' : 'sm'}
-        onClick={handleOpenTemplateEditor}
-        title={activeTemplate?.is_system ? 'Criar modelo personalizado' : 'Editar campos do modelo'}
-        className={size === 'lg' ? '' : 'h-8 px-2'}
-      >
-        <Settings className={`h-4 w-4 ${size === 'lg' ? 'mr-2' : ''}`} />
-        {size === 'lg' && (activeTemplate?.is_system ? 'Personalizar' : 'Editar Campos')}
+  // ─── Template selector (compact) ────────────────────────────────
+  const renderTemplateSelector = () => (
+    <div className="flex items-center gap-2">
+      <Select value={selectedTemplateId || ''} onValueChange={handleTemplateSwitch}>
+        <SelectTrigger className="bg-background h-8 text-xs w-64">
+          <div className="flex items-center gap-1.5 truncate">
+            <SelectValue placeholder="Selecionar modelo..." />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="bg-background z-50">
+          {allTemplates.map(t => (
+            <SelectItem key={t.id} value={t.id}>
+              <div className="flex items-center gap-2">
+                <span className="truncate">{t.nome}</span>
+                {t.is_system && <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button variant="ghost" size="sm" onClick={handleOpenTemplateEditor} className="h-8 px-2">
+        <Settings className="h-3.5 w-3.5" />
       </Button>
     </div>
   );
@@ -758,7 +672,7 @@ export function AnamneseBlock({
             Trocar modelo de anamnese?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Trocar o modelo irá apagar os dados atuais preenchidos. Deseja continuar?
+            Trocar o modelo irá apagar os dados atuais preenchidos.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -771,83 +685,20 @@ export function AnamneseBlock({
     </AlertDialog>
   );
 
-  // ─── Stepper component ─────────────────────────────────────────
-  const sections = activeTemplate?.secoes || [];
-  const currentSection = sections[activeStep];
-  const totalSteps = sections.length;
-
-  const renderStepper = () => (
-    <div className="w-full">
-      {/* Stepper horizontal */}
-      <div className="flex items-center justify-between mb-1 overflow-x-auto pb-1">
-        {sections.map((secao, index) => {
-          const status = sectionStatus[index];
-          const isActive = index === activeStep;
-          const isPast = index < activeStep;
-          
-          return (
-            <button
-              key={secao.id}
-              onClick={() => setActiveStep(index)}
-              className={cn(
-                "flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg transition-all min-w-0 flex-1 group",
-                isActive && "bg-primary/10",
-                !isActive && "hover:bg-muted/50"
-              )}
-            >
-              {/* Step indicator */}
-              <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors",
-                isActive && "bg-primary text-primary-foreground",
-                !isActive && status?.complete && "bg-emerald-500 text-white",
-                !isActive && status?.hasData && !status?.complete && "bg-amber-500 text-white",
-                !isActive && !status?.hasData && "bg-muted text-muted-foreground"
-              )}>
-                {status?.complete ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  index + 1
-                )}
-              </div>
-              {/* Step label */}
-              <span className={cn(
-                "text-[10px] leading-tight text-center line-clamp-2 max-w-[80px]",
-                isActive ? "text-primary font-semibold" : "text-muted-foreground"
-              )}>
-                {secao.titulo.replace(/^\d+\.\s*/, '')}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {/* Connection line */}
-      <div className="relative h-0.5 bg-muted mx-4 mb-4 rounded-full overflow-hidden">
-        <div
-          className="absolute h-full bg-primary transition-all duration-300 rounded-full"
-          style={{ width: `${totalSteps > 1 ? (activeStep / (totalSteps - 1)) * 100 : 0}%` }}
-        />
-      </div>
-    </div>
-  );
-
-  // ─── Empty state (templates exist but no anamnese) ──────────────
+  // ─── Empty state ────────────────────────────────────────────────
   if (!currentAnamnese && !isEditing) {
     return (
       <>
         {renderSwitchConfirmDialog()}
         <Card className="border-dashed">
           <CardContent className="p-8 text-center">
-            <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-            <h3 className="font-semibold mb-1">Nenhuma anamnese registrada</h3>
+            <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+            <h3 className="font-semibold mb-3">Nenhuma anamnese registrada</h3>
             <div className="flex flex-col items-center gap-3 mb-4">
-              <p className="text-sm text-muted-foreground">Selecione o modelo:</p>
-              {renderTemplateSelector('lg')}
-              <p className="text-xs text-muted-foreground">
-                {activeTemplate?.descricao || ''}
-              </p>
+              {renderTemplateSelector()}
             </div>
             {canEdit && activeTemplate && (
-              <Button onClick={() => { setActiveStep(0); setIsEditing(true); }}>
+              <Button onClick={() => setIsEditing(true)}>
                 <Edit3 className="h-4 w-4 mr-2" />
                 Registrar Anamnese
               </Button>
@@ -863,156 +714,93 @@ export function AnamneseBlock({
     );
   }
 
-  // ─── Compact anamnese header ────────────────────────────────────
-  const renderCompactHeader = () => (
-    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-      <div className="flex items-center gap-2 min-w-0">
-        <Stethoscope className="h-4 w-4 text-primary flex-shrink-0" />
-        <h3 className="font-semibold text-sm truncate">
-          {activeTemplate?.nome || 'Anamnese'}
-        </h3>
-        <Badge variant="outline" className="text-[10px] flex-shrink-0">
-          v{currentAnamnese?.version || 1}
-        </Badge>
-        {isEditing ? (
-          <Badge className="text-[10px] bg-amber-500 text-white flex-shrink-0">Rascunho</Badge>
-        ) : (
-          <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-            <Check className="h-2.5 w-2.5 mr-0.5" />
-            Finalizado
-          </Badge>
-        )}
-      </div>
-      {currentAnamnese && !isEditing && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          <span>
-            {format(parseISO(currentAnamnese.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-            {currentAnamnese.created_by_name && ` • ${currentAnamnese.created_by_name}`}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── Editing mode with stepper ──────────────────────────────────
+  // ─── EDITING MODE — Single page, all sections visible ───────────
   if (isEditing) {
+    const sections = activeTemplate?.secoes || [];
+
     return (
       <>
         {renderSwitchConfirmDialog()}
-        <div className="space-y-3">
-          {/* Compact Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Edit3 className="h-4 w-4 text-primary" />
+        <div className="space-y-4">
+          {/* Compact header */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <h3 className="font-semibold text-sm">
                 {currentAnamnese ? 'Atualizar Anamnese' : 'Nova Anamnese'}
               </h3>
-              <Badge className="text-[10px] bg-amber-500 text-white">Rascunho</Badge>
+              <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-200">
+                Rascunho
+              </Badge>
+              {lastAutoSave && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Check className="h-2.5 w-2.5" />
+                  Salvo {format(lastAutoSave, "HH:mm")}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {renderTemplateSelector()}
-              <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
-                <X className="h-4 w-4 mr-1" /> Cancelar
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar'}
-              </Button>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="flex items-center gap-3">
-            <Progress value={progressInfo.percent} className="flex-1 h-2" />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {progressInfo.filled}/{progressInfo.total} campos ({progressInfo.percent}%)
-            </span>
+          {/* All sections in a single scrollable page */}
+          <div className="space-y-6">
+            {sections.map((secao) => (
+              <Card key={secao.id} className="overflow-hidden">
+                <div className="px-5 py-3 border-b bg-muted/30">
+                  <h4 className="font-semibold text-sm text-foreground">
+                    {secao.titulo.replace(/^\d+\.\s*/, '')}
+                  </h4>
+                </div>
+                <CardContent className="p-5 space-y-5">
+                  {secao.campos.map(campo => (
+                    <div key={campo.id} className="space-y-1.5">
+                      <Label className={cn(
+                        "text-sm text-muted-foreground",
+                        campo.required && "after:content-['*'] after:text-destructive after:ml-0.5"
+                      )}>
+                        {campo.label}
+                      </Label>
+                      {renderField(campo)}
+                    </div>
+                  ))}
+                  {/* Auto IMC */}
+                  {secao.id === 'dados_antropometricos' && imcResult && (
+                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-semibold">IMC: {imcResult.value}</span>
+                        <Badge variant={
+                          imcResult.value < 18.5 || imcResult.value >= 30 ? 'destructive' :
+                          imcResult.value >= 25 ? 'secondary' : 'default'
+                        }>
+                          {imcResult.classification}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          <Card>
-            <CardContent className="p-4">
-              {/* Stepper navigation */}
-              {renderStepper()}
-
-              {/* Current section content */}
-              {currentSection && (
-                <div className="min-h-[400px]">
-                  <div className="flex items-center gap-2 mb-4">
-                    <SectionIcon name={currentSection.icon} className="h-5 w-5 text-primary" />
-                    <h4 className="font-semibold">{currentSection.titulo}</h4>
-                    {sectionStatus[activeStep] && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {sectionStatus[activeStep].filled}/{sectionStatus[activeStep].total}
-                      </Badge>
-                    )}
-                  </div>
-                  {currentSection.descricao && (
-                    <p className="text-xs text-muted-foreground mb-4">{currentSection.descricao}</p>
-                  )}
-                  <div className="space-y-4">
-                    {currentSection.campos.map(campo => (
-                      <div key={campo.id} className="space-y-1.5">
-                        <Label className={`text-sm ${campo.required ? 'after:content-["*"] after:text-destructive after:ml-0.5' : ''}`}>
-                          {campo.label}
-                        </Label>
-                        {renderField(campo)}
-                      </div>
-                    ))}
-                    {/* Auto IMC display */}
-                    {currentSection.id === 'dados_antropometricos' && imcResult && (
-                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Calculator className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-semibold">IMC: {imcResult.value}</span>
-                          <Badge variant={
-                            imcResult.value < 18.5 || imcResult.value >= 30 ? 'destructive' :
-                            imcResult.value >= 25 ? 'secondary' : 'default'
-                          }>
-                            {imcResult.classification}
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation buttons */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={activeStep === 0}
-                  onClick={() => setActiveStep(prev => prev - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Anterior
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  {activeStep + 1} de {totalSteps}
-                </span>
-                {activeStep < totalSteps - 1 ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActiveStep(prev => prev + 1)}
-                  >
-                    Próximo
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    {saving ? 'Salvando...' : 'Finalizar'}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Sticky action bar */}
+          <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t py-3 -mx-1 px-1 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving}>
+              <X className="h-4 w-4 mr-1.5" />
+              Cancelar
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+                <Save className="h-4 w-4 mr-1.5" />
+                {saving ? 'Salvando...' : 'Salvar Rascunho'}
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                Finalizar Atendimento
+              </Button>
+            </div>
+          </div>
         </div>
 
         <AnamnesisTemplateBuilderDialog
@@ -1024,47 +812,60 @@ export function AnamneseBlock({
     );
   }
 
-  // ─── View mode ──────────────────────────────────────────────────
+  // ─── VIEW MODE ──────────────────────────────────────────────────
   const hasStructuredData = currentAnamnese?.structured_data && Object.keys(currentAnamnese.structured_data).length > 0;
 
   return (
     <div className="space-y-3">
       {/* Compact header */}
-      {renderCompactHeader()}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="font-semibold text-sm truncate">
+            {activeTemplate?.nome || 'Anamnese'}
+          </h3>
+          <Badge variant="outline" className="text-[10px] flex-shrink-0">
+            v{currentAnamnese?.version || 1}
+          </Badge>
+          <Badge variant="secondary" className="text-[10px] flex-shrink-0 bg-emerald-500/10 text-emerald-700 border-emerald-200">
+            <Check className="h-2.5 w-2.5 mr-0.5" />
+            Finalizado
+          </Badge>
+        </div>
+        {currentAnamnese && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>
+              {format(parseISO(currentAnamnese.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+              {currentAnamnese.created_by_name && ` • ${currentAnamnese.created_by_name}`}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 flex-wrap">
         {currentAnamnese && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={generating}
-            onClick={() => {
-              generateAnamnesisPdf(
-                { name: patientName || 'Paciente', cpf: patientCpf },
-                currentAnamnese,
-                activeTemplate?.secoes || [],
-              );
-            }}
-          >
+          <Button variant="ghost" size="sm" disabled={generating} onClick={() => {
+            generateAnamnesisPdf(
+              { name: patientName || 'Paciente', cpf: patientCpf },
+              currentAnamnese,
+              activeTemplate?.secoes || [],
+            );
+          }}>
             <FileDown className="h-4 w-4 mr-1" />
             {generating ? 'Gerando...' : 'PDF'}
           </Button>
         )}
-        {canEdit && (
-          <Button variant="outline" size="sm" onClick={handleOpenTemplateEditor} title="Editar campos do modelo">
-            <Settings className="h-4 w-4 mr-1" /> Campos
-          </Button>
-        )}
         {anamneseHistory.length > 1 && (
-          <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setShowHistory(true)}>
             <History className="h-4 w-4 mr-1" />
             Histórico ({anamneseHistory.length})
           </Button>
         )}
         {canEdit && (
           <Button size="sm" onClick={handleStartEdit}>
-            <Edit3 className="h-4 w-4 mr-1" /> Atualizar
+            <Edit3 className="h-4 w-4 mr-1.5" />
+            Atualizar
           </Button>
         )}
       </div>
@@ -1073,7 +874,7 @@ export function AnamneseBlock({
       <Card>
         <CardContent className="p-0 divide-y">
           {hasStructuredData ? (
-            (activeTemplate?.secoes || []).map(secao => 
+            (activeTemplate?.secoes || []).map(secao =>
               renderViewSection(secao, currentAnamnese!.structured_data!)
             )
           ) : (
@@ -1091,7 +892,7 @@ export function AnamneseBlock({
               Histórico de Anamneses
             </DialogTitle>
             <DialogDescription>
-              Visualize as versões anteriores da anamnese do paciente
+              Versões anteriores da anamnese
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[400px]">
@@ -1107,17 +908,8 @@ export function AnamneseBlock({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant={anamnese.is_current ? 'default' : 'outline'}>
-                        v{anamnese.version}
-                      </Badge>
-                      {anamnese.is_current && (
-                        <Badge variant="secondary" className="text-xs">Atual</Badge>
-                      )}
-                      {anamnese.template_id && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {allTemplates.find(t => t.id === anamnese.template_id)?.nome || 'Modelo'}
-                        </Badge>
-                      )}
+                      <Badge variant={anamnese.is_current ? 'default' : 'outline'}>v{anamnese.version}</Badge>
+                      {anamnese.is_current && <Badge variant="secondary" className="text-xs">Atual</Badge>}
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
@@ -1136,10 +928,7 @@ export function AnamneseBlock({
       <Dialog open={!!selectedVersion} onOpenChange={() => setSelectedVersion(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Anamnese - Versão {selectedVersion?.version}
-            </DialogTitle>
+            <DialogTitle>Anamnese — Versão {selectedVersion?.version}</DialogTitle>
             <DialogDescription>
               {selectedVersion && format(parseISO(selectedVersion.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
               {selectedVersion?.created_by_name && ` • ${selectedVersion.created_by_name}`}
@@ -1158,10 +947,7 @@ export function AnamneseBlock({
                     if (filledFields.length === 0) return null;
                     return (
                       <div key={secao.id}>
-                        <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-                          <SectionIcon name={secao.icon} className="h-3.5 w-3.5" />
-                          {secao.titulo}
-                        </h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-2">{secao.titulo}</h4>
                         {filledFields.map(campo => {
                           const val = selectedVersion.structured_data?.[campo.id];
                           const display = Array.isArray(val) ? val.join(', ') : String(val);

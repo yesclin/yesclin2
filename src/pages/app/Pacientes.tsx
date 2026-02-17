@@ -171,7 +171,7 @@ export default function Pacientes() {
     navigate(`/app/prontuario/${patient.id}`);
   };
 
-  const handleSavePatient = (data: any) => {
+  const handleSavePatient = async (data: any) => {
     const formData: PatientFormData = {
       full_name: data.full_name,
       birth_date: data.birth_date || undefined,
@@ -206,14 +206,22 @@ export default function Pacientes() {
       clinical_restrictions: data.clinical_restrictions ?? '',
     };
 
-    if (editingPatient) {
-      updatePatient.mutate({ id: editingPatient.id, data: formData });
-    } else {
-      createPatient.mutate(formData);
+    try {
+      if (editingPatient) {
+        await updatePatient.mutateAsync({ id: editingPatient.id, data: formData });
+      } else {
+        await createPatient.mutateAsync(formData);
+      }
+      // Only close after success
+      setShowForm(false);
+      setEditingPatient(null);
+    } catch {
+      // Error toast is already handled by the mutation's onError
     }
   };
 
   const handleCloseForm = () => {
+    if (updatePatient.isPending || createPatient.isPending) return;
     setShowForm(false);
     setEditingPatient(null);
   };
@@ -277,6 +285,7 @@ export default function Pacientes() {
           patient={editingPatient as any}
           insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
           onSave={handleSavePatient}
+          isSaving={updatePatient.isPending || createPatient.isPending}
         />
       </div>
     );
@@ -367,6 +376,7 @@ export default function Pacientes() {
         patient={editingPatient as any}
         insurances={insurances.map(i => ({ id: i.id, name: i.name }))}
         onSave={handleSavePatient}
+        isSaving={updatePatient.isPending || createPatient.isPending}
       />
     </div>
   );

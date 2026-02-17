@@ -376,6 +376,21 @@ export function AnamneseBlock({
     }
   }, [specialtyId, specialtyName, createTemplate, creatingDefault]);
 
+  // ─── Auto-provision default template if none exist ──────────────
+  const autoProvisionTriggered = useRef(false);
+  useEffect(() => {
+    if (
+      !loadingTemplates &&
+      allTemplates.length === 0 &&
+      specialtyId &&
+      !creatingDefault &&
+      !autoProvisionTriggered.current
+    ) {
+      autoProvisionTriggered.current = true;
+      handleCreateDefaultTemplate();
+    }
+  }, [loadingTemplates, allTemplates.length, specialtyId, creatingDefault, handleCreateDefaultTemplate]);
+
   // ─── Handlers ───────────────────────────────────────────────────
   const handleStartEdit = () => {
     if (currentAnamnese?.template_id) {
@@ -588,39 +603,18 @@ export function AnamneseBlock({
   }
 
   // ─── No templates exist ─────────────────────────────────────────
-  if (allTemplates.length === 0) {
+   if (allTemplates.length === 0) {
+    // Auto-provisioning is in progress or will trigger
     return (
       <Card className="border-dashed">
         <CardContent className="p-10 text-center">
-          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <Stethoscope className="h-10 w-10 mx-auto mb-4 text-primary animate-pulse" />
           <h3 className="text-lg font-semibold mb-2">
-            Nenhum modelo de anamnese cadastrado para esta especialidade.
+            {creatingDefault ? 'Criando modelo padrão...' : 'Preparando modelo de anamnese...'}
           </h3>
-          <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-            Para registrar anamneses, é necessário ter pelo menos um modelo ativo configurado.
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            O modelo padrão será configurado automaticamente para esta especialidade.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              onClick={() => {
-                if (!specialtyId) return;
-                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create_default&return=prontuario`);
-              }}
-              disabled={!specialtyId}
-            >
-              <Stethoscope className="h-4 w-4 mr-2" />
-              Criar modelo padrão
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!specialtyId) return;
-                navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese&action=create&return=prontuario`);
-              }}
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              Criar modelo do zero
-            </Button>
-          </div>
         </CardContent>
       </Card>
     );

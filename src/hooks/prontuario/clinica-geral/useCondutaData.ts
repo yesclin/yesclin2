@@ -200,7 +200,9 @@ export function useCondutaData(patientId: string | null): UseCondutaDataResult {
   }, [patientId, clinic?.id, currentProfessionalId, fetchCondutas]);
 
   useEffect(() => {
-    fetchCondutas();
+    let cancelled = false;
+    fetchCondutas().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchCondutas]);
 
   return {

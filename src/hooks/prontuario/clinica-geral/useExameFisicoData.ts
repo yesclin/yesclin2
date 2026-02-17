@@ -216,7 +216,9 @@ export function useExameFisicoData(patientId: string | null): UseExameFisicoData
   }, [patientId, clinic?.id, currentProfessionalId, fetchExames]);
 
   useEffect(() => {
-    fetchExames();
+    let cancelled = false;
+    fetchExames().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchExames]);
 
   return {

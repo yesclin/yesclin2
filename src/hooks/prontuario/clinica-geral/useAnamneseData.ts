@@ -165,7 +165,11 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
   }, [patientId, clinic?.id, currentAnamnese, anamneseHistory, fetchAnamneses]);
 
   useEffect(() => {
-    fetchAnamneses();
+    let cancelled = false;
+    fetchAnamneses().then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
   }, [fetchAnamneses]);
 
   return {

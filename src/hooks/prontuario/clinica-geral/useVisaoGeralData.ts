@@ -219,7 +219,11 @@ export function useVisaoGeralData(patientId: string | null): UseVisaoGeralDataRe
   }, [patientId, clinic?.id]);
 
   useEffect(() => {
-    fetchData();
+    let cancelled = false;
+    fetchData().then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
   }, [fetchData]);
 
   return {

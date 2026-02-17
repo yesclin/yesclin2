@@ -306,7 +306,11 @@ export function useAlertasData(patientId: string | null): UseAlertasDataResult {
   }, [fetchAlertas]);
 
   useEffect(() => {
-    fetchAlertas();
+    let cancelled = false;
+    fetchAlertas().then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
   }, [fetchAlertas]);
 
   const activeAlertas = alertas.filter(a => a.is_active);

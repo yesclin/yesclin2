@@ -229,7 +229,9 @@ export function useEvolucoesData(patientId: string | null): UseEvolucoesDataResu
   }, [fetchEvolucoes]);
 
   useEffect(() => {
-    fetchEvolucoes();
+    let cancelled = false;
+    fetchEvolucoes().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchEvolucoes]);
 
   return {

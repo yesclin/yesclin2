@@ -378,7 +378,9 @@ export function usePrescricoesData(patientId: string | null): UsePrescricoesData
   }, [fetchPrescricoes]);
 
   useEffect(() => {
-    fetchPrescricoes();
+    let cancelled = false;
+    fetchPrescricoes().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchPrescricoes]);
 
   return {

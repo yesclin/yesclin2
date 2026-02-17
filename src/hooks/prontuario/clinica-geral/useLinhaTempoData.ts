@@ -317,7 +317,11 @@ export function useLinhaTempoData(patientId: string | null): UseLinhaTempoDataRe
   }, [patientId, clinic?.id]);
 
   useEffect(() => {
-    fetchTimeline();
+    let cancelled = false;
+    fetchTimeline().then(() => {
+      if (cancelled) return; // Prevent stale updates
+    });
+    return () => { cancelled = true; };
   }, [fetchTimeline]);
 
   return {

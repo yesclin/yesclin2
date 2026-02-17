@@ -287,7 +287,9 @@ export function useDocumentosData(patientId: string | null): UseDocumentosDataRe
   }, []);
 
   useEffect(() => {
-    fetchDocumentos();
+    let cancelled = false;
+    fetchDocumentos().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchDocumentos]);
 
   return {

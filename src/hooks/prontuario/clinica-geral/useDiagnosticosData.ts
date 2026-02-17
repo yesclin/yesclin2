@@ -255,7 +255,9 @@ export function useDiagnosticosData(patientId: string | null): UseDiagnosticosDa
   }, [patientId, clinic?.id, fetchDiagnosticos]);
 
   useEffect(() => {
-    fetchDiagnosticos();
+    let cancelled = false;
+    fetchDiagnosticos().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
   }, [fetchDiagnosticos]);
 
   return {

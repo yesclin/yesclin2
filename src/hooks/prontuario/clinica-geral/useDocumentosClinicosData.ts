@@ -275,7 +275,11 @@ export function useDocumentosClinicosData(patientId: string | null): UseDocument
     }
   }, [patientId, clinic?.id]);
 
-  useEffect(() => { fetchDocumentos(); }, [fetchDocumentos]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchDocumentos().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
+  }, [fetchDocumentos]);
 
   const logDocumentAction = async (documentoId: string, acao: 'criado' | 'emitido' | 'cancelado') => {
     try {

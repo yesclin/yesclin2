@@ -115,16 +115,23 @@ export function useProntuarioData(patientId: string | null) {
     }
   }, [patientId, clinic?.id]);
 
-  // Load all data when patient or clinic changes
+  // Load all data when patient or clinic changes — reset state when deps are missing
   useEffect(() => {
-    if (patientId && clinic?.id) {
-      fetchPatient();
-      fetchAlerts();
-      fetchClinicalData();
-      entriesHook.fetchEntriesForPatient(patientId);
-      filesHook.fetchFilesForPatient(patientId);
+    if (!patientId || !clinic?.id) {
+      // Reset all state to prevent showing stale data
+      setPatient(null);
+      setAlerts([]);
+      setClinicalData(null);
+      return;
     }
-  }, [patientId, clinic?.id]);
+
+    fetchPatient();
+    fetchAlerts();
+    fetchClinicalData();
+    entriesHook.fetchEntriesForPatient(patientId);
+    filesHook.fetchFilesForPatient(patientId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId, clinic?.id, fetchPatient, fetchAlerts, fetchClinicalData]);
 
   // Get active tabs from configuration
   const getActiveTabs = useCallback((): TabConfig[] => {

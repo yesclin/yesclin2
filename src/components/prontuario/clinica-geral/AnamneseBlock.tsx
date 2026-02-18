@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useClinicData } from "@/hooks/useClinicData";
 import { AnamnesisTemplateBuilderDialog } from "@/components/configuracoes/AnamnesisTemplateBuilderDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -306,11 +308,46 @@ export function AnamneseBlock({
     setShowTemplateEditor(true);
   }, [activeTemplate, v2Templates]);
 
-  // ─── Create default template ─────────────────────────────────
+  // ─── Create default template (IDEMPOTENT) ─────────────────────
+  const { clinic } = useClinicData();
+
   const handleCreateDefaultTemplate = useCallback(async () => {
-    if (!specialtyId || creatingDefault) return;
+    if (!specialtyId || !clinic?.id || creatingDefault) return;
     setCreatingDefault(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Usuário não autenticado');
+
+      // ── 1. Check if a template already exists for this clinic+specialty ──
+      const { data: existing, error: fetchErr } = await supabase
+        .from('anamnesis_templates')
+        .select('id, current_version_id, is_active, is_default')
+        .eq('clinic_id', clinic.id)
+        .eq('specialty_id', specialtyId)
+        .eq('archived', false)
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error('Erro ao verificar modelo existente:', { code: (fetchErr as any).code, message: fetchErr.message, details: (fetchErr as any).details, clinic_id: clinic.id, specialty_id: specialtyId });
+        throw fetchErr;
+      }
+
+      // ── If template exists, just ensure it's active+default and reload ──
+      if (existing) {
+        console.log('Modelo de anamnese já existe, reutilizando:', existing.id);
+        if (!existing.is_active || !existing.is_default) {
+          await supabase
+            .from('anamnesis_templates')
+            .update({ is_active: true, is_default: true } as any)
+            .eq('id', existing.id);
+        }
+        // Force refetch templates
+        window.location.reload();
+        return;
+      }
+
+      // ── 2. No template found — create one ──
       const defaultStructure: TemplateSection[] = [
         {
           id: 'queixa_principal', type: 'section', title: 'Queixa Principal',
@@ -326,55 +363,58 @@ export function AnamneseBlock({
           ],
         },
         {
-          id: 'antecedentes_pessoais', type: 'section', title: 'Antecedentes Pessoais',
+          id: 'exame_fisico', type: 'section', title: 'Exame Físico',
           fields: [
-            { id: 'hpp_doencas_previas', type: 'textarea', label: 'Doenças prévias', placeholder: 'HAS, DM, dislipidemia, etc.' },
-            { id: 'hpp_cirurgias', type: 'textarea', label: 'Cirurgias', placeholder: 'Procedimentos cirúrgicos realizados' },
+            { id: 'ef_descricao', type: 'textarea', label: 'Exame físico', placeholder: 'Achados do exame físico' },
           ],
         },
         {
-          id: 'antecedentes_familiares', type: 'section', title: 'História Familiar',
+          id: 'hipotese_diagnostica', type: 'section', title: 'Hipótese Diagnóstica',
           fields: [
-            { id: 'hf_detalhes', type: 'textarea', label: 'Antecedentes familiares', placeholder: 'Doenças hereditárias na família' },
+            { id: 'hd_descricao', type: 'textarea', label: 'Hipótese diagnóstica', placeholder: 'Hipóteses / CID' },
           ],
         },
         {
-          id: 'medicamentos', type: 'section', title: 'Medicamentos em Uso',
+          id: 'plano_conduta', type: 'section', title: 'Plano / Conduta',
           fields: [
-            { id: 'med_lista', type: 'textarea', label: 'Medicamentos', placeholder: 'Nome / Dose / Frequência', required: true },
-          ],
-        },
-        {
-          id: 'alergias', type: 'section', title: 'Alergias',
-          fields: [
-            { id: 'alergias_medicamentosas', type: 'textarea', label: 'Alergias', placeholder: 'Medicamentosas, alimentares, ambientais' },
-          ],
-        },
-        {
-          id: 'habitos_vida', type: 'section', title: 'Hábitos de Vida',
-          fields: [
-            { id: 'hab_tabagismo', type: 'text', label: 'Tabagismo', placeholder: 'Ex: nunca fumou' },
-            { id: 'hab_etilismo', type: 'text', label: 'Etilismo', placeholder: 'Frequência/quantidade' },
-            { id: 'hab_atividade_fisica', type: 'textarea', label: 'Atividade física', placeholder: 'Tipo, frequência' },
+            { id: 'pc_descricao', type: 'textarea', label: 'Plano terapêutico', placeholder: 'Conduta, prescrições, orientações' },
           ],
         },
       ];
 
       const name = `Anamnese Padrão - ${specialtyName || 'Geral'} (YesClin)`;
-      await createTemplate({
-        name,
-        description: 'Modelo padrão criado automaticamente pelo YesClin',
+
+      try {
+        await createTemplate({
+          name,
+          description: 'Modelo padrão criado automaticamente pelo YesClin',
+          specialty_id: specialtyId,
+          icon: 'Stethoscope',
+          is_default: true,
+          structure: defaultStructure,
+        });
+      } catch (createErr: any) {
+        // Handle duplicate/conflict — try to fetch and use existing
+        if (createErr?.code === '23505' || createErr?.message?.includes('duplicate')) {
+          console.warn('Conflito de duplicidade ao criar modelo, buscando existente...');
+          window.location.reload();
+          return;
+        }
+        throw createErr;
+      }
+    } catch (err: any) {
+      console.error('Erro ao criar modelo padrão:', {
+        code: err?.code,
+        message: err?.message,
+        details: err?.details,
+        clinic_id: clinic?.id,
         specialty_id: specialtyId,
-        icon: 'Stethoscope',
-        is_default: true,
-        structure: defaultStructure,
       });
-    } catch (err) {
-      console.error('Erro ao criar modelo padrão:', err);
+      toast.error(`Erro ao criar modelo: ${err?.message || 'Erro desconhecido'}`);
     } finally {
       setCreatingDefault(false);
     }
-  }, [specialtyId, specialtyName, createTemplate, creatingDefault]);
+  }, [specialtyId, specialtyName, clinic?.id, createTemplate, creatingDefault]);
 
   // ─── Auto-provision default template if none exist ──────────────
   const autoProvisionTriggered = useRef(false);
@@ -383,13 +423,14 @@ export function AnamneseBlock({
       !loadingTemplates &&
       allTemplates.length === 0 &&
       specialtyId &&
+      clinic?.id &&
       !creatingDefault &&
       !autoProvisionTriggered.current
     ) {
       autoProvisionTriggered.current = true;
       handleCreateDefaultTemplate();
     }
-  }, [loadingTemplates, allTemplates.length, specialtyId, creatingDefault, handleCreateDefaultTemplate]);
+  }, [loadingTemplates, allTemplates.length, specialtyId, clinic?.id, creatingDefault, handleCreateDefaultTemplate]);
 
   // ─── Handlers ───────────────────────────────────────────────────
   const handleStartEdit = () => {

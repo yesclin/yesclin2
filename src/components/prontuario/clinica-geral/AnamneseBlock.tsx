@@ -932,9 +932,22 @@ export function AnamneseBlock({
         {currentAnamnese && (
           <Button variant="ghost" size="sm" disabled={generating} onClick={() => {
             generateAnamnesisPdf(
-              { name: patientName || 'Paciente', cpf: patientCpf },
+              {
+                name: patientName || 'Paciente',
+                cpf: patientCpf,
+                id: patientData?.id,
+                age: patientData?.age || patientData?.idade,
+                sex: patientData?.sex || patientData?.sexo,
+                phone: patientData?.phone || patientData?.telefone,
+                insurance_name: patientData?.insurance_name || patientData?.convenio,
+                birth_date: patientData?.birth_date || patientData?.data_nascimento,
+              },
               currentAnamnese,
               activeTemplate?.secoes || [],
+              {
+                name: currentAnamnese.created_by_name,
+                specialty: specialtyName || undefined,
+              },
             );
           }}>
             <FileDown className="h-4 w-4 mr-1" />

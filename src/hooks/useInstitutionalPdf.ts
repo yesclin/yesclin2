@@ -15,11 +15,30 @@ import {
 } from '@/utils/documentControl';
 import { logAudit } from '@/utils/auditLog';
 
-interface PatientInfo {
+export interface PatientInfo {
   name: string;
   cpf?: string;
   birth_date?: string;
   phone?: string;
+  sex?: string;
+  age?: number | string;
+  insurance_name?: string;
+  id?: string;
+}
+
+interface ClinicInfo {
+  name: string;
+  logo_url?: string | null;
+  cnpj?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}
+
+interface ProfessionalInfo {
+  name?: string;
+  crm?: string;
+  specialty?: string;
 }
 
 interface AnamneseForPdf {
@@ -38,12 +57,13 @@ interface AnamneseForPdf {
   template_id?: string;
 }
 
+// ─── Content Builder ─────────────────────────────────────────────
+
 function buildContentHtml(
-  pc: string,
   anamnese: AnamneseForPdf,
   sections: SecaoAnamnese[],
 ): string {
-  let contentHtml = '';
+  let html = '';
 
   if (anamnese.structured_data && Object.keys(anamnese.structured_data).length > 0) {
     for (const secao of sections) {
@@ -54,18 +74,18 @@ function buildContentHtml(
       });
       if (fields.length === 0) continue;
 
-      contentHtml += `<div style="margin-bottom:14px;">
-        <h3 style="color:${pc};font-size:13px;margin:0 0 6px 0;border-bottom:1px solid #e5e7eb;padding-bottom:4px;">${secao.titulo}</h3>`;
+      html += `<div style="margin-bottom:20px;">
+        <h3 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#374151;margin:0 0 10px 0;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">${secao.titulo}</h3>`;
 
       for (const campo of fields) {
         const val = anamnese.structured_data![campo.id];
         const display = Array.isArray(val) ? val.join(', ') : String(val);
-        contentHtml += `<div style="margin-bottom:6px;">
-          <span style="font-size:10px;color:#6b7280;display:block;">${campo.label}</span>
-          <span style="font-size:12px;">${display}</span>
+        html += `<div style="margin-bottom:8px;">
+          <div style="font-size:9px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${campo.label}</div>
+          <div style="font-size:11px;color:#1f2937;line-height:1.6;text-align:justify;">${display}</div>
         </div>`;
       }
-      contentHtml += '</div>';
+      html += '</div>';
     }
   } else {
     const legacyFields = [
@@ -74,130 +94,198 @@ function buildContentHtml(
       { label: 'Antecedentes Pessoais', value: anamnese.antecedentes_pessoais },
       { label: 'Antecedentes Familiares', value: anamnese.antecedentes_familiares },
       { label: 'Hábitos de Vida', value: anamnese.habitos_vida },
-      { label: 'Medicamentos', value: anamnese.medicamentos_uso_continuo },
+      { label: 'Medicamentos em Uso', value: anamnese.medicamentos_uso_continuo },
       { label: 'Alergias', value: anamnese.alergias },
       { label: 'Comorbidades', value: anamnese.comorbidades },
     ].filter(f => f.value);
 
     for (const f of legacyFields) {
-      contentHtml += `<div style="margin-bottom:10px;">
-        <h3 style="color:${pc};font-size:13px;margin:0 0 4px 0;">${f.label}</h3>
-        <p style="font-size:12px;margin:0;white-space:pre-wrap;">${f.value}</p>
+      html += `<div style="margin-bottom:20px;">
+        <h3 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#374151;margin:0 0 10px 0;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">${f.label}</h3>
+        <p style="font-size:11px;margin:0;white-space:pre-wrap;line-height:1.6;text-align:justify;color:#1f2937;">${f.value}</p>
       </div>`;
     }
   }
 
-  return contentHtml;
+  return html;
 }
 
-function buildHtml(
-  settings: DocumentSettings | null,
+// ─── Premium A4 HTML Builder ─────────────────────────────────────
+
+function buildPremiumHtml(
+  clinicInfo: ClinicInfo,
   patient: PatientInfo,
+  professional: ProfessionalInfo,
   anamnese: AnamneseForPdf,
   sections: SecaoAnamnese[],
+  settings: DocumentSettings | null,
   docReference?: string,
   docId?: string,
   qrCodeDataUrl?: string,
 ): string {
   const s = settings || (DOCUMENT_DEFAULTS as unknown as DocumentSettings);
-  const pc = s.primary_color || '#6366f1';
-  const clinicName = s.clinic_name || 'Clínica';
+  const pc = s.primary_color || '#2563eb';
+  const fontFamily = s.font_family || 'Inter';
   const dateStr = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  const appointmentDate = format(new Date(anamnese.created_at), "dd/MM/yyyy", { locale: ptBR });
 
-  const contentHtml = buildContentHtml(pc, anamnese, sections);
+  const contentHtml = buildContentHtml(anamnese, sections);
 
-  // Build header
-  let headerHtml = '';
-  if (s.header_style === 'stripe') {
-    headerHtml = `<div style="background:${pc};color:white;padding:16px 20px;display:flex;align-items:center;gap:12px;">
-      ${s.logo_url ? `<img src="${s.logo_url}" style="height:48px;width:48px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,0.2);" />` : ''}
-      <div>
-        <div style="font-weight:bold;font-size:16px;">${clinicName}</div>
-        ${s.responsible_name ? `<div style="font-size:11px;opacity:0.9;">${s.responsible_name}</div>` : ''}
-        ${s.show_crm && s.responsible_crm ? `<div style="font-size:10px;opacity:0.8;">CRM: ${s.responsible_crm}</div>` : ''}
-      </div>
-    </div>`;
-  } else {
-    headerHtml = `<div style="padding:16px 20px;border-bottom:2px solid ${pc};display:flex;align-items:center;gap:12px;">
-      ${s.logo_url ? `<img src="${s.logo_url}" style="height:48px;width:48px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;" />` : ''}
-      <div>
-        <div style="font-weight:bold;font-size:16px;color:${pc};">${clinicName}</div>
-        ${s.responsible_name ? `<div style="font-size:11px;color:#4b5563;">${s.responsible_name}</div>` : ''}
-        ${s.show_crm && s.responsible_crm ? `<div style="font-size:10px;color:#6b7280;">CRM: ${s.responsible_crm}</div>` : ''}
-      </div>
-    </div>`;
-  }
+  // ── Institutional Header ──
+  const logoHtml = clinicInfo.logo_url
+    ? `<img src="${clinicInfo.logo_url}" style="height:52px;width:52px;border-radius:6px;object-fit:cover;" />`
+    : `<div style="height:52px;width:52px;border-radius:6px;background:${pc};display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:20px;">${clinicInfo.name.charAt(0)}</div>`;
 
-  // Footer with document control
-  let footerHtml = '';
-  if (s.show_footer || docReference) {
-    const signatureBlock = s.show_digital_signature && s.signature_image_url
-      ? `<img src="${s.signature_image_url}" style="height:40px;object-fit:contain;" />`
-      : '';
+  const clinicDetails = [
+    clinicInfo.cnpj ? `CNPJ: ${clinicInfo.cnpj}` : null,
+    clinicInfo.address,
+    clinicInfo.phone ? `Tel: ${clinicInfo.phone}` : null,
+    clinicInfo.email,
+  ].filter(Boolean).join(' • ');
 
-    const controlBlock = docReference
-      ? `<div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-          ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" style="width:60px;height:60px;" />` : ''}
-          <div style="font-size:8px;color:#9ca3af;line-height:1.4;">
-            <div><strong>Nº:</strong> ${docReference}</div>
-            ${docId ? `<div><strong>Código:</strong> ${docId.substring(0, 8)}...</div>` : ''}
-            <div>Documento com validação digital</div>
-          </div>
-        </div>`
-      : '';
-
-    footerHtml = `<div style="border-top:1px solid #e5e7eb;padding:10px 20px;display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;">
-      <div>
-        <div style="font-size:9px;color:#9ca3af;">${s.footer_text || ''}<br/>Gerado em: ${dateStr}</div>
-        ${controlBlock}
-      </div>
-      ${signatureBlock}
-    </div>`;
-  }
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; color:#1f2937; }
-  </style></head><body>
-    <div style="min-height:100vh;display:flex;flex-direction:column;">
-      ${headerHtml}
-      <div style="padding:12px 20px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">
-        <div style="font-size:10px;color:#6b7280;font-weight:600;">DADOS DO PACIENTE</div>
-        <div style="font-size:11px;margin-top:2px;">
-          <strong>${patient.name}</strong>
-          ${patient.cpf ? ` • CPF: ${patient.cpf}` : ''}
-          ${patient.birth_date ? ` • Nasc: ${patient.birth_date}` : ''}
+  const headerHtml = `
+    <div style="padding:25mm 20mm 0 20mm;">
+      <div style="display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:2px solid ${pc};">
+        ${logoHtml}
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:700;color:${pc};letter-spacing:0.3px;">${clinicInfo.name}</div>
+          <div style="font-size:8px;color:#6b7280;margin-top:3px;line-height:1.5;">${clinicDetails}</div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px;border-bottom:1px solid #e5e7eb;">
-        <div style="font-weight:bold;font-size:14px;color:${pc};letter-spacing:1px;">ANAMNESE</div>
-        ${docReference ? `<div style="font-size:9px;color:#9ca3af;margin-top:2px;">${docReference}</div>` : ''}
+    </div>`;
+
+  // ── Patient Identification Block ──
+  const patientFields = [
+    { label: 'Paciente', value: patient.name, bold: true },
+    { label: 'Idade', value: patient.age ? `${patient.age} anos` : null },
+    { label: 'Sexo', value: patient.sex },
+    { label: 'CPF', value: patient.cpf },
+    { label: 'Telefone', value: patient.phone },
+    { label: 'Convênio', value: patient.insurance_name },
+    { label: 'Data do Atendimento', value: appointmentDate },
+    { label: 'Profissional', value: professional.name },
+  ].filter(f => f.value);
+
+  const patientGridHtml = patientFields.map(f =>
+    `<div style="min-width:140px;">
+      <div style="font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">${f.label}</div>
+      <div style="font-size:10px;color:#1f2937;margin-top:1px;${f.bold ? 'font-weight:700;' : ''}">${f.value}</div>
+    </div>`
+  ).join('');
+
+  const patientHtml = `
+    <div style="margin:0 20mm;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-top:14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:12px 24px;">
+        ${patientGridHtml}
       </div>
-      <div style="padding:16px 20px;flex:1;">
-        ${contentHtml}
+    </div>`;
+
+  // ── Document Title ──
+  const titleHtml = `
+    <div style="margin:16px 20mm 0 20mm;text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:${pc};letter-spacing:2px;text-transform:uppercase;">ANAMNESE CLÍNICA</div>
+      ${docReference ? `<div style="font-size:8px;color:#9ca3af;margin-top:3px;">${docReference}</div>` : ''}
+    </div>`;
+
+  // ── Content ──
+  const bodyHtml = `
+    <div style="margin:16px 20mm 0 20mm;flex:1;">
+      ${contentHtml}
+    </div>`;
+
+  // ── Professional Footer ──
+  const signatureBlock = s.show_digital_signature && s.signature_image_url
+    ? `<img src="${s.signature_image_url}" style="height:40px;object-fit:contain;margin-bottom:4px;" />`
+    : '';
+
+  const profLine = [
+    professional.name,
+    professional.crm,
+    professional.specialty,
+  ].filter(Boolean).join(' • ');
+
+  const qrBlock = qrCodeDataUrl
+    ? `<div style="display:flex;align-items:center;gap:8px;">
+        <img src="${qrCodeDataUrl}" style="width:50px;height:50px;" />
+        <div style="font-size:7px;color:#9ca3af;line-height:1.4;">
+          ${docReference ? `<div>Nº ${docReference}</div>` : ''}
+          ${docId ? `<div>ID: ${docId.substring(0, 8)}</div>` : ''}
+          <div>Documento com validação digital</div>
+        </div>
+      </div>`
+    : '';
+
+  const footerHtml = `
+    <div style="margin:auto 20mm 20mm 20mm;border-top:1px solid #e5e7eb;padding-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          ${qrBlock}
+        </div>
+        <div style="text-align:right;">
+          ${signatureBlock}
+          <div style="font-size:10px;font-weight:600;color:#1f2937;">${professional.name || ''}</div>
+          <div style="font-size:8px;color:#6b7280;margin-top:1px;">${professional.crm || ''}</div>
+          ${professional.specialty ? `<div style="font-size:8px;color:#6b7280;">${professional.specialty}</div>` : ''}
+          <div style="font-size:7px;color:#9ca3af;margin-top:4px;">Emitido em: ${dateStr}</div>
+          ${docId ? `<div style="font-size:7px;color:#9ca3af;">Doc: ${docId.substring(0, 12)}</div>` : ''}
+        </div>
       </div>
+      ${s.footer_text ? `<div style="font-size:7px;color:#b0b0b0;text-align:center;margin-top:10px;">${s.footer_text}</div>` : ''}
+    </div>`;
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+  <link href="https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: '${fontFamily}', 'Helvetica Neue', Arial, sans-serif; color:#1f2937; background:white; }
+    @page { size: A4; margin: 0; }
+  </style></head><body>
+    <div style="min-height:297mm;display:flex;flex-direction:column;">
+      ${headerHtml}
+      ${patientHtml}
+      ${titleHtml}
+      ${bodyHtml}
       ${footerHtml}
     </div>
   </body></html>`;
 }
 
+// ─── Hook ────────────────────────────────────────────────────────
+
 export function useInstitutionalPdf() {
-  const { clinic } = useClinicData();
+  const { clinic, getFormattedAddress, getFiscalDocument } = useClinicData();
   const { settings } = useDocumentSettings();
   const [generating, setGenerating] = useState(false);
 
   const generateAnamnesisPdf = useCallback(async (
-    patient: PatientInfo & { id?: string },
+    patient: PatientInfo,
     anamnese: AnamneseForPdf,
     sections: SecaoAnamnese[],
+    professional?: ProfessionalInfo,
   ) => {
     setGenerating(true);
     try {
+      // Build clinic info from clinic data
+      const clinicInfo: ClinicInfo = {
+        name: settings?.clinic_name || clinic?.name || 'Clínica',
+        logo_url: settings?.logo_url || clinic?.logo_url,
+        cnpj: clinic?.cnpj,
+        phone: clinic?.phone,
+        email: clinic?.email,
+        address: getFormattedAddress() || undefined,
+      };
+
+      const profInfo: ProfessionalInfo = {
+        name: professional?.name || anamnese.created_by_name || settings?.responsible_name || undefined,
+        crm: professional?.crm || (settings?.show_crm ? settings?.responsible_crm : undefined) || undefined,
+        specialty: professional?.specialty || undefined,
+      };
+
       let docReference: string | undefined;
       let docId: string | undefined;
       let qrCodeDataUrl: string | undefined;
 
-      // Document control: get sequential number and prepare QR code
+      // Document control: get sequential number
       if (clinic?.id && patient.id) {
         try {
           const seqNum = await getNextDocumentNumber(clinic.id);
@@ -207,8 +295,8 @@ export function useInstitutionalPdf() {
         }
       }
 
-      // Build HTML (first pass without QR to get hash)
-      const htmlForHash = buildHtml(settings, patient, anamnese, sections, docReference);
+      // Build HTML for hash (without QR)
+      const htmlForHash = buildPremiumHtml(clinicInfo, patient, profInfo, anamnese, sections, settings, docReference);
       const documentHash = await generateHash(htmlForHash);
 
       // Register document to get UUID for QR code
@@ -222,12 +310,11 @@ export function useInstitutionalPdf() {
             documentHash,
             sourceRecordId: anamnese.id,
             patientName: patient.name,
-            professionalName: anamnese.created_by_name || settings?.responsible_name || undefined,
+            professionalName: profInfo.name,
           });
           docId = registered.id;
           qrCodeDataUrl = await generateValidationQRCode(docId);
-          
-          // Audit log for document creation
+
           await logAudit({
             clinicId: clinic.id,
             action: 'document_created',
@@ -244,14 +331,14 @@ export function useInstitutionalPdf() {
         }
       }
 
-      // Build final HTML with QR code
-      const html = buildHtml(settings, patient, anamnese, sections, docReference, docId, qrCodeDataUrl);
+      // Build final HTML with QR
+      const html = buildPremiumHtml(clinicInfo, patient, profInfo, anamnese, sections, settings, docReference, docId, qrCodeDataUrl);
 
-      // Render HTML to canvas
+      // Render to canvas
       const container = document.createElement('div');
       container.style.position = 'absolute';
       container.style.left = '-9999px';
-      container.style.width = '794px';
+      container.style.width = '794px'; // A4 at 96dpi
       container.innerHTML = html;
       document.body.appendChild(container);
 
@@ -276,22 +363,31 @@ export function useInstitutionalPdf() {
 
       let position = 0;
       let heightLeft = imgHeight;
+      let pageNum = 1;
 
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      // Page number
+      pdf.setFontSize(7);
+      pdf.setTextColor(180);
+      pdf.text(`Página ${pageNum}`, pdfWidth - 20, pdfHeight - 5);
       heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
+        pageNum++;
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.setFontSize(7);
+        pdf.setTextColor(180);
+        pdf.text(`Página ${pageNum}`, pdfWidth - 20, pdfHeight - 5);
         heightLeft -= pdfHeight;
       }
 
       // Save to storage
       const pdfBlob = pdf.output('blob');
       const safeName = patient.name.replace(/[^a-zA-Z0-9]/g, '_');
-      const dateStr = format(new Date(), 'yyyy-MM-dd_HHmm');
-      const fileName = `anamnese_${safeName}_${dateStr}.pdf`;
+      const dateFileStr = format(new Date(), 'yyyy-MM-dd_HHmm');
+      const fileName = `anamnese_${safeName}_${dateFileStr}.pdf`;
       const storagePath = `${clinic?.id}/${anamnese.id}/${fileName}`;
 
       const { error: uploadErr } = await supabase.storage
@@ -302,7 +398,7 @@ export function useInstitutionalPdf() {
         console.warn('Storage upload error (saving locally):', uploadErr);
       }
 
-      // Update document record with PDF URL if registered
+      // Update document record with PDF URL
       if (docId && !uploadErr) {
         const { data: urlData } = supabase.storage
           .from('generated-documents')
@@ -334,14 +430,14 @@ export function useInstitutionalPdf() {
 
       // Download
       pdf.save(fileName);
-      toast.success(`PDF institucional gerado! ${docReference || ''}`);
+      toast.success(`Documento clínico gerado! ${docReference || ''}`);
     } catch (error) {
       console.error('PDF generation error:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');
     } finally {
       setGenerating(false);
     }
-  }, [settings, clinic?.id]);
+  }, [settings, clinic?.id, clinic?.name, clinic?.cnpj, clinic?.phone, clinic?.email, clinic?.logo_url, getFormattedAddress]);
 
   return { generateAnamnesisPdf, generating, hasSettings: !!settings };
 }

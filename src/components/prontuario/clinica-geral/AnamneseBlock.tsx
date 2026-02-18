@@ -350,34 +350,37 @@ export function AnamneseBlock({
       // ── 2. No template found — create one ──
       const defaultStructure: TemplateSection[] = [
         {
-          id: 'queixa_principal', type: 'section', title: 'Queixa Principal',
+          id: 'motivo_consulta', type: 'section', title: 'Motivo da Consulta',
           fields: [
-            { id: 'qp_descricao', type: 'textarea', label: 'Motivo da consulta (nas palavras do paciente)', required: true, placeholder: 'Ex: "Dor no peito há 2 dias"' },
+            { id: 'qp_descricao', type: 'textarea', label: 'Queixa Principal', required: true, placeholder: 'Descreva o motivo da consulta nas palavras do paciente...' },
           ],
         },
         {
-          id: 'historia_doenca_atual', type: 'section', title: 'História da Doença Atual',
+          id: 'historia_atual', type: 'section', title: 'História Atual',
           fields: [
-            { id: 'hda_evolucao', type: 'textarea', label: 'Evolução', placeholder: 'Como evoluiu desde o início?' },
-            { id: 'hda_sintomas_associados', type: 'textarea', label: 'Sintomas associados', placeholder: 'Outros sintomas relacionados' },
+            { id: 'hda_descricao', type: 'textarea', label: 'História da Doença Atual', placeholder: 'Descreva a evolução do quadro clínico...' },
+            { id: 'hda_inicio', type: 'text', label: 'Início dos sintomas', placeholder: 'Ex: Há 3 dias, após esforço físico' },
+            { id: 'hda_evolucao', type: 'text', label: 'Evolução', placeholder: 'Progressiva, estável, intermitente...' },
+            { id: 'hda_intensidade', type: 'select', label: 'Intensidade (0-10)', options: ['0','1','2','3','4','5','6','7','8','9','10'] },
           ],
         },
         {
-          id: 'exame_fisico', type: 'section', title: 'Exame Físico',
+          id: 'contexto_clinico', type: 'section', title: 'Contexto Clínico',
           fields: [
-            { id: 'ef_descricao', type: 'textarea', label: 'Exame físico', placeholder: 'Achados do exame físico' },
+            { id: 'antecedentes', type: 'textarea', label: 'Antecedentes Pessoais', placeholder: 'Doenças prévias, cirurgias, internações...' },
+            { id: 'medicamentos', type: 'textarea', label: 'Medicamentos em Uso', placeholder: 'Medicamentos contínuos, dosagem...' },
+            { id: 'historia_familiar', type: 'textarea', label: 'História Familiar', placeholder: 'Doenças relevantes na família...' },
+            { id: 'hab_tabagismo', type: 'select', label: 'Tabagismo', options: ['Nunca fumou','Ex-fumante','Fumante ativo'] },
+            { id: 'hab_etilismo', type: 'select', label: 'Etilismo', options: ['Não','Social','Moderado','Frequente'] },
+            { id: 'hab_atividade', type: 'select', label: 'Atividade Física', options: ['Sedentário','Eventual','Regular','Diária'] },
+            { id: 'hab_sono', type: 'select', label: 'Sono', options: ['Bom','Regular','Ruim','Insônia'] },
           ],
         },
         {
-          id: 'hipotese_diagnostica', type: 'section', title: 'Hipótese Diagnóstica',
+          id: 'impressao_conduta', type: 'section', title: 'Impressão e Conduta',
           fields: [
-            { id: 'hd_descricao', type: 'textarea', label: 'Hipótese diagnóstica', placeholder: 'Hipóteses / CID' },
-          ],
-        },
-        {
-          id: 'plano_conduta', type: 'section', title: 'Plano / Conduta',
-          fields: [
-            { id: 'pc_descricao', type: 'textarea', label: 'Plano terapêutico', placeholder: 'Conduta, prescrições, orientações' },
+            { id: 'hd_descricao', type: 'textarea', label: 'Hipótese Diagnóstica', placeholder: 'Hipóteses diagnósticas / CID-10...' },
+            { id: 'pc_descricao', type: 'textarea', label: 'Plano / Conduta', placeholder: 'Prescrições, orientações, encaminhamentos, retorno...' },
           ],
         },
       ];
@@ -503,8 +506,8 @@ export function AnamneseBlock({
             value={(value as string) || ''}
             onChange={e => updateField(campo.id, e.target.value)}
             placeholder={campo.placeholder}
-            rows={4}
-            className="bg-background resize-none"
+            rows={campo.required ? 5 : 3}
+            className="bg-background resize-none text-sm leading-relaxed"
           />
         );
       case 'number':
@@ -766,79 +769,109 @@ export function AnamneseBlock({
     );
   }
 
-  // ─── EDITING MODE — Single page, all sections visible ───────────
+  // ─── EDITING MODE — Premium single-page layout ──────────────────
   if (isEditing) {
     const sections = activeTemplate?.secoes || [];
+    // Block icons for premium feel
+    const blockIcons: Record<string, React.ReactNode> = {
+      'motivo_consulta': <Stethoscope className="h-4 w-4" />,
+      'queixa_principal': <Stethoscope className="h-4 w-4" />,
+      'historia_atual': <Clock className="h-4 w-4" />,
+      'historia_doenca_atual': <Clock className="h-4 w-4" />,
+      'contexto_clinico': <FileText className="h-4 w-4" />,
+      'impressao_conduta': <CheckCircle2 className="h-4 w-4" />,
+      'plano_conduta': <CheckCircle2 className="h-4 w-4" />,
+    };
+
+    // Determine if a section uses a grid layout for compact fields (selects)
+    const isCompactSection = (secao: SecaoAnamnese) => {
+      const selectFields = secao.campos.filter(c => c.type === 'select' || c.type === 'radio');
+      return selectFields.length >= 3;
+    };
 
     return (
       <>
         {renderSwitchConfirmDialog()}
-        <div className="space-y-4">
-          {/* Compact header */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <h3 className="font-semibold text-sm">
+        <div className="space-y-6">
+          {/* Minimal header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-base tracking-tight">
                 {currentAnamnese ? 'Atualizar Anamnese' : 'Nova Anamnese'}
               </h3>
-              <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-200">
+              <Badge variant="outline" className="text-[10px] font-medium border-amber-300 text-amber-600 bg-amber-50">
                 Rascunho
               </Badge>
               {lastAutoSave && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
                   <Check className="h-2.5 w-2.5" />
-                  Salvo {format(lastAutoSave, "HH:mm")}
+                  {format(lastAutoSave, "HH:mm")}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {renderTemplateSelector()}
-            </div>
+            {allTemplates.length > 1 && renderTemplateSelector()}
           </div>
 
-          {/* All sections in a single scrollable page */}
-          <div className="space-y-6">
-            {sections.map((secao) => (
-              <Card key={secao.id} className="overflow-hidden">
-                <div className="px-5 py-3 border-b bg-muted/30">
-                  <h4 className="font-semibold text-sm text-foreground">
-                    {secao.titulo.replace(/^\d+\.\s*/, '')}
-                  </h4>
-                </div>
-                <CardContent className="p-5 space-y-5">
-                  {secao.campos.map(campo => (
-                    <div key={campo.id} className="space-y-1.5">
-                      <Label className={cn(
-                        "text-sm text-muted-foreground",
-                        campo.required && "after:content-['*'] after:text-destructive after:ml-0.5"
-                      )}>
-                        {campo.label}
-                      </Label>
-                      {renderField(campo)}
-                    </div>
-                  ))}
-                  {/* Auto IMC */}
-                  {secao.id === 'dados_antropometricos' && imcResult && (
-                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Calculator className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-semibold">IMC: {imcResult.value}</span>
-                        <Badge variant={
-                          imcResult.value < 18.5 || imcResult.value >= 30 ? 'destructive' :
-                          imcResult.value >= 25 ? 'secondary' : 'default'
-                        }>
-                          {imcResult.classification}
-                        </Badge>
+          {/* Premium blocks */}
+          <div className="space-y-8">
+            {sections.map((secao) => {
+              const compact = isCompactSection(secao);
+              const textareaFields = secao.campos.filter(c => c.type === 'textarea');
+              const otherFields = secao.campos.filter(c => c.type !== 'textarea');
+              const icon = blockIcons[secao.id] || <FileText className="h-4 w-4" />;
+
+              return (
+                <div key={secao.id} className="space-y-4">
+                  {/* Block title */}
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/50">
+                    <span className="text-primary/70">{icon}</span>
+                    <h4 className="font-semibold text-sm tracking-tight text-foreground">
+                      {secao.titulo}
+                    </h4>
+                  </div>
+
+                  {/* Fields */}
+                  <div className="space-y-5 pl-0.5">
+                    {/* Large textarea fields first */}
+                    {textareaFields.map(campo => (
+                      <div key={campo.id} className="space-y-1.5">
+                        <Label className={cn(
+                          "text-xs font-medium text-muted-foreground uppercase tracking-wider",
+                          campo.required && "after:content-['*'] after:text-destructive after:ml-0.5"
+                        )}>
+                          {campo.label}
+                        </Label>
+                        {renderField(campo)}
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    ))}
+
+                    {/* Compact grid for selects and short fields */}
+                    {otherFields.length > 0 && (
+                      <div className={cn(
+                        compact ? "grid grid-cols-2 md:grid-cols-4 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"
+                      )}>
+                        {otherFields.map(campo => (
+                          <div key={campo.id} className="space-y-1.5">
+                            <Label className={cn(
+                              "text-xs font-medium text-muted-foreground uppercase tracking-wider",
+                              campo.required && "after:content-['*'] after:text-destructive after:ml-0.5"
+                            )}>
+                              {campo.label}
+                            </Label>
+                            {renderField(campo)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Sticky action bar */}
-          <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t py-3 -mx-1 px-1 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving}>
+          {/* Sticky action bar — clean */}
+          <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t py-3 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving} className="text-muted-foreground">
               <X className="h-4 w-4 mr-1.5" />
               Cancelar
             </Button>
@@ -849,7 +882,7 @@ export function AnamneseBlock({
               </Button>
               <Button size="sm" onClick={handleSave} disabled={saving}>
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                Finalizar Atendimento
+                Finalizar
               </Button>
             </div>
           </div>

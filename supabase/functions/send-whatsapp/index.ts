@@ -70,7 +70,33 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: claims, error: claimsError } = await supabaseAuth.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsError || !claims?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claims.claims.sub;
+
     const supabase = getSupabase();
+
     const body: SendRequest = await req.json();
     const { clinic_id, phone, message, patient_id, appointment_id, template_id, automation_rule_id, queue_id } = body;
 
@@ -78,6 +104,20 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "clinic_id, phone e message são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Clinic authorization ---
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("clinic_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (!profile || profile.clinic_id !== clinic_id) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

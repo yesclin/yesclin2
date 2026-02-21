@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Save, X,
-  ClipboardList, Edit3, Settings2, Asterisk,
+  ClipboardList, Edit3, Settings2, Asterisk, Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AnamnesisModel } from '@/hooks/prontuario/useAnamnesisModels';
@@ -56,7 +56,7 @@ interface EditorSection {
   fields: EditorField[];
 }
 
-const FIELD_TYPES = [
+const ALL_FIELD_TYPES = [
   { value: 'text', label: 'Texto curto' },
   { value: 'textarea', label: 'Texto longo' },
   { value: 'number', label: 'Número' },
@@ -71,6 +71,18 @@ const FIELD_TYPES = [
   { value: 'signature', label: 'Assinatura' },
   { value: 'scale', label: 'Escala' },
 ];
+
+// Psychology: only narrative/free field types
+const PSICOLOGIA_FIELD_TYPES = [
+  'text', 'textarea', 'date', 'select', 'multiselect', 'checkbox', 'radio',
+];
+
+const getFieldTypes = (specialtySlug?: string) => {
+  if (specialtySlug === 'psicologia') {
+    return ALL_FIELD_TYPES.filter(ft => PSICOLOGIA_FIELD_TYPES.includes(ft.value));
+  }
+  return ALL_FIELD_TYPES;
+};
 
 interface AnamnesisModelEditorDialogProps {
   open: boolean;
@@ -95,6 +107,7 @@ export function AnamnesisModelEditorDialog({
   const [hasChanges, setHasChanges] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [loadingStructure, setLoadingStructure] = useState(false);
+  const fieldTypes = getFieldTypes(specialtySlug);
 
   // Load model data and structure from version
   useEffect(() => {
@@ -176,6 +189,22 @@ export function AnamnesisModelEditorDialog({
     markChanged();
   };
 
+  const duplicateSection = (idx: number) => {
+    setSections(prev => {
+      const src = prev[idx];
+      const dup: EditorSection = {
+        ...src,
+        id: `section_${Date.now()}`,
+        title: `${src.title} (cópia)`,
+        fields: src.fields.map(f => ({ ...f, id: `field_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` })),
+      };
+      const arr = [...prev];
+      arr.splice(idx + 1, 0, dup);
+      return arr;
+    });
+    markChanged();
+  };
+
   const moveSectionUp = (idx: number) => {
     if (idx === 0) return;
     setSections(prev => {
@@ -236,6 +265,18 @@ export function AnamnesisModelEditorDialog({
     setSections(prev => prev.map((s, i) => {
       if (i !== sectionIdx) return s;
       return { ...s, fields: s.fields.filter((_, fi) => fi !== fieldIdx) };
+    }));
+    markChanged();
+  };
+
+  const duplicateField = (sectionIdx: number, fieldIdx: number) => {
+    setSections(prev => prev.map((s, i) => {
+      if (i !== sectionIdx) return s;
+      const src = s.fields[fieldIdx];
+      const dup: EditorField = { ...src, id: `field_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, label: `${src.label} (cópia)` };
+      const fields = [...s.fields];
+      fields.splice(fieldIdx + 1, 0, dup);
+      return { ...s, fields };
     }));
     markChanged();
   };
@@ -415,6 +456,16 @@ export function AnamnesisModelEditorDialog({
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="shrink-0 h-8"
+                            onClick={() => duplicateSection(sIdx)}
+                            title="Duplicar seção"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
                             className="text-destructive hover:text-destructive shrink-0 h-8"
                             onClick={() => removeSection(sIdx)}
                           >
@@ -427,80 +478,85 @@ export function AnamnesisModelEditorDialog({
                           {section.fields.map((field, fIdx) => (
                             <div
                               key={field.id}
-                              className="flex items-start gap-2 p-3 rounded-md border bg-background"
+                              className="space-y-2 p-3 rounded-md border bg-background"
                             >
-                              {/* Reorder */}
-                              <div className="flex flex-col gap-0.5 pt-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5"
-                                  onClick={() => moveFieldUp(sIdx, fIdx)}
-                                  disabled={fIdx === 0}
-                                >
-                                  <ArrowUp className="h-3 w-3" />
+                              <div className="flex items-start gap-2">
+                                {/* Reorder */}
+                                <div className="flex flex-col gap-0.5 pt-1">
+                                  <Button type="button" variant="ghost" size="icon" className="h-5 w-5"
+                                    onClick={() => moveFieldUp(sIdx, fIdx)} disabled={fIdx === 0}>
+                                    <ArrowUp className="h-3 w-3" />
+                                  </Button>
+                                  <Button type="button" variant="ghost" size="icon" className="h-5 w-5"
+                                    onClick={() => moveFieldDown(sIdx, fIdx)} disabled={fIdx === section.fields.length - 1}>
+                                    <ArrowDown className="h-3 w-3" />
+                                  </Button>
+                                </div>
+
+                                {/* Field config */}
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                                  <Input
+                                    value={field.label}
+                                    onChange={e => updateField(sIdx, fIdx, { label: e.target.value })}
+                                    placeholder="Nome do campo"
+                                    className="h-8 text-sm"
+                                  />
+                                  <Select
+                                    value={field.type}
+                                    onValueChange={v => updateField(sIdx, fIdx, { type: v })}
+                                  >
+                                    <SelectTrigger className="h-8 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {fieldTypes.map(ft => (
+                                        <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    value={field.placeholder || ''}
+                                    onChange={e => updateField(sIdx, fIdx, { placeholder: e.target.value })}
+                                    placeholder="Placeholder"
+                                    className="h-8 text-sm"
+                                  />
+                                </div>
+
+                                {/* Required toggle */}
+                                <div className="flex items-center gap-1 pt-1">
+                                  <Checkbox
+                                    checked={field.required}
+                                    onCheckedChange={v => updateField(sIdx, fIdx, { required: !!v })}
+                                  />
+                                  <Asterisk className={`h-3 w-3 ${field.required ? 'text-destructive' : 'text-muted-foreground/40'}`} />
+                                </div>
+
+                                {/* Duplicate */}
+                                <Button type="button" variant="ghost" size="icon"
+                                  className="h-8 w-8 shrink-0" onClick={() => duplicateField(sIdx, fIdx)} title="Duplicar campo">
+                                  <Copy className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5"
-                                  onClick={() => moveFieldDown(sIdx, fIdx)}
-                                  disabled={fIdx === section.fields.length - 1}
-                                >
-                                  <ArrowDown className="h-3 w-3" />
+
+                                {/* Remove */}
+                                <Button type="button" variant="ghost" size="icon"
+                                  className="h-8 w-8 text-destructive/60 hover:text-destructive shrink-0"
+                                  onClick={() => removeField(sIdx, fIdx)}>
+                                  <X className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
 
-                              {/* Field config */}
-                              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                                <Input
-                                  value={field.label}
-                                  onChange={e => updateField(sIdx, fIdx, { label: e.target.value })}
-                                  placeholder="Nome do campo"
-                                  className="h-8 text-sm"
-                                />
-                                <Select
-                                  value={field.type}
-                                  onValueChange={v => updateField(sIdx, fIdx, { type: v })}
-                                >
-                                  <SelectTrigger className="h-8 text-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {FIELD_TYPES.map(ft => (
-                                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <Input
-                                  value={field.placeholder || ''}
-                                  onChange={e => updateField(sIdx, fIdx, { placeholder: e.target.value })}
-                                  placeholder="Placeholder"
-                                  className="h-8 text-sm"
-                                />
-                              </div>
-
-                              {/* Required toggle */}
-                              <div className="flex items-center gap-1 pt-1">
-                                <Checkbox
-                                  checked={field.required}
-                                  onCheckedChange={v => updateField(sIdx, fIdx, { required: !!v })}
-                                />
-                                <Asterisk className={`h-3 w-3 ${field.required ? 'text-destructive' : 'text-muted-foreground/40'}`} />
-                              </div>
-
-                              {/* Remove */}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive/60 hover:text-destructive shrink-0"
-                                onClick={() => removeField(sIdx, fIdx)}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </Button>
+                              {/* Options editor for select/multiselect/radio */}
+                              {['select', 'multiselect', 'radio'].includes(field.type) && (
+                                <div className="ml-12 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Opções (uma por linha)</Label>
+                                  <textarea
+                                    className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 min-h-[60px] resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    value={(field.options || []).join('\n')}
+                                    onChange={e => updateField(sIdx, fIdx, { options: e.target.value.split('\n') })}
+                                    placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
+                                  />
+                                </div>
+                              )}
                             </div>
                           ))}
 

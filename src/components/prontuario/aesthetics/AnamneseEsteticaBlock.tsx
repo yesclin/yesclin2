@@ -42,11 +42,16 @@ import {
   type AnamneseEsteticaContent,
 } from '@/hooks/aesthetics/useAnamneseEsteticaData';
 
+import { useResolvedAnamnesisTemplate } from '@/hooks/prontuario/useResolvedAnamnesisTemplate';
+import { AnamneseModelSelector } from '@/components/prontuario/AnamneseModelSelector';
+
 interface AnamneseEsteticaBlockProps {
   patientId: string | null;
   clinicId: string | null;
   appointmentId?: string | null;
   canEdit?: boolean;
+  specialtyId?: string | null;
+  procedureId?: string | null;
 }
 
 export function AnamneseEsteticaBlock({
@@ -54,6 +59,8 @@ export function AnamneseEsteticaBlock({
   clinicId,
   appointmentId,
   canEdit = false,
+  specialtyId,
+  procedureId,
 }: AnamneseEsteticaBlockProps) {
   const { 
     current, 
@@ -71,6 +78,13 @@ export function AnamneseEsteticaBlock({
   );
   const [showHistory, setShowHistory] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const {
+    data: resolvedTemplate,
+    allTemplates,
+    isLoading: templateLoading,
+  } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
 
   // Carregar dados atuais no formulário
   useEffect(() => {

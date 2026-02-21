@@ -30,6 +30,7 @@ import {
 } from '@/hooks/prontuario/nutricao/useAnamneseNutricionalData';
 import { useResolvedAnamnesisTemplate } from '@/hooks/prontuario/useResolvedAnamnesisTemplate';
 import { AnamnesisTemplatePicker } from '@/components/prontuario/AnamnesisTemplatePicker';
+import { AnamneseModelSelector } from '@/components/prontuario/AnamneseModelSelector';
 
 interface AnamneseNutricionalBlockProps {
   currentAnamnese: AnamneseNutricional | null;
@@ -751,49 +752,22 @@ export function AnamneseNutricionalBlock({
 
       {/* Empty State */}
       {!currentAnamnese && !showForm && (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <Apple className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground mb-4">Nenhuma anamnese nutricional registrada</p>
-
-            {/* Template picker */}
-            {specialtyId && (
-              <div className="flex justify-center mb-4">
-                <AnamnesisTemplatePicker
-                  resolvedTemplate={resolvedTemplate}
-                  allTemplates={allTemplates}
-                  hasMultipleTemplates={hasMultipleTemplates}
-                  isLoading={templateLoading}
-                  hasStartedFilling={false}
-                  onTemplateChange={setSelectedTemplateId}
-                  selectedTemplateId={selectedTemplateId}
-                  versionNumber={resolvedTemplate?.version_number}
-                />
-              </div>
-            )}
-
-            {/* No template - show create/configure */}
-            {!templateLoading && !hasTemplate && specialtyId && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-center gap-2 text-sm text-amber-600 mb-3">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Nenhum modelo de anamnese configurado para Nutrição</span>
-                </div>
-                <Button variant="outline" onClick={() => navigate('/configuracoes/modelos-anamnese')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configurar Modelo
-                </Button>
-              </div>
-            )}
-
-            {canEdit && hasTemplate && (
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Registrar Anamnese Nutricional
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <AnamneseModelSelector
+          icon={<Apple className="h-10 w-10 text-muted-foreground opacity-50" />}
+          emptyTitle="Nenhuma anamnese nutricional registrada"
+          registerLabel="Registrar Anamnese Nutricional"
+          resolvedTemplate={resolvedTemplate}
+          allTemplates={allTemplates}
+          isLoading={templateLoading}
+          selectedTemplateId={selectedTemplateId}
+          onTemplateChange={setSelectedTemplateId}
+          canEdit={canEdit}
+          canManageTemplates={canEdit}
+          onRegister={() => setShowForm(true)}
+          onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
+          onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+          specialtyLabel="Nutrição"
+        />
       )}
 
       {/* Histórico */}

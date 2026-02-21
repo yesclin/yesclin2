@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,11 +57,16 @@ import {
   type AnamneseFuncionalPilatesData
 } from '@/hooks/prontuario/pilates/useAnamneseFuncionalPilatesData';
 
+import { useResolvedAnamnesisTemplate } from '@/hooks/prontuario/useResolvedAnamnesisTemplate';
+import { AnamneseModelSelector } from '@/components/prontuario/AnamneseModelSelector';
+
 interface AnamneseFuncionalPilatesBlockProps {
   patientId: string | null;
   clinicId: string | null;
   professionalId: string | null;
   canEdit?: boolean;
+  specialtyId?: string | null;
+  procedureId?: string | null;
 }
 
 /**
@@ -379,7 +385,10 @@ export function AnamneseFuncionalPilatesBlock({
   clinicId,
   professionalId,
   canEdit = false,
+  specialtyId,
+  procedureId,
 }: AnamneseFuncionalPilatesBlockProps) {
+  const navigate = useNavigate();
   const {
     currentAnamnese,
     history,
@@ -391,6 +400,13 @@ export function AnamneseFuncionalPilatesBlock({
   } = useAnamneseFuncionalPilatesData({ patientId, clinicId, professionalId });
 
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const {
+    data: resolvedTemplate,
+    allTemplates,
+    isLoading: templateLoading,
+  } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
 
   if (loading) {
     return (
@@ -478,18 +494,23 @@ export function AnamneseFuncionalPilatesBlock({
 
       {/* Conteúdo */}
       {history.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Nenhuma anamnese registrada para este aluno.</p>
-            {canEdit && (
-              <Button onClick={() => setIsFormOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Registrar Anamnese
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <AnamneseModelSelector
+          icon={<ClipboardList className="h-10 w-10 text-muted-foreground opacity-50" />}
+          emptyTitle="Nenhuma anamnese registrada"
+          emptyDescription="Registre a anamnese funcional para este aluno."
+          registerLabel="Registrar Anamnese"
+          resolvedTemplate={resolvedTemplate}
+          allTemplates={allTemplates}
+          isLoading={templateLoading}
+          selectedTemplateId={selectedTemplateId}
+          onTemplateChange={setSelectedTemplateId}
+          canEdit={canEdit}
+          canManageTemplates={canEdit}
+          onRegister={() => setIsFormOpen(true)}
+          onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
+          onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+          specialtyLabel="Pilates"
+        />
       ) : (
         <ScrollArea className="max-h-[600px]">
           <div className="space-y-3">

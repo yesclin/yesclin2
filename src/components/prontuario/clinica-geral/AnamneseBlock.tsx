@@ -349,92 +349,131 @@ export function AnamneseBlock({
 
       // ── 2. No template found — create one ──
       const defaultStructure: TemplateSection[] = [
+        // BLOCO 1 — Queixa Principal
         {
           id: 'section_queixa_principal', type: 'section', title: 'Queixa Principal',
           fields: [
-            { id: 'f_qp', type: 'textarea', label: 'Queixa principal (QP)', required: true, placeholder: 'Descreva a queixa principal do paciente nas palavras dele...' },
-            { id: 'f_qp_duracao', type: 'text', label: 'Duração dos sintomas', placeholder: 'Ex: há 3 dias, há 2 semanas' },
+            { id: 'f_queixa_principal', type: 'textarea', label: 'Queixa principal', required: true, placeholder: 'Descreva a queixa principal do paciente nas palavras dele...' },
           ],
         },
+        // BLOCO 2 — História da Doença Atual (HDA)
         {
           id: 'section_hda', type: 'section', title: 'História da Doença Atual (HDA)',
           fields: [
-            { id: 'f_hda_onset', type: 'text', label: 'Início (Onset)', placeholder: 'Ex: Há 5 dias, após esforço físico' },
-            { id: 'f_hda_provocacao', type: 'textarea', label: 'Provocação / Paliação', placeholder: 'Fatores agravantes e atenuantes...' },
-            { id: 'f_hda_qualidade', type: 'textarea', label: 'Qualidade do sintoma', placeholder: 'Pontada, queimação, pressão, contínua...' },
-            { id: 'f_hda_regiao', type: 'text', label: 'Região / Irradiação', placeholder: 'Ex: Precordial, irradiando para o braço esquerdo' },
-            { id: 'f_hda_severidade', type: 'select', label: 'Severidade (0-10)', options: ['0 - Sem dor','1','2','3','4','5','6','7','8','9','10 - Pior dor possível'] },
-            { id: 'f_hda_tempo', type: 'textarea', label: 'Evolução temporal', placeholder: 'Contínua, intermitente, progressiva...' },
+            { id: 'f_hda_inicio', type: 'text', label: 'Início dos sintomas', placeholder: 'Ex: Há 3 dias, após esforço físico' },
+            { id: 'f_hda_evolucao', type: 'textarea', label: 'Evolução', placeholder: 'Progressiva, estável, intermitente...' },
+            { id: 'f_hda_localizacao_irradiacao', type: 'text', label: 'Localização / Irradiação', placeholder: 'Ex: Precordial, irradiando para braço esquerdo' },
+            { id: 'f_hda_intensidade', type: 'select', label: 'Intensidade (0-10)', options: ['0','1','2','3','4','5','6','7','8','9','10'] },
             { id: 'f_hda_sintomas_associados', type: 'textarea', label: 'Sintomas associados', placeholder: 'Náusea, febre, dispneia, sudorese...' },
+            { id: 'f_hda_piora_melhora', type: 'textarea', label: 'Fatores de piora / melhora', placeholder: 'O que piora e o que alivia os sintomas...' },
             { id: 'f_hda_tratamentos_previos', type: 'textarea', label: 'Tratamentos prévios', placeholder: 'Medicamentos, procedimentos já realizados...' },
           ],
         },
+        // BLOCO 3 — Revisão de Sistemas
         {
-          id: 'section_antecedentes_pessoais', type: 'section', title: 'Antecedentes Pessoais (HPP)',
+          id: 'section_revisao_sistemas', type: 'section', title: 'Revisão de Sistemas',
           fields: [
-            { id: 'f_hpp_doencas', type: 'textarea', label: 'Doenças crônicas', placeholder: 'HAS, DM, Asma, Cardiopatia...' },
-            { id: 'f_hpp_cirurgias', type: 'textarea', label: 'Cirurgias prévias', placeholder: 'Tipo, ano, complicações...' },
-            { id: 'f_hpp_internacoes', type: 'textarea', label: 'Internações anteriores', placeholder: 'Motivo, data, duração...' },
-            { id: 'f_hpp_transfusoes', type: 'select', label: 'Transfusões sanguíneas', options: ['Nunca','Sim, sem reações','Sim, com reações'] },
-            { id: 'f_hpp_traumas', type: 'textarea', label: 'Traumas / Fraturas' },
-            { id: 'f_hpp_vacinacao', type: 'select', label: 'Vacinação em dia', options: ['Sim','Não','Não sabe'] },
-            { id: 'f_hpp_gineco', type: 'textarea', label: 'Ginecológico / Obstétrico (se aplicável)', placeholder: 'G_P_A_, DUM, métodos contraceptivos...' },
+            { id: 'f_rs_febre', type: 'select', label: 'Febre', options: ['Não','Sim'] },
+            { id: 'f_rs_febre_obs', type: 'text', label: 'Febre — observação', placeholder: 'Detalhes...' },
+            { id: 'f_rs_perda_peso', type: 'select', label: 'Perda de peso', options: ['Não','Sim'] },
+            { id: 'f_rs_perda_peso_obs', type: 'text', label: 'Perda de peso — observação', placeholder: 'Quanto, em quanto tempo...' },
+            { id: 'f_rs_dispneia', type: 'select', label: 'Dispneia', options: ['Não','Sim'] },
+            { id: 'f_rs_dispneia_obs', type: 'text', label: 'Dispneia — observação', placeholder: 'Aos esforços, em repouso...' },
+            { id: 'f_rs_dor_toracica', type: 'select', label: 'Dor torácica', options: ['Não','Sim'] },
+            { id: 'f_rs_dor_toracica_obs', type: 'text', label: 'Dor torácica — observação', placeholder: 'Tipo, duração...' },
+            { id: 'f_rs_nauseas_vomitos', type: 'select', label: 'Náuseas / Vômitos', options: ['Não','Sim'] },
+            { id: 'f_rs_nauseas_obs', type: 'text', label: 'Náuseas — observação', placeholder: 'Frequência, gatilhos...' },
+            { id: 'f_rs_intestinal', type: 'select', label: 'Alterações intestinais', options: ['Não','Sim'] },
+            { id: 'f_rs_intestinal_obs', type: 'text', label: 'Intestinal — observação', placeholder: 'Constipação, diarreia...' },
+            { id: 'f_rs_urinario', type: 'select', label: 'Alterações urinárias', options: ['Não','Sim'] },
+            { id: 'f_rs_urinario_obs', type: 'text', label: 'Urinário — observação', placeholder: 'Disúria, polaciúria...' },
+            { id: 'f_rs_cefaleia_tontura', type: 'select', label: 'Cefaleia / Tontura', options: ['Não','Sim'] },
+            { id: 'f_rs_cefaleia_obs', type: 'text', label: 'Cefaleia — observação', placeholder: 'Tipo, frequência...' },
+            { id: 'f_rs_edema', type: 'select', label: 'Edema', options: ['Não','Sim'] },
+            { id: 'f_rs_edema_obs', type: 'text', label: 'Edema — observação', placeholder: 'Localização, intensidade...' },
+            { id: 'f_rs_outros', type: 'textarea', label: 'Outros achados na revisão', placeholder: 'Outros sintomas relevantes...' },
           ],
         },
+        // BLOCO 4 — Antecedentes Pessoais
         {
-          id: 'section_medicamentos_alergias', type: 'section', title: 'Medicamentos em Uso e Alergias',
+          id: 'section_antecedentes_pessoais', type: 'section', title: 'Antecedentes Pessoais',
           fields: [
-            { id: 'f_med_uso', type: 'textarea', label: 'Medicamentos em uso contínuo', placeholder: 'Nome, dose, posologia...' },
-            { id: 'f_med_suplementos', type: 'textarea', label: 'Suplementos e fitoterápicos' },
-            { id: 'f_alergias_med', type: 'textarea', label: 'Alergias a medicamentos', placeholder: 'Nome do medicamento e tipo de reação...' },
-            { id: 'f_alergias_outras', type: 'textarea', label: 'Outras alergias', placeholder: 'Alimentos, látex, contrastes...' },
+            { id: 'f_ap_doencas_preexistentes', type: 'textarea', label: 'Doenças pré-existentes', placeholder: 'HAS, DM, Asma, Cardiopatia...' },
+            { id: 'f_ap_internacoes_previas', type: 'textarea', label: 'Internações prévias', placeholder: 'Motivo, data, duração...' },
+            { id: 'f_ap_cirurgias_previas', type: 'textarea', label: 'Cirurgias prévias', placeholder: 'Tipo, ano, complicações...' },
+            { id: 'f_ap_alergias', type: 'textarea', label: 'Alergias', placeholder: 'Medicamentos, alimentos, contrastes, látex...' },
+            { id: 'f_ap_imunizacoes', type: 'text', label: 'Imunizações', placeholder: 'Em dia, pendências...' },
+            { id: 'f_ap_gineco_obstetrico', type: 'textarea', label: 'Ginecológico / Obstétrico (se aplicável)', placeholder: 'G_P_A_, DUM, contraceptivos...' },
           ],
         },
+        // BLOCO 5 — Medicamentos / Tratamentos
         {
-          id: 'section_historico_familiar', type: 'section', title: 'Histórico Familiar',
+          id: 'section_medicamentos', type: 'section', title: 'Medicamentos / Tratamentos',
           fields: [
-            { id: 'f_hf_detalhes', type: 'textarea', label: 'Detalhes e parentesco', placeholder: 'Ex: Pai faleceu de IAM aos 55a, mãe DM2...' },
+            { id: 'f_med_em_uso', type: 'textarea', label: 'Medicamentos em uso', placeholder: 'Nome, dose, posologia...' },
+            { id: 'f_med_aderencia', type: 'select', label: 'Aderência ao tratamento', options: ['Boa','Irregular','Baixa'] },
+            { id: 'f_med_aderencia_obs', type: 'text', label: 'Observação sobre aderência', placeholder: 'Detalhes...' },
+            { id: 'f_med_suplementos', type: 'textarea', label: 'Suplementos / Fitoterápicos', placeholder: 'Suplementos em uso...' },
           ],
         },
+        // BLOCO 6 — Antecedentes Familiares
         {
-          id: 'section_habitos', type: 'section', title: 'Hábitos de Vida',
+          id: 'section_antecedentes_familiares', type: 'section', title: 'Antecedentes Familiares',
           fields: [
-            { id: 'f_hab_tabagismo', type: 'select', label: 'Tabagismo', options: ['Nunca fumou','Ex-fumante','Fumante ativo'] },
-            { id: 'f_hab_etilismo', type: 'select', label: 'Etilismo', options: ['Não','Social','Moderado','Frequente'] },
-            { id: 'f_hab_atividade', type: 'select', label: 'Atividade física', options: ['Sedentário','Eventual','1-3x/semana','4-5x/semana','Diária'] },
-            { id: 'f_hab_alimentacao', type: 'textarea', label: 'Padrão alimentar', placeholder: 'Descreva resumidamente o padrão alimentar...' },
-            { id: 'f_hab_sono', type: 'select', label: 'Qualidade do sono', options: ['Bom','Regular','Ruim','Insônia'] },
+            { id: 'f_af_historico', type: 'textarea', label: 'Histórico familiar', placeholder: 'Pai IAM aos 55a, mãe DM2, irmão HAS...' },
           ],
         },
+        // BLOCO 7 — Hábitos de Vida
+        {
+          id: 'section_habitos_vida', type: 'section', title: 'Hábitos de Vida',
+          fields: [
+            { id: 'f_hv_tabagismo', type: 'select', label: 'Tabagismo', options: ['Nunca fumou','Ex-fumante','Fumante ativo'] },
+            { id: 'f_hv_tabagismo_macos', type: 'text', label: 'Maços/ano (se aplicável)', placeholder: 'Ex: 20 maços/ano' },
+            { id: 'f_hv_etilismo', type: 'select', label: 'Etilismo', options: ['Não','Ocasional','Frequente'] },
+            { id: 'f_hv_etilismo_qtd', type: 'text', label: 'Quantidade (se aplicável)', placeholder: 'Ex: 2 cervejas/semana' },
+            { id: 'f_hv_drogas', type: 'select', label: 'Uso de drogas ilícitas', options: ['Não','Sim'] },
+            { id: 'f_hv_drogas_quais', type: 'text', label: 'Quais drogas (se aplicável)', placeholder: 'Especificar...' },
+            { id: 'f_hv_atividade_fisica', type: 'text', label: 'Atividade física', placeholder: 'Ex: Caminhada 3x/semana, 30min' },
+            { id: 'f_hv_alimentacao', type: 'textarea', label: 'Padrão alimentar', placeholder: 'Descreva resumidamente...' },
+            { id: 'f_hv_sono', type: 'text', label: 'Sono', placeholder: 'Ex: 7h/noite, fragmentado' },
+            { id: 'f_hv_estresse_trabalho', type: 'textarea', label: 'Estresse / Trabalho', placeholder: 'Nível de estresse, carga de trabalho...' },
+          ],
+        },
+        // BLOCO 8 — Exame Físico
         {
           id: 'section_exame_fisico', type: 'section', title: 'Exame Físico',
           fields: [
-            { id: 'f_ef_pa', type: 'text', label: 'Pressão Arterial (mmHg)', placeholder: 'Ex: 120x80' },
-            { id: 'f_ef_fc', type: 'number', label: 'Frequência Cardíaca (bpm)', placeholder: 'Ex: 72' },
-            { id: 'f_ef_peso', type: 'number', label: 'Peso (kg)', required: true, placeholder: 'Ex: 75.5' },
-            { id: 'f_ef_altura', type: 'number', label: 'Altura (cm)', required: true, placeholder: 'Ex: 172' },
-            { id: 'f_ef_estado_geral', type: 'select', label: 'Estado geral', options: ['Bom','Regular','Ruim','Grave'] },
-            { id: 'f_ef_inspecao', type: 'textarea', label: 'Inspeção geral', placeholder: 'Lúcido, orientado, corado, hidratado...' },
-            { id: 'f_ef_cardiovascular', type: 'textarea', label: 'Aparelho cardiovascular', placeholder: 'RCR 2T, BNF, sem sopros...' },
-            { id: 'f_ef_respiratorio', type: 'textarea', label: 'Aparelho respiratório', placeholder: 'MV presente bilateralmente, sem RA...' },
+            { id: 'f_ef_estado_geral', type: 'text', label: 'Estado geral', placeholder: 'BEG, lúcido, orientado, corado, hidratado...' },
+            { id: 'f_ef_pa', type: 'text', label: 'PA (mmHg)', placeholder: 'Ex: 120x80' },
+            { id: 'f_ef_fc', type: 'text', label: 'FC (bpm)', placeholder: 'Ex: 72' },
+            { id: 'f_ef_fr', type: 'text', label: 'FR (irpm)', placeholder: 'Ex: 16' },
+            { id: 'f_ef_temp', type: 'text', label: 'Temperatura (°C)', placeholder: 'Ex: 36.5' },
+            { id: 'f_ef_spo2', type: 'text', label: 'SpO₂ (%)', placeholder: 'Ex: 98' },
+            { id: 'f_ef_cabeca_pescoco', type: 'textarea', label: 'Cabeça e Pescoço', placeholder: 'Oroscopia, otoscopia, linfonodos...' },
+            { id: 'f_ef_cardio', type: 'textarea', label: 'Cardiovascular', placeholder: 'RCR 2T, BNF, sem sopros...' },
+            { id: 'f_ef_respiratorio', type: 'textarea', label: 'Respiratório', placeholder: 'MV presente bilateralmente, sem RA...' },
             { id: 'f_ef_abdome', type: 'textarea', label: 'Abdome', placeholder: 'Plano, flácido, indolor à palpação, RHA+...' },
+            { id: 'f_ef_neurologico', type: 'textarea', label: 'Neurológico', placeholder: 'Glasgow 15, pupilas isocóricas, sem déficits...' },
+            { id: 'f_ef_pele_extremidades', type: 'textarea', label: 'Pele e Extremidades', placeholder: 'Sem lesões, pulsos presentes, sem edema...' },
           ],
         },
+        // BLOCO 9 — Hipóteses Diagnósticas
         {
           id: 'section_hipoteses', type: 'section', title: 'Hipóteses Diagnósticas',
           fields: [
-            { id: 'f_hd_principal', type: 'textarea', label: 'Hipótese diagnóstica principal', placeholder: 'CID-10 e descrição...' },
+            { id: 'f_hd_principais', type: 'textarea', label: 'Hipóteses principais', placeholder: 'CID-10 e descrição...' },
             { id: 'f_hd_diferenciais', type: 'textarea', label: 'Diagnósticos diferenciais', placeholder: 'Liste as hipóteses diferenciais...' },
-            { id: 'f_hd_exames', type: 'textarea', label: 'Exames complementares solicitados', placeholder: 'Hemograma, glicemia, ECG...' },
           ],
         },
+        // BLOCO 10 — Plano / Conduta
         {
           id: 'section_conduta', type: 'section', title: 'Plano / Conduta',
           fields: [
-            { id: 'f_conduta_plano', type: 'textarea', label: 'Plano terapêutico', placeholder: 'Prescrição, orientações, procedimentos...' },
-            { id: 'f_conduta_encaminhamento', type: 'textarea', label: 'Encaminhamentos', placeholder: 'Especialidades, exames de imagem...' },
-            { id: 'f_conduta_retorno', type: 'text', label: 'Retorno previsto', placeholder: 'Ex: em 15 dias, em 1 mês' },
-            { id: 'f_conduta_observacoes', type: 'textarea', label: 'Observações gerais', placeholder: 'Informações adicionais, sinais de alerta...' },
+            { id: 'f_pc_exames', type: 'textarea', label: 'Exames solicitados', placeholder: 'Hemograma, glicemia, ECG...' },
+            { id: 'f_pc_prescricao_orientacoes', type: 'textarea', label: 'Prescrição e Orientações', placeholder: 'Prescrições, orientações gerais...' },
+            { id: 'f_pc_encaminhamentos', type: 'textarea', label: 'Encaminhamentos', placeholder: 'Especialidades, exames de imagem...' },
+            { id: 'f_pc_retorno', type: 'text', label: 'Retorno', placeholder: 'Ex: em 15 dias, em 1 mês' },
+            { id: 'f_pc_sinais_alarme', type: 'textarea', label: 'Sinais de alarme', placeholder: 'Orientar o paciente a retornar se...' },
           ],
         },
       ];

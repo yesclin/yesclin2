@@ -1,11 +1,11 @@
 /**
- * NUTRIÇÃO - Anamnese Nutricional
+ * NUTRIÇÃO - Anamnese Nutricional Premium
  * 
- * Bloco para registro de anamnese nutricional completa.
- * Mantém versionamento - não sobrescreve automaticamente.
+ * 7 blocos clínicos em tela única. Layout limpo, auto-IMC, autosave-ready.
+ * Exclusivo para especialidade Nutrição.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,37 +13,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  ClipboardList, 
-  Plus, 
-  Save,
-  History,
-  ChevronDown,
-  Calendar,
-  User,
-  Clock,
-  Droplets,
-  Pill,
-  AlertTriangle,
-  Target,
-  Utensils,
-  X
+  ClipboardList, Plus, Save, History, Calendar, User,
+  Apple, Stethoscope, Ruler, Brain, FileText, Utensils, Target
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
-  FREQUENCIA_CONSUMO_LABELS,
-  RESTRICOES_ALIMENTARES_OPTIONS,
-  INTOLERANCIAS_OPTIONS,
-  ALERGIAS_ALIMENTARES_OPTIONS,
   type AnamneseNutricional, 
   type AnamneseNutricionalFormData,
-  type FrequenciaConsumo
+  INITIAL_NUTRICAO_FORM,
+  calcularIMC,
+  classificarIMC,
 } from '@/hooks/prontuario/nutricao/useAnamneseNutricionalData';
 
 interface AnamneseNutricionalBlockProps {
@@ -56,37 +38,27 @@ interface AnamneseNutricionalBlockProps {
   professionalId?: string;
 }
 
-const initialFormData: AnamneseNutricionalFormData = {
-  queixa_principal: '',
-  historico_alimentar: '',
-  dietas_anteriores: '',
-  rotina_diaria: '',
-  horario_acordar: null,
-  horario_dormir: null,
-  horario_trabalho: null,
-  pratica_atividade_fisica: false,
-  atividade_fisica_detalhes: null,
-  refeicoes_por_dia: null,
-  come_fora_casa: null,
-  prepara_propria_refeicao: false,
-  quem_prepara_refeicoes: null,
-  come_assistindo_tv: false,
-  velocidade_refeicao: null,
-  mastigacao: null,
-  consumo_agua_litros: null,
-  tipo_agua: null,
-  usa_suplementos: false,
-  suplementos_detalhes: null,
-  restricoes_alimentares: [],
-  restricoes_detalhes: null,
-  intolerancias: [],
-  alergias_alimentares: [],
-  alergias_detalhes: null,
-  objetivos_paciente: '',
-  peso_desejado_kg: null,
-  prazo_objetivo: null,
-  observacoes: null,
-};
+// ─── Section Header ──────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title, badge }: { icon: React.ElementType; title: string; badge?: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border">
+      <Icon className="h-5 w-5 text-primary" />
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">{title}</h3>
+      {badge && <Badge variant="outline" className="ml-auto text-xs">{badge}</Badge>}
+    </div>
+  );
+}
+
+// ─── View-only field ─────────────────────────────────────────────
+function ViewField({ label, value, className }: { label: string; value: string | number | null | undefined; className?: string }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className={className}>
+      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-sm whitespace-pre-wrap">{value}</p>
+    </div>
+  );
+}
 
 export function AnamneseNutricionalBlock({
   currentAnamnese,
@@ -99,64 +71,60 @@ export function AnamneseNutricionalBlock({
 }: AnamneseNutricionalBlockProps) {
   const [showForm, setShowForm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [formData, setFormData] = useState<AnamneseNutricionalFormData>(initialFormData);
-  const [expandedSections, setExpandedSections] = useState({
-    queixa: true,
-    historico: true,
-    rotina: false,
-    habitos: false,
-    agua: false,
-    suplementos: false,
-    restricoes: false,
-    objetivos: true,
-  });
+  const [formData, setFormData] = useState<AnamneseNutricionalFormData>({ ...INITIAL_NUTRICAO_FORM });
+  const [status, setStatus] = useState<'rascunho' | 'finalizado'>('rascunho');
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Preencher formulário com dados existentes para atualização
+  // Auto-calculate IMC when peso or altura changes
+  useEffect(() => {
+    const imc = calcularIMC(formData.peso_kg, formData.altura_cm);
+    if (imc !== formData.imc) {
+      setFormData(prev => ({ ...prev, imc }));
+    }
+  }, [formData.peso_kg, formData.altura_cm]);
+
   const handleEdit = () => {
     if (currentAnamnese) {
       setFormData({
         queixa_principal: currentAnamnese.queixa_principal,
-        historico_alimentar: currentAnamnese.historico_alimentar,
-        dietas_anteriores: currentAnamnese.dietas_anteriores,
-        rotina_diaria: currentAnamnese.rotina_diaria,
-        horario_acordar: currentAnamnese.horario_acordar,
-        horario_dormir: currentAnamnese.horario_dormir,
-        horario_trabalho: currentAnamnese.horario_trabalho,
-        pratica_atividade_fisica: currentAnamnese.pratica_atividade_fisica,
-        atividade_fisica_detalhes: currentAnamnese.atividade_fisica_detalhes,
+        rotina_alimentar: currentAnamnese.rotina_alimentar,
         refeicoes_por_dia: currentAnamnese.refeicoes_por_dia,
-        come_fora_casa: currentAnamnese.come_fora_casa,
-        prepara_propria_refeicao: currentAnamnese.prepara_propria_refeicao,
-        quem_prepara_refeicoes: currentAnamnese.quem_prepara_refeicoes,
-        come_assistindo_tv: currentAnamnese.come_assistindo_tv,
-        velocidade_refeicao: currentAnamnese.velocidade_refeicao,
-        mastigacao: currentAnamnese.mastigacao,
         consumo_agua_litros: currentAnamnese.consumo_agua_litros,
-        tipo_agua: currentAnamnese.tipo_agua,
-        usa_suplementos: currentAnamnese.usa_suplementos,
-        suplementos_detalhes: currentAnamnese.suplementos_detalhes,
-        restricoes_alimentares: currentAnamnese.restricoes_alimentares,
-        restricoes_detalhes: currentAnamnese.restricoes_detalhes,
-        intolerancias: currentAnamnese.intolerancias,
-        alergias_alimentares: currentAnamnese.alergias_alimentares,
-        alergias_detalhes: currentAnamnese.alergias_detalhes,
-        objetivos_paciente: currentAnamnese.objetivos_paciente,
-        peso_desejado_kg: currentAnamnese.peso_desejado_kg,
-        prazo_objetivo: currentAnamnese.prazo_objetivo,
+        consumo_acucar: currentAnamnese.consumo_acucar,
+        consumo_ultraprocessados: currentAnamnese.consumo_ultraprocessados,
+        consumo_alcool: currentAnamnese.consumo_alcool,
+        doencas_associadas: currentAnamnese.doencas_associadas,
+        uso_medicamentos: currentAnamnese.uso_medicamentos,
+        suplementacao: currentAnamnese.suplementacao,
+        peso_kg: currentAnamnese.peso_kg,
+        altura_cm: currentAnamnese.altura_cm,
+        imc: currentAnamnese.imc,
+        circunferencia_abdominal_cm: currentAnamnese.circunferencia_abdominal_cm,
+        percentual_gordura: currentAnamnese.percentual_gordura,
+        massa_magra_kg: currentAnamnese.massa_magra_kg,
+        qualidade_sono: currentAnamnese.qualidade_sono,
+        nivel_estresse: currentAnamnese.nivel_estresse,
+        atividade_fisica: currentAnamnese.atividade_fisica,
+        compulsao_alimentar: currentAnamnese.compulsao_alimentar,
+        relacao_emocional_comida: currentAnamnese.relacao_emocional_comida,
+        diagnostico_nutricional: currentAnamnese.diagnostico_nutricional,
+        estrategia_nutricional: currentAnamnese.estrategia_nutricional,
+        meta_calorica: currentAnamnese.meta_calorica,
+        distribuicao_macronutrientes: currentAnamnese.distribuicao_macronutrientes,
+        orientacoes_gerais: currentAnamnese.orientacoes_gerais,
+        proxima_reavaliacao: currentAnamnese.proxima_reavaliacao,
         observacoes: currentAnamnese.observacoes,
       });
     }
     setShowForm(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!professionalId) {
-      return;
-    }
+  const handleSubmit = async (asDraft: boolean) => {
+    if (!professionalId) return;
+    setStatus(asDraft ? 'rascunho' : 'finalizado');
     const result = await onSave(formData, professionalId);
     if (result) {
-      setFormData(initialFormData);
+      setFormData({ ...INITIAL_NUTRICAO_FORM });
       setShowForm(false);
     }
   };
@@ -165,27 +133,23 @@ export function AnamneseNutricionalBlock({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  const updateNumericField = (field: keyof AnamneseNutricionalFormData, value: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updateField(field, value ? parseFloat(value) : null as any);
   };
 
-  const toggleArrayItem = (field: 'restricoes_alimentares' | 'intolerancias' | 'alergias_alimentares', item: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(item)
-        ? prev[field].filter(i => i !== item)
-        : [...prev[field], item],
-    }));
+  const updateIntField = (field: keyof AnamneseNutricionalFormData, value: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updateField(field, value ? parseInt(value) : null as any);
   };
 
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
+        <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
           </div>
@@ -196,24 +160,18 @@ export function AnamneseNutricionalBlock({
 
   return (
     <div className="space-y-4">
-      {/* Cabeçalho */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5 text-primary" />
+          <Apple className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Anamnese Nutricional</h2>
           {currentAnamnese && (
-            <Badge variant="outline" className="ml-2">
-              v{currentAnamnese.version}
-            </Badge>
+            <Badge variant="outline" className="ml-2">v{currentAnamnese.version}</Badge>
           )}
         </div>
         <div className="flex gap-2">
           {anamneseHistory.length > 1 && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
               <History className="h-4 w-4 mr-2" />
               Histórico ({anamneseHistory.length})
             </Button>
@@ -227,474 +185,387 @@ export function AnamneseNutricionalBlock({
         </div>
       </div>
 
-      {/* Formulário */}
+      {/* ─── FORM ─────────────────────────────────────────── */}
       {showForm && canEdit && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="pb-4">
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               {currentAnamnese ? 'Atualizar Anamnese (Nova Versão)' : 'Nova Anamnese Nutricional'}
             </CardTitle>
-            {currentAnamnese && (
-              <p className="text-xs text-muted-foreground">
-                Uma nova versão será criada. O histórico anterior será preservado.
-              </p>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant={status === 'rascunho' ? 'secondary' : 'default'} className="text-xs">
+                {status === 'rascunho' ? 'Rascunho' : 'Finalizado'}
+              </Badge>
+            </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Queixa Principal e Objetivos */}
-              <Collapsible open={expandedSections.queixa} onOpenChange={() => toggleSection('queixa')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Target className="h-4 w-4 text-primary" />
-                      Queixa Principal e Objetivos
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.queixa ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
-                  <div>
-                    <Label htmlFor="queixa_principal">Queixa Principal *</Label>
-                    <Textarea
-                      id="queixa_principal"
-                      placeholder="Descreva o motivo principal da consulta..."
-                      value={formData.queixa_principal}
-                      onChange={(e) => updateField('queixa_principal', e.target.value)}
-                      rows={3}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="objetivos_paciente">Objetivos do Paciente *</Label>
-                    <Textarea
-                      id="objetivos_paciente"
-                      placeholder="O que o paciente deseja alcançar..."
-                      value={formData.objetivos_paciente}
-                      onChange={(e) => updateField('objetivos_paciente', e.target.value)}
-                      rows={2}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="peso_desejado_kg">Peso Desejado (kg)</Label>
-                      <Input
-                        id="peso_desejado_kg"
-                        type="number"
-                        step="0.1"
-                        placeholder="Ex: 65"
-                        value={formData.peso_desejado_kg ?? ''}
-                        onChange={(e) => updateField('peso_desejado_kg', e.target.value ? parseFloat(e.target.value) : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="prazo_objetivo">Prazo para Objetivo</Label>
-                      <Input
-                        id="prazo_objetivo"
-                        type="date"
-                        value={formData.prazo_objetivo ?? ''}
-                        onChange={(e) => updateField('prazo_objetivo', e.target.value || null)}
-                      />
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+          <CardContent className="space-y-8">
 
-              {/* Histórico Alimentar */}
-              <Collapsible open={expandedSections.historico} onOpenChange={() => toggleSection('historico')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Utensils className="h-4 w-4 text-accent-foreground" />
-                      Histórico Alimentar
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.historico ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
+            {/* BLOCO 1 – Objetivo / Queixa Principal */}
+            <section>
+              <SectionHeader icon={Target} title="Objetivo / Queixa Principal" badge="Bloco 1" />
+              <div>
+                <Label htmlFor="queixa_principal">Queixa Principal / Objetivo *</Label>
+                <Textarea
+                  id="queixa_principal"
+                  placeholder="Descreva o objetivo principal da consulta nutricional..."
+                  value={formData.queixa_principal}
+                  onChange={(e) => updateField('queixa_principal', e.target.value)}
+                  rows={4}
+                  required
+                  className="mt-1"
+                />
+              </div>
+            </section>
+
+            {/* BLOCO 2 – História Alimentar */}
+            <section>
+              <SectionHeader icon={Utensils} title="História Alimentar" badge="Bloco 2" />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="rotina_alimentar">Rotina Alimentar</Label>
+                  <Textarea
+                    id="rotina_alimentar"
+                    placeholder="Descreva a rotina alimentar detalhada do paciente (café da manhã, almoço, jantar, lanches)..."
+                    value={formData.rotina_alimentar}
+                    onChange={(e) => updateField('rotina_alimentar', e.target.value)}
+                    rows={5}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div>
-                    <Label htmlFor="historico_alimentar">Histórico Alimentar</Label>
-                    <Textarea
-                      id="historico_alimentar"
-                      placeholder="Descreva o histórico alimentar do paciente..."
-                      value={formData.historico_alimentar}
-                      onChange={(e) => updateField('historico_alimentar', e.target.value)}
-                      rows={3}
+                    <Label htmlFor="refeicoes_por_dia">Refeições/dia</Label>
+                    <Input
+                      id="refeicoes_por_dia"
+                      type="number"
+                      min={1} max={10}
+                      placeholder="5"
+                      value={formData.refeicoes_por_dia ?? ''}
+                      onChange={(e) => updateIntField('refeicoes_por_dia', e.target.value)}
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="dietas_anteriores">Dietas Anteriores</Label>
-                    <Textarea
-                      id="dietas_anteriores"
-                      placeholder="Quais dietas o paciente já fez? Como foi a experiência?"
-                      value={formData.dietas_anteriores}
-                      onChange={(e) => updateField('dietas_anteriores', e.target.value)}
-                      rows={2}
+                    <Label htmlFor="consumo_agua_litros">Água (L/dia)</Label>
+                    <Input
+                      id="consumo_agua_litros"
+                      type="number"
+                      step="0.1" min={0} max={10}
+                      placeholder="2.0"
+                      value={formData.consumo_agua_litros ?? ''}
+                      onChange={(e) => updateNumericField('consumo_agua_litros', e.target.value)}
+                      className="mt-1"
                     />
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Rotina Diária */}
-              <Collapsible open={expandedSections.rotina} onOpenChange={() => toggleSection('rotina')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      Rotina Diária
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.rotina ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
                   <div>
-                    <Label htmlFor="rotina_diaria">Descrição da Rotina</Label>
-                    <Textarea
-                      id="rotina_diaria"
-                      placeholder="Descreva a rotina diária do paciente..."
-                      value={formData.rotina_diaria}
-                      onChange={(e) => updateField('rotina_diaria', e.target.value)}
-                      rows={2}
-                    />
+                    <Label htmlFor="consumo_acucar">Açúcar</Label>
+                    <Select value={formData.consumo_acucar} onValueChange={(v) => updateField('consumo_acucar', v)}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nenhum">Nenhum</SelectItem>
+                        <SelectItem value="baixo">Baixo</SelectItem>
+                        <SelectItem value="moderado">Moderado</SelectItem>
+                        <SelectItem value="alto">Alto</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="horario_acordar">Horário de Acordar</Label>
-                      <Input
-                        id="horario_acordar"
-                        type="time"
-                        value={formData.horario_acordar ?? ''}
-                        onChange={(e) => updateField('horario_acordar', e.target.value || null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="horario_dormir">Horário de Dormir</Label>
-                      <Input
-                        id="horario_dormir"
-                        type="time"
-                        value={formData.horario_dormir ?? ''}
-                        onChange={(e) => updateField('horario_dormir', e.target.value || null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="horario_trabalho">Horário de Trabalho</Label>
-                      <Input
-                        id="horario_trabalho"
-                        placeholder="Ex: 8h às 18h"
-                        value={formData.horario_trabalho ?? ''}
-                        onChange={(e) => updateField('horario_trabalho', e.target.value || null)}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="pratica_atividade_fisica" className="cursor-pointer">
-                        Pratica atividade física?
-                      </Label>
-                    </div>
-                    <Switch
-                      id="pratica_atividade_fisica"
-                      checked={formData.pratica_atividade_fisica}
-                      onCheckedChange={(checked) => updateField('pratica_atividade_fisica', checked)}
-                    />
-                  </div>
-                  {formData.pratica_atividade_fisica && (
-                    <div>
-                      <Label htmlFor="atividade_fisica_detalhes">Detalhes da Atividade Física</Label>
-                      <Textarea
-                        id="atividade_fisica_detalhes"
-                        placeholder="Qual atividade, frequência, duração..."
-                        value={formData.atividade_fisica_detalhes ?? ''}
-                        onChange={(e) => updateField('atividade_fisica_detalhes', e.target.value || null)}
-                        rows={2}
-                      />
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Hábitos Alimentares */}
-              <Collapsible open={expandedSections.habitos} onOpenChange={() => toggleSection('habitos')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Utensils className="h-4 w-4 text-secondary-foreground" />
-                      Hábitos Alimentares
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.habitos ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label htmlFor="refeicoes_por_dia">Refeições por Dia</Label>
-                      <Input
-                        id="refeicoes_por_dia"
-                        type="number"
-                        min="1"
-                        max="10"
-                        placeholder="Ex: 5"
-                        value={formData.refeicoes_por_dia ?? ''}
-                        onChange={(e) => updateField('refeicoes_por_dia', e.target.value ? parseInt(e.target.value) : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="come_fora_casa">Come fora de casa</Label>
-                      <Select
-                        value={formData.come_fora_casa ?? ''}
-                        onValueChange={(value: FrequenciaConsumo) => updateField('come_fora_casa', value || null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(FREQUENCIA_CONSUMO_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="velocidade_refeicao">Velocidade da Refeição</Label>
-                      <Select
-                        value={formData.velocidade_refeicao ?? ''}
-                        onValueChange={(value: 'lenta' | 'normal' | 'rapida') => updateField('velocidade_refeicao', value || null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lenta">Lenta</SelectItem>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="rapida">Rápida</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="mastigacao">Mastigação</Label>
-                      <Select
-                        value={formData.mastigacao ?? ''}
-                        onValueChange={(value: 'adequada' | 'rapida' | 'muito_rapida') => updateField('mastigacao', value || null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="adequada">Adequada</SelectItem>
-                          <SelectItem value="rapida">Rápida</SelectItem>
-                          <SelectItem value="muito_rapida">Muito Rápida</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <Label htmlFor="prepara_propria_refeicao" className="cursor-pointer">
-                        Prepara própria refeição?
-                      </Label>
-                      <Switch
-                        id="prepara_propria_refeicao"
-                        checked={formData.prepara_propria_refeicao}
-                        onCheckedChange={(checked) => updateField('prepara_propria_refeicao', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <Label htmlFor="come_assistindo_tv" className="cursor-pointer">
-                        Come assistindo TV?
-                      </Label>
-                      <Switch
-                        id="come_assistindo_tv"
-                        checked={formData.come_assistindo_tv}
-                        onCheckedChange={(checked) => updateField('come_assistindo_tv', checked)}
-                      />
-                    </div>
-                  </div>
-                  {!formData.prepara_propria_refeicao && (
-                    <div>
-                      <Label htmlFor="quem_prepara_refeicoes">Quem prepara as refeições?</Label>
-                      <Input
-                        id="quem_prepara_refeicoes"
-                        placeholder="Ex: Esposa, mãe, restaurante..."
-                        value={formData.quem_prepara_refeicoes ?? ''}
-                        onChange={(e) => updateField('quem_prepara_refeicoes', e.target.value || null)}
-                      />
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Consumo de Água */}
-              <Collapsible open={expandedSections.agua} onOpenChange={() => toggleSection('agua')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Droplets className="h-4 w-4 text-primary" />
-                      Consumo de Água
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.agua ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="consumo_agua_litros">Consumo Diário (litros)</Label>
-                      <Input
-                        id="consumo_agua_litros"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="10"
-                        placeholder="Ex: 2"
-                        value={formData.consumo_agua_litros ?? ''}
-                        onChange={(e) => updateField('consumo_agua_litros', e.target.value ? parseFloat(e.target.value) : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tipo_agua">Tipo de Água</Label>
-                      <Select
-                        value={formData.tipo_agua ?? ''}
-                        onValueChange={(value: 'filtrada' | 'mineral' | 'torneira' | 'outro') => updateField('tipo_agua', value || null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="filtrada">Filtrada</SelectItem>
-                          <SelectItem value="mineral">Mineral</SelectItem>
-                          <SelectItem value="torneira">Torneira</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Suplementos */}
-              <Collapsible open={expandedSections.suplementos} onOpenChange={() => toggleSection('suplementos')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <Pill className="h-4 w-4 text-secondary-foreground" />
-                      Uso de Suplementos
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.suplementos ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <Label htmlFor="usa_suplementos" className="cursor-pointer">
-                      Faz uso de suplementos?
-                    </Label>
-                    <Switch
-                      id="usa_suplementos"
-                      checked={formData.usa_suplementos}
-                      onCheckedChange={(checked) => updateField('usa_suplementos', checked)}
-                    />
-                  </div>
-                  {formData.usa_suplementos && (
-                    <div>
-                      <Label htmlFor="suplementos_detalhes">Quais suplementos?</Label>
-                      <Textarea
-                        id="suplementos_detalhes"
-                        placeholder="Liste os suplementos utilizados, dosagem e frequência..."
-                        value={formData.suplementos_detalhes ?? ''}
-                        onChange={(e) => updateField('suplementos_detalhes', e.target.value || null)}
-                        rows={2}
-                      />
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Restrições, Intolerâncias e Alergias */}
-              <Collapsible open={expandedSections.restricoes} onOpenChange={() => toggleSection('restricoes')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                    <span className="flex items-center gap-2 font-medium">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      Restrições, Intolerâncias e Alergias
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.restricoes ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4 space-y-4">
-                  {/* Restrições Alimentares */}
                   <div>
-                    <Label className="mb-2">Restrições Alimentares</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                      {RESTRICOES_ALIMENTARES_OPTIONS.map((restricao) => (
-                        <div key={restricao} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`restricao-${restricao}`}
-                            checked={formData.restricoes_alimentares.includes(restricao)}
-                            onCheckedChange={() => toggleArrayItem('restricoes_alimentares', restricao)}
-                          />
-                          <label htmlFor={`restricao-${restricao}`} className="text-sm cursor-pointer">
-                            {restricao}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    <Textarea
-                      className="mt-2"
-                      placeholder="Outras restrições ou detalhes..."
-                      value={formData.restricoes_detalhes ?? ''}
-                      onChange={(e) => updateField('restricoes_detalhes', e.target.value || null)}
-                      rows={2}
+                    <Label htmlFor="consumo_ultraprocessados">Ultraprocessados</Label>
+                    <Select value={formData.consumo_ultraprocessados} onValueChange={(v) => updateField('consumo_ultraprocessados', v)}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nenhum">Nenhum</SelectItem>
+                        <SelectItem value="baixo">Baixo</SelectItem>
+                        <SelectItem value="moderado">Moderado</SelectItem>
+                        <SelectItem value="alto">Alto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="consumo_alcool">Álcool</Label>
+                    <Select value={formData.consumo_alcool} onValueChange={(v) => updateField('consumo_alcool', v)}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nenhum">Nenhum</SelectItem>
+                        <SelectItem value="social">Social</SelectItem>
+                        <SelectItem value="moderado">Moderado</SelectItem>
+                        <SelectItem value="frequente">Frequente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* BLOCO 3 – Histórico Clínico Nutricional */}
+            <section>
+              <SectionHeader icon={Stethoscope} title="Histórico Clínico Nutricional" badge="Bloco 3" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="doencas_associadas">Doenças Associadas</Label>
+                  <Textarea
+                    id="doencas_associadas"
+                    placeholder="Diabetes, hipertensão, dislipidemia..."
+                    value={formData.doencas_associadas}
+                    onChange={(e) => updateField('doencas_associadas', e.target.value)}
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="uso_medicamentos">Uso de Medicamentos</Label>
+                  <Textarea
+                    id="uso_medicamentos"
+                    placeholder="Medicamentos em uso contínuo..."
+                    value={formData.uso_medicamentos}
+                    onChange={(e) => updateField('uso_medicamentos', e.target.value)}
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="suplementacao">Suplementação</Label>
+                  <Textarea
+                    id="suplementacao"
+                    placeholder="Suplementos em uso, dosagem..."
+                    value={formData.suplementacao}
+                    onChange={(e) => updateField('suplementacao', e.target.value)}
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* BLOCO 4 – Avaliação Antropométrica */}
+            <section>
+              <SectionHeader icon={Ruler} title="Avaliação Antropométrica" badge="Bloco 4" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div>
+                  <Label htmlFor="peso_kg">Peso (kg)</Label>
+                  <Input
+                    id="peso_kg"
+                    type="number"
+                    step="0.1"
+                    placeholder="70.5"
+                    value={formData.peso_kg ?? ''}
+                    onChange={(e) => updateNumericField('peso_kg', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="altura_cm">Altura (cm)</Label>
+                  <Input
+                    id="altura_cm"
+                    type="number"
+                    step="0.1"
+                    placeholder="170"
+                    value={formData.altura_cm ?? ''}
+                    onChange={(e) => updateNumericField('altura_cm', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>IMC (auto)</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      value={formData.imc !== null ? formData.imc : ''}
+                      readOnly
+                      className="bg-muted font-semibold"
+                    />
+                    {formData.imc !== null && (
+                      <Badge variant={formData.imc < 18.5 || formData.imc >= 30 ? 'destructive' : formData.imc >= 25 ? 'secondary' : 'default'} className="text-xs whitespace-nowrap">
+                        {classificarIMC(formData.imc)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="circunferencia_abdominal_cm">Circ. Abdominal (cm)</Label>
+                  <Input
+                    id="circunferencia_abdominal_cm"
+                    type="number"
+                    step="0.1"
+                    placeholder="85"
+                    value={formData.circunferencia_abdominal_cm ?? ''}
+                    onChange={(e) => updateNumericField('circunferencia_abdominal_cm', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="percentual_gordura">% Gordura</Label>
+                  <Input
+                    id="percentual_gordura"
+                    type="number"
+                    step="0.1"
+                    placeholder="25"
+                    value={formData.percentual_gordura ?? ''}
+                    onChange={(e) => updateNumericField('percentual_gordura', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="massa_magra_kg">Massa Magra (kg)</Label>
+                  <Input
+                    id="massa_magra_kg"
+                    type="number"
+                    step="0.1"
+                    placeholder="52"
+                    value={formData.massa_magra_kg ?? ''}
+                    onChange={(e) => updateNumericField('massa_magra_kg', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* BLOCO 5 – Comportamento e Estilo de Vida */}
+            <section>
+              <SectionHeader icon={Brain} title="Comportamento e Estilo de Vida" badge="Bloco 5" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="qualidade_sono">Qualidade do Sono</Label>
+                  <Select value={formData.qualidade_sono} onValueChange={(v) => updateField('qualidade_sono', v)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="otima">Ótima</SelectItem>
+                      <SelectItem value="boa">Boa</SelectItem>
+                      <SelectItem value="regular">Regular</SelectItem>
+                      <SelectItem value="ruim">Ruim</SelectItem>
+                      <SelectItem value="insonia">Insônia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="nivel_estresse">Nível de Estresse</Label>
+                  <Select value={formData.nivel_estresse} onValueChange={(v) => updateField('nivel_estresse', v)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baixo">Baixo</SelectItem>
+                      <SelectItem value="moderado">Moderado</SelectItem>
+                      <SelectItem value="alto">Alto</SelectItem>
+                      <SelectItem value="muito_alto">Muito Alto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="atividade_fisica">Atividade Física</Label>
+                  <Select value={formData.atividade_fisica} onValueChange={(v) => updateField('atividade_fisica', v)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sedentario">Sedentário</SelectItem>
+                      <SelectItem value="leve">Leve (1-2x/sem)</SelectItem>
+                      <SelectItem value="moderado">Moderado (3-4x/sem)</SelectItem>
+                      <SelectItem value="intenso">Intenso (5+x/sem)</SelectItem>
+                      <SelectItem value="atleta">Atleta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="compulsao_alimentar">Compulsão Alimentar</Label>
+                  <Textarea
+                    id="compulsao_alimentar"
+                    placeholder="Relatos de episódios compulsivos, gatilhos..."
+                    value={formData.compulsao_alimentar}
+                    onChange={(e) => updateField('compulsao_alimentar', e.target.value)}
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="relacao_emocional_comida">Relação Emocional com a Comida</Label>
+                  <Textarea
+                    id="relacao_emocional_comida"
+                    placeholder="Como o paciente se relaciona emocionalmente com a alimentação..."
+                    value={formData.relacao_emocional_comida}
+                    onChange={(e) => updateField('relacao_emocional_comida', e.target.value)}
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* BLOCO 6 – Diagnóstico Nutricional */}
+            <section>
+              <SectionHeader icon={FileText} title="Diagnóstico Nutricional" badge="Bloco 6" />
+              <div>
+                <Label htmlFor="diagnostico_nutricional">Diagnóstico Nutricional</Label>
+                <Textarea
+                  id="diagnostico_nutricional"
+                  placeholder="Diagnóstico nutricional estruturado..."
+                  value={formData.diagnostico_nutricional}
+                  onChange={(e) => updateField('diagnostico_nutricional', e.target.value)}
+                  rows={4}
+                  className="mt-1"
+                />
+              </div>
+            </section>
+
+            {/* BLOCO 7 – Plano Alimentar / Conduta */}
+            <section>
+              <SectionHeader icon={ClipboardList} title="Plano Alimentar / Conduta" badge="Bloco 7" />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="estrategia_nutricional">Estratégia Nutricional</Label>
+                  <Textarea
+                    id="estrategia_nutricional"
+                    placeholder="Estratégia nutricional adotada..."
+                    value={formData.estrategia_nutricional}
+                    onChange={(e) => updateField('estrategia_nutricional', e.target.value)}
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="meta_calorica">Meta Calórica</Label>
+                    <Input
+                      id="meta_calorica"
+                      placeholder="Ex: 1800 kcal/dia"
+                      value={formData.meta_calorica}
+                      onChange={(e) => updateField('meta_calorica', e.target.value)}
+                      className="mt-1"
                     />
                   </div>
-
-                  {/* Intolerâncias */}
                   <div>
-                    <Label className="mb-2">Intolerâncias</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                      {INTOLERANCIAS_OPTIONS.map((intolerancia) => (
-                        <div key={intolerancia} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`intolerancia-${intolerancia}`}
-                            checked={formData.intolerancias.includes(intolerancia)}
-                            onCheckedChange={() => toggleArrayItem('intolerancias', intolerancia)}
-                          />
-                          <label htmlFor={`intolerancia-${intolerancia}`} className="text-sm cursor-pointer">
-                            {intolerancia}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Alergias */}
-                  <div>
-                    <Label className="mb-2">Alergias Alimentares</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                      {ALERGIAS_ALIMENTARES_OPTIONS.map((alergia) => (
-                        <div key={alergia} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`alergia-${alergia}`}
-                            checked={formData.alergias_alimentares.includes(alergia)}
-                            onCheckedChange={() => toggleArrayItem('alergias_alimentares', alergia)}
-                          />
-                          <label htmlFor={`alergia-${alergia}`} className="text-sm cursor-pointer">
-                            {alergia}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    <Textarea
-                      className="mt-2"
-                      placeholder="Outras alergias ou detalhes sobre reações..."
-                      value={formData.alergias_detalhes ?? ''}
-                      onChange={(e) => updateField('alergias_detalhes', e.target.value || null)}
-                      rows={2}
+                    <Label htmlFor="distribuicao_macronutrientes">Distribuição de Macronutrientes</Label>
+                    <Input
+                      id="distribuicao_macronutrientes"
+                      placeholder="Ex: 50% CHO, 25% PTN, 25% LIP"
+                      value={formData.distribuicao_macronutrientes}
+                      onChange={(e) => updateField('distribuicao_macronutrientes', e.target.value)}
+                      className="mt-1"
                     />
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                </div>
+                <div>
+                  <Label htmlFor="orientacoes_gerais">Orientações Gerais</Label>
+                  <Textarea
+                    id="orientacoes_gerais"
+                    placeholder="Orientações gerais ao paciente..."
+                    value={formData.orientacoes_gerais}
+                    onChange={(e) => updateField('orientacoes_gerais', e.target.value)}
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="proxima_reavaliacao">Próxima Reavaliação</Label>
+                  <Input
+                    id="proxima_reavaliacao"
+                    type="date"
+                    value={formData.proxima_reavaliacao ?? ''}
+                    onChange={(e) => updateField('proxima_reavaliacao', e.target.value || null)}
+                    className="mt-1 w-48"
+                  />
+                </div>
+              </div>
+            </section>
 
-              {/* Observações */}
+            {/* Observações */}
+            <section>
               <div>
                 <Label htmlFor="observacoes">Observações Gerais</Label>
                 <Textarea
@@ -703,32 +574,43 @@ export function AnamneseNutricionalBlock({
                   value={formData.observacoes ?? ''}
                   onChange={(e) => updateField('observacoes', e.target.value || null)}
                   rows={2}
+                  className="mt-1"
                 />
               </div>
+            </section>
 
-              {/* Ações */}
-              <div className="flex justify-end gap-2 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setFormData(initialFormData);
-                    setShowForm(false);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={saving || !formData.queixa_principal || !formData.objetivos_paciente}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Salvando...' : 'Salvar Anamnese'}
-                </Button>
-              </div>
-            </form>
+            {/* ─── Sticky Footer ──────────────────────────── */}
+            <div className="sticky bottom-0 bg-background border-t border-border pt-4 pb-2 flex justify-end gap-2 -mx-6 px-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setFormData({ ...INITIAL_NUTRICAO_FORM }); setShowForm(false); }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={saving}
+                onClick={() => handleSubmit(true)}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Salvar Rascunho
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !formData.queixa_principal}
+                onClick={() => handleSubmit(false)}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? 'Salvando...' : 'Finalizar'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Anamnese Atual (Visualização) */}
+      {/* ─── VIEW MODE ────────────────────────────────────── */}
       {currentAnamnese && !showForm && (
         <Card>
           <CardHeader className="pb-2">
@@ -749,77 +631,102 @@ export function AnamneseNutricionalBlock({
               </p>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Queixa e Objetivos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Queixa Principal</p>
-                <p className="text-sm">{currentAnamnese.queixa_principal}</p>
-              </div>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Objetivos</p>
-                <p className="text-sm">{currentAnamnese.objetivos_paciente}</p>
-                {currentAnamnese.peso_desejado_kg && (
-                  <Badge variant="outline" className="mt-1">Meta: {currentAnamnese.peso_desejado_kg} kg</Badge>
-                )}
+          <CardContent className="space-y-6">
+            {/* Bloco 1 */}
+            <ViewField label="Queixa Principal / Objetivo" value={currentAnamnese.queixa_principal} className="p-3 bg-muted rounded-lg" />
+
+            {/* Bloco 2 */}
+            <div>
+              <SectionHeader icon={Utensils} title="História Alimentar" />
+              <ViewField label="Rotina Alimentar" value={currentAnamnese.rotina_alimentar} className="mb-3" />
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <ViewField label="Refeições/dia" value={currentAnamnese.refeicoes_por_dia} className="p-2 bg-muted rounded" />
+                <ViewField label="Água (L/dia)" value={currentAnamnese.consumo_agua_litros} className="p-2 bg-muted rounded" />
+                <ViewField label="Açúcar" value={currentAnamnese.consumo_acucar} className="p-2 bg-muted rounded" />
+                <ViewField label="Ultraprocessados" value={currentAnamnese.consumo_ultraprocessados} className="p-2 bg-muted rounded" />
+                <ViewField label="Álcool" value={currentAnamnese.consumo_alcool} className="p-2 bg-muted rounded" />
               </div>
             </div>
 
-            {/* Histórico Alimentar */}
-            {currentAnamnese.historico_alimentar && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Histórico Alimentar</p>
-                <p className="text-sm bg-muted/50 p-2 rounded">{currentAnamnese.historico_alimentar}</p>
+            {/* Bloco 3 */}
+            <div>
+              <SectionHeader icon={Stethoscope} title="Histórico Clínico" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <ViewField label="Doenças Associadas" value={currentAnamnese.doencas_associadas} className="p-2 bg-muted rounded" />
+                <ViewField label="Medicamentos" value={currentAnamnese.uso_medicamentos} className="p-2 bg-muted rounded" />
+                <ViewField label="Suplementação" value={currentAnamnese.suplementacao} className="p-2 bg-muted rounded" />
               </div>
-            )}
-
-            {/* Dados da Rotina */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              {currentAnamnese.refeicoes_por_dia && (
-                <div className="p-2 bg-muted rounded">
-                  <p className="text-xs text-muted-foreground">Refeições/dia</p>
-                  <p className="font-medium">{currentAnamnese.refeicoes_por_dia}</p>
-                </div>
-              )}
-              {currentAnamnese.consumo_agua_litros && (
-                <div className="p-2 bg-muted rounded">
-                  <p className="text-xs text-muted-foreground">Água/dia</p>
-                  <p className="font-medium">{currentAnamnese.consumo_agua_litros}L</p>
-                </div>
-              )}
-              {currentAnamnese.horario_acordar && (
-                <div className="p-2 bg-muted rounded">
-                  <p className="text-xs text-muted-foreground">Acorda</p>
-                  <p className="font-medium">{currentAnamnese.horario_acordar}</p>
-                </div>
-              )}
-              {currentAnamnese.horario_dormir && (
-                <div className="p-2 bg-muted rounded">
-                  <p className="text-xs text-muted-foreground">Dorme</p>
-                  <p className="font-medium">{currentAnamnese.horario_dormir}</p>
-                </div>
-              )}
             </div>
 
-            {/* Restrições e Alergias */}
-            <div className="flex flex-wrap gap-2">
-              {currentAnamnese.restricoes_alimentares.map((restricao) => (
-                <Badge key={restricao} variant="secondary">{restricao}</Badge>
-              ))}
-              {currentAnamnese.intolerancias.map((intolerancia) => (
-                <Badge key={intolerancia} variant="outline" className="text-accent-foreground border-accent">{intolerancia}</Badge>
-              ))}
-              {currentAnamnese.alergias_alimentares.map((alergia) => (
-                <Badge key={alergia} variant="destructive">{alergia}</Badge>
-              ))}
+            {/* Bloco 4 */}
+            <div>
+              <SectionHeader icon={Ruler} title="Avaliação Antropométrica" />
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <ViewField label="Peso" value={currentAnamnese.peso_kg ? `${currentAnamnese.peso_kg} kg` : null} className="p-2 bg-muted rounded" />
+                <ViewField label="Altura" value={currentAnamnese.altura_cm ? `${currentAnamnese.altura_cm} cm` : null} className="p-2 bg-muted rounded" />
+                <div className="p-2 bg-muted rounded">
+                  <p className="text-xs text-muted-foreground mb-0.5">IMC</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{currentAnamnese.imc ?? '—'}</p>
+                    {currentAnamnese.imc && (
+                      <Badge variant={currentAnamnese.imc < 18.5 || currentAnamnese.imc >= 30 ? 'destructive' : currentAnamnese.imc >= 25 ? 'secondary' : 'default'} className="text-xs">
+                        {classificarIMC(currentAnamnese.imc)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <ViewField label="Circ. Abdominal" value={currentAnamnese.circunferencia_abdominal_cm ? `${currentAnamnese.circunferencia_abdominal_cm} cm` : null} className="p-2 bg-muted rounded" />
+                <ViewField label="% Gordura" value={currentAnamnese.percentual_gordura ? `${currentAnamnese.percentual_gordura}%` : null} className="p-2 bg-muted rounded" />
+                <ViewField label="Massa Magra" value={currentAnamnese.massa_magra_kg ? `${currentAnamnese.massa_magra_kg} kg` : null} className="p-2 bg-muted rounded" />
+              </div>
             </div>
 
-            {/* Suplementos */}
-            {currentAnamnese.usa_suplementos && currentAnamnese.suplementos_detalhes && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Suplementos em Uso</p>
-                <p className="text-sm bg-secondary/50 p-2 rounded">{currentAnamnese.suplementos_detalhes}</p>
+            {/* Bloco 5 */}
+            <div>
+              <SectionHeader icon={Brain} title="Comportamento e Estilo de Vida" />
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <ViewField label="Sono" value={currentAnamnese.qualidade_sono} className="p-2 bg-muted rounded" />
+                <ViewField label="Estresse" value={currentAnamnese.nivel_estresse} className="p-2 bg-muted rounded" />
+                <ViewField label="Atividade Física" value={currentAnamnese.atividade_fisica} className="p-2 bg-muted rounded" />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                <ViewField label="Compulsão Alimentar" value={currentAnamnese.compulsao_alimentar} className="p-2 bg-muted rounded" />
+                <ViewField label="Relação Emocional" value={currentAnamnese.relacao_emocional_comida} className="p-2 bg-muted rounded" />
+              </div>
+            </div>
+
+            {/* Bloco 6 */}
+            <ViewField label="Diagnóstico Nutricional" value={currentAnamnese.diagnostico_nutricional} className="p-3 bg-muted rounded-lg" />
+
+            {/* Bloco 7 */}
+            <div>
+              <SectionHeader icon={ClipboardList} title="Plano Alimentar / Conduta" />
+              <ViewField label="Estratégia Nutricional" value={currentAnamnese.estrategia_nutricional} className="mb-3" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ViewField label="Meta Calórica" value={currentAnamnese.meta_calorica} className="p-2 bg-muted rounded" />
+                <ViewField label="Macronutrientes" value={currentAnamnese.distribuicao_macronutrientes} className="p-2 bg-muted rounded" />
+              </div>
+              <ViewField label="Orientações Gerais" value={currentAnamnese.orientacoes_gerais} className="mt-3 p-2 bg-muted rounded" />
+              <ViewField label="Próxima Reavaliação" value={currentAnamnese.proxima_reavaliacao ? format(new Date(currentAnamnese.proxima_reavaliacao), 'dd/MM/yyyy') : null} className="mt-3 p-2 bg-muted rounded" />
+            </div>
+
+            {/* Observações */}
+            <ViewField label="Observações" value={currentAnamnese.observacoes} className="p-3 bg-muted/50 rounded-lg" />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {!currentAnamnese && !showForm && (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <Apple className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-muted-foreground mb-4">Nenhuma anamnese nutricional registrada</p>
+            {canEdit && (
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Registrar Anamnese Nutricional
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -831,58 +738,29 @@ export function AnamneseNutricionalBlock({
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <History className="h-4 w-4" />
-              Histórico de Versões
+              Histórico de Anamneses
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-2">
-                {anamneseHistory.map((anamnese) => (
-                  <div 
-                    key={anamnese.id}
-                    className={`p-3 rounded-lg border ${anamnese.is_current ? 'bg-primary/10 border-primary/30' : 'bg-muted/30'}`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={anamnese.is_current ? 'default' : 'outline'}>
-                          v{anamnese.version}
-                        </Badge>
-                        {anamnese.is_current && (
-                          <Badge variant="secondary" className="text-xs">Atual</Badge>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(anamnese.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {anamnese.queixa_principal}
-                    </p>
-                    {anamnese.created_by_name && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Por: {anamnese.created_by_name}
+            <div className="space-y-2">
+              {anamneseHistory.map((anamnese) => (
+                <div key={anamnese.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={anamnese.is_current ? 'default' : 'outline'}>v{anamnese.version}</Badge>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {anamnese.queixa_principal ? anamnese.queixa_principal.substring(0, 80) + (anamnese.queixa_principal.length > 80 ? '...' : '') : 'Sem queixa registrada'}
                       </p>
-                    )}
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(anamnese.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        {anamnese.created_by_name && ` • ${anamnese.created_by_name}`}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Estado vazio */}
-      {!currentAnamnese && !showForm && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Nenhuma anamnese nutricional registrada.</p>
-            {canEdit && (
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Registrar Anamnese
-              </Button>
-            )}
+                  {anamnese.is_current && <Badge>Atual</Badge>}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

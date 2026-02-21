@@ -35,6 +35,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import type { AnamnesisModel } from '@/hooks/prontuario/useAnamnesisModels';
 import type { Json } from '@/integrations/supabase/types';
+import { getDefaultAnamnesisStructure } from '@/constants/defaultAnamnesisStructures';
 
 // ===== TYPES =====
 
@@ -77,6 +78,7 @@ interface AnamnesisModelEditorDialogProps {
   model: AnamnesisModel | null;
   onSave: (id: string, data: { name?: string; description?: string; campos?: Json }) => Promise<boolean>;
   saving: boolean;
+  specialtySlug?: string;
 }
 
 export function AnamnesisModelEditorDialog({
@@ -85,6 +87,7 @@ export function AnamnesisModelEditorDialog({
   model,
   onSave,
   saving,
+  specialtySlug,
 }: AnamnesisModelEditorDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -122,6 +125,14 @@ export function AnamnesisModelEditorDialog({
         // Fallback to campos
         if (structure.length === 0 && model.campos && Array.isArray(model.campos)) {
           structure = model.campos as any[];
+        }
+
+        // Fallback to default specialty structure if still empty
+        if (structure.length === 0 && specialtySlug) {
+          const defaultStructure = getDefaultAnamnesisStructure(specialtySlug);
+          if (defaultStructure.length > 0) {
+            structure = defaultStructure;
+          }
         }
 
         // Parse into EditorSection[]

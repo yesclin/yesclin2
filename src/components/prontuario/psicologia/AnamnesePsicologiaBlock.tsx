@@ -240,6 +240,7 @@ export function AnamnesePsicologiaBlock({
             return !!result;
           }}
           saving={savingModel}
+          specialtySlug="psicologia"
         />
       </>
     );
@@ -910,6 +911,7 @@ export function AnamnesePsicologiaBlock({
           return !!result;
         }}
         saving={savingModel}
+        specialtySlug="psicologia"
       />
     </div>
   );

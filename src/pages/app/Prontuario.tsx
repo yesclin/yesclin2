@@ -1115,6 +1115,8 @@ export default function Prontuario() {
               clinicId={clinicIdForFisio || null}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
             />
           );
         }
@@ -1125,6 +1127,8 @@ export default function Prontuario() {
               clinicId={clinicIdForFisio || null}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
             />
           );
         }
@@ -1135,6 +1139,8 @@ export default function Prontuario() {
               clinicId={clinicIdForFisio || null}
               appointmentId={activeAppointment?.id}
               canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
             />
           );
         }

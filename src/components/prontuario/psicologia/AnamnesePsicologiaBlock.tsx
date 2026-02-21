@@ -64,7 +64,7 @@ import type {
   AnamnesePsicologiaFormData 
 } from "@/hooks/prontuario/psicologia/useAnamnesePsicologiaData";
 import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnamnesisTemplate";
-import { AnamnesisTemplatePicker } from "@/components/prontuario/AnamnesisTemplatePicker";
+import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
 
 interface AnamnesePsicologiaBlockProps {
   currentAnamnese: AnamnesePsicologiaData | null;
@@ -199,50 +199,23 @@ export function AnamnesePsicologiaBlock({
   // Empty state
   if (!currentAnamnese && !isEditing) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="p-8 text-center">
-          <Brain className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <h3 className="font-semibold mb-2">Nenhuma avaliação inicial registrada</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Registre a avaliação inicial para iniciar o acompanhamento terapêutico.
-          </p>
-
-          {specialtyId && (
-            <div className="flex justify-center mb-4">
-              <AnamnesisTemplatePicker
-                resolvedTemplate={resolvedTemplate}
-                allTemplates={allTemplates}
-                hasMultipleTemplates={hasMultipleTemplates}
-                isLoading={templateLoading}
-                hasStartedFilling={false}
-                onTemplateChange={setSelectedTemplateId}
-                selectedTemplateId={selectedTemplateId}
-                versionNumber={resolvedTemplate?.version_number}
-              />
-            </div>
-          )}
-
-          {!templateLoading && !hasTemplate && specialtyId && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2 text-sm text-amber-600 mb-3">
-                <AlertTriangle className="h-4 w-4" />
-                <span>Nenhum modelo configurado para Psicologia</span>
-              </div>
-              <Button variant="outline" onClick={() => navigate('/configuracoes/modelos-anamnese')}>
-                <Settings className="h-4 w-4 mr-2" />
-                Configurar Modelo
-              </Button>
-            </div>
-          )}
-
-          {canEdit && hasTemplate && (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit3 className="h-4 w-4 mr-2" />
-              Registrar Avaliação Inicial
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <AnamneseModelSelector
+        icon={<Brain className="h-10 w-10 text-muted-foreground opacity-50" />}
+        emptyTitle="Nenhuma avaliação inicial registrada"
+        emptyDescription="Registre a avaliação inicial para iniciar o acompanhamento terapêutico."
+        registerLabel="Registrar Avaliação Inicial"
+        resolvedTemplate={resolvedTemplate}
+        allTemplates={allTemplates}
+        isLoading={templateLoading}
+        selectedTemplateId={selectedTemplateId}
+        onTemplateChange={setSelectedTemplateId}
+        canEdit={canEdit}
+        canManageTemplates={canEdit}
+        onRegister={() => setIsEditing(true)}
+        onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
+        onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+        specialtyLabel="Psicologia"
+      />
     );
   }
 

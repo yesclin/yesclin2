@@ -35,14 +35,19 @@ import {
   ShieldAlert,
   ShieldCheck,
   FileText,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle,
+  Settings
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 import type { 
   AnamnesePsicologiaData, 
   AnamnesePsicologiaFormData 
 } from "@/hooks/prontuario/psicologia/useAnamnesePsicologiaData";
+import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnamnesisTemplate";
+import { AnamnesisTemplatePicker } from "@/components/prontuario/AnamnesisTemplatePicker";
 
 interface AnamnesePsicologiaBlockProps {
   currentAnamnese: AnamnesePsicologiaData | null;
@@ -51,6 +56,8 @@ interface AnamnesePsicologiaBlockProps {
   saving?: boolean;
   canEdit?: boolean;
   onSave: (data: AnamnesePsicologiaFormData) => Promise<void>;
+  specialtyId?: string | null;
+  procedureId?: string | null;
 }
 
 const EMPTY_FORM: AnamnesePsicologiaFormData = {
@@ -89,11 +96,25 @@ export function AnamnesePsicologiaBlock({
   saving = false,
   canEdit = false,
   onSave,
+  specialtyId,
+  procedureId,
 }: AnamnesePsicologiaBlockProps) {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamnesePsicologiaData | null>(null);
   const [formData, setFormData] = useState<AnamnesePsicologiaFormData>(EMPTY_FORM);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  // Template resolution for specialty validation
+  const {
+    data: resolvedTemplate,
+    allTemplates,
+    hasMultipleTemplates,
+    isLoading: templateLoading,
+  } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
+
+  const hasTemplate = !!resolvedTemplate;
 
   const handleStartEdit = () => {
     if (currentAnamnese) {
@@ -145,7 +166,38 @@ export function AnamnesePsicologiaBlock({
           <p className="text-sm text-muted-foreground mb-4">
             Registre a anamnese inicial para iniciar o acompanhamento terapêutico.
           </p>
-          {canEdit && (
+
+          {/* Template picker */}
+          {specialtyId && (
+            <div className="flex justify-center mb-4">
+              <AnamnesisTemplatePicker
+                resolvedTemplate={resolvedTemplate}
+                allTemplates={allTemplates}
+                hasMultipleTemplates={hasMultipleTemplates}
+                isLoading={templateLoading}
+                hasStartedFilling={false}
+                onTemplateChange={setSelectedTemplateId}
+                selectedTemplateId={selectedTemplateId}
+                versionNumber={resolvedTemplate?.version_number}
+              />
+            </div>
+          )}
+
+          {/* No template warning */}
+          {!templateLoading && !hasTemplate && specialtyId && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 text-sm text-amber-600 mb-3">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Nenhum modelo de anamnese configurado para Psicologia</span>
+              </div>
+              <Button variant="outline" onClick={() => navigate('/configuracoes/modelos-anamnese')}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar Modelo
+              </Button>
+            </div>
+          )}
+
+          {canEdit && hasTemplate && (
             <Button onClick={() => setIsEditing(true)}>
               <Edit3 className="h-4 w-4 mr-2" />
               Registrar Anamnese

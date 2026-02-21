@@ -350,37 +350,91 @@ export function AnamneseBlock({
       // ── 2. No template found — create one ──
       const defaultStructure: TemplateSection[] = [
         {
-          id: 'motivo_consulta', type: 'section', title: 'Motivo da Consulta',
+          id: 'section_queixa_principal', type: 'section', title: 'Queixa Principal',
           fields: [
-            { id: 'qp_descricao', type: 'textarea', label: 'Queixa Principal', required: true, placeholder: 'Descreva o motivo da consulta nas palavras do paciente...' },
+            { id: 'f_qp', type: 'textarea', label: 'Queixa principal (QP)', required: true, placeholder: 'Descreva a queixa principal do paciente nas palavras dele...' },
+            { id: 'f_qp_duracao', type: 'text', label: 'Duração dos sintomas', placeholder: 'Ex: há 3 dias, há 2 semanas' },
           ],
         },
         {
-          id: 'historia_atual', type: 'section', title: 'História Atual',
+          id: 'section_hda', type: 'section', title: 'História da Doença Atual (HDA)',
           fields: [
-            { id: 'hda_descricao', type: 'textarea', label: 'História da Doença Atual', placeholder: 'Descreva a evolução do quadro clínico...' },
-            { id: 'hda_inicio', type: 'text', label: 'Início dos sintomas', placeholder: 'Ex: Há 3 dias, após esforço físico' },
-            { id: 'hda_evolucao', type: 'text', label: 'Evolução', placeholder: 'Progressiva, estável, intermitente...' },
-            { id: 'hda_intensidade', type: 'select', label: 'Intensidade (0-10)', options: ['0','1','2','3','4','5','6','7','8','9','10'] },
+            { id: 'f_hda_onset', type: 'text', label: 'Início (Onset)', placeholder: 'Ex: Há 5 dias, após esforço físico' },
+            { id: 'f_hda_provocacao', type: 'textarea', label: 'Provocação / Paliação', placeholder: 'Fatores agravantes e atenuantes...' },
+            { id: 'f_hda_qualidade', type: 'textarea', label: 'Qualidade do sintoma', placeholder: 'Pontada, queimação, pressão, contínua...' },
+            { id: 'f_hda_regiao', type: 'text', label: 'Região / Irradiação', placeholder: 'Ex: Precordial, irradiando para o braço esquerdo' },
+            { id: 'f_hda_severidade', type: 'select', label: 'Severidade (0-10)', options: ['0 - Sem dor','1','2','3','4','5','6','7','8','9','10 - Pior dor possível'] },
+            { id: 'f_hda_tempo', type: 'textarea', label: 'Evolução temporal', placeholder: 'Contínua, intermitente, progressiva...' },
+            { id: 'f_hda_sintomas_associados', type: 'textarea', label: 'Sintomas associados', placeholder: 'Náusea, febre, dispneia, sudorese...' },
+            { id: 'f_hda_tratamentos_previos', type: 'textarea', label: 'Tratamentos prévios', placeholder: 'Medicamentos, procedimentos já realizados...' },
           ],
         },
         {
-          id: 'contexto_clinico', type: 'section', title: 'Contexto Clínico',
+          id: 'section_antecedentes_pessoais', type: 'section', title: 'Antecedentes Pessoais (HPP)',
           fields: [
-            { id: 'antecedentes', type: 'textarea', label: 'Antecedentes Pessoais', placeholder: 'Doenças prévias, cirurgias, internações...' },
-            { id: 'medicamentos', type: 'textarea', label: 'Medicamentos em Uso', placeholder: 'Medicamentos contínuos, dosagem...' },
-            { id: 'historia_familiar', type: 'textarea', label: 'História Familiar', placeholder: 'Doenças relevantes na família...' },
-            { id: 'hab_tabagismo', type: 'select', label: 'Tabagismo', options: ['Nunca fumou','Ex-fumante','Fumante ativo'] },
-            { id: 'hab_etilismo', type: 'select', label: 'Etilismo', options: ['Não','Social','Moderado','Frequente'] },
-            { id: 'hab_atividade', type: 'select', label: 'Atividade Física', options: ['Sedentário','Eventual','Regular','Diária'] },
-            { id: 'hab_sono', type: 'select', label: 'Sono', options: ['Bom','Regular','Ruim','Insônia'] },
+            { id: 'f_hpp_doencas', type: 'textarea', label: 'Doenças crônicas', placeholder: 'HAS, DM, Asma, Cardiopatia...' },
+            { id: 'f_hpp_cirurgias', type: 'textarea', label: 'Cirurgias prévias', placeholder: 'Tipo, ano, complicações...' },
+            { id: 'f_hpp_internacoes', type: 'textarea', label: 'Internações anteriores', placeholder: 'Motivo, data, duração...' },
+            { id: 'f_hpp_transfusoes', type: 'select', label: 'Transfusões sanguíneas', options: ['Nunca','Sim, sem reações','Sim, com reações'] },
+            { id: 'f_hpp_traumas', type: 'textarea', label: 'Traumas / Fraturas' },
+            { id: 'f_hpp_vacinacao', type: 'select', label: 'Vacinação em dia', options: ['Sim','Não','Não sabe'] },
+            { id: 'f_hpp_gineco', type: 'textarea', label: 'Ginecológico / Obstétrico (se aplicável)', placeholder: 'G_P_A_, DUM, métodos contraceptivos...' },
           ],
         },
         {
-          id: 'impressao_conduta', type: 'section', title: 'Impressão e Conduta',
+          id: 'section_medicamentos_alergias', type: 'section', title: 'Medicamentos em Uso e Alergias',
           fields: [
-            { id: 'hd_descricao', type: 'textarea', label: 'Hipótese Diagnóstica', placeholder: 'Hipóteses diagnósticas / CID-10...' },
-            { id: 'pc_descricao', type: 'textarea', label: 'Plano / Conduta', placeholder: 'Prescrições, orientações, encaminhamentos, retorno...' },
+            { id: 'f_med_uso', type: 'textarea', label: 'Medicamentos em uso contínuo', placeholder: 'Nome, dose, posologia...' },
+            { id: 'f_med_suplementos', type: 'textarea', label: 'Suplementos e fitoterápicos' },
+            { id: 'f_alergias_med', type: 'textarea', label: 'Alergias a medicamentos', placeholder: 'Nome do medicamento e tipo de reação...' },
+            { id: 'f_alergias_outras', type: 'textarea', label: 'Outras alergias', placeholder: 'Alimentos, látex, contrastes...' },
+          ],
+        },
+        {
+          id: 'section_historico_familiar', type: 'section', title: 'Histórico Familiar',
+          fields: [
+            { id: 'f_hf_detalhes', type: 'textarea', label: 'Detalhes e parentesco', placeholder: 'Ex: Pai faleceu de IAM aos 55a, mãe DM2...' },
+          ],
+        },
+        {
+          id: 'section_habitos', type: 'section', title: 'Hábitos de Vida',
+          fields: [
+            { id: 'f_hab_tabagismo', type: 'select', label: 'Tabagismo', options: ['Nunca fumou','Ex-fumante','Fumante ativo'] },
+            { id: 'f_hab_etilismo', type: 'select', label: 'Etilismo', options: ['Não','Social','Moderado','Frequente'] },
+            { id: 'f_hab_atividade', type: 'select', label: 'Atividade física', options: ['Sedentário','Eventual','1-3x/semana','4-5x/semana','Diária'] },
+            { id: 'f_hab_alimentacao', type: 'textarea', label: 'Padrão alimentar', placeholder: 'Descreva resumidamente o padrão alimentar...' },
+            { id: 'f_hab_sono', type: 'select', label: 'Qualidade do sono', options: ['Bom','Regular','Ruim','Insônia'] },
+          ],
+        },
+        {
+          id: 'section_exame_fisico', type: 'section', title: 'Exame Físico',
+          fields: [
+            { id: 'f_ef_pa', type: 'text', label: 'Pressão Arterial (mmHg)', placeholder: 'Ex: 120x80' },
+            { id: 'f_ef_fc', type: 'number', label: 'Frequência Cardíaca (bpm)', placeholder: 'Ex: 72' },
+            { id: 'f_ef_peso', type: 'number', label: 'Peso (kg)', required: true, placeholder: 'Ex: 75.5' },
+            { id: 'f_ef_altura', type: 'number', label: 'Altura (cm)', required: true, placeholder: 'Ex: 172' },
+            { id: 'f_ef_estado_geral', type: 'select', label: 'Estado geral', options: ['Bom','Regular','Ruim','Grave'] },
+            { id: 'f_ef_inspecao', type: 'textarea', label: 'Inspeção geral', placeholder: 'Lúcido, orientado, corado, hidratado...' },
+            { id: 'f_ef_cardiovascular', type: 'textarea', label: 'Aparelho cardiovascular', placeholder: 'RCR 2T, BNF, sem sopros...' },
+            { id: 'f_ef_respiratorio', type: 'textarea', label: 'Aparelho respiratório', placeholder: 'MV presente bilateralmente, sem RA...' },
+            { id: 'f_ef_abdome', type: 'textarea', label: 'Abdome', placeholder: 'Plano, flácido, indolor à palpação, RHA+...' },
+          ],
+        },
+        {
+          id: 'section_hipoteses', type: 'section', title: 'Hipóteses Diagnósticas',
+          fields: [
+            { id: 'f_hd_principal', type: 'textarea', label: 'Hipótese diagnóstica principal', placeholder: 'CID-10 e descrição...' },
+            { id: 'f_hd_diferenciais', type: 'textarea', label: 'Diagnósticos diferenciais', placeholder: 'Liste as hipóteses diferenciais...' },
+            { id: 'f_hd_exames', type: 'textarea', label: 'Exames complementares solicitados', placeholder: 'Hemograma, glicemia, ECG...' },
+          ],
+        },
+        {
+          id: 'section_conduta', type: 'section', title: 'Plano / Conduta',
+          fields: [
+            { id: 'f_conduta_plano', type: 'textarea', label: 'Plano terapêutico', placeholder: 'Prescrição, orientações, procedimentos...' },
+            { id: 'f_conduta_encaminhamento', type: 'textarea', label: 'Encaminhamentos', placeholder: 'Especialidades, exames de imagem...' },
+            { id: 'f_conduta_retorno', type: 'text', label: 'Retorno previsto', placeholder: 'Ex: em 15 dias, em 1 mês' },
+            { id: 'f_conduta_observacoes', type: 'textarea', label: 'Observações gerais', placeholder: 'Informações adicionais, sinais de alerta...' },
           ],
         },
       ];
@@ -775,10 +829,19 @@ export function AnamneseBlock({
     // Block icons for premium feel
     const blockIcons: Record<string, React.ReactNode> = {
       'motivo_consulta': <Stethoscope className="h-4 w-4" />,
+      'section_queixa_principal': <Stethoscope className="h-4 w-4" />,
       'queixa_principal': <Stethoscope className="h-4 w-4" />,
+      'section_hda': <Clock className="h-4 w-4" />,
       'historia_atual': <Clock className="h-4 w-4" />,
       'historia_doenca_atual': <Clock className="h-4 w-4" />,
+      'section_antecedentes_pessoais': <FileText className="h-4 w-4" />,
+      'section_medicamentos_alergias': <FileText className="h-4 w-4" />,
+      'section_historico_familiar': <FileText className="h-4 w-4" />,
+      'section_habitos': <FileText className="h-4 w-4" />,
       'contexto_clinico': <FileText className="h-4 w-4" />,
+      'section_exame_fisico': <Stethoscope className="h-4 w-4" />,
+      'section_hipoteses': <CheckCircle2 className="h-4 w-4" />,
+      'section_conduta': <CheckCircle2 className="h-4 w-4" />,
       'impressao_conduta': <CheckCircle2 className="h-4 w-4" />,
       'plano_conduta': <CheckCircle2 className="h-4 w-4" />,
     };

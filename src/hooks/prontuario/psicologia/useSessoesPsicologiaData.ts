@@ -3,9 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClinicData } from '@/hooks/useClinicData';
 import { toast } from 'sonner';
 
-/**
- * Status da sessão
- */
 export type StatusSessao = 'rascunho' | 'assinada';
 
 export const statusSessaoConfig: Record<StatusSessao, { label: string; color: string }> = {
@@ -13,20 +10,47 @@ export const statusSessaoConfig: Record<StatusSessao, { label: string; color: st
   assinada: { label: 'Assinada', color: 'bg-green-100 text-green-700 border-green-300' },
 };
 
-/**
- * Estrutura de dados da Sessão Psicológica
- */
+/** Intervenções pré-definidas para multi-select */
+export const INTERVENCOES_OPTIONS = [
+  'Escuta ativa',
+  'Reestruturação cognitiva',
+  'Técnica de respiração',
+  'Psicoeducação',
+  'Dessensibilização',
+  'Role-playing',
+  'Mindfulness',
+  'Registro de pensamentos',
+  'Exposição gradual',
+  'Relaxamento progressivo',
+] as const;
+
+/** Encaminhamentos pré-definidos */
+export const ENCAMINHAMENTOS_OPTIONS = [
+  'Tarefa para casa',
+  'Leitura indicada',
+  'Encaminhamento psiquiátrico',
+  'Encaminhamento médico',
+  'Exercício terapêutico',
+  'Nenhum',
+] as const;
+
 export interface SessaoPsicologia {
   id: string;
   patient_id: string;
   clinic_id: string;
+  numero_sessao: number | null;
   data_sessao: string;
   duracao_minutos: number;
+  tema_central: string;
   abordagem_terapeutica: string;
   relato_paciente: string;
   intervencoes_realizadas: string;
+  intervencoes_tags: string[];
   observacoes_terapeuta: string;
   encaminhamentos_tarefas: string;
+  encaminhamentos_tags: string[];
+  risco_interno: string;
+  humor_paciente: number | null;
   status: StatusSessao;
   assinada_em: string | null;
   profissional_id: string;
@@ -37,11 +61,16 @@ export interface SessaoPsicologia {
 export interface SessaoFormData {
   data_sessao: string;
   duracao_minutos: number;
+  tema_central: string;
   abordagem_terapeutica: string;
   relato_paciente: string;
   intervencoes_realizadas: string;
+  intervencoes_tags: string[];
   observacoes_terapeuta: string;
   encaminhamentos_tarefas: string;
+  encaminhamentos_tags: string[];
+  risco_interno: string;
+  humor_paciente: number | null;
 }
 
 interface UseSessoesPsicologiaDataResult {
@@ -49,19 +78,12 @@ interface UseSessoesPsicologiaDataResult {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  totalSessoes: number;
   saveSessao: (data: SessaoFormData & { assinar: boolean }) => Promise<void>;
   signSessao: (sessaoId: string) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
-/**
- * Hook para gerenciar Sessões de Psicoterapia
- * 
- * Regras:
- * - Exibidas em ordem cronológica (mais recente primeiro)
- * - Nunca podem ser apagadas automaticamente
- * - Após assinadas, não podem ser editadas
- */
 export function useSessoesPsicologiaData(
   patientId: string | null,
   currentProfessionalId?: string
@@ -97,17 +119,23 @@ export function useSessoesPsicologiaData(
 
       if (fetchError) throw fetchError;
 
-      const mapped: SessaoPsicologia[] = (data || []).map(item => ({
+      const mapped: SessaoPsicologia[] = (data || []).map((item: any) => ({
         id: item.id,
         patient_id: item.patient_id,
         clinic_id: item.clinic_id,
+        numero_sessao: item.numero_sessao,
         data_sessao: item.data_sessao,
         duracao_minutos: item.duracao_minutos,
+        tema_central: item.tema_central || '',
         abordagem_terapeutica: item.abordagem_terapeutica || '',
         relato_paciente: item.relato_paciente || '',
         intervencoes_realizadas: item.intervencoes_realizadas || '',
+        intervencoes_tags: item.intervencoes_tags || [],
         observacoes_terapeuta: item.observacoes_terapeuta || '',
         encaminhamentos_tarefas: item.encaminhamentos_tarefas || '',
+        encaminhamentos_tags: item.encaminhamentos_tags || [],
+        risco_interno: item.risco_interno || '',
+        humor_paciente: item.humor_paciente,
         status: item.status as StatusSessao,
         assinada_em: item.assinada_em,
         profissional_id: item.profissional_id,
@@ -134,17 +162,28 @@ export function useSessoesPsicologiaData(
     setError(null);
 
     try {
-      const insertData = {
+      // Calculate next session number
+      const nextNumber = sessoes.length > 0 
+        ? Math.max(...sessoes.map(s => s.numero_sessao || 0)) + 1 
+        : 1;
+
+      const insertData: any = {
         patient_id: patientId,
         clinic_id: clinic.id,
         profissional_id: currentProfessionalId,
+        numero_sessao: nextNumber,
         data_sessao: data.data_sessao,
         duracao_minutos: data.duracao_minutos,
+        tema_central: data.tema_central,
         abordagem_terapeutica: data.abordagem_terapeutica,
         relato_paciente: data.relato_paciente,
         intervencoes_realizadas: data.intervencoes_realizadas,
+        intervencoes_tags: data.intervencoes_tags,
         observacoes_terapeuta: data.observacoes_terapeuta,
         encaminhamentos_tarefas: data.encaminhamentos_tarefas,
+        encaminhamentos_tags: data.encaminhamentos_tags,
+        risco_interno: data.risco_interno || null,
+        humor_paciente: data.humor_paciente,
         status: data.assinar ? 'assinada' : 'rascunho',
         assinada_em: data.assinar ? new Date().toISOString() : null,
       };
@@ -155,7 +194,10 @@ export function useSessoesPsicologiaData(
 
       if (insertError) throw insertError;
 
-      toast.success(data.assinar ? 'Sessão registrada e assinada' : 'Sessão salva como rascunho');
+      toast.success(data.assinar 
+        ? `Sessão ${nextNumber} registrada e assinada` 
+        : `Sessão ${nextNumber} salva como rascunho`
+      );
       await fetchSessoes();
     } catch (err) {
       console.error('Error saving sessao:', err);
@@ -165,7 +207,7 @@ export function useSessoesPsicologiaData(
     } finally {
       setSaving(false);
     }
-  }, [patientId, clinic?.id, currentProfessionalId, fetchSessoes]);
+  }, [patientId, clinic?.id, currentProfessionalId, sessoes, fetchSessoes]);
 
   const signSessao = useCallback(async (sessaoId: string) => {
     setSaving(true);
@@ -177,7 +219,7 @@ export function useSessoesPsicologiaData(
         .update({
           status: 'assinada',
           assinada_em: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', sessaoId);
 
       if (updateError) throw updateError;
@@ -203,6 +245,7 @@ export function useSessoesPsicologiaData(
     loading,
     saving,
     error,
+    totalSessoes: sessoes.length,
     saveSessao,
     signSessao,
     refetch: fetchSessoes,

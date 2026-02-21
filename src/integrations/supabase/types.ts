@@ -5687,56 +5687,119 @@ export type Database = {
       patient_anamnese_psicologia: {
         Row: {
           clinic_id: string
+          contexto_alimentacao: string | null
           contexto_familiar: string | null
+          contexto_relacionamentos: string | null
+          contexto_rotina: string | null
           contexto_social: string | null
+          contexto_sono: string | null
+          contexto_trabalho: string | null
+          contexto_vida_social: string | null
           created_at: string
           created_by: string | null
+          diagnostico_previo: string | null
           expectativas_terapia: string | null
           fatores_protecao: string | null
           fatores_risco: string | null
+          formulacao_inicial: string | null
+          hipoteses: string | null
           historico_emocional_comportamental: string | null
           historico_tratamentos: string | null
           id: string
+          impressoes_clinicas: string | null
+          internacoes: boolean | null
+          internacoes_obs: string | null
           is_current: boolean
+          ja_fez_terapia: boolean | null
+          ja_fez_terapia_obs: string | null
+          modalidade: string | null
+          objetivo_1: string | null
+          objetivo_2: string | null
+          objetivo_3: string | null
           observacoes: string | null
+          ocultar_avaliacao_relatorio: boolean | null
           patient_id: string
           queixa_principal: string | null
+          uso_medicacao: boolean | null
+          uso_medicacao_qual: string | null
           version: number
         }
         Insert: {
           clinic_id: string
+          contexto_alimentacao?: string | null
           contexto_familiar?: string | null
+          contexto_relacionamentos?: string | null
+          contexto_rotina?: string | null
           contexto_social?: string | null
+          contexto_sono?: string | null
+          contexto_trabalho?: string | null
+          contexto_vida_social?: string | null
           created_at?: string
           created_by?: string | null
+          diagnostico_previo?: string | null
           expectativas_terapia?: string | null
           fatores_protecao?: string | null
           fatores_risco?: string | null
+          formulacao_inicial?: string | null
+          hipoteses?: string | null
           historico_emocional_comportamental?: string | null
           historico_tratamentos?: string | null
           id?: string
+          impressoes_clinicas?: string | null
+          internacoes?: boolean | null
+          internacoes_obs?: string | null
           is_current?: boolean
+          ja_fez_terapia?: boolean | null
+          ja_fez_terapia_obs?: string | null
+          modalidade?: string | null
+          objetivo_1?: string | null
+          objetivo_2?: string | null
+          objetivo_3?: string | null
           observacoes?: string | null
+          ocultar_avaliacao_relatorio?: boolean | null
           patient_id: string
           queixa_principal?: string | null
+          uso_medicacao?: boolean | null
+          uso_medicacao_qual?: string | null
           version?: number
         }
         Update: {
           clinic_id?: string
+          contexto_alimentacao?: string | null
           contexto_familiar?: string | null
+          contexto_relacionamentos?: string | null
+          contexto_rotina?: string | null
           contexto_social?: string | null
+          contexto_sono?: string | null
+          contexto_trabalho?: string | null
+          contexto_vida_social?: string | null
           created_at?: string
           created_by?: string | null
+          diagnostico_previo?: string | null
           expectativas_terapia?: string | null
           fatores_protecao?: string | null
           fatores_risco?: string | null
+          formulacao_inicial?: string | null
+          hipoteses?: string | null
           historico_emocional_comportamental?: string | null
           historico_tratamentos?: string | null
           id?: string
+          impressoes_clinicas?: string | null
+          internacoes?: boolean | null
+          internacoes_obs?: string | null
           is_current?: boolean
+          ja_fez_terapia?: boolean | null
+          ja_fez_terapia_obs?: string | null
+          modalidade?: string | null
+          objetivo_1?: string | null
+          objetivo_2?: string | null
+          objetivo_3?: string | null
           observacoes?: string | null
+          ocultar_avaliacao_relatorio?: boolean | null
           patient_id?: string
           queixa_principal?: string | null
+          uso_medicacao?: boolean | null
+          uso_medicacao_qual?: string | null
           version?: number
         }
         Relationships: [
@@ -8748,14 +8811,20 @@ export type Database = {
           created_at: string
           data_sessao: string
           duracao_minutos: number
+          encaminhamentos_tags: string[] | null
           encaminhamentos_tarefas: string | null
+          humor_paciente: number | null
           id: string
           intervencoes_realizadas: string | null
+          intervencoes_tags: string[] | null
+          numero_sessao: number | null
           observacoes_terapeuta: string | null
           patient_id: string
           profissional_id: string
           relato_paciente: string | null
+          risco_interno: string | null
           status: string
+          tema_central: string | null
           updated_at: string
         }
         Insert: {
@@ -8765,14 +8834,20 @@ export type Database = {
           created_at?: string
           data_sessao?: string
           duracao_minutos?: number
+          encaminhamentos_tags?: string[] | null
           encaminhamentos_tarefas?: string | null
+          humor_paciente?: number | null
           id?: string
           intervencoes_realizadas?: string | null
+          intervencoes_tags?: string[] | null
+          numero_sessao?: number | null
           observacoes_terapeuta?: string | null
           patient_id: string
           profissional_id: string
           relato_paciente?: string | null
+          risco_interno?: string | null
           status?: string
+          tema_central?: string | null
           updated_at?: string
         }
         Update: {
@@ -8782,14 +8857,20 @@ export type Database = {
           created_at?: string
           data_sessao?: string
           duracao_minutos?: number
+          encaminhamentos_tags?: string[] | null
           encaminhamentos_tarefas?: string | null
+          humor_paciente?: number | null
           id?: string
           intervencoes_realizadas?: string | null
+          intervencoes_tags?: string[] | null
+          numero_sessao?: number | null
           observacoes_terapeuta?: string | null
           patient_id?: string
           profissional_id?: string
           relato_paciente?: string | null
+          risco_interno?: string | null
           status?: string
+          tema_central?: string | null
           updated_at?: string
         }
         Relationships: [

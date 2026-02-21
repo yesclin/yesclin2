@@ -98,6 +98,7 @@ interface AnamneseBlockProps {
   saving?: boolean;
   canEdit?: boolean;
   onSave: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
+  onUpdate?: (id: string, data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
   patientName?: string;
   patientCpf?: string;
   patientData?: any;
@@ -193,6 +194,7 @@ export function AnamneseBlock({
   saving = false,
   canEdit = false,
   onSave,
+  onUpdate,
   patientName,
   patientCpf,
   patientData,
@@ -203,6 +205,7 @@ export function AnamneseBlock({
   const { generateAnamnesisPdf, generating } = useInstitutionalPdf();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamneseData | null>(null);
   const [structuredData, setStructuredData] = useState<Record<string, unknown>>({});
@@ -547,18 +550,42 @@ export function AnamneseBlock({
       });
     }
     setLastAutoSave(null);
+    setIsEditingExisting(true);
+    setIsEditing(true);
+  };
+
+  const handleStartNewVersion = () => {
+    if (currentAnamnese?.template_id) {
+      setSelectedTemplateId(currentAnamnese.template_id);
+    }
+    if (currentAnamnese?.structured_data && Object.keys(currentAnamnese.structured_data).length > 0) {
+      setStructuredData({ ...currentAnamnese.structured_data });
+    } else if (currentAnamnese) {
+      setStructuredData({
+        qp_descricao: currentAnamnese.queixa_principal || '',
+        hda_evolucao: currentAnamnese.historia_doenca_atual || '',
+        hpp_doencas_obs: currentAnamnese.antecedentes_pessoais || '',
+        hf_detalhes: currentAnamnese.antecedentes_familiares || '',
+        med_lista: currentAnamnese.medicamentos_uso_continuo || '',
+        alergias_medicamentosas: currentAnamnese.alergias || '',
+        hab_alimentacao: currentAnamnese.habitos_vida || '',
+      });
+    }
+    setLastAutoSave(null);
+    setIsEditingExisting(false);
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setIsEditingExisting(false);
     setStructuredData({});
     setLastAutoSave(null);
   };
 
   const handleSave = async () => {
     const legacy = mapStructuredToLegacy(structuredData);
-    await onSave({
+    const saveData = {
       queixa_principal: legacy.queixa_principal || '',
       historia_doenca_atual: legacy.historia_doenca_atual || '',
       antecedentes_pessoais: legacy.antecedentes_pessoais || '',
@@ -569,8 +596,14 @@ export function AnamneseBlock({
       comorbidades: currentAnamnese?.comorbidades || '',
       structured_data: structuredData,
       template_id: activeTemplate?.id || '',
-    });
+    };
+    if (isEditingExisting && currentAnamnese && onUpdate) {
+      await onUpdate(currentAnamnese.id, saveData);
+    } else {
+      await onSave(saveData);
+    }
     setIsEditing(false);
+    setIsEditingExisting(false);
     setStructuredData({});
     setLastAutoSave(null);
   };
@@ -1062,10 +1095,16 @@ export function AnamneseBlock({
             Histórico ({anamneseHistory.length})
           </Button>
         )}
-        {canEdit && (
-          <Button size="sm" onClick={handleStartEdit}>
+        {canEdit && onUpdate && (
+          <Button variant="outline" size="sm" onClick={handleStartEdit}>
             <Edit3 className="h-4 w-4 mr-1.5" />
-            Atualizar
+            Editar
+          </Button>
+        )}
+        {canEdit && (
+          <Button size="sm" onClick={handleStartNewVersion}>
+            <Edit3 className="h-4 w-4 mr-1.5" />
+            Nova Versão
           </Button>
         )}
       </div>

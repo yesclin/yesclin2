@@ -108,15 +108,13 @@ export type {
 // Anamnese Nutricional
 export { 
   useAnamneseNutricionalData,
-  FREQUENCIA_CONSUMO_LABELS,
-  RESTRICOES_ALIMENTARES_OPTIONS,
-  INTOLERANCIAS_OPTIONS,
-  ALERGIAS_ALIMENTARES_OPTIONS,
+  INITIAL_NUTRICAO_FORM,
+  calcularIMC,
+  classificarIMC,
 } from './useAnamneseNutricionalData';
 export type { 
   AnamneseNutricional,
   AnamneseNutricionalFormData,
-  FrequenciaConsumo,
 } from './useAnamneseNutricionalData';
 
 // Avaliação Nutricional Inicial (novo módulo)

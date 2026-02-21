@@ -70,6 +70,7 @@ interface UseAnamnesePsicologiaDataResult {
   saving: boolean;
   error: string | null;
   saveAnamnese: (data: AnamnesePsicologiaFormData) => Promise<void>;
+  updateAnamnese: (id: string, data: AnamnesePsicologiaFormData) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -248,6 +249,66 @@ export function useAnamnesePsicologiaData(patientId: string | null): UseAnamnese
     }
   }, [patientId, clinic?.id, currentAnamnese, anamneseHistory, fetchAnamneses]);
 
+  const updateAnamnese = useCallback(async (id: string, data: AnamnesePsicologiaFormData) => {
+    if (!patientId || !clinic?.id) {
+      toast.error('Paciente ou clínica não identificados');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from('patient_anamnese_psicologia')
+        .update({
+          queixa_principal: data.queixa_principal,
+          historico_emocional_comportamental: data.historico_emocional_comportamental,
+          ja_fez_terapia: data.ja_fez_terapia,
+          ja_fez_terapia_obs: data.ja_fez_terapia_obs,
+          uso_medicacao: data.uso_medicacao,
+          uso_medicacao_qual: data.uso_medicacao_qual,
+          diagnostico_previo: data.diagnostico_previo,
+          internacoes: data.internacoes,
+          internacoes_obs: data.internacoes_obs,
+          contexto_familiar: data.contexto_familiar,
+          contexto_trabalho: data.contexto_trabalho,
+          contexto_relacionamentos: data.contexto_relacionamentos,
+          contexto_vida_social: data.contexto_vida_social,
+          contexto_rotina: data.contexto_rotina,
+          contexto_sono: data.contexto_sono,
+          contexto_alimentacao: data.contexto_alimentacao,
+          contexto_social: data.contexto_social,
+          historico_tratamentos: data.historico_tratamentos,
+          expectativas_terapia: data.expectativas_terapia,
+          fatores_risco: data.fatores_risco,
+          fatores_protecao: data.fatores_protecao,
+          impressoes_clinicas: data.impressoes_clinicas,
+          formulacao_inicial: data.formulacao_inicial,
+          hipoteses: data.hipoteses,
+          ocultar_avaliacao_relatorio: data.ocultar_avaliacao_relatorio,
+          objetivo_1: data.objetivo_1,
+          objetivo_2: data.objetivo_2,
+          objetivo_3: data.objetivo_3,
+          modalidade: data.modalidade,
+          observacoes: data.observacoes,
+        } as any)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Avaliação inicial atualizada');
+      await fetchAnamneses();
+    } catch (err) {
+      console.error('Error updating anamnese psicologia:', err);
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar avaliação';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [patientId, clinic?.id, fetchAnamneses]);
+
   useEffect(() => {
     fetchAnamneses();
   }, [fetchAnamneses]);
@@ -259,6 +320,7 @@ export function useAnamnesePsicologiaData(patientId: string | null): UseAnamnese
     saving,
     error,
     saveAnamnese,
+    updateAnamnese,
     refetch: fetchAnamneses,
   };
 }

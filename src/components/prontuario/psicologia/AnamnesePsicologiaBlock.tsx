@@ -73,6 +73,7 @@ interface AnamnesePsicologiaBlockProps {
   saving?: boolean;
   canEdit?: boolean;
   onSave: (data: AnamnesePsicologiaFormData) => Promise<void>;
+  onUpdate?: (id: string, data: AnamnesePsicologiaFormData) => Promise<void>;
   specialtyId?: string | null;
   procedureId?: string | null;
 }
@@ -129,11 +130,13 @@ export function AnamnesePsicologiaBlock({
   saving = false,
   canEdit = false,
   onSave,
+  onUpdate,
   specialtyId,
   procedureId,
 }: AnamnesePsicologiaBlockProps) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<AnamnesePsicologiaData | null>(null);
   const [formData, setFormData] = useState<AnamnesePsicologiaFormData>(EMPTY_FORM);
@@ -151,18 +154,33 @@ export function AnamnesePsicologiaBlock({
   const handleStartEdit = () => {
     if (currentAnamnese) {
       setFormData({ ...currentAnamnese });
+      setIsEditingExisting(true);
     }
+    setIsEditing(true);
+  };
+
+  const handleStartNewVersion = () => {
+    if (currentAnamnese) {
+      setFormData({ ...currentAnamnese });
+    }
+    setIsEditingExisting(false);
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setIsEditingExisting(false);
     setFormData(EMPTY_FORM);
   };
 
   const handleSave = async () => {
-    await onSave(formData);
+    if (isEditingExisting && currentAnamnese && onUpdate) {
+      await onUpdate(currentAnamnese.id, formData);
+    } else {
+      await onSave(formData);
+    }
     setIsEditing(false);
+    setIsEditingExisting(false);
   };
 
   const updateField = (field: keyof AnamnesePsicologiaFormData, value: any) => {
@@ -233,10 +251,10 @@ export function AnamnesePsicologiaBlock({
     return (
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Edit3 className="h-5 w-5 text-primary" />
-              {currentAnamnese ? 'Atualizar Avaliação Inicial' : 'Nova Avaliação Inicial — Psicologia'}
+              {isEditingExisting ? 'Editar Avaliação Inicial' : currentAnamnese ? 'Nova Versão da Avaliação' : 'Nova Avaliação Inicial — Psicologia'}
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
@@ -247,11 +265,15 @@ export function AnamnesePsicologiaBlock({
               </Button>
             </div>
           </div>
-          {currentAnamnese && (
+          {isEditingExisting ? (
+            <p className="text-sm text-muted-foreground">
+              Editando a versão atual. As alterações serão salvas diretamente.
+            </p>
+          ) : currentAnamnese ? (
             <p className="text-sm text-muted-foreground">
               Uma nova versão será criada. O histórico anterior será preservado.
             </p>
-          )}
+          ) : null}
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[700px] pr-4">
@@ -642,9 +664,14 @@ export function AnamnesePsicologiaBlock({
               <History className="h-4 w-4 mr-1" /> Histórico ({anamneseHistory.length})
             </Button>
           )}
+          {canEdit && onUpdate && (
+            <Button variant="outline" size="sm" onClick={handleStartEdit}>
+              <Edit3 className="h-4 w-4 mr-1" /> Editar
+            </Button>
+          )}
           {canEdit && (
-            <Button size="sm" onClick={handleStartEdit}>
-              <Edit3 className="h-4 w-4 mr-1" /> Atualizar
+            <Button size="sm" onClick={handleStartNewVersion}>
+              <Save className="h-4 w-4 mr-1" /> Nova Versão
             </Button>
           )}
         </div>

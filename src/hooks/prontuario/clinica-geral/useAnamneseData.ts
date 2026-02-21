@@ -11,6 +11,7 @@ interface UseAnamneseDataResult {
   saving: boolean;
   error: string | null;
   saveAnamnese: (data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
+  updateAnamnese: (id: string, data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -164,6 +165,54 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
     }
   }, [patientId, clinic?.id, currentAnamnese, anamneseHistory, fetchAnamneses]);
 
+  const updateAnamnese = useCallback(async (
+    id: string,
+    data: Omit<AnamneseData, 'id' | 'patient_id' | 'version' | 'created_at' | 'created_by' | 'created_by_name' | 'is_current'>
+  ) => {
+    if (!patientId || !clinic?.id) {
+      toast.error('Paciente ou clínica não identificados');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const updateData: Record<string, unknown> = {
+        queixa_principal: data.queixa_principal,
+        historia_doenca_atual: data.historia_doenca_atual,
+        antecedentes_pessoais: data.antecedentes_pessoais,
+        antecedentes_familiares: data.antecedentes_familiares,
+        habitos_vida: data.habitos_vida,
+        medicamentos_uso_continuo: data.medicamentos_uso_continuo,
+        alergias: data.alergias,
+        comorbidades: data.comorbidades,
+      };
+
+      if (data.structured_data) updateData.structured_data = data.structured_data;
+      if (data.template_id) updateData.template_id = data.template_id;
+      if (data.historia_ginecologica) updateData.historia_ginecologica = data.historia_ginecologica;
+      if (data.revisao_sistemas) updateData.revisao_sistemas = data.revisao_sistemas;
+
+      const { error: updateError } = await supabase
+        .from('patient_anamneses')
+        .update(updateData as any)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Anamnese atualizada');
+      await fetchAnamneses();
+    } catch (err) {
+      console.error('Error updating anamnese:', err);
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar anamnese';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [patientId, clinic?.id, fetchAnamneses]);
+
   useEffect(() => {
     let cancelled = false;
     fetchAnamneses().then(() => {
@@ -179,6 +228,7 @@ export function useAnamneseData(patientId: string | null): UseAnamneseDataResult
     saving,
     error,
     saveAnamnese,
+    updateAnamnese,
     refetch: fetchAnamneses,
   };
 }

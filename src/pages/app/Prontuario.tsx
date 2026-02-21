@@ -553,6 +553,7 @@ export default function Prontuario() {
     loading: anamneseLoading,
     saving: anamneseSaving,
     saveAnamnese,
+    updateAnamnese,
   } = useAnamneseData(patientId);
 
   // Anamnese Psicológica Data - specific for Psicologia specialty
@@ -562,6 +563,7 @@ export default function Prontuario() {
     loading: anamnesePsicoLoading,
     saving: anamnesePsicoSaving,
     saveAnamnese: saveAnamnesePsico,
+    updateAnamnese: updateAnamnesePsico,
   } = useAnamnesePsicologiaData(patientId);
 
   // Evoluções Data - specific for Clínica Geral specialty
@@ -1085,6 +1087,7 @@ export default function Prontuario() {
               saving={anamnesePsicoSaving}
               canEdit={canEditCurrentTab}
               onSave={saveAnamnesePsico}
+              onUpdate={updateAnamnesePsico}
               specialtyId={activeSpecialtyId}
               procedureId={activeAppointment?.procedure_id || null}
             />
@@ -1144,6 +1147,7 @@ export default function Prontuario() {
             saving={anamneseSaving}
             canEdit={canEditCurrentTab}
             onSave={saveAnamnese}
+            onUpdate={updateAnamnese}
             patientName={patient?.full_name}
             patientCpf={patient?.cpf}
             patientData={{

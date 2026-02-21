@@ -348,7 +348,7 @@ export function AnamnesisModelEditorDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit3 className="h-5 w-5 text-primary" />
@@ -365,7 +365,7 @@ export function AnamnesisModelEditorDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 max-h-[calc(95vh-200px)]">
+          <ScrollArea className="flex-1 min-h-0 overflow-auto" style={{ maxHeight: 'calc(95vh - 220px)' }}>
             <div className="space-y-6 pr-4 pb-4">
               {/* Name & Description */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

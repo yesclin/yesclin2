@@ -16,10 +16,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ClipboardList, Plus, Save, History, Calendar, User,
-  Apple, Stethoscope, Ruler, Brain, FileText, Utensils, Target
+  Apple, Stethoscope, Ruler, Brain, FileText, Utensils, Target, AlertTriangle, Settings
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { 
   type AnamneseNutricional, 
   type AnamneseNutricionalFormData,
@@ -27,6 +28,8 @@ import {
   calcularIMC,
   classificarIMC,
 } from '@/hooks/prontuario/nutricao/useAnamneseNutricionalData';
+import { useResolvedAnamnesisTemplate } from '@/hooks/prontuario/useResolvedAnamnesisTemplate';
+import { AnamnesisTemplatePicker } from '@/components/prontuario/AnamnesisTemplatePicker';
 
 interface AnamneseNutricionalBlockProps {
   currentAnamnese: AnamneseNutricional | null;
@@ -36,6 +39,8 @@ interface AnamneseNutricionalBlockProps {
   canEdit: boolean;
   onSave: (data: AnamneseNutricionalFormData, professionalId: string) => Promise<unknown>;
   professionalId?: string;
+  specialtyId?: string | null;
+  procedureId?: string | null;
 }
 
 // ─── Section Header ──────────────────────────────────────────────
@@ -68,12 +73,27 @@ export function AnamneseNutricionalBlock({
   canEdit,
   onSave,
   professionalId,
+  specialtyId,
+  procedureId,
 }: AnamneseNutricionalBlockProps) {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [formData, setFormData] = useState<AnamneseNutricionalFormData>({ ...INITIAL_NUTRICAO_FORM });
   const [status, setStatus] = useState<'rascunho' | 'finalizado'>('rascunho');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Template resolution for specialty validation
+  const {
+    data: resolvedTemplate,
+    allTemplates,
+    hasMultipleTemplates,
+    isLoading: templateLoading,
+  } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
+
+  const hasTemplate = !!resolvedTemplate;
+  const hasStartedFilling = showForm && Object.values(formData).some(v => v !== '' && v !== null && v !== 0);
 
   // Auto-calculate IMC when peso or altura changes
   useEffect(() => {
@@ -161,7 +181,7 @@ export function AnamneseNutricionalBlock({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Apple className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Anamnese Nutricional</h2>
@@ -169,14 +189,27 @@ export function AnamneseNutricionalBlock({
             <Badge variant="outline" className="ml-2">v{currentAnamnese.version}</Badge>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {/* Template picker in header */}
+          {specialtyId && hasTemplate && (
+            <AnamnesisTemplatePicker
+              resolvedTemplate={resolvedTemplate}
+              allTemplates={allTemplates}
+              hasMultipleTemplates={hasMultipleTemplates}
+              isLoading={templateLoading}
+              hasStartedFilling={hasStartedFilling}
+              onTemplateChange={setSelectedTemplateId}
+              selectedTemplateId={selectedTemplateId}
+              versionNumber={resolvedTemplate?.version_number}
+            />
+          )}
           {anamneseHistory.length > 1 && (
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
               <History className="h-4 w-4 mr-2" />
               Histórico ({anamneseHistory.length})
             </Button>
           )}
-          {canEdit && !showForm && (
+          {canEdit && !showForm && hasTemplate && (
             <Button onClick={currentAnamnese ? handleEdit : () => setShowForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               {currentAnamnese ? 'Atualizar' : 'Registrar'}
@@ -722,7 +755,38 @@ export function AnamneseNutricionalBlock({
           <CardContent className="py-12 text-center">
             <Apple className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground mb-4">Nenhuma anamnese nutricional registrada</p>
-            {canEdit && (
+
+            {/* Template picker */}
+            {specialtyId && (
+              <div className="flex justify-center mb-4">
+                <AnamnesisTemplatePicker
+                  resolvedTemplate={resolvedTemplate}
+                  allTemplates={allTemplates}
+                  hasMultipleTemplates={hasMultipleTemplates}
+                  isLoading={templateLoading}
+                  hasStartedFilling={false}
+                  onTemplateChange={setSelectedTemplateId}
+                  selectedTemplateId={selectedTemplateId}
+                  versionNumber={resolvedTemplate?.version_number}
+                />
+              </div>
+            )}
+
+            {/* No template - show create/configure */}
+            {!templateLoading && !hasTemplate && specialtyId && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-sm text-amber-600 mb-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Nenhum modelo de anamnese configurado para Nutrição</span>
+                </div>
+                <Button variant="outline" onClick={() => navigate('/configuracoes/modelos-anamnese')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurar Modelo
+                </Button>
+              </div>
+            )}
+
+            {canEdit && hasTemplate && (
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Registrar Anamnese Nutricional

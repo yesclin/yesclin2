@@ -1085,6 +1085,8 @@ export default function Prontuario() {
               saving={anamnesePsicoSaving}
               canEdit={canEditCurrentTab}
               onSave={saveAnamnesePsico}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
             />
           );
         }
@@ -1098,6 +1100,8 @@ export default function Prontuario() {
               canEdit={canEditCurrentTab}
               onSave={saveAnamneseNutricao}
               professionalId={currentProfessionalId || undefined}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
             />
           );
         }

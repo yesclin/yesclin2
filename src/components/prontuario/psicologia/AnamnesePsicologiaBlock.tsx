@@ -64,7 +64,9 @@ import type {
   AnamnesePsicologiaFormData 
 } from "@/hooks/prontuario/psicologia/useAnamnesePsicologiaData";
 import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnamnesisTemplate";
+import { useAnamnesisModels } from "@/hooks/prontuario/useAnamnesisModels";
 import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
+import { AnamnesisModelEditorDialog } from "@/components/config/prontuario/AnamnesisModelEditorDialog";
 
 interface AnamnesePsicologiaBlockProps {
   currentAnamnese: AnamnesePsicologiaData | null;
@@ -141,6 +143,7 @@ export function AnamnesePsicologiaBlock({
   const [selectedVersion, setSelectedVersion] = useState<AnamnesePsicologiaData | null>(null);
   const [formData, setFormData] = useState<AnamnesePsicologiaFormData>(EMPTY_FORM);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   const {
     data: resolvedTemplate,
@@ -149,7 +152,18 @@ export function AnamnesePsicologiaBlock({
     isLoading: templateLoading,
   } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
 
+  const {
+    models: anamnesisModels,
+    updateModel,
+    saving: savingModel,
+  } = useAnamnesisModels(specialtyId);
+
   const hasTemplate = !!resolvedTemplate;
+
+  // Find the current model for the editor
+  const currentEditorModel = anamnesisModels.find(
+    m => m.id === (selectedTemplateId || resolvedTemplate?.id)
+  ) || anamnesisModels[0] || null;
 
   const handleStartEdit = () => {
     if (currentAnamnese) {
@@ -199,23 +213,35 @@ export function AnamnesePsicologiaBlock({
   // Empty state
   if (!currentAnamnese && !isEditing) {
     return (
-      <AnamneseModelSelector
-        icon={<Brain className="h-10 w-10 text-muted-foreground opacity-50" />}
-        emptyTitle="Nenhuma avaliação inicial registrada"
-        emptyDescription="Registre a avaliação inicial para iniciar o acompanhamento terapêutico."
-        registerLabel="Registrar Avaliação Inicial"
-        resolvedTemplate={resolvedTemplate}
-        allTemplates={allTemplates}
-        isLoading={templateLoading}
-        selectedTemplateId={selectedTemplateId}
-        onTemplateChange={setSelectedTemplateId}
-        canEdit={canEdit}
-        canManageTemplates={canEdit}
-        onRegister={() => setIsEditing(true)}
-        onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
-        onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
-        specialtyLabel="Psicologia"
-      />
+      <>
+        <AnamneseModelSelector
+          icon={<Brain className="h-10 w-10 text-muted-foreground opacity-50" />}
+          emptyTitle="Nenhuma avaliação inicial registrada"
+          emptyDescription="Registre a avaliação inicial para iniciar o acompanhamento terapêutico."
+          registerLabel="Registrar Avaliação Inicial"
+          resolvedTemplate={resolvedTemplate}
+          allTemplates={allTemplates}
+          isLoading={templateLoading}
+          selectedTemplateId={selectedTemplateId}
+          onTemplateChange={setSelectedTemplateId}
+          canEdit={canEdit}
+          canManageTemplates={canEdit}
+          onRegister={() => setIsEditing(true)}
+          onOpenTemplateEditor={() => setShowTemplateEditor(true)}
+          onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+          specialtyLabel="Psicologia"
+        />
+        <AnamnesisModelEditorDialog
+          open={showTemplateEditor}
+          onOpenChange={setShowTemplateEditor}
+          model={currentEditorModel}
+          onSave={async (id, data) => {
+            const result = await updateModel(id, data);
+            return !!result;
+          }}
+          saving={savingModel}
+        />
+      </>
     );
   }
 
@@ -873,6 +899,18 @@ export function AnamnesePsicologiaBlock({
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Template Editor Modal */}
+      <AnamnesisModelEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        model={currentEditorModel}
+        onSave={async (id, data) => {
+          const result = await updateModel(id, data);
+          return !!result;
+        }}
+        saving={savingModel}
+      />
     </div>
   );
 }

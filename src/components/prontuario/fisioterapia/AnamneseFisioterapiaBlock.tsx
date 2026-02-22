@@ -453,8 +453,14 @@ export function AnamneseFisioterapiaBlock({
           canEdit={canEdit}
           canManageTemplates={canEdit}
           onRegister={() => setIsFormOpen(true)}
-          onOpenTemplateEditor={() => setShowTemplateEditor(true)}
-          onConfigureTemplate={() => setShowTemplateEditor(true)}
+          onOpenTemplateEditor={() => {
+            console.log("Abrindo editor modelo Fisioterapia", currentEditorModel?.id);
+            setShowTemplateEditor(true);
+          }}
+          onConfigureTemplate={() => {
+            console.log("Configurar modelo Fisioterapia", currentEditorModel?.id);
+            setShowTemplateEditor(true);
+          }}
           specialtyLabel="Fisioterapia"
         />
       ) : (

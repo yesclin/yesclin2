@@ -5686,9 +5686,17 @@ export type Database = {
       }
       patient_anamnese_psicologia: {
         Row: {
+          abordagem_terapeutica: string | null
+          adolescencia: string | null
+          ansiedade: string | null
+          autoestima: string | null
           clinic_id: string
+          comportamentos_risco: string | null
+          concentracao: string | null
           contexto_alimentacao: string | null
+          contexto_atividade_fisica: string | null
           contexto_familiar: string | null
+          contexto_rede_apoio: string | null
           contexto_relacionamentos: string | null
           contexto_rotina: string | null
           contexto_social: string | null
@@ -5698,17 +5706,31 @@ export type Database = {
           created_at: string
           created_by: string | null
           diagnostico_previo: string | null
+          encaminhamentos: string | null
+          estrategias_tentadas: string | null
+          eventos_marcantes: string | null
           expectativas_terapia: string | null
+          experiencias_traumaticas: string | null
           fatores_protecao: string | null
           fatores_risco: string | null
           formulacao_inicial: string | null
+          frequencia_sessoes: string | null
+          frequencia_sintomas: string | null
           hipoteses: string | null
           historico_emocional_comportamental: string | null
           historico_tratamentos: string | null
+          humor_predominante: string | null
           id: string
+          ideacao_suicida: boolean | null
+          ideacao_suicida_obs: string | null
+          impacto_vida: string | null
           impressoes_clinicas: string | null
+          infancia: string | null
+          intensidade_subjetiva: string | null
           internacoes: boolean | null
           internacoes_obs: string | null
+          intervencoes_previstas: string | null
+          irritabilidade: string | null
           is_current: boolean
           ja_fez_terapia: boolean | null
           ja_fez_terapia_obs: string | null
@@ -5716,18 +5738,37 @@ export type Database = {
           objetivo_1: string | null
           objetivo_2: string | null
           objetivo_3: string | null
+          observacao_afeto: string | null
+          observacao_coerencia_discurso: string | null
+          observacao_insight: string | null
+          observacao_linguagem: string | null
+          observacao_postura: string | null
           observacoes: string | null
+          observacoes_objetivos: string | null
           ocultar_avaliacao_relatorio: boolean | null
           patient_id: string
+          pensamentos_recorrentes: string | null
+          quando_comecou: string | null
           queixa_principal: string | null
+          quem_sugeriu_terapia: string | null
+          relacionamento_pais_cuidadores: string | null
+          situacoes_associadas: string | null
           uso_medicacao: boolean | null
           uso_medicacao_qual: string | null
           version: number
         }
         Insert: {
+          abordagem_terapeutica?: string | null
+          adolescencia?: string | null
+          ansiedade?: string | null
+          autoestima?: string | null
           clinic_id: string
+          comportamentos_risco?: string | null
+          concentracao?: string | null
           contexto_alimentacao?: string | null
+          contexto_atividade_fisica?: string | null
           contexto_familiar?: string | null
+          contexto_rede_apoio?: string | null
           contexto_relacionamentos?: string | null
           contexto_rotina?: string | null
           contexto_social?: string | null
@@ -5737,17 +5778,31 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnostico_previo?: string | null
+          encaminhamentos?: string | null
+          estrategias_tentadas?: string | null
+          eventos_marcantes?: string | null
           expectativas_terapia?: string | null
+          experiencias_traumaticas?: string | null
           fatores_protecao?: string | null
           fatores_risco?: string | null
           formulacao_inicial?: string | null
+          frequencia_sessoes?: string | null
+          frequencia_sintomas?: string | null
           hipoteses?: string | null
           historico_emocional_comportamental?: string | null
           historico_tratamentos?: string | null
+          humor_predominante?: string | null
           id?: string
+          ideacao_suicida?: boolean | null
+          ideacao_suicida_obs?: string | null
+          impacto_vida?: string | null
           impressoes_clinicas?: string | null
+          infancia?: string | null
+          intensidade_subjetiva?: string | null
           internacoes?: boolean | null
           internacoes_obs?: string | null
+          intervencoes_previstas?: string | null
+          irritabilidade?: string | null
           is_current?: boolean
           ja_fez_terapia?: boolean | null
           ja_fez_terapia_obs?: string | null
@@ -5755,18 +5810,37 @@ export type Database = {
           objetivo_1?: string | null
           objetivo_2?: string | null
           objetivo_3?: string | null
+          observacao_afeto?: string | null
+          observacao_coerencia_discurso?: string | null
+          observacao_insight?: string | null
+          observacao_linguagem?: string | null
+          observacao_postura?: string | null
           observacoes?: string | null
+          observacoes_objetivos?: string | null
           ocultar_avaliacao_relatorio?: boolean | null
           patient_id: string
+          pensamentos_recorrentes?: string | null
+          quando_comecou?: string | null
           queixa_principal?: string | null
+          quem_sugeriu_terapia?: string | null
+          relacionamento_pais_cuidadores?: string | null
+          situacoes_associadas?: string | null
           uso_medicacao?: boolean | null
           uso_medicacao_qual?: string | null
           version?: number
         }
         Update: {
+          abordagem_terapeutica?: string | null
+          adolescencia?: string | null
+          ansiedade?: string | null
+          autoestima?: string | null
           clinic_id?: string
+          comportamentos_risco?: string | null
+          concentracao?: string | null
           contexto_alimentacao?: string | null
+          contexto_atividade_fisica?: string | null
           contexto_familiar?: string | null
+          contexto_rede_apoio?: string | null
           contexto_relacionamentos?: string | null
           contexto_rotina?: string | null
           contexto_social?: string | null
@@ -5776,17 +5850,31 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnostico_previo?: string | null
+          encaminhamentos?: string | null
+          estrategias_tentadas?: string | null
+          eventos_marcantes?: string | null
           expectativas_terapia?: string | null
+          experiencias_traumaticas?: string | null
           fatores_protecao?: string | null
           fatores_risco?: string | null
           formulacao_inicial?: string | null
+          frequencia_sessoes?: string | null
+          frequencia_sintomas?: string | null
           hipoteses?: string | null
           historico_emocional_comportamental?: string | null
           historico_tratamentos?: string | null
+          humor_predominante?: string | null
           id?: string
+          ideacao_suicida?: boolean | null
+          ideacao_suicida_obs?: string | null
+          impacto_vida?: string | null
           impressoes_clinicas?: string | null
+          infancia?: string | null
+          intensidade_subjetiva?: string | null
           internacoes?: boolean | null
           internacoes_obs?: string | null
+          intervencoes_previstas?: string | null
+          irritabilidade?: string | null
           is_current?: boolean
           ja_fez_terapia?: boolean | null
           ja_fez_terapia_obs?: string | null
@@ -5794,10 +5882,21 @@ export type Database = {
           objetivo_1?: string | null
           objetivo_2?: string | null
           objetivo_3?: string | null
+          observacao_afeto?: string | null
+          observacao_coerencia_discurso?: string | null
+          observacao_insight?: string | null
+          observacao_linguagem?: string | null
+          observacao_postura?: string | null
           observacoes?: string | null
+          observacoes_objetivos?: string | null
           ocultar_avaliacao_relatorio?: boolean | null
           patient_id?: string
+          pensamentos_recorrentes?: string | null
+          quando_comecou?: string | null
           queixa_principal?: string | null
+          quem_sugeriu_terapia?: string | null
+          relacionamento_pais_cuidadores?: string | null
+          situacoes_associadas?: string | null
           uso_medicacao?: boolean | null
           uso_medicacao_qual?: string | null
           version?: number

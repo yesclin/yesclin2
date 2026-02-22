@@ -329,11 +329,89 @@ export const PSICOLOGIA_STRUCTURE: DefaultSectionDef[] = [
   },
 ];
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FISIOTERAPIA — Modelo Padrão Clínico
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const FISIOTERAPIA_STRUCTURE: DefaultSectionDef[] = [
+  {
+    id: 'section_queixa_principal', type: 'section', title: 'Queixa Principal',
+    fields: [
+      { id: 'f_queixa_principal', type: 'textarea', label: 'Queixa principal', required: true, placeholder: 'Motivo da consulta, nas palavras do paciente...' },
+      { id: 'f_encaminhamento', type: 'text', label: 'Encaminhado por', required: false, placeholder: 'Médico, ortopedista, auto-referência...' },
+    ],
+  },
+  {
+    id: 'section_hda', type: 'section', title: 'História da Disfunção Atual',
+    fields: [
+      { id: 'f_inicio_sintomas', type: 'text', label: 'Início dos sintomas', required: false, placeholder: 'Quando começou? Há quanto tempo?' },
+      { id: 'f_mecanismo_lesao', type: 'textarea', label: 'Mecanismo da lesão', required: false, placeholder: 'Como ocorreu? Trauma, sobrecarga, espontâneo...' },
+      { id: 'f_evolucao', type: 'textarea', label: 'Evolução do quadro', required: false, placeholder: 'Progressiva, estável, com melhoras/pioras...' },
+      { id: 'f_localizacao', type: 'text', label: 'Localização da dor/disfunção', required: false, placeholder: 'Região anatômica acometida...' },
+      { id: 'f_intensidade_dor', type: 'select', label: 'Intensidade da dor (EVA 0-10)', required: false, options: ['0','1','2','3','4','5','6','7','8','9','10'] },
+      { id: 'f_tipo_dor', type: 'select', label: 'Tipo de dor', required: false, options: ['Aguda', 'Crônica', 'Pontada', 'Queimação', 'Latejante', 'Difusa', 'Outro'] },
+      { id: 'f_fatores_piora', type: 'textarea', label: 'Fatores de piora', required: false, placeholder: 'Movimentos, posições, atividades que agravam...' },
+      { id: 'f_fatores_alivio', type: 'textarea', label: 'Fatores de alívio', required: false, placeholder: 'Repouso, medicação, gelo, calor...' },
+    ],
+  },
+  {
+    id: 'section_limitacoes', type: 'section', title: 'Limitações Funcionais',
+    fields: [
+      { id: 'f_avds', type: 'textarea', label: 'Atividades de Vida Diária (AVDs)', required: false, placeholder: 'Quais atividades cotidianas estão comprometidas?' },
+      { id: 'f_atividade_laboral', type: 'textarea', label: 'Atividade laboral', required: false, placeholder: 'Profissão, demandas físicas, afastamento...' },
+      { id: 'f_atividade_esportiva', type: 'textarea', label: 'Atividade esportiva', required: false, placeholder: 'Pratica esporte? Qual? Frequência? Impacto...' },
+      { id: 'f_independencia', type: 'select', label: 'Nível de independência funcional', required: false, options: ['Independente', 'Parcialmente dependente', 'Dependente', 'Acamado'] },
+    ],
+  },
+  {
+    id: 'section_antecedentes', type: 'section', title: 'Antecedentes e Histórico Clínico',
+    fields: [
+      { id: 'f_patologias', type: 'textarea', label: 'Patologias prévias', required: false, placeholder: 'Doenças crônicas, cirurgias, internações...' },
+      { id: 'f_cirurgias', type: 'textarea', label: 'Cirurgias ortopédicas/anteriores', required: false, placeholder: 'Tipo, data, local...' },
+      { id: 'f_fraturas', type: 'textarea', label: 'Fraturas / lesões prévias', required: false, placeholder: 'Fraturas, entorses, luxações anteriores...' },
+      { id: 'f_medicamentos', type: 'textarea', label: 'Medicamentos em uso', required: false, placeholder: 'Medicamentos, dosagem, frequência...' },
+      { id: 'f_exames', type: 'textarea', label: 'Exames complementares', required: false, placeholder: 'RX, RM, TC, exames laboratoriais relevantes...' },
+    ],
+  },
+  {
+    id: 'section_tratamentos_previos', type: 'section', title: 'Tratamentos Anteriores',
+    fields: [
+      { id: 'f_fisio_previa', type: 'checkbox', label: 'Já fez fisioterapia antes?', required: false },
+      { id: 'f_fisio_previa_obs', type: 'textarea', label: 'Detalhes do tratamento anterior', required: false, placeholder: 'Quando, onde, técnicas, resultados...' },
+      { id: 'f_outros_tratamentos', type: 'textarea', label: 'Outros tratamentos realizados', required: false, placeholder: 'Acupuntura, pilates, RPG, infiltração...' },
+    ],
+  },
+  {
+    id: 'section_habitos', type: 'section', title: 'Hábitos de Vida',
+    fields: [
+      { id: 'f_sono', type: 'textarea', label: 'Qualidade do sono', required: false, placeholder: 'Horas de sono, qualidade, posição ao dormir...' },
+      { id: 'f_tabagismo', type: 'select', label: 'Tabagismo', required: false, options: ['Não', 'Sim', 'Ex-fumante'] },
+      { id: 'f_etilismo', type: 'select', label: 'Etilismo', required: false, options: ['Não', 'Social', 'Frequente'] },
+      { id: 'f_nivel_atividade', type: 'select', label: 'Nível de atividade física', required: false, options: ['Sedentário', 'Levemente ativo', 'Moderadamente ativo', 'Muito ativo'] },
+    ],
+  },
+  {
+    id: 'section_objetivos', type: 'section', title: 'Objetivos do Paciente',
+    fields: [
+      { id: 'f_objetivo_paciente', type: 'textarea', label: 'Expectativas e objetivos', required: false, placeholder: 'O que o paciente espera alcançar com o tratamento?' },
+      { id: 'f_objetivo_funcional', type: 'textarea', label: 'Objetivo funcional principal', required: false, placeholder: 'Meta funcional prioritária (ex: voltar a correr, trabalhar sem dor...)' },
+    ],
+  },
+  {
+    id: 'section_observacoes', type: 'section', title: 'Observações do Fisioterapeuta',
+    fields: [
+      { id: 'f_impressao_inicial', type: 'textarea', label: 'Impressão clínica inicial', required: false, placeholder: 'Observações iniciais do profissional...' },
+      { id: 'f_observacoes', type: 'textarea', label: 'Observações adicionais', required: false, placeholder: 'Outras informações relevantes...' },
+    ],
+  },
+];
+
 export const DEFAULT_ANAMNESIS_STRUCTURES: Record<string, DefaultSectionDef[]> = {
   'clinica-geral': CLINICA_GERAL_STRUCTURE,
   'geral': CLINICA_GERAL_STRUCTURE,
   'nutricao': NUTRICAO_STRUCTURE,
   'psicologia': PSICOLOGIA_STRUCTURE,
+  'fisioterapia': FISIOTERAPIA_STRUCTURE,
 };
 
 /**

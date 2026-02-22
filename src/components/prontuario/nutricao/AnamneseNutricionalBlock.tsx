@@ -191,19 +191,6 @@ export function AnamneseNutricionalBlock({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Template picker in header */}
-          {specialtyId && hasTemplate && (
-            <AnamnesisTemplatePicker
-              resolvedTemplate={resolvedTemplate}
-              allTemplates={allTemplates}
-              hasMultipleTemplates={hasMultipleTemplates}
-              isLoading={templateLoading}
-              hasStartedFilling={hasStartedFilling}
-              onTemplateChange={setSelectedTemplateId}
-              selectedTemplateId={selectedTemplateId}
-              versionNumber={resolvedTemplate?.version_number}
-            />
-          )}
           {anamneseHistory.length > 1 && (
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
               <History className="h-4 w-4 mr-2" />

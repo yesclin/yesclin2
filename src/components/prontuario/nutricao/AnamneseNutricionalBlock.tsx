@@ -6,6 +6,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useAnamnesisModels } from '@/hooks/prontuario/useAnamnesisModels';
+import { AnamnesisModelEditorDialog } from '@/components/config/prontuario/AnamnesisModelEditorDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +85,14 @@ export function AnamneseNutricionalBlock({
   const [formData, setFormData] = useState<AnamneseNutricionalFormData>({ ...INITIAL_NUTRICAO_FORM });
   const [status, setStatus] = useState<'rascunho' | 'finalizado'>('rascunho');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const {
+    models: anamnesisModels,
+    updateModel,
+    saving: savingModel,
+  } = useAnamnesisModels(specialtyId);
 
   // Template resolution for specialty validation
   const {
@@ -95,6 +104,11 @@ export function AnamneseNutricionalBlock({
 
   const hasTemplate = !!resolvedTemplate;
   const hasStartedFilling = showForm && Object.values(formData).some(v => v !== '' && v !== null && v !== 0);
+
+  // Find the current model for the editor
+  const currentEditorModel = anamnesisModels.find(
+    m => m.id === (selectedTemplateId || resolvedTemplate?.id)
+  ) || anamnesisModels[0] || null;
 
   // Auto-calculate IMC when peso or altura changes
   useEffect(() => {
@@ -764,11 +778,24 @@ export function AnamneseNutricionalBlock({
           canEdit={canEdit}
           canManageTemplates={canEdit}
           onRegister={() => setShowForm(true)}
-          onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
+          onOpenTemplateEditor={() => setShowTemplateEditor(true)}
           onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
           specialtyLabel="Nutrição"
         />
       )}
+
+      {/* Template Editor Modal */}
+      <AnamnesisModelEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        model={currentEditorModel}
+        onSave={async (id, data) => {
+          const result = await updateModel(id, data);
+          return !!result;
+        }}
+        saving={savingModel}
+        specialtySlug="nutricao"
+      />
 
       {/* Histórico */}
       {showHistory && anamneseHistory.length > 1 && (

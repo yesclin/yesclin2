@@ -739,10 +739,22 @@ export function AnamneseNutricionalBlock({
 
       {/* Empty State */}
       {!currentAnamnese && !showForm && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Apple className="h-10 w-10 text-muted-foreground opacity-50 mb-3" />
-          <p className="text-muted-foreground">Nenhuma anamnese nutricional registrada</p>
-        </div>
+        <AnamneseModelSelector
+          icon={<Apple className="h-10 w-10 text-muted-foreground opacity-50" />}
+          emptyTitle="Nenhuma anamnese nutricional registrada"
+          registerLabel="Registrar Anamnese Nutricional"
+          resolvedTemplate={resolvedTemplate}
+          allTemplates={allTemplates}
+          isLoading={templateLoading}
+          selectedTemplateId={selectedTemplateId}
+          onTemplateChange={setSelectedTemplateId}
+          canEdit={canEdit}
+          canManageTemplates={canEdit}
+          onRegister={() => setShowForm(true)}
+          onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
+          onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+          specialtyLabel="Nutrição"
+        />
       )}
 
       {/* Histórico */}

@@ -5,8 +5,7 @@
  * Cada atualização cria nova versão, mantendo histórico completo.
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +48,8 @@ import {
 
 import { useResolvedAnamnesisTemplate } from '@/hooks/prontuario/useResolvedAnamnesisTemplate';
 import { AnamneseModelSelector } from '@/components/prontuario/AnamneseModelSelector';
+import { useAnamnesisModels } from '@/hooks/prontuario/useAnamnesisModels';
+import { AnamnesisModelEditorDialog } from '@/components/config/prontuario/AnamnesisModelEditorDialog';
 
 interface AnamneseFisioterapiaBlockProps {
   patientId: string | null;
@@ -323,7 +324,6 @@ export function AnamneseFisioterapiaBlock({
   specialtyId,
   procedureId,
 }: AnamneseFisioterapiaBlockProps) {
-  const navigate = useNavigate();
   const {
     currentAnamnese,
     history,
@@ -336,12 +336,23 @@ export function AnamneseFisioterapiaBlock({
 
   const [showHistory, setShowHistory] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   const {
     data: resolvedTemplate,
     allTemplates,
     isLoading: templateLoading,
   } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
+
+  const {
+    models: anamnesisModels,
+    updateModel,
+    saving: savingModel,
+  } = useAnamnesisModels(specialtyId);
+
+  const currentEditorModel = anamnesisModels.find(
+    m => m.id === (selectedTemplateId || resolvedTemplate?.id)
+  ) || anamnesisModels[0] || null;
 
   if (loading) {
     return (
@@ -442,8 +453,8 @@ export function AnamneseFisioterapiaBlock({
           canEdit={canEdit}
           canManageTemplates={canEdit}
           onRegister={() => setIsFormOpen(true)}
-          onOpenTemplateEditor={() => navigate(`/app/config/prontuario?especialidade_id=${specialtyId}&tipo=anamnese`)}
-          onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
+          onOpenTemplateEditor={() => setShowTemplateEditor(true)}
+          onConfigureTemplate={() => setShowTemplateEditor(true)}
           specialtyLabel="Fisioterapia"
         />
       ) : (
@@ -494,6 +505,19 @@ export function AnamneseFisioterapiaBlock({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Template Editor Modal */}
+      <AnamnesisModelEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        model={currentEditorModel}
+        onSave={async (id, data) => {
+          const result = await updateModel(id, data);
+          return !!result;
+        }}
+        saving={savingModel}
+        specialtySlug="fisioterapia"
+      />
     </div>
   );
 }

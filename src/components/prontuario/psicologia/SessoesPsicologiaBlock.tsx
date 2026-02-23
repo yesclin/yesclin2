@@ -279,7 +279,7 @@ export function SessoesPsicologiaBlock({
 
       {/* New Session Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
@@ -297,7 +297,7 @@ export function SessoesPsicologiaBlock({
             </div>
           )}
 
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
             <div className="space-y-6">
               {/* Data, Duração e Humor */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

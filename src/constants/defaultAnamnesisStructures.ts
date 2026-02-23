@@ -430,6 +430,65 @@ export const FISIOTERAPIA_STRUCTURE: DefaultSectionDef[] = [
   },
 ];
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PSICOLOGIA — Evolução (Sessão Recorrente)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const PSICOLOGIA_EVOLUCAO_STRUCTURE: DefaultSectionDef[] = [
+  // 1. Identificação da Sessão
+  {
+    id: 'section_identificacao_sessao', type: 'section', title: 'Identificação da Sessão',
+    fields: [
+      { id: 'f_numero_sessao', type: 'number', label: 'Número da sessão', required: false, description: 'Preenchimento automático incremental' },
+      { id: 'f_modalidade', type: 'select', label: 'Modalidade', required: false, options: ['Presencial', 'Online'] },
+      { id: 'f_duracao_sessao', type: 'text', label: 'Duração da sessão', required: false, placeholder: 'Ex: 50 min' },
+    ],
+  },
+  // 2. Tema Central da Sessão
+  {
+    id: 'section_tema_central', type: 'section', title: 'Tema Central da Sessão',
+    fields: [
+      { id: 'f_tema_principal', type: 'text', label: 'Tema principal abordado', required: true, placeholder: 'Tema central discutido na sessão...' },
+      { id: 'f_resumo_sessao', type: 'textarea', label: 'Resumo da sessão', required: false, placeholder: 'Resumo geral do que foi trabalhado...' },
+    ],
+  },
+  // 3. Relato do Paciente
+  {
+    id: 'section_relato_paciente', type: 'section', title: 'Relato do Paciente',
+    fields: [
+      { id: 'f_principais_falas', type: 'textarea', label: 'Principais falas / acontecimentos', required: false, placeholder: 'Relatos mais relevantes trazidos pelo paciente...' },
+      { id: 'f_mudancas_percebidas', type: 'textarea', label: 'Mudanças percebidas desde última sessão', required: false, placeholder: 'Progressos, retrocessos, novidades...' },
+      { id: 'f_emocoes_predominantes', type: 'multiselect', label: 'Emoções predominantes', required: false, options: ['Ansiedade', 'Tristeza', 'Raiva', 'Culpa', 'Medo', 'Alegria', 'Frustração', 'Apatia'] },
+    ],
+  },
+  // 4. Intervenções do Psicólogo
+  {
+    id: 'section_intervencoes', type: 'section', title: 'Intervenções do Psicólogo',
+    fields: [
+      { id: 'f_tecnicas_utilizadas', type: 'multiselect', label: 'Técnicas utilizadas', required: false, options: ['Escuta ativa', 'Reestruturação cognitiva', 'Psicoeducação', 'Técnica de respiração', 'Técnica comportamental', 'Técnica de exposição', 'Outro'] },
+      { id: 'f_observacoes_tecnicas', type: 'textarea', label: 'Observações técnicas', required: false, placeholder: 'Notas clínicas sobre as intervenções realizadas...' },
+    ],
+  },
+  // 5. Avaliação Clínica
+  {
+    id: 'section_avaliacao_clinica', type: 'section', title: 'Avaliação Clínica',
+    fields: [
+      { id: 'f_evolucao_caso', type: 'select', label: 'Evolução do caso', required: false, options: ['Melhorando', 'Estável', 'Piorando'] },
+      { id: 'f_adesao_processo', type: 'select', label: 'Adesão ao processo terapêutico', required: false, options: ['Boa', 'Parcial', 'Baixa'] },
+      { id: 'f_risco_atual', type: 'select', label: 'Risco atual', required: false, options: ['Ausente', 'Baixo', 'Moderado', 'Alto'], description: 'Se risco = Alto, gerar alerta interno no prontuário' },
+    ],
+  },
+  // 6. Encaminhamentos e Tarefas
+  {
+    id: 'section_encaminhamentos_tarefas', type: 'section', title: 'Encaminhamentos e Tarefas',
+    fields: [
+      { id: 'f_tarefa_casa', type: 'textarea', label: 'Tarefa para casa', required: false, placeholder: 'Atividades ou reflexões propostas ao paciente...' },
+      { id: 'f_encaminhamento', type: 'text', label: 'Encaminhamento (se houver)', required: false, placeholder: 'Psiquiatria, neurologia, assistência social...' },
+      { id: 'f_proximo_foco', type: 'text', label: 'Próximo foco terapêutico', required: false, placeholder: 'Tema ou objetivo para a próxima sessão...' },
+    ],
+  },
+];
+
 export const DEFAULT_ANAMNESIS_STRUCTURES: Record<string, DefaultSectionDef[]> = {
   'clinica-geral': CLINICA_GERAL_STRUCTURE,
   'geral': CLINICA_GERAL_STRUCTURE,
@@ -438,10 +497,23 @@ export const DEFAULT_ANAMNESIS_STRUCTURES: Record<string, DefaultSectionDef[]> =
   'fisioterapia': FISIOTERAPIA_STRUCTURE,
 };
 
+/** Evolution/session structures (separate from initial anamnesis) */
+export const DEFAULT_EVOLUTION_STRUCTURES: Record<string, DefaultSectionDef[]> = {
+  'psicologia': PSICOLOGIA_EVOLUCAO_STRUCTURE,
+};
+
 /**
  * Get the default structure for a specialty slug.
  * Returns empty array if no default exists.
  */
 export function getDefaultAnamnesisStructure(slug: string): DefaultSectionDef[] {
   return DEFAULT_ANAMNESIS_STRUCTURES[slug] || [];
+}
+
+/**
+ * Get the default evolution/session structure for a specialty slug.
+ * Returns empty array if no default exists.
+ */
+export function getDefaultEvolutionStructure(slug: string): DefaultSectionDef[] {
+  return DEFAULT_EVOLUTION_STRUCTURES[slug] || [];
 }

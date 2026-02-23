@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProntuarioTabNav, type TabNavItem } from "@/components/prontuario/ProntuarioTabNav";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ClinicalAccessGuard } from "@/components/permissions/ClinicalAccessGuard";
 import {
@@ -120,10 +121,10 @@ import {
   TimelineEsteticaBlock,
 } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock, DocumentosClinicosBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, PlanoTerapeuticoBlock, MetasTerapeuticasBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useDocumentosClinicosData } from "@/hooks/prontuario/clinica-geral/useDocumentosClinicosData";
-import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
+import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useMetasTerapeuticasData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
 import { 
   EvolucoesNutricaoBlock, 
   EvolucaoRetornoBlock,
@@ -656,6 +657,17 @@ export default function Prontuario() {
     saving: planoTerapeuticoSaving,
     savePlano: savePlanoTerapeutico,
   } = usePlanoTerapeuticoData(patientId);
+
+  // Metas Terapêuticas Data - goal-based tracking for Psicologia
+  const {
+    goals: metasTerapeuticas,
+    loading: metasLoading,
+    saving: metasSaving,
+    createGoal: createMeta,
+    updateProgress: updateMetaProgress,
+    updateStatus: updateMetaStatus,
+    fetchGoalUpdates: fetchMetaUpdates,
+  } = useMetasTerapeuticasData(patientId);
 
   // Instrumentos Psicológicos Data - specific for Psicologia specialty
   const {
@@ -1433,14 +1445,27 @@ export default function Prontuario() {
         // Render specialty-specific Conduta/Plano
         if (activeSpecialtyKey === 'psicologia') {
           return (
-            <PlanoTerapeuticoBlock
-              currentPlano={currentPlanoTerapeutico}
-              planoHistory={planoTerapeuticoHistory}
-              loading={planoTerapeuticoLoading}
-              saving={planoTerapeuticoSaving}
-              canEdit={canEditCurrentTab}
-              onSave={savePlanoTerapeutico}
-            />
+            <div className="space-y-8">
+              <MetasTerapeuticasBlock
+                goals={metasTerapeuticas}
+                loading={metasLoading}
+                saving={metasSaving}
+                canEdit={canEditCurrentTab}
+                onCreateGoal={createMeta}
+                onUpdateProgress={updateMetaProgress}
+                onUpdateStatus={updateMetaStatus}
+                fetchGoalUpdates={fetchMetaUpdates}
+              />
+              <Separator />
+              <PlanoTerapeuticoBlock
+                currentPlano={currentPlanoTerapeutico}
+                planoHistory={planoTerapeuticoHistory}
+                loading={planoTerapeuticoLoading}
+                saving={planoTerapeuticoSaving}
+                canEdit={canEditCurrentTab}
+                onSave={savePlanoTerapeutico}
+              />
+            </div>
           );
         }
         if (activeSpecialtyKey === 'fisioterapia') {

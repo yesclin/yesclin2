@@ -9555,6 +9555,116 @@ export type Database = {
         }
         Relationships: []
       }
+      therapeutic_goal_updates: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          new_progress: number
+          observation: string | null
+          previous_progress: number
+          sessao_id: string | null
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          new_progress: number
+          observation?: string | null
+          previous_progress: number
+          sessao_id?: string | null
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          new_progress?: number
+          observation?: string | null
+          previous_progress?: number
+          sessao_id?: string | null
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapeutic_goal_updates_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "therapeutic_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      therapeutic_goals: {
+        Row: {
+          clinic_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_measurable: boolean
+          patient_id: string
+          priority: string
+          professional_id: string
+          progress: number
+          review_date: string | null
+          status: string
+          success_indicator: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_measurable?: boolean
+          patient_id: string
+          priority?: string
+          professional_id: string
+          progress?: number
+          review_date?: string | null
+          status?: string
+          success_indicator?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_measurable?: boolean
+          patient_id?: string
+          priority?: string
+          professional_id?: string
+          progress?: number
+          review_date?: string | null
+          status?: string
+          success_indicator?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapeutic_goals_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "therapeutic_goals_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       therapeutic_plans: {
         Row: {
           clinic_id: string

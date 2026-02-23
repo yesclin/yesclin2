@@ -666,8 +666,13 @@ export default function Prontuario() {
     createGoal: createMeta,
     updateProgress: updateMetaProgress,
     updateStatus: updateMetaStatus,
+    updateScaleScore: updateMetaScaleScore,
     fetchGoalUpdates: fetchMetaUpdates,
   } = useMetasTerapeuticasData(patientId);
+
+  // Compute latest PHQ-9 and GAD-7 scores from sessions
+  const latestPHQ9Score = sessoesPsico.find(s => s.phq9_total != null)?.phq9_total ?? null;
+  const latestGAD7Score = sessoesPsico.find(s => s.gad7_total != null)?.gad7_total ?? null;
 
   // Instrumentos Psicológicos Data - specific for Psicologia specialty
   const {
@@ -1454,7 +1459,10 @@ export default function Prontuario() {
                 onCreateGoal={createMeta}
                 onUpdateProgress={updateMetaProgress}
                 onUpdateStatus={updateMetaStatus}
+                onUpdateScaleScore={updateMetaScaleScore}
                 fetchGoalUpdates={fetchMetaUpdates}
+                latestPHQ9={latestPHQ9Score}
+                latestGAD7={latestGAD7Score}
               />
               <Separator />
               <PlanoTerapeuticoBlock

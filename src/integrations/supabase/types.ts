@@ -9563,6 +9563,7 @@ export type Database = {
           new_progress: number
           observation: string | null
           previous_progress: number
+          score_value: number | null
           sessao_id: string | null
           updated_by: string
         }
@@ -9573,6 +9574,7 @@ export type Database = {
           new_progress: number
           observation?: string | null
           previous_progress: number
+          score_value?: number | null
           sessao_id?: string | null
           updated_by: string
         }
@@ -9583,6 +9585,7 @@ export type Database = {
           new_progress?: number
           observation?: string | null
           previous_progress?: number
+          score_value?: number | null
           sessao_id?: string | null
           updated_by?: string
         }
@@ -9601,16 +9604,21 @@ export type Database = {
           clinic_id: string
           completed_at: string | null
           created_at: string
+          current_score: number | null
           description: string | null
+          goal_type: string
           id: string
+          initial_score: number | null
           is_measurable: boolean
           patient_id: string
           priority: string
           professional_id: string
           progress: number
           review_date: string | null
+          scale_name: string | null
           status: string
           success_indicator: string | null
+          target_score: number | null
           title: string
           updated_at: string
         }
@@ -9618,16 +9626,21 @@ export type Database = {
           clinic_id: string
           completed_at?: string | null
           created_at?: string
+          current_score?: number | null
           description?: string | null
+          goal_type?: string
           id?: string
+          initial_score?: number | null
           is_measurable?: boolean
           patient_id: string
           priority?: string
           professional_id: string
           progress?: number
           review_date?: string | null
+          scale_name?: string | null
           status?: string
           success_indicator?: string | null
+          target_score?: number | null
           title: string
           updated_at?: string
         }
@@ -9635,16 +9648,21 @@ export type Database = {
           clinic_id?: string
           completed_at?: string | null
           created_at?: string
+          current_score?: number | null
           description?: string | null
+          goal_type?: string
           id?: string
+          initial_score?: number | null
           is_measurable?: boolean
           patient_id?: string
           priority?: string
           professional_id?: string
           progress?: number
           review_date?: string | null
+          scale_name?: string | null
           status?: string
           success_indicator?: string | null
+          target_score?: number | null
           title?: string
           updated_at?: string
         }

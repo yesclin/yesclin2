@@ -249,82 +249,106 @@ export const NUTRICAO_STRUCTURE: DefaultSectionDef[] = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const PSICOLOGIA_STRUCTURE: DefaultSectionDef[] = [
+  // 1. Demanda Inicial
   {
     id: 'section_demanda_inicial', type: 'section', title: 'Demanda Inicial',
     fields: [
-      { id: 'f_queixa_principal', type: 'textarea', label: 'Queixa Principal', required: true, placeholder: 'Descreva a queixa ou demanda principal do paciente...' },
-      { id: 'f_expectativa_terapia', type: 'textarea', label: 'Expectativas em relação à terapia', required: false, placeholder: 'O que o paciente espera do processo terapêutico...' },
+      { id: 'f_motivo_procura', type: 'textarea', label: 'Motivo da procura', required: true, placeholder: 'Descreva o motivo da procura pelo atendimento psicológico...' },
+      { id: 'f_expectativa_terapia', type: 'textarea', label: 'Expectativa em relação à terapia', required: false, placeholder: 'O que o paciente espera do processo terapêutico...' },
       { id: 'f_encaminhamento', type: 'text', label: 'Encaminhamento', required: false, placeholder: 'Quem encaminhou (médico, escola, espontâneo)...' },
+      { id: 'f_quem_sugeriu', type: 'text', label: 'Quem sugeriu a terapia', required: false, placeholder: 'Familiar, amigo, profissional de saúde...' },
     ],
   },
+  // 2. História do Problema Atual
   {
     id: 'section_historia_problema', type: 'section', title: 'História do Problema Atual',
     fields: [
-      { id: 'f_inicio_sintomas', type: 'textarea', label: 'Início e evolução', required: false, placeholder: 'Quando os sintomas começaram, como evoluíram...' },
-      { id: 'f_frequencia_intensidade', type: 'textarea', label: 'Frequência e intensidade', required: false, placeholder: 'Com que frequência ocorrem, nível de impacto...' },
-      { id: 'f_fatores_desencadeantes', type: 'textarea', label: 'Fatores desencadeantes', required: false, placeholder: 'Situações, eventos ou contextos que agravam...' },
-      { id: 'f_impacto_funcional', type: 'textarea', label: 'Impacto funcional', required: false, placeholder: 'Como afeta trabalho, relacionamentos, rotina...' },
+      { id: 'f_quando_comecou', type: 'text', label: 'Quando começou', required: false, placeholder: 'Quando os sintomas/queixas começaram...' },
+      { id: 'f_situacoes_associadas', type: 'textarea', label: 'Situações associadas', required: false, placeholder: 'Eventos ou contextos relacionados ao início ou agravamento...' },
+      { id: 'f_frequencia', type: 'text', label: 'Frequência', required: false, placeholder: 'Com que frequência ocorrem os sintomas...' },
+      { id: 'f_intensidade_subjetiva', type: 'select', label: 'Intensidade subjetiva', required: false, options: ['Leve', 'Moderada', 'Intensa'] },
+      { id: 'f_impacto_pessoal', type: 'textarea', label: 'Impacto na vida pessoal', required: false, placeholder: 'Como afeta relacionamentos, rotina, bem-estar...' },
+      { id: 'f_impacto_profissional', type: 'textarea', label: 'Impacto profissional/acadêmico', required: false, placeholder: 'Como afeta trabalho, estudos, produtividade...' },
+      { id: 'f_estrategias_tentadas', type: 'textarea', label: 'Estratégias já tentadas', required: false, placeholder: 'O que o paciente já tentou para lidar com o problema...' },
     ],
   },
+  // 3. Histórico Psicológico / Psiquiátrico
   {
     id: 'section_historico_psicologico', type: 'section', title: 'Histórico Psicológico / Psiquiátrico',
     fields: [
-      { id: 'f_terapia_anterior', type: 'select', label: 'Já fez terapia anteriormente?', required: false, options: ['Não', 'Sim'] },
-      { id: 'f_terapia_anterior_obs', type: 'textarea', label: 'Detalhes da terapia anterior', required: false, placeholder: 'Duração, abordagem, motivo de interrupção...' },
-      { id: 'f_uso_medicacao', type: 'select', label: 'Uso de medicação psiquiátrica', required: false, options: ['Não', 'Sim'] },
-      { id: 'f_medicacao_qual', type: 'textarea', label: 'Medicação em uso', required: false, placeholder: 'Nome, dosagem, prescritor...' },
-      { id: 'f_diagnostico_previo', type: 'textarea', label: 'Diagnósticos prévios', required: false, placeholder: 'Diagnósticos anteriores (CID/DSM)...' },
-      { id: 'f_internacoes', type: 'select', label: 'Internações psiquiátricas', required: false, options: ['Não', 'Sim'] },
-      { id: 'f_internacoes_obs', type: 'textarea', label: 'Detalhes das internações', required: false, placeholder: 'Motivo, duração, local...' },
+      { id: 'f_terapia_anterior', type: 'select', label: 'Já realizou terapia anteriormente', required: false, options: ['Sim', 'Não'] },
+      { id: 'f_terapia_anterior_obs', type: 'textarea', label: 'Observação sobre terapias anteriores', required: false, placeholder: 'Duração, abordagem, motivo de interrupção, resultados...' },
+      { id: 'f_uso_medicacao', type: 'select', label: 'Uso atual de medicação', required: false, options: ['Sim', 'Não'] },
+      { id: 'f_qual_medicacao', type: 'text', label: 'Qual medicação', required: false, placeholder: 'Nome, dosagem, prescritor...' },
+      { id: 'f_diagnostico_previo', type: 'text', label: 'Diagnóstico prévio', required: false, placeholder: 'Diagnósticos anteriores (CID/DSM)...' },
+      { id: 'f_internacoes', type: 'select', label: 'Internações psiquiátricas', required: false, options: ['Sim', 'Não'] },
+      { id: 'f_acompanhamento_psiq', type: 'select', label: 'Acompanhamento psiquiátrico atual', required: false, options: ['Sim', 'Não'] },
     ],
   },
+  // 4. Histórico Familiar
   {
-    id: 'section_contexto_familiar', type: 'section', title: 'Histórico e Contexto Familiar',
+    id: 'section_historico_familiar', type: 'section', title: 'Histórico Familiar',
     fields: [
-      { id: 'f_composicao_familiar', type: 'textarea', label: 'Composição familiar', required: false, placeholder: 'Quem compõe o núcleo familiar, relações...' },
-      { id: 'f_dinamica_familiar', type: 'textarea', label: 'Dinâmica familiar', required: false, placeholder: 'Qualidade dos vínculos, conflitos, apoio...' },
-      { id: 'f_historico_familiar_psiq', type: 'textarea', label: 'Histórico familiar psiquiátrico', required: false, placeholder: 'Transtornos mentais na família...' },
+      { id: 'f_relacao_pais', type: 'textarea', label: 'Relação com pais/cuidadores', required: false, placeholder: 'Qualidade dos vínculos, dinâmica familiar na infância e atualmente...' },
+      { id: 'f_eventos_infancia', type: 'textarea', label: 'Eventos marcantes na infância', required: false, placeholder: 'Traumas, perdas, mudanças significativas...' },
+      { id: 'f_transtornos_familia', type: 'textarea', label: 'Histórico de transtornos na família', required: false, placeholder: 'Transtornos mentais, dependência química na família...' },
+      { id: 'f_conflitos_familiares', type: 'textarea', label: 'Conflitos familiares atuais', required: false, placeholder: 'Conflitos, tensões ou dificuldades familiares presentes...' },
     ],
   },
+  // 5. Contexto Atual
   {
-    id: 'section_contexto_atual', type: 'section', title: 'Contexto de Vida Atual',
+    id: 'section_contexto_atual', type: 'section', title: 'Contexto Atual',
     fields: [
-      { id: 'f_trabalho', type: 'textarea', label: 'Trabalho / Ocupação', required: false, placeholder: 'Ocupação atual, satisfação, estresse...' },
-      { id: 'f_relacionamentos', type: 'textarea', label: 'Relacionamentos', required: false, placeholder: 'Relações afetivas, sociais, conflitos...' },
-      { id: 'f_vida_social', type: 'textarea', label: 'Vida social e lazer', required: false, placeholder: 'Atividades sociais, hobbies, isolamento...' },
-      { id: 'f_rotina', type: 'textarea', label: 'Rotina diária', required: false, placeholder: 'Estrutura do dia, organização, autocuidado...' },
-      { id: 'f_sono', type: 'textarea', label: 'Sono', required: false, placeholder: 'Qualidade, duração, insônia, pesadelos...' },
-      { id: 'f_alimentacao', type: 'textarea', label: 'Alimentação', required: false, placeholder: 'Padrão alimentar, alterações recentes...' },
+      { id: 'f_situacao_familiar', type: 'textarea', label: 'Situação familiar', required: false, placeholder: 'Composição familiar atual, dinâmica...' },
+      { id: 'f_relacionamento_afetivo', type: 'textarea', label: 'Relacionamento afetivo', required: false, placeholder: 'Status, qualidade do relacionamento...' },
+      { id: 'f_vida_social', type: 'textarea', label: 'Vida social', required: false, placeholder: 'Amizades, atividades sociais, isolamento...' },
+      { id: 'f_trabalho_estudos', type: 'textarea', label: 'Trabalho / Estudos', required: false, placeholder: 'Ocupação, satisfação, estresse laboral...' },
+      { id: 'f_rede_apoio', type: 'textarea', label: 'Rede de apoio', required: false, placeholder: 'Pessoas de confiança, suporte emocional...' },
+      { id: 'f_rotina_diaria', type: 'textarea', label: 'Rotina diária', required: false, placeholder: 'Estrutura do dia, organização, autocuidado...' },
+      { id: 'f_sono', type: 'text', label: 'Sono', required: false, placeholder: 'Qualidade, horas, insônia, pesadelos...' },
+      { id: 'f_alimentacao', type: 'text', label: 'Alimentação', required: false, placeholder: 'Padrão alimentar, alterações recentes...' },
+      { id: 'f_atividade_fisica', type: 'text', label: 'Atividade física', required: false, placeholder: 'Tipo, frequência...' },
     ],
   },
+  // 6. Funcionamento Psíquico Atual
   {
-    id: 'section_fatores', type: 'section', title: 'Fatores de Risco e Proteção',
+    id: 'section_funcionamento_psiquico', type: 'section', title: 'Funcionamento Psíquico Atual',
     fields: [
-      { id: 'f_fatores_risco', type: 'textarea', label: 'Fatores de risco', required: false, placeholder: 'Ideação suicida, autolesão, uso de substâncias, isolamento...' },
-      { id: 'f_fatores_protecao', type: 'textarea', label: 'Fatores de proteção', required: false, placeholder: 'Rede de apoio, recursos pessoais, motivação...' },
+      { id: 'f_humor_predominante', type: 'text', label: 'Humor predominante', required: false, placeholder: 'Triste, ansioso, irritável, estável...' },
+      { id: 'f_ansiedade', type: 'select', label: 'Ansiedade', required: false, options: ['Ausente', 'Leve', 'Moderada', 'Intensa'] },
+      { id: 'f_irritabilidade', type: 'select', label: 'Irritabilidade', required: false, options: ['Ausente', 'Leve', 'Moderada', 'Intensa'] },
+      { id: 'f_concentracao', type: 'select', label: 'Concentração', required: false, options: ['Preservada', 'Prejudicada'] },
+      { id: 'f_autoestima', type: 'select', label: 'Autoestima', required: false, options: ['Baixa', 'Moderada', 'Alta'] },
+      { id: 'f_pensamentos_recorrentes', type: 'textarea', label: 'Pensamentos recorrentes', required: false, placeholder: 'Pensamentos intrusivos, ruminações, preocupações constantes...' },
+      { id: 'f_ideacao_suicida', type: 'select', label: 'Ideação suicida', required: false, options: ['Sim', 'Não'], description: 'Se "Sim", gerar alerta interno no prontuário (não exportável em PDF)' },
+      { id: 'f_comportamentos_risco', type: 'textarea', label: 'Comportamentos de risco', required: false, placeholder: 'Autolesão, uso de substâncias, comportamentos impulsivos...' },
     ],
   },
+  // 7. Observação Clínica do Psicólogo
   {
-    id: 'section_avaliacao_tecnica', type: 'section', title: 'Avaliação Técnica',
+    id: 'section_observacao_clinica', type: 'section', title: 'Observação Clínica do Psicólogo',
     fields: [
-      { id: 'f_impressoes_clinicas', type: 'textarea', label: 'Impressões clínicas', required: false, placeholder: 'Observações sobre apresentação, afeto, discurso, comportamento...' },
-      { id: 'f_formulacao_caso', type: 'textarea', label: 'Formulação de caso', required: false, placeholder: 'Compreensão clínica integrada do caso...' },
-      { id: 'f_hipoteses', type: 'textarea', label: 'Hipóteses diagnósticas', required: false, placeholder: 'Hipóteses baseadas em CID-10 / DSM-5...' },
+      { id: 'f_observacao_tecnica', type: 'textarea', label: 'Observação técnica do profissional', required: false, placeholder: 'Impressões clínicas, apresentação, afeto, discurso, comportamento... (pode ser ocultado no relatório exportável)', description: 'Campo técnico — opção de ocultar no relatório exportável' },
     ],
   },
+  // 8. Objetivos Terapêuticos
   {
     id: 'section_objetivos', type: 'section', title: 'Objetivos Terapêuticos',
     fields: [
-      { id: 'f_objetivo_1', type: 'textarea', label: 'Objetivo 1', required: false, placeholder: 'Primeiro objetivo terapêutico...' },
-      { id: 'f_objetivo_2', type: 'textarea', label: 'Objetivo 2', required: false, placeholder: 'Segundo objetivo terapêutico...' },
-      { id: 'f_objetivo_3', type: 'textarea', label: 'Objetivo 3', required: false, placeholder: 'Terceiro objetivo terapêutico...' },
+      { id: 'f_objetivo_1', type: 'text', label: 'Objetivo 1', required: false, placeholder: 'Primeiro objetivo terapêutico...' },
+      { id: 'f_objetivo_2', type: 'text', label: 'Objetivo 2', required: false, placeholder: 'Segundo objetivo terapêutico...' },
+      { id: 'f_objetivo_3', type: 'text', label: 'Objetivo 3', required: false, placeholder: 'Terceiro objetivo terapêutico...' },
+      { id: 'f_objetivos_obs', type: 'textarea', label: 'Observações adicionais', required: false, placeholder: 'Informações complementares sobre os objetivos...' },
     ],
   },
+  // 9. Plano Terapêutico Inicial
   {
-    id: 'section_observacoes', type: 'section', title: 'Observações Gerais',
+    id: 'section_plano_terapeutico', type: 'section', title: 'Plano Terapêutico Inicial',
     fields: [
-      { id: 'f_modalidade', type: 'select', label: 'Modalidade de atendimento', required: false, options: ['Presencial', 'Online', 'Híbrido'] },
-      { id: 'f_observacoes', type: 'textarea', label: 'Observações adicionais', required: false, placeholder: 'Informações complementares relevantes...' },
+      { id: 'f_abordagem', type: 'text', label: 'Abordagem terapêutica', required: false, placeholder: 'TCC, Psicanálise, Humanista, Sistêmica...' },
+      { id: 'f_frequencia_sessoes', type: 'select', label: 'Frequência das sessões', required: false, options: ['Semanal', 'Quinzenal', 'Mensal'] },
+      { id: 'f_intervencoes_previstas', type: 'textarea', label: 'Intervenções previstas', required: false, placeholder: 'Técnicas e estratégias terapêuticas planejadas...' },
+      { id: 'f_encaminhamentos', type: 'textarea', label: 'Encaminhamentos', required: false, placeholder: 'Psiquiatria, neurologia, assistência social...' },
     ],
   },
 ];

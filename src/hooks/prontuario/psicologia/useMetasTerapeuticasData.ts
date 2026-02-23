@@ -17,6 +17,11 @@ export interface TherapeuticGoal {
   success_indicator: string | null;
   review_date: string | null;
   completed_at: string | null;
+  goal_type: 'livre' | 'escala';
+  scale_name: string | null;
+  initial_score: number | null;
+  target_score: number | null;
+  current_score: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +33,7 @@ export interface GoalUpdate {
   previous_progress: number;
   new_progress: number;
   observation: string | null;
+  score_value: number | null;
   updated_by: string;
   created_at: string;
 }
@@ -39,6 +45,10 @@ export interface GoalFormData {
   is_measurable: boolean;
   success_indicator: string;
   review_date: string;
+  goal_type: 'livre' | 'escala';
+  scale_name: string;
+  initial_score: number | null;
+  target_score: number | null;
 }
 
 export function useMetasTerapeuticasData(patientId: string | null) {
@@ -79,7 +89,7 @@ export function useMetasTerapeuticasData(patientId: string | null) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
 
-      const { error } = await supabase.from('therapeutic_goals' as any).insert({
+      const insertData: any = {
         patient_id: patientId,
         clinic_id: clinic.id,
         professional_id: user.id,
@@ -89,7 +99,17 @@ export function useMetasTerapeuticasData(patientId: string | null) {
         is_measurable: data.is_measurable,
         success_indicator: data.success_indicator || null,
         review_date: data.review_date || null,
-      } as any);
+        goal_type: data.goal_type || 'livre',
+        scale_name: data.goal_type === 'escala' ? data.scale_name : null,
+        initial_score: data.goal_type === 'escala' ? data.initial_score : null,
+        target_score: data.goal_type === 'escala' ? data.target_score : null,
+        current_score: data.goal_type === 'escala' ? data.initial_score : null,
+      };
+      // Calculate initial progress for scale goals
+      if (data.goal_type === 'escala' && data.initial_score != null && data.target_score != null) {
+        insertData.progress = 0; // starts at 0%
+      }
+      const { error } = await supabase.from('therapeutic_goals' as any).insert(insertData);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -160,13 +180,68 @@ export function useMetasTerapeuticasData(patientId: string | null) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const updateScaleScoreMutation = useMutation({
+    mutationFn: async ({ goalId, newScore, sessaoId }: {
+      goalId: string; newScore: number; sessaoId?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      const { data: goal } = await supabase
+        .from('therapeutic_goals' as any)
+        .select('progress, current_score, initial_score, target_score')
+        .eq('id', goalId)
+        .single();
+      
+      const g = goal as any;
+      const previousProgress = g?.progress ?? 0;
+      const initialScore = g?.initial_score ?? 0;
+      const targetScore = g?.target_score ?? 0;
+      const previousScore = g?.current_score ?? initialScore;
+
+      // Calculate progress: ((initial - current) / (initial - target)) * 100
+      let newProgress = 0;
+      if (initialScore !== targetScore) {
+        newProgress = Math.round(((initialScore - newScore) / (initialScore - targetScore)) * 100);
+        newProgress = Math.max(0, Math.min(100, newProgress));
+      }
+
+      // Insert history
+      const { error: histErr } = await supabase.from('therapeutic_goal_updates' as any).insert({
+        goal_id: goalId,
+        sessao_id: sessaoId || null,
+        previous_progress: previousProgress,
+        new_progress: newProgress,
+        score_value: newScore,
+        observation: `Pontuação: ${previousScore} → ${newScore}`,
+        updated_by: user.id,
+      } as any);
+      if (histErr) throw histErr;
+
+      const updateData: any = { progress: newProgress, current_score: newScore };
+      if (newProgress >= 100) {
+        updateData.status = 'concluida';
+        updateData.completed_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from('therapeutic_goals' as any)
+        .update(updateData).eq('id', goalId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+      toast.success('Pontuação da escala atualizada');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   return {
     goals: goalsQuery.data || [],
     loading: goalsQuery.isLoading,
     createGoal: createGoalMutation.mutateAsync,
     updateProgress: updateProgressMutation.mutateAsync,
     updateStatus: updateStatusMutation.mutateAsync,
+    updateScaleScore: updateScaleScoreMutation.mutateAsync,
     fetchGoalUpdates: goalUpdatesQuery,
-    saving: createGoalMutation.isPending || updateProgressMutation.isPending || updateStatusMutation.isPending,
+    saving: createGoalMutation.isPending || updateProgressMutation.isPending || updateStatusMutation.isPending || updateScaleScoreMutation.isPending,
   };
 }

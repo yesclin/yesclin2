@@ -41,6 +41,7 @@ export interface SessaoPsicologia {
   numero_sessao: number | null;
   data_sessao: string;
   duracao_minutos: number;
+  modalidade: string;
   tema_central: string;
   abordagem_terapeutica: string;
   relato_paciente: string;
@@ -50,7 +51,17 @@ export interface SessaoPsicologia {
   encaminhamentos_tarefas: string;
   encaminhamentos_tags: string[];
   risco_interno: string;
+  risco_atual: string;
   humor_paciente: number | null;
+  emocoes_predominantes: string[];
+  evolucao_caso: string;
+  adesao_terapeutica: string;
+  phq9_respostas: number[] | null;
+  phq9_total: number | null;
+  gad7_respostas: number[] | null;
+  gad7_total: number | null;
+  tarefa_casa: string;
+  proximo_foco: string;
   status: StatusSessao;
   assinada_em: string | null;
   profissional_id: string;
@@ -61,6 +72,7 @@ export interface SessaoPsicologia {
 export interface SessaoFormData {
   data_sessao: string;
   duracao_minutos: number;
+  modalidade: string;
   tema_central: string;
   abordagem_terapeutica: string;
   relato_paciente: string;
@@ -70,7 +82,17 @@ export interface SessaoFormData {
   encaminhamentos_tarefas: string;
   encaminhamentos_tags: string[];
   risco_interno: string;
+  risco_atual: string;
   humor_paciente: number | null;
+  emocoes_predominantes: string[];
+  evolucao_caso: string;
+  adesao_terapeutica: string;
+  phq9_respostas: number[] | null;
+  phq9_total: number | null;
+  gad7_respostas: number[] | null;
+  gad7_total: number | null;
+  tarefa_casa: string;
+  proximo_foco: string;
 }
 
 interface UseSessoesPsicologiaDataResult {
@@ -126,6 +148,7 @@ export function useSessoesPsicologiaData(
         numero_sessao: item.numero_sessao,
         data_sessao: item.data_sessao,
         duracao_minutos: item.duracao_minutos,
+        modalidade: item.modalidade || 'presencial',
         tema_central: item.tema_central || '',
         abordagem_terapeutica: item.abordagem_terapeutica || '',
         relato_paciente: item.relato_paciente || '',
@@ -135,7 +158,17 @@ export function useSessoesPsicologiaData(
         encaminhamentos_tarefas: item.encaminhamentos_tarefas || '',
         encaminhamentos_tags: item.encaminhamentos_tags || [],
         risco_interno: item.risco_interno || '',
+        risco_atual: item.risco_atual || 'ausente',
         humor_paciente: item.humor_paciente,
+        emocoes_predominantes: item.emocoes_predominantes || [],
+        evolucao_caso: item.evolucao_caso || '',
+        adesao_terapeutica: item.adesao_terapeutica || '',
+        phq9_respostas: item.phq9_respostas || null,
+        phq9_total: item.phq9_total ?? null,
+        gad7_respostas: item.gad7_respostas || null,
+        gad7_total: item.gad7_total ?? null,
+        tarefa_casa: item.tarefa_casa || '',
+        proximo_foco: item.proximo_foco || '',
         status: item.status as StatusSessao,
         assinada_em: item.assinada_em,
         profissional_id: item.profissional_id,
@@ -174,6 +207,7 @@ export function useSessoesPsicologiaData(
         numero_sessao: nextNumber,
         data_sessao: data.data_sessao,
         duracao_minutos: data.duracao_minutos,
+        modalidade: data.modalidade,
         tema_central: data.tema_central,
         abordagem_terapeutica: data.abordagem_terapeutica,
         relato_paciente: data.relato_paciente,
@@ -183,7 +217,17 @@ export function useSessoesPsicologiaData(
         encaminhamentos_tarefas: data.encaminhamentos_tarefas,
         encaminhamentos_tags: data.encaminhamentos_tags,
         risco_interno: data.risco_interno || null,
+        risco_atual: data.risco_atual || 'ausente',
         humor_paciente: data.humor_paciente,
+        emocoes_predominantes: data.emocoes_predominantes,
+        evolucao_caso: data.evolucao_caso || null,
+        adesao_terapeutica: data.adesao_terapeutica || null,
+        phq9_respostas: data.phq9_respostas,
+        phq9_total: data.phq9_total,
+        gad7_respostas: data.gad7_respostas,
+        gad7_total: data.gad7_total,
+        tarefa_casa: data.tarefa_casa || null,
+        proximo_foco: data.proximo_foco || null,
         status: data.assinar ? 'assinada' : 'rascunho',
         assinada_em: data.assinar ? new Date().toISOString() : null,
       };

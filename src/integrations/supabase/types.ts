@@ -8905,70 +8905,103 @@ export type Database = {
       sessoes_psicologia: {
         Row: {
           abordagem_terapeutica: string | null
+          adesao_terapeutica: string | null
           assinada_em: string | null
           clinic_id: string
           created_at: string
           data_sessao: string
           duracao_minutos: number
+          emocoes_predominantes: string[] | null
           encaminhamentos_tags: string[] | null
           encaminhamentos_tarefas: string | null
+          evolucao_caso: string | null
+          gad7_respostas: number[] | null
+          gad7_total: number | null
           humor_paciente: number | null
           id: string
           intervencoes_realizadas: string | null
           intervencoes_tags: string[] | null
+          modalidade: string | null
           numero_sessao: number | null
           observacoes_terapeuta: string | null
           patient_id: string
+          phq9_respostas: number[] | null
+          phq9_total: number | null
           profissional_id: string
+          proximo_foco: string | null
           relato_paciente: string | null
+          risco_atual: string | null
           risco_interno: string | null
           status: string
+          tarefa_casa: string | null
           tema_central: string | null
           updated_at: string
         }
         Insert: {
           abordagem_terapeutica?: string | null
+          adesao_terapeutica?: string | null
           assinada_em?: string | null
           clinic_id: string
           created_at?: string
           data_sessao?: string
           duracao_minutos?: number
+          emocoes_predominantes?: string[] | null
           encaminhamentos_tags?: string[] | null
           encaminhamentos_tarefas?: string | null
+          evolucao_caso?: string | null
+          gad7_respostas?: number[] | null
+          gad7_total?: number | null
           humor_paciente?: number | null
           id?: string
           intervencoes_realizadas?: string | null
           intervencoes_tags?: string[] | null
+          modalidade?: string | null
           numero_sessao?: number | null
           observacoes_terapeuta?: string | null
           patient_id: string
+          phq9_respostas?: number[] | null
+          phq9_total?: number | null
           profissional_id: string
+          proximo_foco?: string | null
           relato_paciente?: string | null
+          risco_atual?: string | null
           risco_interno?: string | null
           status?: string
+          tarefa_casa?: string | null
           tema_central?: string | null
           updated_at?: string
         }
         Update: {
           abordagem_terapeutica?: string | null
+          adesao_terapeutica?: string | null
           assinada_em?: string | null
           clinic_id?: string
           created_at?: string
           data_sessao?: string
           duracao_minutos?: number
+          emocoes_predominantes?: string[] | null
           encaminhamentos_tags?: string[] | null
           encaminhamentos_tarefas?: string | null
+          evolucao_caso?: string | null
+          gad7_respostas?: number[] | null
+          gad7_total?: number | null
           humor_paciente?: number | null
           id?: string
           intervencoes_realizadas?: string | null
           intervencoes_tags?: string[] | null
+          modalidade?: string | null
           numero_sessao?: number | null
           observacoes_terapeuta?: string | null
           patient_id?: string
+          phq9_respostas?: number[] | null
+          phq9_total?: number | null
           profissional_id?: string
+          proximo_foco?: string | null
           relato_paciente?: string | null
+          risco_atual?: string | null
           risco_interno?: string | null
           status?: string
+          tarefa_casa?: string | null
           tema_central?: string | null
           updated_at?: string
         }

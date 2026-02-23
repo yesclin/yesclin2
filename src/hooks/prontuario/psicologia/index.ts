@@ -18,7 +18,7 @@ export type {
   AnamnesePsicologiaFormData,
 } from './useAnamnesePsicologiaData';
 
-export { useSessoesPsicologiaData, INTERVENCOES_OPTIONS, ENCAMINHAMENTOS_OPTIONS } from './useSessoesPsicologiaData';
+export { useSessoesPsicologiaData, INTERVENCOES_OPTIONS, ENCAMINHAMENTOS_OPTIONS, statusSessaoConfig } from './useSessoesPsicologiaData';
 export type { 
   SessaoPsicologia,
   SessaoFormData,

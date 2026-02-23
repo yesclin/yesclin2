@@ -31,6 +31,13 @@ export type {
   PlanoTerapeuticoFormData,
 } from './usePlanoTerapeuticoData';
 
+export { useMetasTerapeuticasData } from './useMetasTerapeuticasData';
+export type {
+  TherapeuticGoal,
+  GoalUpdate,
+  GoalFormData,
+} from './useMetasTerapeuticasData';
+
 export { useInstrumentosPsicologicosData } from './useInstrumentosPsicologicosData';
 export type { 
   InstrumentoPsicologico,

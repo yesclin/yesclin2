@@ -10,6 +10,7 @@ export { VisaoGeralPsicologiaBlock } from './VisaoGeralPsicologiaBlock';
 export { AnamnesePsicologiaBlock } from './AnamnesePsicologiaBlock';
 export { SessoesPsicologiaBlock } from './SessoesPsicologiaBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';
+export { MetasTerapeuticasBlock } from './MetasTerapeuticasBlock';
 export { InstrumentosPsicologicosBlock } from './InstrumentosPsicologicosBlock';
 export { TermosConsentimentosPsicologiaBlock } from './TermosConsentimentosPsicologiaBlock';
 export { AlertasPsicologiaBlock } from './AlertasPsicologiaBlock';

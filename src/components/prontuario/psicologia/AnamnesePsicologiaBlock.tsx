@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,8 @@ import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnam
 import { useAnamnesisModels } from "@/hooks/prontuario/useAnamnesisModels";
 import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
 import { AnamnesisModelEditorDialog } from "@/components/config/prontuario/AnamnesisModelEditorDialog";
+import { DynamicAnamnesisFormRenderer } from "./DynamicAnamnesisFormRenderer";
+import type { Json } from "@/integrations/supabase/types";
 
 interface AnamnesePsicologiaBlockProps {
   currentAnamnese: AnamnesePsicologiaData | null;
@@ -145,11 +147,17 @@ export function AnamnesePsicologiaBlock({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
+  // Dynamic template state
+  const [activeStructure, setActiveStructure] = useState<Json | null>(null);
+  const [dynamicResponses, setDynamicResponses] = useState<Record<string, any>>({});
+  const [isDynamicEditing, setIsDynamicEditing] = useState(false);
+
   const {
     data: resolvedTemplate,
     allTemplates,
     hasMultipleTemplates,
     isLoading: templateLoading,
+    loadTemplateById,
   } = useResolvedAnamnesisTemplate(specialtyId, procedureId);
 
   const {
@@ -163,6 +171,39 @@ export function AnamnesePsicologiaBlock({
   const currentEditorModel = anamnesisModels.find(
     m => m.id === (selectedTemplateId || resolvedTemplate?.id)
   ) || anamnesisModels[0] || null;
+
+  // Determine if the selected template is the default (hardcoded adult) or a structured one
+  const isDefaultAdultTemplate = !selectedTemplateId || 
+    selectedTemplateId === resolvedTemplate?.id;
+
+  // Load structure when template changes
+  const handleTemplateChange = useCallback(async (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    // Reset states
+    setIsEditing(false);
+    setIsDynamicEditing(false);
+    setFormData(EMPTY_FORM);
+    setDynamicResponses({});
+    setActiveStructure(null);
+
+    // Check if this is a template with structure (non-default)
+    const template = await loadTemplateById(templateId);
+    if (template?.structure && Array.isArray(template.structure) && (template.structure as any[]).length > 0) {
+      setActiveStructure(template.structure);
+    } else {
+      setActiveStructure(null);
+    }
+  }, [loadTemplateById]);
+
+  // Load structure for initially resolved template if it has one
+  useEffect(() => {
+    if (resolvedTemplate?.id && !selectedTemplateId) {
+      // Check if the resolved (default) template itself has a structure
+      if (resolvedTemplate.structure && Array.isArray(resolvedTemplate.structure) && (resolvedTemplate.structure as any[]).length > 0) {
+        setActiveStructure(resolvedTemplate.structure);
+      }
+    }
+  }, [resolvedTemplate?.id, selectedTemplateId, resolvedTemplate?.structure]);
 
   const handleStartEdit = () => {
     if (currentAnamnese) {
@@ -209,8 +250,8 @@ export function AnamnesePsicologiaBlock({
     );
   }
 
-  // Empty state
-  if (!currentAnamnese && !isEditing) {
+  // Empty state — show selector (but not when dynamic editing is in progress)
+  if (!currentAnamnese && !isEditing && !isDynamicEditing) {
     return (
       <>
         <AnamneseModelSelector
@@ -222,10 +263,16 @@ export function AnamnesePsicologiaBlock({
           allTemplates={allTemplates}
           isLoading={templateLoading}
           selectedTemplateId={selectedTemplateId}
-          onTemplateChange={setSelectedTemplateId}
+          onTemplateChange={handleTemplateChange}
           canEdit={canEdit}
           canManageTemplates={canEdit}
-          onRegister={() => setIsEditing(true)}
+          onRegister={() => {
+            if (activeStructure) {
+              setIsDynamicEditing(true);
+            } else {
+              setIsEditing(true);
+            }
+          }}
           onOpenTemplateEditor={() => setShowTemplateEditor(true)}
           onConfigureTemplate={() => navigate('/configuracoes/modelos-anamnese')}
           specialtyLabel="Psicologia"
@@ -246,7 +293,51 @@ export function AnamnesePsicologiaBlock({
   }
 
   // ═══════════════════════════════════════════
-  // EDITING MODE — All 9 Sections
+  // DYNAMIC TEMPLATE MODE (e.g., Infantil)
+  // ═══════════════════════════════════════════
+  if (activeStructure && Array.isArray(activeStructure) && (activeStructure as any[]).length > 0) {
+    const selectedName = allTemplates.find(t => t.id === selectedTemplateId)?.name || resolvedTemplate?.name || "Anamnese";
+    return (
+      <>
+        <DynamicAnamnesisFormRenderer
+          key={selectedTemplateId || "default"}
+          structure={activeStructure}
+          templateName={selectedName}
+          responses={dynamicResponses}
+          isEditing={isDynamicEditing}
+          saving={saving}
+          canEdit={canEdit}
+          onResponseChange={(fieldId, value) => {
+            setDynamicResponses(prev => ({ ...prev, [fieldId]: value }));
+          }}
+          onSave={async () => {
+            // Save dynamic responses as the anamnesis data
+            await onSave(dynamicResponses as any);
+            setIsDynamicEditing(false);
+          }}
+          onCancel={() => {
+            setIsDynamicEditing(false);
+            setDynamicResponses({});
+          }}
+          onStartEdit={() => setIsDynamicEditing(true)}
+        />
+        <AnamnesisModelEditorDialog
+          open={showTemplateEditor}
+          onOpenChange={setShowTemplateEditor}
+          model={currentEditorModel}
+          onSave={async (id, data) => {
+            const result = await updateModel(id, data);
+            return !!result;
+          }}
+          saving={savingModel}
+          specialtySlug="psicologia"
+        />
+      </>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // EDITING MODE — Hardcoded Adult Form (9 Sections)
   // ═══════════════════════════════════════════
   if (isEditing) {
     return (

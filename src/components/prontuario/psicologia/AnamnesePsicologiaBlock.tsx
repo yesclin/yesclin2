@@ -47,6 +47,7 @@ import { useAnamnesisModels } from "@/hooks/prontuario/useAnamnesisModels";
 import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
 import { AnamnesisModelEditorDialog } from "@/components/config/prontuario/AnamnesisModelEditorDialog";
 import { DynamicAnamnesisFormRenderer } from "./DynamicAnamnesisFormRenderer";
+import { useDynamicAnamnesisRecords, type DynamicAnamnesisRecord } from "@/hooks/prontuario/psicologia/useDynamicAnamnesisRecords";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AnamnesePsicologiaBlockProps {
@@ -59,6 +60,8 @@ interface AnamnesePsicologiaBlockProps {
   onUpdate?: (id: string, data: AnamnesePsicologiaFormData) => Promise<void>;
   specialtyId?: string | null;
   procedureId?: string | null;
+  patientId?: string | null;
+  appointmentId?: string | null;
 }
 
 const EMPTY_FORM: AnamnesePsicologiaFormData = {
@@ -137,6 +140,8 @@ export function AnamnesePsicologiaBlock({
   onUpdate,
   specialtyId,
   procedureId,
+  patientId,
+  appointmentId,
 }: AnamnesePsicologiaBlockProps) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -151,6 +156,12 @@ export function AnamnesePsicologiaBlock({
   const [activeStructure, setActiveStructure] = useState<Json | null>(null);
   const [dynamicResponses, setDynamicResponses] = useState<Record<string, any>>({});
   const [isDynamicEditing, setIsDynamicEditing] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [showDynamicHistory, setShowDynamicHistory] = useState(false);
+  const [viewingDynamicRecord, setViewingDynamicRecord] = useState<DynamicAnamnesisRecord | null>(null);
+
+  // Dynamic records persistence
+  const dynamicRecords = useDynamicAnamnesisRecords(patientId || null);
 
   const {
     data: resolvedTemplate,
@@ -176,12 +187,21 @@ export function AnamnesePsicologiaBlock({
   const isDefaultAdultTemplate = !selectedTemplateId || 
     selectedTemplateId === resolvedTemplate?.id;
 
+  // Fetch dynamic records on mount
+  useEffect(() => {
+    if (patientId) {
+      dynamicRecords.fetchRecords();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
+
   // Load structure when template changes
   const handleTemplateChange = useCallback(async (templateId: string) => {
     setSelectedTemplateId(templateId);
     // Reset states
     setIsEditing(false);
     setIsDynamicEditing(false);
+    setEditingRecordId(null);
     setFormData(EMPTY_FORM);
     setDynamicResponses({});
     setActiveStructure(null);
@@ -198,7 +218,6 @@ export function AnamnesePsicologiaBlock({
   // Load structure for initially resolved template if it has one
   useEffect(() => {
     if (resolvedTemplate?.id && !selectedTemplateId) {
-      // Check if the resolved (default) template itself has a structure
       if (resolvedTemplate.structure && Array.isArray(resolvedTemplate.structure) && (resolvedTemplate.structure as any[]).length > 0) {
         setActiveStructure(resolvedTemplate.structure);
       }
@@ -250,8 +269,13 @@ export function AnamnesePsicologiaBlock({
     );
   }
 
-  // Empty state — show selector (but not when dynamic editing is in progress)
-  if (!currentAnamnese && !isEditing && !isDynamicEditing) {
+  // Check if there are dynamic records for the currently selected template
+  const effectiveTemplateIdForCheck = selectedTemplateId || resolvedTemplate?.id || "";
+  const hasDynamicRecordsForTemplate = dynamicRecords.records.some(r => r.template_id === effectiveTemplateIdForCheck);
+  const hasDynamicStructure = activeStructure && Array.isArray(activeStructure) && (activeStructure as any[]).length > 0;
+
+  // Empty state — show selector (but not when dynamic editing/records exist)
+  if (!currentAnamnese && !isEditing && !isDynamicEditing && !(hasDynamicStructure && hasDynamicRecordsForTemplate)) {
     return (
       <>
         <AnamneseModelSelector
@@ -296,31 +320,162 @@ export function AnamnesePsicologiaBlock({
   // DYNAMIC TEMPLATE MODE (e.g., Infantil)
   // ═══════════════════════════════════════════
   if (activeStructure && Array.isArray(activeStructure) && (activeStructure as any[]).length > 0) {
-    const selectedName = allTemplates.find(t => t.id === selectedTemplateId)?.name || resolvedTemplate?.name || "Anamnese";
+    const effectiveTemplateId = selectedTemplateId || resolvedTemplate?.id || "";
+    const selectedName = allTemplates.find(t => t.id === effectiveTemplateId)?.name || resolvedTemplate?.name || "Anamnese";
+
+    // Filter records for this specific template
+    const templateRecords = dynamicRecords.records.filter(r => r.template_id === effectiveTemplateId);
+    const latestRecord = templateRecords[0] || null;
+
+    // If viewing a specific record from history
+    if (viewingDynamicRecord) {
+      const viewStructure = viewingDynamicRecord.structure_snapshot || activeStructure;
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold">{viewingDynamicRecord.template_name || selectedName}</h2>
+              <Badge variant="outline" className="text-xs">
+                {format(parseISO(viewingDynamicRecord.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+              </Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setViewingDynamicRecord(null)}>
+                <X className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+              {canEdit && (
+                <Button variant="outline" size="sm" onClick={() => {
+                  setDynamicResponses(viewingDynamicRecord.responses as Record<string, any>);
+                  setEditingRecordId(viewingDynamicRecord.id);
+                  setIsDynamicEditing(true);
+                  setViewingDynamicRecord(null);
+                }}>
+                  <Edit3 className="h-4 w-4 mr-1" /> Editar
+                </Button>
+              )}
+            </div>
+          </div>
+          {viewingDynamicRecord.created_by_name && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+              <Clock className="h-4 w-4" />
+              <span>
+                Registrada em {format(parseISO(viewingDynamicRecord.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                {` por ${viewingDynamicRecord.created_by_name}`}
+              </span>
+            </div>
+          )}
+          <DynamicAnamnesisFormRenderer
+            key={`view-${viewingDynamicRecord.id}`}
+            structure={viewStructure as Json}
+            templateName={viewingDynamicRecord.template_name || selectedName}
+            responses={viewingDynamicRecord.responses as Record<string, any>}
+            isEditing={false}
+            canEdit={false}
+            onResponseChange={() => {}}
+            onSave={() => {}}
+            onCancel={() => {}}
+            onStartEdit={() => {}}
+          />
+        </div>
+      );
+    }
+
     return (
       <>
+        {/* History button for dynamic records */}
+        {templateRecords.length > 0 && !isDynamicEditing && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {templateRecords.length} registro{templateRecords.length > 1 ? 's' : ''} salvo{templateRecords.length > 1 ? 's' : ''}
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowDynamicHistory(true)}>
+              <History className="h-4 w-4 mr-1" /> Histórico ({templateRecords.length})
+            </Button>
+          </div>
+        )}
+
         <DynamicAnamnesisFormRenderer
           key={selectedTemplateId || "default"}
           structure={activeStructure}
           templateName={selectedName}
-          responses={dynamicResponses}
+          responses={isDynamicEditing ? dynamicResponses : (latestRecord?.responses as Record<string, any> || {})}
           isEditing={isDynamicEditing}
-          saving={saving}
+          saving={dynamicRecords.saving}
           canEdit={canEdit}
           onResponseChange={(fieldId, value) => {
             setDynamicResponses(prev => ({ ...prev, [fieldId]: value }));
           }}
           onSave={async () => {
-            // Save dynamic responses as the anamnesis data
-            await onSave(dynamicResponses as any);
+            const templateVersionId = resolvedTemplate?.current_version_id
+              || allTemplates.find(t => t.id === effectiveTemplateId)?.current_version_id
+              || effectiveTemplateId;
+
+            if (editingRecordId) {
+              // Update existing record
+              await dynamicRecords.updateRecord(editingRecordId, dynamicResponses);
+            } else {
+              // Create new record
+              await dynamicRecords.saveRecord({
+                templateId: effectiveTemplateId,
+                templateVersionId: templateVersionId,
+                specialtyId: specialtyId,
+                procedureId: procedureId,
+                appointmentId: appointmentId,
+                responses: dynamicResponses,
+                structureSnapshot: activeStructure,
+              });
+            }
             setIsDynamicEditing(false);
+            setEditingRecordId(null);
           }}
           onCancel={() => {
             setIsDynamicEditing(false);
+            setEditingRecordId(null);
             setDynamicResponses({});
           }}
-          onStartEdit={() => setIsDynamicEditing(true)}
+          onStartEdit={() => {
+            if (latestRecord) {
+              setDynamicResponses(latestRecord.responses as Record<string, any>);
+              setEditingRecordId(latestRecord.id);
+            }
+            setIsDynamicEditing(true);
+          }}
         />
+
+        {/* Dynamic History Dialog */}
+        <Dialog open={showDynamicHistory} onOpenChange={setShowDynamicHistory}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Histórico — {selectedName}</DialogTitle></DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2">
+                {templateRecords.map((record, idx) => (
+                  <button
+                    key={record.id}
+                    onClick={() => {
+                      setViewingDynamicRecord(record);
+                      setShowDynamicHistory(false);
+                    }}
+                    className="w-full text-left p-3 rounded-lg border hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant={idx === 0 ? "default" : "outline"}>
+                        {idx === 0 ? 'Mais recente' : `Registro ${templateRecords.length - idx}`}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(parseISO(record.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+                    {record.created_by_name && <p className="text-xs text-muted-foreground mt-1">por {record.created_by_name}</p>}
+                    {record.template_name && <p className="text-xs text-muted-foreground">{record.template_name}</p>}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
         <AnamnesisModelEditorDialog
           open={showTemplateEditor}
           onOpenChange={setShowTemplateEditor}
@@ -334,6 +489,7 @@ export function AnamnesePsicologiaBlock({
         />
       </>
     );
+
   }
 
   // ═══════════════════════════════════════════

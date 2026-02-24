@@ -18,6 +18,9 @@ export type {
   AnamnesePsicologiaFormData,
 } from './useAnamnesePsicologiaData';
 
+export { useDynamicAnamnesisRecords } from './useDynamicAnamnesisRecords';
+export type { DynamicAnamnesisRecord } from './useDynamicAnamnesisRecords';
+
 export { useSessoesPsicologiaData, INTERVENCOES_OPTIONS, ENCAMINHAMENTOS_OPTIONS, statusSessaoConfig } from './useSessoesPsicologiaData';
 export type { 
   SessaoPsicologia,

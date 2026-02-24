@@ -1107,6 +1107,8 @@ export default function Prontuario() {
               onUpdate={updateAnamnesePsico}
               specialtyId={activeSpecialtyId}
               procedureId={activeAppointment?.procedure_id || null}
+              patientId={patientId}
+              appointmentId={activeAppointment?.id || null}
             />
           );
         }

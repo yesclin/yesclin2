@@ -9,6 +9,7 @@
 export { VisaoGeralPsicologiaBlock } from './VisaoGeralPsicologiaBlock';
 export { AnamnesePsicologiaBlock } from './AnamnesePsicologiaBlock';
 export { RelatorioPsicologicoBlock } from './RelatorioPsicologicoBlock';
+export { RelatorioEscolarBlock } from './RelatorioEscolarBlock';
 export { SessoesPsicologiaBlock } from './SessoesPsicologiaBlock';
 export { EvolucaoCasalBlock } from './EvolucaoCasalBlock';
 export { PlanoTerapeuticoBlock } from './PlanoTerapeuticoBlock';

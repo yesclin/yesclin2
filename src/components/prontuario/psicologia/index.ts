@@ -19,6 +19,7 @@ export { AlertasPsicologiaBlock } from './AlertasPsicologiaBlock';
 export { AlertasBannerPsicologia } from './AlertasBannerPsicologia';
 export { HistoricoPsicologiaBlock } from './HistoricoPsicologiaBlock';
 export { GraficosEvolucaoPsicologia } from './GraficosEvolucaoPsicologia';
+export { AnaliseTendenciaPsicologia } from './AnaliseTendenciaPsicologia';
 
 export type { 
   PsicologiaPatientData, 

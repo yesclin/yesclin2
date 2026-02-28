@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,18 +26,82 @@ import {
   Loader2,
   CalendarDays,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import { useRelatorioPsicologicoData, type ReportSection } from '@/hooks/prontuario/psicologia/useRelatorioPsicologicoData';
+import { useRelatorioPsicologicoData, type ReportSection, type RelatorioPsicologicoAggregated } from '@/hooks/prontuario/psicologia/useRelatorioPsicologicoData';
 import { useClinicData } from '@/hooks/useClinicData';
 
 interface RelatorioPsicologicoBlockProps {
   patientId: string | null;
   patientName?: string;
   canEdit: boolean;
+}
+
+function AnalysisSummary({ aggregated }: { aggregated: RelatorioPsicologicoAggregated }) {
+  const { trendAnalysis, riskAnalysis, engagementAnalysis, techniqueAnalysis } = aggregated;
+
+  const trendIcon = trendAnalysis.pattern === 'melhora' ? <TrendingUp className="h-3 w-3" /> :
+    trendAnalysis.pattern === 'regressao' ? <TrendingDown className="h-3 w-3" /> :
+    <Minus className="h-3 w-3" />;
+
+  const trendColor = trendAnalysis.pattern === 'melhora' ? 'bg-green-50 dark:bg-green-950/30 border-green-300 text-green-700 dark:text-green-400' :
+    trendAnalysis.pattern === 'regressao' ? 'bg-red-50 dark:bg-red-950/30 border-red-300 text-red-700 dark:text-red-400' :
+    'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 text-yellow-700 dark:text-yellow-400';
+
+  const engColor = engagementAnalysis.classification === 'alto' ? 'bg-green-50 dark:bg-green-950/30 border-green-300 text-green-700 dark:text-green-400' :
+    engagementAnalysis.classification === 'baixo' ? 'bg-red-50 dark:bg-red-950/30 border-red-300 text-red-700 dark:text-red-400' :
+    'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 text-yellow-700 dark:text-yellow-400';
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 rounded-lg bg-muted/50 border">
+      <div className="text-center space-y-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Tendência</p>
+        <Badge variant="outline" className={`text-xs ${trendColor}`}>
+          {trendIcon}
+          <span className="ml-1">
+            {trendAnalysis.pattern === 'melhora' ? 'Melhora' :
+              trendAnalysis.pattern === 'regressao' ? 'Regressão' :
+              trendAnalysis.pattern === 'estabilidade' ? 'Estável' : 'N/A'}
+          </span>
+        </Badge>
+      </div>
+
+      <div className="text-center space-y-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Risco</p>
+        <Badge variant="outline" className={riskAnalysis.hasHighRisk
+          ? 'bg-red-50 dark:bg-red-950/30 border-red-300 text-red-700 dark:text-red-400 text-xs'
+          : 'text-xs'}>
+          <ShieldAlert className="h-3 w-3 mr-1" />
+          {riskAnalysis.hasHighRisk ? `Alto (${riskAnalysis.highRiskCount}x)` : 'Sem risco alto'}
+        </Badge>
+      </div>
+
+      <div className="text-center space-y-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Engajamento</p>
+        <Badge variant="outline" className={`text-xs ${engColor}`}>
+          <Zap className="h-3 w-3 mr-1" />
+          {engagementAnalysis.classification === 'insuficiente' ? 'N/A' :
+            `${engagementAnalysis.classification.charAt(0).toUpperCase() + engagementAnalysis.classification.slice(1)} (${engagementAnalysis.average})`}
+        </Badge>
+      </div>
+
+      <div className="text-center space-y-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Sessões</p>
+        <Badge variant="outline" className="text-xs">
+          <BarChart3 className="h-3 w-3 mr-1" />
+          {aggregated.totalSessions}
+        </Badge>
+      </div>
+    </div>
+  );
 }
 
 export function RelatorioPsicologicoBlock({
@@ -50,6 +114,7 @@ export function RelatorioPsicologicoBlock({
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sections, setSections] = useState<ReportSection[]>([]);
+  const [aggregated, setAggregated] = useState<RelatorioPsicologicoAggregated | null>(null);
   const [includeConfidential, setIncludeConfidential] = useState(false);
   const [periodStart, setPeriodStart] = useState(() =>
     format(subMonths(new Date(), 3), 'yyyy-MM-dd'),
@@ -69,6 +134,7 @@ export function RelatorioPsicologicoBlock({
     if (!result) return;
 
     setSections(result.sections);
+    setAggregated(result.aggregated);
     setProfessionalName(result.aggregated.professionalName);
     setProfessionalReg(result.aggregated.professionalRegistration);
     setStep('edit');
@@ -110,10 +176,7 @@ export function RelatorioPsicologicoBlock({
       doc.setFont('helvetica', isBold ? 'bold' : 'normal');
       const lines = doc.splitTextToSize(text, maxWidth);
       for (const line of lines) {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
+        if (y > 270) { doc.addPage(); y = 20; }
         doc.text(line, x, y);
         y += fontSize * 0.45;
       }
@@ -139,11 +202,7 @@ export function RelatorioPsicologicoBlock({
     // Sections
     const visibleSections = sections.filter(s => s.visible);
     for (const section of visibleSections) {
-      if (y > 255) {
-        doc.addPage();
-        y = 20;
-      }
-
+      if (y > 255) { doc.addPage(); y = 20; }
       addWrappedText(section.title, marginLeft, 12, true);
       y += 2;
       addWrappedText(section.content, marginLeft, 10, false);
@@ -152,10 +211,7 @@ export function RelatorioPsicologicoBlock({
 
     // Signature
     y += 10;
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    }
+    if (y > 250) { doc.addPage(); y = 20; }
 
     doc.setDrawColor(100);
     const sigLineX = pageWidth / 2 - 40;
@@ -169,22 +225,15 @@ export function RelatorioPsicologicoBlock({
       doc.text(`CRP: ${professionalReg}`, pageWidth / 2, y, { align: 'center' });
       y += 5;
     }
-    doc.text(format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }), pageWidth / 2, y, {
-      align: 'center',
-    });
+    doc.text(format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }), pageWidth / 2, y, { align: 'center' });
 
-    // Footer on all pages
+    // Footer
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(
-        `Página ${i} de ${totalPages}`,
-        pageWidth / 2,
-        290,
-        { align: 'center' },
-      );
+      doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, 290, { align: 'center' });
     }
 
     const fileName = `relatorio-psicologico-${(patientName || 'paciente').replace(/\s+/g, '-').toLowerCase()}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -194,6 +243,7 @@ export function RelatorioPsicologicoBlock({
 
   const openDialog = () => {
     setStep('config');
+    setAggregated(null);
     setDialogOpen(true);
   };
 
@@ -203,11 +253,11 @@ export function RelatorioPsicologicoBlock({
         <CardContent className="py-6 flex flex-col items-center gap-3">
           <FileText className="h-8 w-8 text-primary/60" />
           <p className="text-sm text-muted-foreground text-center max-w-md">
-            Gere um relatório psicológico consolidado com base nos dados reais de anamnese, sessões e plano terapêutico.
+            Gere um relatório inteligente consolidado com análise automática de tendência, risco, engajamento e técnicas predominantes.
           </p>
           <Button onClick={openDialog} disabled={!canEdit || !patientId}>
             <FileText className="h-4 w-4 mr-2" />
-            Gerar Relatório Psicológico
+            Gerar Relatório Inteligente
           </Button>
         </CardContent>
       </Card>
@@ -217,12 +267,12 @@ export function RelatorioPsicologicoBlock({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Relatório Psicológico
+              Relatório Psicológico Inteligente
             </DialogTitle>
             <DialogDescription>
               {step === 'config'
-                ? 'Selecione o período e as opções para gerar o relatório.'
-                : 'Revise e edite as seções antes de salvar. Todas as informações são provenientes dos registros existentes.'}
+                ? 'Selecione o período e as opções. O sistema analisará automaticamente tendências, riscos e engajamento.'
+                : 'Revise e edite as seções antes de salvar. Todas as informações foram consolidadas a partir dos registros existentes.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -234,22 +284,14 @@ export function RelatorioPsicologicoBlock({
                     <CalendarDays className="h-3.5 w-3.5" />
                     Período Inicial
                   </Label>
-                  <Input
-                    type="date"
-                    value={periodStart}
-                    onChange={e => setPeriodStart(e.target.value)}
-                  />
+                  <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
                     <CalendarDays className="h-3.5 w-3.5" />
                     Período Final
                   </Label>
-                  <Input
-                    type="date"
-                    value={periodEnd}
-                    onChange={e => setPeriodEnd(e.target.value)}
-                  />
+                  <Input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
                 </div>
               </div>
 
@@ -273,14 +315,12 @@ export function RelatorioPsicologicoBlock({
               <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                 <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  O relatório é gerado exclusivamente com dados já registrados no sistema. Nenhuma informação é inventada ou gerada automaticamente.
+                  O relatório é gerado exclusivamente com dados já registrados. A análise de tendência, risco e engajamento utiliza regras lógicas — nenhum conteúdo é inventado.
                 </p>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                 <Button onClick={handleGenerate} disabled={loading}>
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Gerar Pré-visualização
@@ -291,6 +331,9 @@ export function RelatorioPsicologicoBlock({
             <>
               <ScrollArea className="flex-1 pr-4 max-h-[60vh]">
                 <div className="space-y-4 py-2">
+                  {/* Analysis summary badges */}
+                  {aggregated && <AnalysisSummary aggregated={aggregated} />}
+
                   {sections.map(section => (
                     <div key={section.key} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -309,11 +352,7 @@ export function RelatorioPsicologicoBlock({
                           onClick={() => handleSectionVisibilityToggle(section.key)}
                           className="h-7 px-2 text-xs"
                         >
-                          {section.visible ? (
-                            <Eye className="h-3.5 w-3.5 mr-1" />
-                          ) : (
-                            <EyeOff className="h-3.5 w-3.5 mr-1" />
-                          )}
+                          {section.visible ? <Eye className="h-3.5 w-3.5 mr-1" /> : <EyeOff className="h-3.5 w-3.5 mr-1" />}
                           {section.visible ? 'Visível' : 'Oculto'}
                         </Button>
                       </div>
@@ -337,9 +376,7 @@ export function RelatorioPsicologicoBlock({
               </ScrollArea>
 
               <DialogFooter className="gap-2 pt-2">
-                <Button variant="outline" onClick={() => setStep('config')}>
-                  Voltar
-                </Button>
+                <Button variant="outline" onClick={() => setStep('config')}>Voltar</Button>
                 <Button variant="outline" onClick={handleExportPdf}>
                   <Download className="h-4 w-4 mr-2" />
                   Exportar PDF

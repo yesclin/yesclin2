@@ -48,6 +48,7 @@ import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSele
 import { AnamnesisModelEditorDialog } from "@/components/config/prontuario/AnamnesisModelEditorDialog";
 import { DynamicAnamnesisFormRenderer } from "./DynamicAnamnesisFormRenderer";
 import { useDynamicAnamnesisRecords, type DynamicAnamnesisRecord } from "@/hooks/prontuario/psicologia/useDynamicAnamnesisRecords";
+import { PartnerPatientSelector } from "./PartnerPatientSelector";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AnamnesePsicologiaBlockProps {
@@ -159,6 +160,7 @@ export function AnamnesePsicologiaBlock({
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [showDynamicHistory, setShowDynamicHistory] = useState(false);
   const [viewingDynamicRecord, setViewingDynamicRecord] = useState<DynamicAnamnesisRecord | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<{ id: string; full_name: string } | null>(null);
 
   // Dynamic records persistence
   const dynamicRecords = useDynamicAnamnesisRecords(patientId || null);
@@ -205,6 +207,7 @@ export function AnamnesePsicologiaBlock({
     setFormData(EMPTY_FORM);
     setDynamicResponses({});
     setActiveStructure(null);
+    setSelectedPartner(null);
 
     // Check if this is a template with structure (non-default)
     const template = await loadTemplateById(templateId);
@@ -322,6 +325,7 @@ export function AnamnesePsicologiaBlock({
   if (activeStructure && Array.isArray(activeStructure) && (activeStructure as any[]).length > 0) {
     const effectiveTemplateId = selectedTemplateId || resolvedTemplate?.id || "";
     const selectedName = allTemplates.find(t => t.id === effectiveTemplateId)?.name || resolvedTemplate?.name || "Anamnese";
+    const isCoupleTemplate = selectedName.toLowerCase().includes("casal");
 
     // Filter records for this specific template
     const templateRecords = dynamicRecords.records.filter(r => r.template_id === effectiveTemplateId);
@@ -396,6 +400,33 @@ export function AnamnesePsicologiaBlock({
           </div>
         )}
 
+        {/* Partner selector for couple therapy */}
+        {isCoupleTemplate && isDynamicEditing && !editingRecordId && patientId && (
+          <div className="mb-4">
+            <PartnerPatientSelector
+              currentPatientId={patientId}
+              selectedPartner={selectedPartner}
+              onSelectPartner={(p) => setSelectedPartner(p ? { id: p.id, full_name: p.full_name } : null)}
+            />
+          </div>
+        )}
+
+        {/* Couple indicator on existing records */}
+        {isCoupleTemplate && !isDynamicEditing && latestRecord?.linked_patients && latestRecord.linked_patients.length > 1 && (
+          <div className="flex items-center gap-2 mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Atendimento de Casal</span>
+            <span className="text-sm text-muted-foreground">—</span>
+            {latestRecord.linked_patients.map((lp, i) => (
+              <span key={lp.patient_id} className="text-sm">
+                {lp.full_name || "Paciente"}
+                {lp.role === 'parceiro' && <Badge variant="outline" className="ml-1 text-[10px]">Parceiro(a)</Badge>}
+                {i < latestRecord.linked_patients!.length - 1 && " e "}
+              </span>
+            ))}
+          </div>
+        )}
+
         <DynamicAnamnesisFormRenderer
           key={selectedTemplateId || "default"}
           structure={activeStructure}
@@ -425,15 +456,18 @@ export function AnamnesePsicologiaBlock({
                 appointmentId: appointmentId,
                 responses: dynamicResponses,
                 structureSnapshot: activeStructure,
+                partnerPatientId: isCoupleTemplate ? selectedPartner?.id : undefined,
               });
             }
             setIsDynamicEditing(false);
             setEditingRecordId(null);
+            setSelectedPartner(null);
           }}
           onCancel={() => {
             setIsDynamicEditing(false);
             setEditingRecordId(null);
             setDynamicResponses({});
+            setSelectedPartner(null);
           }}
           onStartEdit={() => {
             if (latestRecord) {
@@ -469,6 +503,12 @@ export function AnamnesePsicologiaBlock({
                     </div>
                     {record.created_by_name && <p className="text-xs text-muted-foreground mt-1">por {record.created_by_name}</p>}
                     {record.template_name && <p className="text-xs text-muted-foreground">{record.template_name}</p>}
+                    {record.linked_patients && record.linked_patients.length > 1 && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Users className="h-3 w-3 text-primary" />
+                        <span className="text-xs text-primary">Atendimento de Casal</span>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>

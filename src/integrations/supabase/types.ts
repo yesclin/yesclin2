@@ -332,6 +332,45 @@ export type Database = {
           },
         ]
       }
+      anamnesis_record_patients: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          record_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          record_id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          record_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_record_patients_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_record_patients_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anamnesis_records: {
         Row: {
           appointment_id: string | null

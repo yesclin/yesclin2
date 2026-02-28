@@ -48,3 +48,6 @@ export type {
 } from './useInstrumentosPsicologicosData';
 
 export { useAlertasPsicologiaData } from './useAlertasPsicologiaData';
+
+export { useRelatorioPsicologicoData } from './useRelatorioPsicologicoData';
+export type { ReportSection, RelatorioPsicologicoAggregated } from './useRelatorioPsicologicoData';

@@ -121,7 +121,7 @@ import {
   TimelineEsteticaBlock,
 } from "@/components/prontuario/aesthetics";
 import { VisaoGeralBlock, AnamneseBlock, EvolucoesBlock, ExameFisicoBlock, CondutaBlock, DocumentosBlock, AlertasBlock, AlertasBanner, LinhaTempoBlock, DiagnosticosBlock, PrescricoesBlock, DocumentosClinicosBlock } from "@/components/prontuario/clinica-geral";
-import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, EvolucaoCasalBlock, PlanoTerapeuticoBlock, MetasTerapeuticasBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock } from "@/components/prontuario/psicologia";
+import { VisaoGeralPsicologiaBlock, AnamnesePsicologiaBlock, SessoesPsicologiaBlock, EvolucaoCasalBlock, PlanoTerapeuticoBlock, MetasTerapeuticasBlock, InstrumentosPsicologicosBlock, TermosConsentimentosPsicologiaBlock, AlertasPsicologiaBlock, AlertasBannerPsicologia, HistoricoPsicologiaBlock, RelatorioPsicologicoBlock } from "@/components/prontuario/psicologia";
 import { useVisaoGeralData, useAnamneseData, useEvolucoesData, useExameFisicoData, useCondutaData, useDocumentosData, useAlertasData, useLinhaTempoData, useDiagnosticosData, usePrescricoesData } from "@/hooks/prontuario/clinica-geral";
 import { useDocumentosClinicosData } from "@/hooks/prontuario/clinica-geral/useDocumentosClinicosData";
 import { useVisaoGeralPsicologiaData, useAnamnesePsicologiaData, useSessoesPsicologiaData, usePlanoTerapeuticoData, useMetasTerapeuticasData, useInstrumentosPsicologicosData, useAlertasPsicologiaData } from "@/hooks/prontuario/psicologia";
@@ -1481,6 +1481,12 @@ export default function Prontuario() {
                 saving={planoTerapeuticoSaving}
                 canEdit={canEditCurrentTab}
                 onSave={savePlanoTerapeutico}
+              />
+              <Separator />
+              <RelatorioPsicologicoBlock
+                patientId={patientId}
+                patientName={patient?.full_name}
+                canEdit={canEditCurrentTab}
               />
             </div>
           );

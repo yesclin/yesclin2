@@ -597,12 +597,133 @@ export const PSICOLOGIA_FAMILIAR_STRUCTURE: DefaultSectionDef[] = [
   },
 ];
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PSICOLOGIA – PSICODIAGNÓSTICO (Avaliação Psicológica)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const PSICOLOGIA_PSICODIAGNOSTICO_STRUCTURE: DefaultSectionDef[] = [
+  // 1. Identificação da Avaliação
+  {
+    id: 'section_identificacao_avaliacao', type: 'section', title: 'Identificação da Avaliação',
+    fields: [
+      { id: 'pd_escolaridade', type: 'text', label: 'Escolaridade', required: false, placeholder: 'Ex: Ensino Médio completo' },
+      { id: 'pd_profissao', type: 'text', label: 'Profissão', required: false, placeholder: 'Ex: Estudante, Engenheiro...' },
+      { id: 'pd_responsavel_legal', type: 'text', label: 'Responsável legal', required: false, placeholder: 'Nome do responsável (se menor ou interditado)' },
+      { id: 'pd_finalidade_avaliacao', type: 'select', label: 'Finalidade da avaliação', required: true, options: ['Clínica', 'Escolar', 'Judicial/Forense', 'Organizacional', 'Trânsito', 'Porte de arma', 'Cirurgia bariátrica', 'Outra'] },
+      { id: 'pd_num_sessoes_previstas', type: 'text', label: 'Número de sessões previstas', required: false, placeholder: 'Ex: 4 a 6 sessões' },
+    ],
+  },
+  // 2. Demanda Formal
+  {
+    id: 'section_demanda_formal', type: 'section', title: 'Demanda Formal',
+    fields: [
+      { id: 'pd_solicitante', type: 'text', label: 'Solicitante da avaliação', required: false, placeholder: 'Nome e instituição/relação' },
+      { id: 'pd_motivo_encaminhamento', type: 'textarea', label: 'Motivo do encaminhamento', required: true, placeholder: 'Descreva o motivo que levou ao encaminhamento para avaliação psicológica...' },
+      { id: 'pd_pergunta_avaliativa', type: 'textarea', label: 'Pergunta avaliativa principal', required: false, placeholder: 'Qual a questão central que a avaliação deve responder?' },
+      { id: 'pd_contexto_solicitacao', type: 'textarea', label: 'Contexto da solicitação', required: false, placeholder: 'Circunstâncias em que a avaliação foi solicitada...' },
+    ],
+  },
+  // 3. Histórico Relevante
+  {
+    id: 'section_historico_relevante', type: 'section', title: 'Histórico Relevante',
+    fields: [
+      { id: 'pd_historico_clinico', type: 'textarea', label: 'Histórico clínico', required: false, placeholder: 'Doenças, internações, tratamentos anteriores...' },
+      { id: 'pd_historico_escolar_profissional', type: 'textarea', label: 'Histórico escolar/profissional', required: false, placeholder: 'Desempenho escolar, trajetória profissional, dificuldades...' },
+      { id: 'pd_uso_medicacao', type: 'textarea', label: 'Uso de medicação', required: false, placeholder: 'Medicações atuais e anteriores relevantes...' },
+      { id: 'pd_diagnosticos_previos', type: 'textarea', label: 'Diagnósticos prévios', required: false, placeholder: 'Diagnósticos anteriores (psicológicos, psiquiátricos, neurológicos)...' },
+    ],
+  },
+  // 4. Observações Comportamentais
+  {
+    id: 'section_observacoes_comportamentais', type: 'section', title: 'Observações Comportamentais',
+    fields: [
+      { id: 'pd_postura', type: 'textarea', label: 'Postura', required: false, placeholder: 'Postura corporal, apresentação geral durante a avaliação...' },
+      { id: 'pd_comunicacao', type: 'textarea', label: 'Comunicação', required: false, placeholder: 'Fluência verbal, coerência, articulação...' },
+      { id: 'pd_organizacao_pensamento', type: 'textarea', label: 'Organização do pensamento', required: false, placeholder: 'Lógica, sequência, coerência do raciocínio...' },
+      { id: 'pd_cooperacao', type: 'textarea', label: 'Cooperação', required: false, placeholder: 'Nível de colaboração, resistência, engajamento nas tarefas...' },
+      { id: 'pd_expressao_emocional', type: 'textarea', label: 'Expressão emocional', required: false, placeholder: 'Afeto observado, congruência, variações emocionais...' },
+    ],
+  },
+  // 5. Instrumentos Psicológicos Aplicados
+  {
+    id: 'section_instrumentos_aplicados', type: 'section', title: 'Instrumentos Psicológicos Aplicados',
+    fields: [
+      { id: 'pd_instrumento_1_nome', type: 'text', label: 'Instrumento 1 – Nome', required: false, placeholder: 'Ex: WISC-V, HTP, Palográfico...' },
+      { id: 'pd_instrumento_1_codigo', type: 'text', label: 'Instrumento 1 – Código/Registro', required: false, placeholder: 'Código SATEPSI (opcional)' },
+      { id: 'pd_instrumento_1_data', type: 'text', label: 'Instrumento 1 – Data de aplicação', required: false, placeholder: 'DD/MM/AAAA' },
+      { id: 'pd_instrumento_1_tipo', type: 'select', label: 'Instrumento 1 – Tipo', required: false, options: ['Cognitivo', 'Projetivo', 'Personalidade', 'Neuropsicológico', 'Escala/Inventário'] },
+      { id: 'pd_instrumento_1_resultado', type: 'textarea', label: 'Instrumento 1 – Resultado resumido', required: false, placeholder: 'Descreva os resultados obtidos...' },
+      { id: 'pd_instrumento_1_interpretacao', type: 'textarea', label: 'Instrumento 1 – Interpretação técnica', required: false, placeholder: 'Interpretação clínica dos resultados...' },
+      { id: 'pd_instrumento_1_referencia', type: 'text', label: 'Instrumento 1 – Referência normativa', required: false, placeholder: 'Tabela normativa utilizada' },
+      { id: 'pd_instrumento_2_nome', type: 'text', label: 'Instrumento 2 – Nome', required: false, placeholder: 'Ex: BFP, R-1, Rorschach...' },
+      { id: 'pd_instrumento_2_codigo', type: 'text', label: 'Instrumento 2 – Código/Registro', required: false },
+      { id: 'pd_instrumento_2_data', type: 'text', label: 'Instrumento 2 – Data de aplicação', required: false },
+      { id: 'pd_instrumento_2_tipo', type: 'select', label: 'Instrumento 2 – Tipo', required: false, options: ['Cognitivo', 'Projetivo', 'Personalidade', 'Neuropsicológico', 'Escala/Inventário'] },
+      { id: 'pd_instrumento_2_resultado', type: 'textarea', label: 'Instrumento 2 – Resultado resumido', required: false },
+      { id: 'pd_instrumento_2_interpretacao', type: 'textarea', label: 'Instrumento 2 – Interpretação técnica', required: false },
+      { id: 'pd_instrumento_2_referencia', type: 'text', label: 'Instrumento 2 – Referência normativa', required: false },
+      { id: 'pd_instrumento_3_nome', type: 'text', label: 'Instrumento 3 – Nome', required: false },
+      { id: 'pd_instrumento_3_codigo', type: 'text', label: 'Instrumento 3 – Código/Registro', required: false },
+      { id: 'pd_instrumento_3_data', type: 'text', label: 'Instrumento 3 – Data de aplicação', required: false },
+      { id: 'pd_instrumento_3_tipo', type: 'select', label: 'Instrumento 3 – Tipo', required: false, options: ['Cognitivo', 'Projetivo', 'Personalidade', 'Neuropsicológico', 'Escala/Inventário'] },
+      { id: 'pd_instrumento_3_resultado', type: 'textarea', label: 'Instrumento 3 – Resultado resumido', required: false },
+      { id: 'pd_instrumento_3_interpretacao', type: 'textarea', label: 'Instrumento 3 – Interpretação técnica', required: false },
+      { id: 'pd_instrumento_3_referencia', type: 'text', label: 'Instrumento 3 – Referência normativa', required: false },
+      { id: 'pd_instrumento_4_nome', type: 'text', label: 'Instrumento 4 – Nome', required: false },
+      { id: 'pd_instrumento_4_tipo', type: 'select', label: 'Instrumento 4 – Tipo', required: false, options: ['Cognitivo', 'Projetivo', 'Personalidade', 'Neuropsicológico', 'Escala/Inventário'] },
+      { id: 'pd_instrumento_4_resultado', type: 'textarea', label: 'Instrumento 4 – Resultado resumido', required: false },
+      { id: 'pd_instrumento_4_interpretacao', type: 'textarea', label: 'Instrumento 4 – Interpretação técnica', required: false },
+      { id: 'pd_instrumento_5_nome', type: 'text', label: 'Instrumento 5 – Nome', required: false },
+      { id: 'pd_instrumento_5_tipo', type: 'select', label: 'Instrumento 5 – Tipo', required: false, options: ['Cognitivo', 'Projetivo', 'Personalidade', 'Neuropsicológico', 'Escala/Inventário'] },
+      { id: 'pd_instrumento_5_resultado', type: 'textarea', label: 'Instrumento 5 – Resultado resumido', required: false },
+      { id: 'pd_instrumento_5_interpretacao', type: 'textarea', label: 'Instrumento 5 – Interpretação técnica', required: false },
+    ],
+  },
+  // 6. Hipóteses Diagnósticas
+  {
+    id: 'section_hipoteses_diagnosticas', type: 'section', title: 'Hipóteses Diagnósticas',
+    fields: [
+      { id: 'pd_hipotese_principal', type: 'textarea', label: 'Hipótese principal', required: false, placeholder: 'Hipótese diagnóstica principal fundamentada nos dados coletados...' },
+      { id: 'pd_hipoteses_secundarias', type: 'textarea', label: 'Hipóteses secundárias', required: false, placeholder: 'Hipóteses alternativas ou comorbidades consideradas...' },
+      { id: 'pd_investigacao_complementar', type: 'select', label: 'Necessidade de investigação complementar?', required: false, options: ['Não', 'Sim'] },
+      { id: 'pd_nivel_consistencia', type: 'select', label: 'Nível de consistência dos dados', required: false, options: ['Alta consistência', 'Moderada', 'Baixa – dados insuficientes', 'Inconclusivo'] },
+    ],
+  },
+  // 7. Fundamentação Técnica
+  {
+    id: 'section_fundamentacao_tecnica', type: 'section', title: 'Fundamentação Técnica',
+    fields: [
+      { id: 'pd_referencial_teorico', type: 'textarea', label: 'Referencial teórico utilizado', required: false, placeholder: 'Abordagem teórica que fundamenta a interpretação dos resultados...' },
+      { id: 'pd_fundamentacao_instrumentos', type: 'textarea', label: 'Fundamentação nos instrumentos', required: false, placeholder: 'Como os resultados dos instrumentos se articulam com a hipótese...' },
+      { id: 'pd_limitacoes_processo', type: 'textarea', label: 'Limitações do processo avaliativo', required: false, placeholder: 'Limitações metodológicas, contextuais ou de adesão do avaliando...' },
+    ],
+  },
+  // 8. Conclusão Parcial
+  {
+    id: 'section_conclusao_parcial', type: 'section', title: 'Conclusão Parcial',
+    fields: [
+      { id: 'pd_conclusao', type: 'textarea', label: 'Conclusão parcial da avaliação', required: false, placeholder: 'Síntese dos achados, impressões clínicas e próximos passos...' },
+    ],
+  },
+  // 9. Encaminhamentos
+  {
+    id: 'section_encaminhamentos', type: 'section', title: 'Encaminhamentos',
+    fields: [
+      { id: 'pd_encaminhamento_medico', type: 'select', label: 'Encaminhamento médico?', required: false, options: ['Não', 'Sim'] },
+      { id: 'pd_encaminhamento_psicopedagogico', type: 'select', label: 'Encaminhamento psicopedagógico?', required: false, options: ['Não', 'Sim'] },
+      { id: 'pd_encaminhamento_psiquiatrico', type: 'select', label: 'Encaminhamento psiquiátrico?', required: false, options: ['Não', 'Sim'] },
+      { id: 'pd_orientacoes_gerais', type: 'textarea', label: 'Orientações gerais', required: false, placeholder: 'Orientações ao paciente, família ou instituição solicitante...' },
+    ],
+  },
+];
+
 export const DEFAULT_ANAMNESIS_STRUCTURES: Record<string, DefaultSectionDef[]> = {
   'clinica-geral': CLINICA_GERAL_STRUCTURE,
   'geral': CLINICA_GERAL_STRUCTURE,
   'nutricao': NUTRICAO_STRUCTURE,
   'psicologia': PSICOLOGIA_STRUCTURE,
   'psicologia-familiar': PSICOLOGIA_FAMILIAR_STRUCTURE,
+  'psicologia-psicodiagnostico': PSICOLOGIA_PSICODIAGNOSTICO_STRUCTURE,
   'fisioterapia': FISIOTERAPIA_STRUCTURE,
 };
 

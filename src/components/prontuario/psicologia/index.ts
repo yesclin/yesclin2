@@ -19,6 +19,7 @@ export { InstrumentosPsicologicosBlock } from './InstrumentosPsicologicosBlock';
 export { TermosConsentimentosPsicologiaBlock } from './TermosConsentimentosPsicologiaBlock';
 export { AlertasPsicologiaBlock } from './AlertasPsicologiaBlock';
 export { AlertasBannerPsicologia } from './AlertasBannerPsicologia';
+export { LaudoPsicologicoBlock } from './LaudoPsicologicoBlock';
 export { HistoricoPsicologiaBlock } from './HistoricoPsicologiaBlock';
 export { GraficosEvolucaoPsicologia } from './GraficosEvolucaoPsicologia';
 export { AnaliseTendenciaPsicologia } from './AnaliseTendenciaPsicologia';

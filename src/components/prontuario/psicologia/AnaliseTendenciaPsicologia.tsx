@@ -92,19 +92,18 @@ function detectAlerts(sessions: SessionInput[]): { status: AlertStatus; reasons:
     new Date(a.data_sessao).getTime() - new Date(b.data_sessao).getTime()
   );
 
-  // Last 3 sessions for crisis check
+  const last2 = sorted.slice(-2);
   const last3 = sorted.slice(-3);
-  const last5 = sorted.slice(-5);
 
   // ─── CRISIS detection ───
-  // A) risco_atual = "Alto" in any of last 3
-  const highRiskInLast3 = last3.some(s => {
+  // A) risco_atual = "Alto" in any of last 2
+  const highRiskInLast2 = last2.some(s => {
     const r = s.risco_atual?.toLowerCase().trim();
     return r === 'alto';
   });
-  if (highRiskInLast3) {
+  if (highRiskInLast2) {
     isCrisis = true;
-    reasons.push('Risco alto registrado nas últimas 3 sessões');
+    reasons.push('Risco alto registrado nas últimas 2 sessões');
   }
 
   // B) 3 consecutive "Piorando"
@@ -132,12 +131,17 @@ function detectAlerts(sessions: SessionInput[]): { status: AlertStatus; reasons:
     }
   }
 
-  // B) Short trend = piora
-  const shortTrend = computeTrend(sorted, 3);
-  if (shortTrend?.label === 'piora') {
-    isRegression = true;
-    if (!reasons.some(r => r.includes('Tendência'))) {
-      reasons.push('Tendência de piora na janela curta (3 sessões)');
+  // B) Sum of last 3 sessions <= -2
+  const last3Evol = last3
+    .map(s => EVOLUCAO_MAP[s.evolucao_caso?.toLowerCase().trim() || ''] ?? null)
+    .filter((v): v is number => v !== null);
+  if (last3Evol.length >= 2) {
+    const sum = last3Evol.reduce((a, b) => a + b, 0);
+    if (sum <= -2) {
+      isRegression = true;
+      if (!reasons.some(r => r.includes('soma'))) {
+        reasons.push(`Soma das últimas ${last3Evol.length} sessões = ${sum} (≤ -2)`);
+      }
     }
   }
 

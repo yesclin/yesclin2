@@ -97,6 +97,7 @@ function DynamicField({
 }) {
   switch (field.type) {
     case "boolean":
+    case "checkbox":
       return (
         <div className="flex items-center gap-3">
           <Switch
@@ -197,6 +198,56 @@ function DynamicField({
           </Select>
         </div>
       );
+
+    case "multiselect": {
+      const selected: string[] = Array.isArray(value) ? value : [];
+      if (readOnly) {
+        return (
+          <div className="space-y-1">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {field.label}
+            </Label>
+            <p className="text-sm">
+              {selected.length > 0
+                ? selected.join(", ")
+                : <span className="italic text-muted-foreground">Não informado</span>}
+            </p>
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-sm text-muted-foreground">
+            {field.label}
+            {field.required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {(field.options || []).map((opt) => {
+              const isSelected = selected.includes(opt);
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    const next = isSelected
+                      ? selected.filter((s) => s !== opt)
+                      : [...selected, opt];
+                    onChange(next);
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
 
     default: // text
       if (readOnly) {

@@ -19,6 +19,8 @@ export interface DynamicAnamnesisRecord {
   created_by: string | null;
   created_by_name?: string;
   template_name?: string;
+  /** Partner patients linked to this record */
+  linked_patients?: { patient_id: string; role: string; full_name?: string }[];
 }
 
 export function useDynamicAnamnesisRecords(patientId: string | null) {
@@ -34,7 +36,8 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch records where this patient is the primary patient
+      const { data: directRecords, error } = await supabase
         .from('anamnesis_records')
         .select('*, anamnesis_templates(name)')
         .eq('patient_id', patientId)
@@ -43,8 +46,35 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
 
       if (error) throw error;
 
+      // Also fetch records where this patient is a linked partner
+      const { data: linkedRows } = await supabase
+        .from('anamnesis_record_patients' as any)
+        .select('record_id')
+        .eq('patient_id', patientId);
+
+      const linkedRecordIds = (linkedRows || [])
+        .map((r: any) => r.record_id)
+        .filter(Boolean);
+
+      let partnerRecords: any[] = [];
+      if (linkedRecordIds.length > 0) {
+        const directIds = (directRecords || []).map(r => r.id);
+        const extraIds = linkedRecordIds.filter((id: string) => !directIds.includes(id));
+        if (extraIds.length > 0) {
+          const { data: extra } = await supabase
+            .from('anamnesis_records')
+            .select('*, anamnesis_templates(name)')
+            .in('id', extraIds)
+            .eq('clinic_id', clinic.id)
+            .order('created_at', { ascending: false });
+          partnerRecords = extra || [];
+        }
+      }
+
+      const allRecords = [...(directRecords || []), ...partnerRecords];
+
       // Get creator names
-      const creatorIds = [...new Set((data || []).map(r => r.created_by).filter(Boolean))] as string[];
+      const creatorIds = [...new Set(allRecords.map(r => r.created_by).filter(Boolean))] as string[];
       let creatorsMap: Record<string, string> = {};
       if (creatorIds.length > 0) {
         const { data: profiles } = await supabase
@@ -59,7 +89,36 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
         }
       }
 
-      const mapped: DynamicAnamnesisRecord[] = (data || []).map((r: any) => ({
+      // Fetch linked patients for all records
+      const allRecordIds = allRecords.map(r => r.id);
+      let linkedPatientsMap: Record<string, { patient_id: string; role: string; full_name?: string }[]> = {};
+      if (allRecordIds.length > 0) {
+        const { data: links } = await supabase
+          .from('anamnesis_record_patients' as any)
+          .select('record_id, patient_id, role')
+          .in('record_id', allRecordIds);
+
+        if (links && links.length > 0) {
+          const patientIds = [...new Set((links as any[]).map(l => l.patient_id))];
+          const { data: patients } = await supabase
+            .from('patients')
+            .select('id, full_name')
+            .in('id', patientIds);
+          const nameMap: Record<string, string> = {};
+          (patients || []).forEach(p => { nameMap[p.id] = p.full_name; });
+
+          for (const link of links as any[]) {
+            if (!linkedPatientsMap[link.record_id]) linkedPatientsMap[link.record_id] = [];
+            linkedPatientsMap[link.record_id].push({
+              patient_id: link.patient_id,
+              role: link.role,
+              full_name: nameMap[link.patient_id],
+            });
+          }
+        }
+      }
+
+      const mapped: DynamicAnamnesisRecord[] = allRecords.map((r: any) => ({
         id: r.id,
         patient_id: r.patient_id,
         clinic_id: r.clinic_id,
@@ -74,8 +133,11 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
         created_by: r.created_by,
         created_by_name: r.created_by ? creatorsMap[r.created_by] : undefined,
         template_name: r.anamnesis_templates?.name || undefined,
+        linked_patients: linkedPatientsMap[r.id] || [],
       }));
 
+      // Sort by date descending
+      mapped.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setRecords(mapped);
     } catch (err) {
       console.error('Error fetching dynamic anamnesis records:', err);
@@ -92,6 +154,8 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
     appointmentId?: string | null;
     responses: Record<string, unknown>;
     structureSnapshot: unknown;
+    /** Optional partner patient for couple therapy */
+    partnerPatientId?: string | null;
   }): Promise<string | null> => {
     if (!patientId || !clinic?.id) {
       toast.error('Paciente ou clínica não identificados');
@@ -120,6 +184,27 @@ export function useDynamicAnamnesisRecords(patientId: string | null) {
         .single();
 
       if (error) throw error;
+
+      // Create link records for multi-patient (couple therapy)
+      if (params.partnerPatientId) {
+        // Link titular
+        await supabase
+          .from('anamnesis_record_patients' as any)
+          .insert({
+            record_id: data.id,
+            patient_id: patientId,
+            role: 'titular',
+          });
+
+        // Link partner
+        await supabase
+          .from('anamnesis_record_patients' as any)
+          .insert({
+            record_id: data.id,
+            patient_id: params.partnerPatientId,
+            role: 'parceiro',
+          });
+      }
 
       toast.success('Anamnese salva com sucesso');
       await fetchRecords();

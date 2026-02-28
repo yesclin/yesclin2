@@ -101,7 +101,7 @@ interface UseSessoesPsicologiaDataResult {
   saving: boolean;
   error: string | null;
   totalSessoes: number;
-  saveSessao: (data: SessaoFormData & { assinar: boolean }) => Promise<void>;
+  saveSessao: (data: SessaoFormData & { assinar: boolean }) => Promise<string | null>;
   signSessao: (sessaoId: string) => Promise<void>;
   refetch: () => Promise<void>;
 }
@@ -185,10 +185,10 @@ export function useSessoesPsicologiaData(
     }
   }, [patientId, clinic?.id]);
 
-  const saveSessao = useCallback(async (data: SessaoFormData & { assinar: boolean }) => {
+  const saveSessao = useCallback(async (data: SessaoFormData & { assinar: boolean }): Promise<string | null> => {
     if (!patientId || !clinic?.id || !currentProfessionalId) {
       toast.error('Dados insuficientes para salvar a sessão');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -232,9 +232,11 @@ export function useSessoesPsicologiaData(
         assinada_em: data.assinar ? new Date().toISOString() : null,
       };
 
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from('sessoes_psicologia')
-        .insert(insertData);
+        .insert(insertData)
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
@@ -243,11 +245,13 @@ export function useSessoesPsicologiaData(
         : `Sessão ${nextNumber} salva como rascunho`
       );
       await fetchSessoes();
+      return inserted?.id || null;
     } catch (err) {
       console.error('Error saving sessao:', err);
       const message = err instanceof Error ? err.message : 'Erro ao salvar sessão';
       setError(message);
       toast.error(message);
+      return null;
     } finally {
       setSaving(false);
     }

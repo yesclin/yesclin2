@@ -7303,6 +7303,104 @@ export type Database = {
           },
         ]
       }
+      planos_acao_crise: {
+        Row: {
+          clinic_id: string
+          contato_intermediario: boolean
+          contato_responsavel: boolean
+          created_at: string
+          descricao_intervencao: string
+          encaminhamento_caps: boolean
+          encaminhamento_emergencial: boolean
+          encaminhamento_hospital: boolean
+          encaminhamento_medico: boolean
+          encaminhamento_outro: string | null
+          id: string
+          observacoes_adicionais: string | null
+          patient_id: string
+          profissional_id: string
+          regression_status: string
+          risco_iminente: boolean
+          sessao_antecipada: boolean
+          sessao_id: string
+          tecnica_aplicada: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          contato_intermediario?: boolean
+          contato_responsavel?: boolean
+          created_at?: string
+          descricao_intervencao: string
+          encaminhamento_caps?: boolean
+          encaminhamento_emergencial?: boolean
+          encaminhamento_hospital?: boolean
+          encaminhamento_medico?: boolean
+          encaminhamento_outro?: string | null
+          id?: string
+          observacoes_adicionais?: string | null
+          patient_id: string
+          profissional_id: string
+          regression_status?: string
+          risco_iminente?: boolean
+          sessao_antecipada?: boolean
+          sessao_id: string
+          tecnica_aplicada?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          contato_intermediario?: boolean
+          contato_responsavel?: boolean
+          created_at?: string
+          descricao_intervencao?: string
+          encaminhamento_caps?: boolean
+          encaminhamento_emergencial?: boolean
+          encaminhamento_hospital?: boolean
+          encaminhamento_medico?: boolean
+          encaminhamento_outro?: string | null
+          id?: string
+          observacoes_adicionais?: string | null
+          patient_id?: string
+          profissional_id?: string
+          regression_status?: string
+          risco_iminente?: boolean
+          sessao_antecipada?: boolean
+          sessao_id?: string
+          tecnica_aplicada?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_acao_crise_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_acao_crise_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_acao_crise_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_acao_crise_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_psicologia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_kits: {
         Row: {
           clinic_id: string

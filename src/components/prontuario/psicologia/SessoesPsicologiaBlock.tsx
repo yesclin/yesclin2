@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ import { INTERVENCOES_OPTIONS, ENCAMINHAMENTOS_OPTIONS } from "@/hooks/prontuari
 import { EvolucaoEmocionalChart } from "./EvolucaoEmocionalChart";
 import { EscalaPHQ9 } from "./EscalaPHQ9";
 import { EscalaGAD7 } from "./EscalaGAD7";
+import { PlanoAcaoCriseModal, PlanoAcaoCriseBadge } from "./PlanoAcaoCriseModal";
+import { useClinicData } from "@/hooks/useClinicData";
 
 interface SessoesPsicologiaBlockProps {
   sessoes: SessaoPsicologia[];
@@ -40,7 +42,7 @@ interface SessoesPsicologiaBlockProps {
   canEdit?: boolean;
   currentProfessionalId?: string;
   currentProfessionalName?: string;
-  onSave: (data: SessaoFormData & { assinar: boolean }) => Promise<void>;
+  onSave: (data: SessaoFormData & { assinar: boolean }) => Promise<string | null>;
   onSign?: (sessaoId: string) => Promise<void>;
 }
 
@@ -91,14 +93,53 @@ export function SessoesPsicologiaBlock({
   sessoes, loading = false, saving = false, canEdit = false,
   currentProfessionalId, currentProfessionalName, onSave, onSign,
 }: SessoesPsicologiaBlockProps) {
+  const { clinic } = useClinicData();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSessao, setSelectedSessao] = useState<SessaoPsicologia | null>(null);
   const [formData, setFormData] = useState<SessaoFormData>(EMPTY_FORM);
   const [customIntervencao, setCustomIntervencao] = useState('');
   const [customEncaminhamento, setCustomEncaminhamento] = useState('');
 
+  // Crisis action plan modal state
+  const [criseModalOpen, setCriseModalOpen] = useState(false);
+  const [criseSessionId, setCriseSessionId] = useState<string>('');
+  const [criseStatus, setCriseStatus] = useState<'crise' | 'regressao'>('crise');
+
   const nextSessionNumber = sessoes.length > 0 
     ? Math.max(...sessoes.map(s => s.numero_sessao || 0)) + 1 : 1;
+
+  // Detect if new session would trigger crisis/regression
+  const detectCrisisAfterSave = (savedFormData: SessaoFormData): 'crise' | 'regressao' | 'normal' => {
+    const EVOLUCAO_MAP: Record<string, number> = { melhorando: 1, estavel: 0, 'estável': 0, piorando: -1 };
+
+    // Build list: existing sessions + new one
+    const sorted = [...sessoes]
+      .sort((a, b) => new Date(a.data_sessao).getTime() - new Date(b.data_sessao).getTime());
+
+    // Add the newly saved session as virtual entry
+    const allSessions = [
+      ...sorted.map(s => ({ evolucao: s.evolucao_caso?.toLowerCase().trim() || '', risco: s.risco_atual?.toLowerCase().trim() || '' })),
+      { evolucao: savedFormData.evolucao_caso?.toLowerCase().trim() || '', risco: savedFormData.risco_atual?.toLowerCase().trim() || '' },
+    ];
+
+    const last2 = allSessions.slice(-2);
+    const last3 = allSessions.slice(-3);
+
+    // CRISIS: 3 consecutive piorando
+    if (last3.length >= 3 && last3.every(s => s.evolucao === 'piorando')) return 'crise';
+    // CRISIS: risco alto in last 2
+    if (last2.some(s => s.risco === 'alto')) return 'crise';
+
+    // REGRESSION: 2 consecutive piorando
+    if (last2.length >= 2 && last2.every(s => s.evolucao === 'piorando')) return 'regressao';
+    // REGRESSION: sum of last 3 <= -2
+    if (last3.length >= 2) {
+      const sum = last3.reduce((acc, s) => acc + (EVOLUCAO_MAP[s.evolucao] ?? 0), 0);
+      if (sum <= -2) return 'regressao';
+    }
+
+    return 'normal';
+  };
 
   const handleOpenForm = () => {
     setFormData({ ...EMPTY_FORM, data_sessao: new Date().toISOString() });
@@ -112,14 +153,28 @@ export function SessoesPsicologiaBlock({
     setCustomEncaminhamento('');
   };
 
-  const handleSaveDraft = async () => {
-    await onSave({ ...formData, assinar: false });
+  const handleSaveWithCrisisCheck = async (assinar: boolean) => {
+    const currentFormData = { ...formData };
+    const sessionId = await onSave({ ...currentFormData, assinar });
+    if (!sessionId) return;
+
     handleCloseForm();
+
+    // Check crisis/regression after save
+    const status = detectCrisisAfterSave(currentFormData);
+    if (status === 'crise' || status === 'regressao') {
+      setCriseSessionId(sessionId);
+      setCriseStatus(status);
+      setCriseModalOpen(true);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    await handleSaveWithCrisisCheck(false);
   };
 
   const handleSaveAndSign = async () => {
-    await onSave({ ...formData, assinar: true });
-    handleCloseForm();
+    await handleSaveWithCrisisCheck(true);
   };
 
   const toggleTag = (field: 'intervencoes_tags' | 'encaminhamentos_tags' | 'emocoes_predominantes', tag: string) => {
@@ -229,6 +284,7 @@ export function SessoesPsicologiaBlock({
                             <ShieldAlert className="h-3 w-3 mr-1" /> Risco
                           </Badge>
                         )}
+                        {clinic?.id && <PlanoAcaoCriseBadge sessaoId={sessao.id} clinicId={clinic.id} />}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
@@ -614,6 +670,20 @@ export function SessoesPsicologiaBlock({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Crisis Action Plan Modal */}
+      {clinic?.id && currentProfessionalId && (
+        <PlanoAcaoCriseModal
+          open={criseModalOpen}
+          onOpenChange={setCriseModalOpen}
+          patientId={sessoes[0]?.patient_id || ''}
+          clinicId={clinic.id}
+          sessaoId={criseSessionId}
+          profissionalId={currentProfessionalId}
+          regressionStatus={criseStatus}
+          onSaved={() => {}}
+        />
+      )}
     </div>
   );
 }

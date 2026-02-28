@@ -489,11 +489,120 @@ export const PSICOLOGIA_EVOLUCAO_STRUCTURE: DefaultSectionDef[] = [
   },
 ];
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PSICOLOGIA — Terapia Familiar
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const PSICOLOGIA_FAMILIAR_STRUCTURE: DefaultSectionDef[] = [
+  // 1. Identificação da Família
+  {
+    id: 'section_identificacao_familia', type: 'section', title: 'Identificação da Família',
+    fields: [
+      { id: 'f_nome_grupo_familiar', type: 'text', label: 'Nome do grupo familiar', required: true, placeholder: 'Ex: Família Silva' },
+      { id: 'f_membros_presentes', type: 'textarea', label: 'Membros presentes na sessão', required: true, placeholder: 'Liste os membros presentes e seu papel na família...' },
+      { id: 'f_grau_parentesco', type: 'textarea', label: 'Grau de parentesco entre os membros', required: false, placeholder: 'Descreva as relações: mãe, pai, filho(a), avó...' },
+      { id: 'f_quem_solicitou', type: 'text', label: 'Quem solicitou a terapia', required: true, placeholder: 'Nome e papel na família' },
+      { id: 'f_membro_ausente', type: 'select', label: 'Há membro ausente relevante?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_membro_ausente_descricao', type: 'textarea', label: 'Descrição do membro ausente', required: false, placeholder: 'Quem está ausente e por qual motivo...' },
+    ],
+  },
+  // 2. Estrutura Familiar
+  {
+    id: 'section_estrutura_familiar', type: 'section', title: 'Estrutura Familiar',
+    fields: [
+      { id: 'f_tipo_estrutura', type: 'select', label: 'Tipo de estrutura familiar', required: true, options: ['Nuclear', 'Monoparental', 'Reconstituída', 'Extensa', 'Homoparental', 'Adotiva', 'Outra'] },
+      { id: 'f_quem_mora_com_quem', type: 'textarea', label: 'Quem mora com quem', required: false, placeholder: 'Descreva a composição domiciliar...' },
+      { id: 'f_autoridade_clara', type: 'select', label: 'Figura de autoridade clara?', required: false, options: ['Sim', 'Não', 'Parcialmente'] },
+      { id: 'f_triangulacoes', type: 'select', label: 'Triangulações percebidas?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_aliancas_familiares', type: 'textarea', label: 'Alianças familiares', required: false, placeholder: 'Descreva alianças, subgrupos ou coalizões observadas...' },
+    ],
+  },
+  // 3. Papéis Familiares
+  {
+    id: 'section_papeis_familiares', type: 'section', title: 'Papéis Familiares',
+    fields: [
+      { id: 'f_papel_cada_membro', type: 'textarea', label: 'Papel de cada membro', required: true, placeholder: 'Descreva o papel que cada membro exerce na dinâmica familiar...' },
+      { id: 'f_inversao_papeis', type: 'select', label: 'Inversão de papéis?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_sobrecarga_emocional', type: 'textarea', label: 'Sobrecarga emocional', required: false, placeholder: 'Algum membro apresenta sobrecarga? Descreva...' },
+    ],
+  },
+  // 4. Conflitos Recorrentes
+  {
+    id: 'section_conflitos_recorrentes', type: 'section', title: 'Conflitos Recorrentes',
+    fields: [
+      { id: 'f_principais_conflitos', type: 'textarea', label: 'Principais conflitos', required: true, placeholder: 'Descreva os conflitos mais frequentes na família...' },
+      { id: 'f_entre_quais_membros', type: 'textarea', label: 'Entre quais membros', required: false, placeholder: 'Identifique os membros envolvidos nos conflitos...' },
+      { id: 'f_frequencia_conflitos', type: 'select', label: 'Frequência', required: false, options: ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Esporádico'] },
+      { id: 'f_intensidade_conflitos', type: 'select', label: 'Intensidade', required: false, options: ['Leve', 'Moderada', 'Alta', 'Muito alta'] },
+      { id: 'f_agressividade_verbal', type: 'select', label: 'Agressividade verbal?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_agressividade_fisica', type: 'select', label: 'Agressividade física?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_tentativas_resolucao', type: 'textarea', label: 'Tentativas anteriores de resolução', required: false, placeholder: 'Descreva tentativas prévias de resolver os conflitos...' },
+    ],
+  },
+  // 5. Dinâmica Relacional
+  {
+    id: 'section_dinamica_relacional', type: 'section', title: 'Dinâmica Relacional',
+    fields: [
+      { id: 'f_comunicacao_predominante', type: 'select', label: 'Comunicação predominante', required: false, options: ['Assertiva', 'Passiva', 'Agressiva', 'Passivo-agressiva', 'Evitativa'] },
+      { id: 'f_coalizoes', type: 'textarea', label: 'Coalizões', required: false, placeholder: 'Descreva coalizões entre membros...' },
+      { id: 'f_exclusoes', type: 'textarea', label: 'Exclusões', required: false, placeholder: 'Algum membro é excluído ou marginalizado?' },
+      { id: 'f_nivel_coesao', type: 'select', label: 'Nível de coesão familiar', required: false, options: ['Desligada', 'Separada', 'Conectada', 'Emaranhada'] },
+      { id: 'f_tipo_limites', type: 'select', label: 'Tipo de limites', required: false, options: ['Rígidos', 'Claros', 'Difusos', 'Inexistentes'] },
+    ],
+  },
+  // 6. Eventos Críticos
+  {
+    id: 'section_eventos_criticos', type: 'section', title: 'Eventos Críticos',
+    fields: [
+      { id: 'f_separacoes', type: 'select', label: 'Separações', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_luto', type: 'select', label: 'Luto', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_mudanca_cidade', type: 'select', label: 'Mudança de cidade', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_doenca_grave', type: 'select', label: 'Doença grave', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_violencia', type: 'select', label: 'Violência', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_processo_judicial', type: 'select', label: 'Processo judicial', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_outro_evento', type: 'textarea', label: 'Outro evento relevante', required: false, placeholder: 'Descreva outro evento relevante...' },
+      { id: 'f_impacto_percebido', type: 'textarea', label: 'Impacto percebido', required: false, placeholder: 'Como esses eventos impactaram a dinâmica familiar...' },
+    ],
+  },
+  // 7. Histórico de Intervenções
+  {
+    id: 'section_historico_intervencoes', type: 'section', title: 'Histórico de Intervenções',
+    fields: [
+      { id: 'f_terapia_previa', type: 'select', label: 'Terapia prévia (individual ou familiar)?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_conselho_tutelar', type: 'select', label: 'Conselho tutelar?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_caps', type: 'select', label: 'CAPS?', required: false, options: ['Não', 'Sim'] },
+      { id: 'f_medicacao_membro', type: 'textarea', label: 'Medicação em membro da família', required: false, placeholder: 'Algum membro faz uso de medicação psiquiátrica? Descreva...' },
+    ],
+  },
+  // 8. Objetivos da Terapia
+  {
+    id: 'section_objetivos_terapia', type: 'section', title: 'Objetivos da Terapia',
+    fields: [
+      { id: 'f_objetivos_individuais', type: 'textarea', label: 'Objetivos individuais', required: false, placeholder: 'O que cada membro espera da terapia...' },
+      { id: 'f_objetivos_familiares', type: 'textarea', label: 'Objetivos familiares', required: true, placeholder: 'O que a família como grupo deseja alcançar...' },
+      { id: 'f_expectativas_familia', type: 'textarea', label: 'Expectativas da família', required: false, placeholder: 'Expectativas gerais sobre o processo terapêutico...' },
+      { id: 'f_resistencias_identificadas', type: 'textarea', label: 'Resistências identificadas', required: false, placeholder: 'Resistências ao processo terapêutico observadas...' },
+    ],
+  },
+  // 9. Avaliação Sistêmica Inicial
+  {
+    id: 'section_avaliacao_sistemica', type: 'section', title: 'Avaliação Sistêmica Inicial',
+    fields: [
+      { id: 'f_padrao_relacional', type: 'textarea', label: 'Padrão relacional predominante', required: false, placeholder: 'Descreva o padrão predominante nas relações familiares...' },
+      { id: 'f_hipotese_sistemica', type: 'textarea', label: 'Hipótese sistêmica inicial', required: true, placeholder: 'Formule a hipótese sistêmica inicial com base na avaliação...' },
+      { id: 'f_motivacao_grupo', type: 'select', label: 'Motivação do grupo', required: false, options: ['Alta', 'Moderada', 'Baixa', 'Ambivalente'] },
+      { id: 'f_risco_estrutural', type: 'select', label: 'Risco estrutural', required: false, options: ['Baixo', 'Moderado', 'Alto', 'Crítico'] },
+      { id: 'f_plano_terapeutico', type: 'textarea', label: 'Plano terapêutico inicial', required: true, placeholder: 'Descreva o plano terapêutico inicial, frequência e abordagem...' },
+    ],
+  },
+];
+
 export const DEFAULT_ANAMNESIS_STRUCTURES: Record<string, DefaultSectionDef[]> = {
   'clinica-geral': CLINICA_GERAL_STRUCTURE,
   'geral': CLINICA_GERAL_STRUCTURE,
   'nutricao': NUTRICAO_STRUCTURE,
   'psicologia': PSICOLOGIA_STRUCTURE,
+  'psicologia-familiar': PSICOLOGIA_FAMILIAR_STRUCTURE,
   'fisioterapia': FISIOTERAPIA_STRUCTURE,
 };
 

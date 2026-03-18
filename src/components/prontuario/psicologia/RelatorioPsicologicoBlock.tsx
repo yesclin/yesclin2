@@ -329,7 +329,7 @@ export function RelatorioPsicologicoBlock({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-2">
                 <div className="space-y-4 py-2">
                   {/* Analysis summary badges */}
                   {aggregated && <AnalysisSummary aggregated={aggregated} />}
@@ -373,9 +373,9 @@ export function RelatorioPsicologicoBlock({
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
-              <DialogFooter className="gap-2 pt-2">
+              <DialogFooter className="shrink-0 gap-2 pt-2 border-t">
                 <Button variant="outline" onClick={() => setStep('config')}>Voltar</Button>
                 <Button variant="outline" onClick={handleExportPdf}>
                   <Download className="h-4 w-4 mr-2" />

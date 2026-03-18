@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import {
   Dialog,
   DialogContent,
@@ -263,8 +263,8 @@ export function RelatorioPsicologicoBlock({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] min-h-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Relatório Psicológico Inteligente
@@ -277,56 +277,60 @@ export function RelatorioPsicologicoBlock({
           </DialogHeader>
 
           {step === 'config' ? (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Período Inicial
-                  </Label>
-                  <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Período Final
-                  </Label>
-                  <Input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
+            <>
+              <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        Período Inicial
+                      </Label>
+                      <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        Período Final
+                      </Label>
+                      <Input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <Checkbox
+                      id="include-confidential"
+                      checked={includeConfidential}
+                      onCheckedChange={checked => setIncludeConfidential(!!checked)}
+                    />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="include-confidential" className="text-sm font-medium flex items-center gap-1">
+                        <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
+                        Incluir informações sensíveis
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Observações confidenciais das sessões serão incluídas no relatório.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                    <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      O relatório é gerado exclusivamente com dados já registrados. A análise de tendência, risco e engajamento utiliza regras lógicas — nenhum conteúdo é inventado.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <Checkbox
-                  id="include-confidential"
-                  checked={includeConfidential}
-                  onCheckedChange={checked => setIncludeConfidential(!!checked)}
-                />
-                <div className="space-y-0.5">
-                  <Label htmlFor="include-confidential" className="text-sm font-medium flex items-center gap-1">
-                    <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
-                    Incluir informações sensíveis
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Observações confidenciais das sessões serão incluídas no relatório.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  O relatório é gerado exclusivamente com dados já registrados. A análise de tendência, risco e engajamento utiliza regras lógicas — nenhum conteúdo é inventado.
-                </p>
-              </div>
-
-              <DialogFooter>
+              <DialogFooter className="shrink-0 gap-2 pt-2 border-t">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                 <Button onClick={handleGenerate} disabled={loading}>
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Gerar Pré-visualização
                 </Button>
               </DialogFooter>
-            </div>
+            </>
           ) : (
             <>
               <div className="flex-1 min-h-0 overflow-y-auto pr-2">

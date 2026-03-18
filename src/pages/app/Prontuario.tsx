@@ -2237,10 +2237,123 @@ export default function Prontuario() {
   return (
     <ClinicalAccessGuard>
     <div className="flex flex-col h-full min-h-0 relative">
-...
+      {/* LGPD Blocking Overlay - shown when consent is required but not granted */}
+      {!lgpdLoading && isEnforcementEnabled && !hasValidConsent && patient && (
+        <LgpdBlockingOverlay
+          patientName={patient.full_name}
+          isFullyLocked={shouldHideContent}
+          onCollectConsent={handleCollectConsent}
+        />
+      )}
+
+      {/* Consent Collection Dialog */}
+      {activeTermTitle && activeTermContent && activeTermVersion && patient && (
+        <ConsentCollectionDialog
+          open={consentDialogOpen}
+          onOpenChange={setConsentDialogOpen}
+          patientName={patient.full_name}
+          termTitle={activeTermTitle}
+          termVersion={activeTermVersion}
+          termContent={activeTermContent}
+          onConfirm={handleConfirmConsent}
+          isLoading={lgpdGranting}
+        />
+      )}
+
+      {/* Digital Signature Dialog */}
+      {patient && (
+        <SignatureDialog
+          open={signatureDialogOpen}
+          onOpenChange={setSignatureDialogOpen}
+          entry={selectedEntryForSignature}
+          professionalName="Profissional"
+          patientName={patient.full_name}
+          hasValidConsent={hasValidConsent}
+          onSign={handleSignRecord}
+          signing={signing}
+        />
+      )}
+
+      {/* Header Unificado */}
+      <ProntuarioHeader
+        patient={patient}
+        patientLoading={patientLoading}
+        activeSpecialtyKey={activeSpecialtyKey}
+        activeSpecialtyName={activeSpecialty?.name}
+        professionalName={currentProfessionalName}
+        isSpecialtyFromAppointment={isSpecialtyFromAppointment}
+        specialtyLoading={specialtyLoading}
+        criticalAlertsCount={criticalAlerts.length}
+        isLgpdPending={isEnforcementEnabled && !hasValidConsent}
+        hasActiveAppointment={hasActiveAppointment}
+        activeAppointment={activeAppointment}
+        appointmentLoading={appointmentLoading}
+        appointmentReason={appointmentReason}
+        isAdmin={isAdmin}
+        canPrint={canPerformAction('print_record')}
+        canExport={canPerformAction('export_pdf')}
+        onPrint={onPrintClick}
+        onExport={onExportClick}
+        exporting={exporting}
+        insuranceName={(patient as any)?.insurance?.insurance_name || null}
+        clinicalSummary={clinicalDataLoading ? undefined : (prontuarioClinicalData ? {
+          allergies: (prontuarioClinicalData.allergies || []).map(a => a.split('\n')[0].substring(0, 40)),
+          chronic_diseases: (prontuarioClinicalData.chronic_diseases || []).map(d => d.split('\n')[0].substring(0, 40)),
+          current_medications: (prontuarioClinicalData.current_medications || []).map(m => m.split('\n')[0].substring(0, 40)),
+          blood_type: prontuarioClinicalData.blood_type,
+          restrictions: prontuarioClinicalData.clinical_restrictions 
+            ? [prontuarioClinicalData.clinical_restrictions.split('\n')[0].substring(0, 40)] 
+            : undefined,
+        } : null)}
+        clinicalDataLoading={clinicalDataLoading}
+      />
+
+      {/* Barra de Pesquisa Global */}
+      {patientId && (
+        <div className="px-4 py-2 border-b bg-background">
+          <ProntuarioSearchBar
+            entries={entries}
+            files={files}
+            alerts={activeAlerts}
+            onResultClick={handleSearchResultClick}
+            onNavigateToTab={handleNavigateToTab}
+            className="max-w-2xl"
+          />
+        </div>
+      )}
+
       {/* Main Content with Responsive Tab Navigation */}
       <div id="print-area" className="flex flex-col flex-1 min-h-0 overflow-hidden">
-...
+        {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
+        <ProntuarioTabNav
+          items={navItems.map((item) => {
+            // Primary tabs (always visible): Visão Geral, Anamnese, Evoluções/Sessões, Plano
+            const primaryTabIds = [
+              'resumo',           // Visão Geral
+              'anamnese',         // Anamnese
+              'evolucao',         // Evoluções / Sessões
+              'conduta',          // Plano / Conduta
+              'plano_alimentar',  // Plano Alimentar (Nutrição)
+              'plano_terapeutico', // Plano Terapêutico (Psicologia/Fisioterapia)
+            ];
+            
+            const isPrimaryTab = primaryTabIds.includes(item.id);
+            
+            return {
+              id: item.id,
+              label: item.label,
+              icon: item.icon,
+              badge: item.id === 'alertas' ? activeAlerts.length : undefined,
+              badgeVariant: item.id === 'alertas' && criticalAlerts.length > 0 ? "destructive" : "secondary",
+              // Secondary tabs go to "More" menu on mobile
+              secondary: !isPrimaryTab,
+            } as TabNavItem;
+          })}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          criticalAlerts={criticalAlerts.length}
+        />
+
         {/* Content Area */}
         <main className="flex-1 min-h-0 overflow-auto">
           <div className="p-4 md:p-6">

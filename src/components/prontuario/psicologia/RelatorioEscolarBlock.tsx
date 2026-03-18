@@ -220,7 +220,91 @@ export function RelatorioEscolarBlock({
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
-...
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Relatório Psicológico Escolar
+            </DialogTitle>
+            <DialogDescription>
+              {step === 'config'
+                ? 'Configure o período e confirme a autorização do responsável. Este relatório não conterá dados clínicos sensíveis.'
+                : 'Revise e edite as seções antes de exportar. Nenhum dado confidencial é incluído automaticamente.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {step === 'config' ? (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Período Inicial
+                  </Label>
+                  <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Período Final
+                  </Label>
+                  <Input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Authorization checkbox - MANDATORY */}
+              <div className="flex items-start gap-2 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <Checkbox
+                  id="autorizacao-responsavel"
+                  checked={autorizacao}
+                  onCheckedChange={checked => setAutorizacao(!!checked)}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="autorizacao-responsavel" className="text-sm font-medium flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                    Responsável autorizou emissão deste relatório
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    É obrigatório ter a autorização do responsável legal antes de emitir o relatório para a escola.
+                  </p>
+                </div>
+              </div>
+
+              {autorizacao && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Data da autorização</Label>
+                  <Input
+                    type="date"
+                    value={dataAutorizacao}
+                    onChange={e => setDataAutorizacao(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border">
+                <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Este relatório <strong>não inclui automaticamente</strong>:</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    <li>Risco clínico ou ideação suicida</li>
+                    <li>Notas confidenciais ou plano de ação de crise</li>
+                    <li>Diagnósticos clínicos</li>
+                    <li>Observações internas do terapeuta</li>
+                  </ul>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleGenerate} disabled={loading || !autorizacao}>
+                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Gerar Pré-visualização
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <>
               <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
                 <div className="space-y-4 py-2">
                   <div className="p-2 rounded-md bg-muted/50 border">

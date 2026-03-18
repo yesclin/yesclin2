@@ -234,7 +234,90 @@ export function LaudoPsicologicoBlock({
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
-...
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              Laudo Psicológico Estruturado
+            </DialogTitle>
+            <DialogDescription>
+              {step === 'select'
+                ? 'Selecione a avaliação psicológica (psicodiagnóstico) base para o laudo.'
+                : 'Revise e edite todas as seções. Nenhum diagnóstico é gerado automaticamente.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {step === 'select' ? (
+            <div className="space-y-4 py-4">
+              {loadingAvaliacoes ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : avaliacoes.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Nenhuma avaliação com instrumentos encontrada</p>
+                    <p className="text-xs text-muted-foreground max-w-sm">
+                      É necessário ter pelo menos uma anamnese do tipo "Avaliação Psicológica (Psicodiagnóstico)" com instrumentos psicológicos registrados.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Label>Selecione a avaliação base</Label>
+                  <Select value={selectedAvaliacaoId} onValueChange={setSelectedAvaliacaoId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma avaliação..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {avaliacoes.map(av => (
+                        <SelectItem key={av.id} value={av.id}>
+                          <span className="flex items-center gap-2">
+                            <FlaskConical className="h-3.5 w-3.5 text-muted-foreground" />
+                            {format(new Date(av.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                            {' – '}
+                            {av.responses.pd_finalidade_avaliacao || 'Avaliação'}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedAvaliacaoId && (() => {
+                    const sel = avaliacoes.find(a => a.id === selectedAvaliacaoId);
+                    if (!sel) return null;
+                    const instCount = [1,2,3,4,5].filter(i => sel.responses[`pd_instrumento_${i}_nome`]).length;
+                    return (
+                      <div className="p-3 rounded-lg bg-muted/50 border space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Finalidade:</strong> {sel.responses.pd_finalidade_avaliacao || 'N/A'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Instrumentos registrados:</strong> {instCount}
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                    <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      O laudo é gerado exclusivamente com dados registrados na avaliação. Nenhum diagnóstico ou interpretação é gerado automaticamente pelo sistema.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleGenerate} disabled={loading || !selectedAvaliacaoId}>
+                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Gerar Estrutura do Laudo
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <>
               <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[55vh]">
                 <div className="space-y-4 py-2">
                   {sections.map(section => (

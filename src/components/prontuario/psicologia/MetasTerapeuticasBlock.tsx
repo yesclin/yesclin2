@@ -269,13 +269,14 @@ export function MetasTerapeuticasBlock({
 
       {/* ===== NEW GOAL DIALOG ===== */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] min-h-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-primary" /> Nova Meta Terapêutica</DialogTitle>
             <DialogDescription>Defina uma meta para o acompanhamento do tratamento.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0 pr-4">
-            <div className="space-y-4">
+
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+            <div className="space-y-4 py-2">
               {/* Goal Type */}
               <div className="space-y-2">
                 <Label>Tipo de Meta</Label>
@@ -383,8 +384,9 @@ export function MetasTerapeuticasBlock({
                 </>
               )}
             </div>
-          </ScrollArea>
-          <DialogFooter>
+          </div>
+
+          <DialogFooter className="shrink-0 pt-2 border-t">
             <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreateGoal} disabled={saving || !formData.title.trim() || (formData.goal_type === 'escala' && (!formData.scale_name || formData.target_score == null))}>
               {saving ? 'Criando...' : 'Criar Meta'}

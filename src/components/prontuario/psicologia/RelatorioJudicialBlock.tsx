@@ -228,95 +228,9 @@ export function RelatorioJudicialBlock({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Scale className="h-5 w-5" />
-              Relatório Psicológico – Uso Judicial
-            </DialogTitle>
-            <DialogDescription>
-              {step === 'config'
-                ? 'Informe a finalidade e confirme a ciência. Este relatório não substitui laudo pericial.'
-                : 'Revise e edite as seções antes de exportar. Nenhum dado confidencial é incluído automaticamente.'}
-            </DialogDescription>
-          </DialogHeader>
-
-          {step === 'config' ? (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Período Inicial
-                  </Label>
-                  <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Período Final
-                  </Label>
-                  <Input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
-                </div>
-              </div>
-
-              {/* Finalidade - MANDATORY */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Finalidade do Relatório <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  value={finalidade}
-                  onChange={e => setFinalidade(e.target.value)}
-                  placeholder="Descreva a finalidade para a qual este relatório está sendo emitido (ex.: solicitação judicial, processo de guarda, etc.)"
-                  className="min-h-[80px] text-sm"
-                />
-              </div>
-
-              {/* Ciência checkbox - MANDATORY */}
-              <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                <Checkbox
-                  id="ciencia-judicial"
-                  checked={ciencia}
-                  onCheckedChange={checked => setCiencia(!!checked)}
-                  className="mt-0.5"
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="ciencia-judicial" className="text-sm font-medium flex items-center gap-1">
-                    <ShieldAlert className="h-3.5 w-3.5 text-destructive" />
-                    Estou ciente de que este documento não substitui laudo pericial
-                    <span className="text-destructive">*</span>
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Este relatório refere-se exclusivamente ao acompanhamento psicológico e não constitui parecer pericial.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border">
-                <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Este relatório <strong>não inclui automaticamente</strong>:</p>
-                  <ul className="list-disc pl-4 space-y-0.5">
-                    <li>Diagnóstico clínico ou parecer pericial</li>
-                    <li>Notas confidenciais ou plano de ação de crise</li>
-                    <li>Risco clínico ou ideação suicida</li>
-                    <li>Observações internas do terapeuta</li>
-                  </ul>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleGenerate} disabled={loading || !canGenerate}>
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Gerar Pré-visualização
-                </Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <>
-              <ScrollArea className="flex-1 pr-4 max-h-[60vh]">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
+...
+              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
                 <div className="space-y-4 py-2">
                   <div className="p-2 rounded-md bg-destructive/5 border border-destructive/20">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

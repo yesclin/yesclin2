@@ -2236,7 +2236,7 @@ export default function Prontuario() {
 
   return (
     <ClinicalAccessGuard>
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full min-h-0 relative">
       {/* LGPD Blocking Overlay - shown when consent is required but not granted */}
       {!lgpdLoading && isEnforcementEnabled && !hasValidConsent && patient && (
         <LgpdBlockingOverlay
@@ -2323,7 +2323,7 @@ export default function Prontuario() {
       )}
 
       {/* Main Content with Responsive Tab Navigation */}
-      <div id="print-area" className="flex flex-col flex-1 overflow-hidden">
+      <div id="print-area" className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Responsive Tab Navigation - Adapts to mobile/tablet/desktop */}
         <ProntuarioTabNav
           items={navItems.map((item) => {
@@ -2355,7 +2355,7 @@ export default function Prontuario() {
         />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 min-h-0 overflow-auto">
           <div className="p-4 md:p-6">
             {/* Alerts Banner - shown at top when there are active alerts */}
             {/* Psychology specialty uses specialized banner with risk indicators */}

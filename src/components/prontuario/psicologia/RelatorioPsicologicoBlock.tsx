@@ -263,7 +263,7 @@ export function RelatorioPsicologicoBlock({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -329,7 +329,7 @@ export function RelatorioPsicologicoBlock({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1 pr-4 max-h-[60vh]">
+              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
                 <div className="space-y-4 py-2">
                   {/* Analysis summary badges */}
                   {aggregated && <AnalysisSummary aggregated={aggregated} />}

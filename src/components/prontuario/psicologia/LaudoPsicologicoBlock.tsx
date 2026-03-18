@@ -233,7 +233,7 @@ export function LaudoPsicologicoBlock({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" />
@@ -318,7 +318,7 @@ export function LaudoPsicologicoBlock({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1 pr-4 max-h-[55vh]">
+              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[55vh]">
                 <div className="space-y-4 py-2">
                   {sections.map(section => (
                     <div key={section.key} className="space-y-2">

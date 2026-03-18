@@ -219,7 +219,7 @@ export function RelatorioEscolarBlock({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
@@ -305,7 +305,7 @@ export function RelatorioEscolarBlock({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1 pr-4 max-h-[60vh]">
+              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
                 <div className="space-y-4 py-2">
                   <div className="p-2 rounded-md bg-muted/50 border">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

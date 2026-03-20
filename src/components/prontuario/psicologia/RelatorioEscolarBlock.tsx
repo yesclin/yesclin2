@@ -220,7 +220,7 @@ export function RelatorioEscolarBlock({
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col min-h-0">
-          <DialogHeader>
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
               Relatório Psicológico Escolar
@@ -233,7 +233,8 @@ export function RelatorioEscolarBlock({
           </DialogHeader>
 
           {step === 'config' ? (
-            <div className="space-y-4 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+              <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">

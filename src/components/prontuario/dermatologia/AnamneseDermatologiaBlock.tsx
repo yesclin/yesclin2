@@ -242,15 +242,7 @@ export function AnamneseDermatologiaBlock({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold">{activeTemplateName}</h2>
-            {autosaveStatus === 'saving' && (
-              <Badge variant="outline" className="text-xs animate-pulse">Salvando...</Badge>
-            )}
-            {autosaveStatus === 'saved' && (
-              <Badge variant="outline" className="text-xs text-primary">Salvo</Badge>
-            )}
-            {autosaveStatus === 'error' && (
-              <Badge variant="destructive" className="text-xs">Erro ao salvar</Badge>
-            )}
+            <AutosaveIndicator status={autosave.status} lastSavedAt={autosave.lastSavedAt} />
           </div>
         </div>
 

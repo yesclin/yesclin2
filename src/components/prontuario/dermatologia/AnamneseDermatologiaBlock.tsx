@@ -132,7 +132,7 @@ export function AnamneseDermatologiaBlock({
     });
     setEditingRecordId(null);
     setIsEditing(true);
-    setAutosaveStatus('idle');
+    autosave.resetStatus();
   }, []);
 
   // Edit existing

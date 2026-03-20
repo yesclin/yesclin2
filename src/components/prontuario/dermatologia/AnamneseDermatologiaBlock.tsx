@@ -141,7 +141,7 @@ export function AnamneseDermatologiaBlock({
       setResponses(currentRecord.responses as Record<string, any>);
       setEditingRecordId(currentRecord.id);
       setIsEditing(true);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
     }
   }, [currentRecord]);
 

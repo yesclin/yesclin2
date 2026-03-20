@@ -296,14 +296,15 @@ export function RelatorioEscolarBlock({
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleGenerate} disabled={loading || !autorizacao}>
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Gerar Pré-visualização
-                </Button>
-              </DialogFooter>
+              </div>
             </div>
+            <DialogFooter className="shrink-0 pt-2 border-t">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleGenerate} disabled={loading || !autorizacao}>
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Gerar Pré-visualização
+              </Button>
+            </DialogFooter>
           ) : (
             <>
               <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">

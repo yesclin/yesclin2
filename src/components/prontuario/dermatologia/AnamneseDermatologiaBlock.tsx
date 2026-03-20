@@ -71,8 +71,6 @@ export function AnamneseDermatologiaBlock({
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<DynamicAnamnesisRecord | null>(null);
-  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Load records on mount
   useEffect(() => {
@@ -94,46 +92,38 @@ export function AnamneseDermatologiaBlock({
   // Current (latest) record
   const currentRecord = dynamicRecords.records[0] || null;
 
-  // Autosave with debounce
-  const triggerAutosave = useCallback(() => {
-    if (!isEditing || !resolvedTemplate) return;
-    
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
-    
-    autosaveTimer.current = setTimeout(async () => {
+  // ─── Autosave (10s debounce, silent, non-intrusive) ────────────────
+  const autosave = useAutosave({
+    enabled: isEditing,
+    debounceMs: 10_000,
+    onSave: useCallback(async () => {
+      if (!resolvedTemplate) return;
       const hasData = Object.values(responses).some(
         v => v !== null && v !== undefined && v !== "" && v !== false
       );
       if (!hasData) return;
 
-      setAutosaveStatus('saving');
-      try {
-        if (editingRecordId) {
-          await dynamicRecords.updateRecord(editingRecordId, responses);
-        } else {
-          const newId = await dynamicRecords.saveRecord({
-            templateId: resolvedTemplate.id,
-            templateVersionId: activeVersionId || resolvedTemplate.id,
-            structureSnapshot: activeStructure,
-            responses,
-            specialtyId: specialtyId || null,
-            procedureId: procedureId || null,
-            appointmentId: appointmentId || null,
-          });
-          if (newId) setEditingRecordId(newId);
-        }
-        setAutosaveStatus('saved');
-      } catch {
-        setAutosaveStatus('error');
+      if (editingRecordId) {
+        await dynamicRecords.updateRecord(editingRecordId, responses);
+      } else {
+        const newId = await dynamicRecords.saveRecord({
+          templateId: resolvedTemplate.id,
+          templateVersionId: activeVersionId || resolvedTemplate.id,
+          structureSnapshot: activeStructure,
+          responses,
+          specialtyId: specialtyId || null,
+          procedureId: procedureId || null,
+          appointmentId: appointmentId || null,
+        });
+        if (newId) setEditingRecordId(newId);
       }
-    }, 3000);
-  }, [isEditing, responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]);
+    }, [responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]),
+  });
 
   const handleResponseChange = useCallback((fieldId: string, value: any) => {
     setResponses(prev => ({ ...prev, [fieldId]: value }));
-    setAutosaveStatus('idle');
-    triggerAutosave();
-  }, [triggerAutosave]);
+    autosave.markDirty();
+  }, [autosave]);
 
   // Start new anamnesis
   const handleStartNew = useCallback(() => {

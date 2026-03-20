@@ -593,7 +593,7 @@ export function MetasTerapeuticasBlock({
                   )}
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           )}
 
           {selectedGoal && canEdit && selectedGoal.status !== 'arquivada' && (

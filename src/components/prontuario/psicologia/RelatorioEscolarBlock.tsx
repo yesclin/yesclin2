@@ -307,7 +307,7 @@ export function RelatorioEscolarBlock({
             </DialogFooter>
           ) : (
             <>
-              <ScrollArea className="flex-1 min-h-0 pr-4 max-h-[60vh]">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-4">
                 <div className="space-y-4 py-2">
                   <div className="p-2 rounded-md bg-muted/50 border">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

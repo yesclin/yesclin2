@@ -153,7 +153,7 @@ export function AnamneseDermatologiaBlock({
       setResponses(duped);
       setEditingRecordId(null);
       setIsEditing(true);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
       toast.info("Anamnese duplicada. Edite e salve como nova versão.");
     }
   }, [currentRecord]);

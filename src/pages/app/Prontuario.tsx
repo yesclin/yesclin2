@@ -1164,6 +1164,19 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'dermatologia') {
+          return (
+            <AnamneseDermatologiaBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              appointmentId={activeAppointment?.id}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
+              procedureId={activeAppointment?.procedure_id || null}
+            />
+          );
+        }
         // Default: Clínica Geral - Anamnese com versionamento
         return (
           <AnamneseBlock

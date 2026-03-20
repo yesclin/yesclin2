@@ -178,6 +178,7 @@ import {
   AlertasPediatriaBanner,
   LinhaDoTempoPediatriaBlock,
 } from "@/components/prontuario/pediatria";
+import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
 import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 

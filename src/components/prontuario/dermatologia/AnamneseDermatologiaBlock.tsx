@@ -33,6 +33,8 @@ import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnam
 import { useDynamicAnamnesisRecords, type DynamicAnamnesisRecord } from "@/hooks/prontuario/psicologia/useDynamicAnamnesisRecords";
 import { DynamicAnamnesisFormRenderer } from "@/components/prontuario/psicologia/DynamicAnamnesisFormRenderer";
 import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
+import { useAutosave } from "@/hooks/prontuario/useAutosave";
+import { AutosaveIndicator } from "@/components/prontuario/AutosaveIndicator";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AnamneseDermatologiaBlockProps {

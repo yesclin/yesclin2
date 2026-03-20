@@ -397,8 +397,8 @@ export function MetasTerapeuticasBlock({
 
       {/* ===== GOAL DETAIL DIALOG ===== */}
       <Dialog open={!!selectedGoal} onOpenChange={() => setSelectedGoal(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] min-h-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" /> {selectedGoal?.title}
             </DialogTitle>

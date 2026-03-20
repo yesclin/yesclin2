@@ -417,7 +417,7 @@ export function MetasTerapeuticasBlock({
           </DialogHeader>
 
           {selectedGoal && (
-            <ScrollArea className="flex-1 min-h-0 pr-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
               <div className="space-y-4">
                 {/* Scale Alert */}
                 {selectedGoal.goal_type === 'escala' && alertLevel !== 'none' && (

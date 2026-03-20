@@ -199,12 +199,11 @@ export function AnamneseDermatologiaBlock({
 
   // Cancel
   const handleCancel = useCallback(() => {
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosave.resetStatus();
     setIsEditing(false);
     setEditingRecordId(null);
     setResponses({});
-    setAutosaveStatus('idle');
-  }, []);
+  }, [autosave]);
 
   // Loading
   if (dynamicRecords.loading || templateLoading) {

@@ -189,7 +189,7 @@ export function AnamneseDermatologiaBlock({
       }
       setIsEditing(false);
       setEditingRecordId(null);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
       await dynamicRecords.fetchRecords();
       toast.success("Anamnese dermatológica salva com sucesso!");
     } catch {

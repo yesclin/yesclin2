@@ -599,7 +599,7 @@ export function MetasTerapeuticasBlock({
           {selectedGoal && canEdit && selectedGoal.status !== 'arquivada' && (
             <>
               <Separator />
-              <DialogFooter className="gap-2 flex-wrap">
+              <DialogFooter className="shrink-0 gap-2 flex-wrap">
                 {selectedGoal.status === 'ativa' && (
                   <>
                     <Button variant="outline" size="sm" onClick={() => { onUpdateStatus({ goalId: selectedGoal.id, status: 'pausada' }); setSelectedGoal(null); }}>

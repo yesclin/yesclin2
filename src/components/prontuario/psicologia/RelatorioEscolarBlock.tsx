@@ -347,9 +347,9 @@ export function RelatorioEscolarBlock({
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
-              <DialogFooter className="gap-2 pt-2">
+              <DialogFooter className="shrink-0 gap-2 pt-2 border-t">
                 <Button variant="outline" onClick={() => setStep('config')}>Voltar</Button>
                 <Button variant="outline" onClick={handleExportPdf}>
                   <Download className="h-4 w-4 mr-2" />

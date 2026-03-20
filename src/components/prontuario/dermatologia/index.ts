@@ -19,6 +19,8 @@ export type {
   DermatoSymptoms 
 } from './AnamneseDermatoBlock';
 
+export { AnamneseDermatologiaBlock } from './AnamneseDermatologiaBlock';
+
 export { ExameDermatoBlock } from './ExameDermatoBlock';
 export type { 
   ExameDermatoData,

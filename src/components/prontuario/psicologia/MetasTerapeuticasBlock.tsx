@@ -397,8 +397,8 @@ export function MetasTerapeuticasBlock({
 
       {/* ===== GOAL DETAIL DIALOG ===== */}
       <Dialog open={!!selectedGoal} onOpenChange={() => setSelectedGoal(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] min-h-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" /> {selectedGoal?.title}
             </DialogTitle>
@@ -417,7 +417,7 @@ export function MetasTerapeuticasBlock({
           </DialogHeader>
 
           {selectedGoal && (
-            <ScrollArea className="flex-1 min-h-0 pr-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
               <div className="space-y-4">
                 {/* Scale Alert */}
                 {selectedGoal.goal_type === 'escala' && alertLevel !== 'none' && (
@@ -593,13 +593,13 @@ export function MetasTerapeuticasBlock({
                   )}
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           )}
 
           {selectedGoal && canEdit && selectedGoal.status !== 'arquivada' && (
             <>
               <Separator />
-              <DialogFooter className="gap-2 flex-wrap">
+              <DialogFooter className="shrink-0 gap-2 flex-wrap">
                 {selectedGoal.status === 'ativa' && (
                   <>
                     <Button variant="outline" size="sm" onClick={() => { onUpdateStatus({ goalId: selectedGoal.id, status: 'pausada' }); setSelectedGoal(null); }}>

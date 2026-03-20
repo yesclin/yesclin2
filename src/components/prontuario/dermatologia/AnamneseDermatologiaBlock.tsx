@@ -6,7 +6,7 @@
  * Suporta: criação, edição, autosave, histórico e visualização.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,8 @@ import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnam
 import { useDynamicAnamnesisRecords, type DynamicAnamnesisRecord } from "@/hooks/prontuario/psicologia/useDynamicAnamnesisRecords";
 import { DynamicAnamnesisFormRenderer } from "@/components/prontuario/psicologia/DynamicAnamnesisFormRenderer";
 import { AnamneseModelSelector } from "@/components/prontuario/AnamneseModelSelector";
+import { useAutosave } from "@/hooks/prontuario/useAutosave";
+import { AutosaveIndicator } from "@/components/prontuario/AutosaveIndicator";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AnamneseDermatologiaBlockProps {
@@ -69,8 +71,6 @@ export function AnamneseDermatologiaBlock({
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<DynamicAnamnesisRecord | null>(null);
-  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Load records on mount
   useEffect(() => {
@@ -92,46 +92,38 @@ export function AnamneseDermatologiaBlock({
   // Current (latest) record
   const currentRecord = dynamicRecords.records[0] || null;
 
-  // Autosave with debounce
-  const triggerAutosave = useCallback(() => {
-    if (!isEditing || !resolvedTemplate) return;
-    
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
-    
-    autosaveTimer.current = setTimeout(async () => {
+  // ─── Autosave (10s debounce, silent, non-intrusive) ────────────────
+  const autosave = useAutosave({
+    enabled: isEditing,
+    debounceMs: 10_000,
+    onSave: useCallback(async () => {
+      if (!resolvedTemplate) return;
       const hasData = Object.values(responses).some(
         v => v !== null && v !== undefined && v !== "" && v !== false
       );
       if (!hasData) return;
 
-      setAutosaveStatus('saving');
-      try {
-        if (editingRecordId) {
-          await dynamicRecords.updateRecord(editingRecordId, responses);
-        } else {
-          const newId = await dynamicRecords.saveRecord({
-            templateId: resolvedTemplate.id,
-            templateVersionId: activeVersionId || resolvedTemplate.id,
-            structureSnapshot: activeStructure,
-            responses,
-            specialtyId: specialtyId || null,
-            procedureId: procedureId || null,
-            appointmentId: appointmentId || null,
-          });
-          if (newId) setEditingRecordId(newId);
-        }
-        setAutosaveStatus('saved');
-      } catch {
-        setAutosaveStatus('error');
+      if (editingRecordId) {
+        await dynamicRecords.updateRecord(editingRecordId, responses);
+      } else {
+        const newId = await dynamicRecords.saveRecord({
+          templateId: resolvedTemplate.id,
+          templateVersionId: activeVersionId || resolvedTemplate.id,
+          structureSnapshot: activeStructure,
+          responses,
+          specialtyId: specialtyId || null,
+          procedureId: procedureId || null,
+          appointmentId: appointmentId || null,
+        });
+        if (newId) setEditingRecordId(newId);
       }
-    }, 3000);
-  }, [isEditing, responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]);
+    }, [responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]),
+  });
 
   const handleResponseChange = useCallback((fieldId: string, value: any) => {
     setResponses(prev => ({ ...prev, [fieldId]: value }));
-    setAutosaveStatus('idle');
-    triggerAutosave();
-  }, [triggerAutosave]);
+    autosave.markDirty();
+  }, [autosave]);
 
   // Start new anamnesis
   const handleStartNew = useCallback(() => {
@@ -140,7 +132,7 @@ export function AnamneseDermatologiaBlock({
     });
     setEditingRecordId(null);
     setIsEditing(true);
-    setAutosaveStatus('idle');
+    autosave.resetStatus();
   }, []);
 
   // Edit existing
@@ -149,7 +141,7 @@ export function AnamneseDermatologiaBlock({
       setResponses(currentRecord.responses as Record<string, any>);
       setEditingRecordId(currentRecord.id);
       setIsEditing(true);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
     }
   }, [currentRecord]);
 
@@ -161,7 +153,7 @@ export function AnamneseDermatologiaBlock({
       setResponses(duped);
       setEditingRecordId(null);
       setIsEditing(true);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
       toast.info("Anamnese duplicada. Edite e salve como nova versão.");
     }
   }, [currentRecord]);
@@ -197,7 +189,7 @@ export function AnamneseDermatologiaBlock({
       }
       setIsEditing(false);
       setEditingRecordId(null);
-      setAutosaveStatus('idle');
+      autosave.resetStatus();
       await dynamicRecords.fetchRecords();
       toast.success("Anamnese dermatológica salva com sucesso!");
     } catch {
@@ -207,12 +199,11 @@ export function AnamneseDermatologiaBlock({
 
   // Cancel
   const handleCancel = useCallback(() => {
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosave.resetStatus();
     setIsEditing(false);
     setEditingRecordId(null);
     setResponses({});
-    setAutosaveStatus('idle');
-  }, []);
+  }, [autosave]);
 
   // Loading
   if (dynamicRecords.loading || templateLoading) {
@@ -251,15 +242,7 @@ export function AnamneseDermatologiaBlock({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold">{activeTemplateName}</h2>
-            {autosaveStatus === 'saving' && (
-              <Badge variant="outline" className="text-xs animate-pulse">Salvando...</Badge>
-            )}
-            {autosaveStatus === 'saved' && (
-              <Badge variant="outline" className="text-xs text-primary">Salvo</Badge>
-            )}
-            {autosaveStatus === 'error' && (
-              <Badge variant="destructive" className="text-xs">Erro ao salvar</Badge>
-            )}
+            <AutosaveIndicator status={autosave.status} lastSavedAt={autosave.lastSavedAt} />
           </div>
         </div>
 

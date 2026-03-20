@@ -247,7 +247,7 @@ export function AnamneseBlock({
     }
   }, [activeTemplate, selectedTemplateId]);
 
-  // ─── Auto-save ─────────────────────────────────────────────────────
+  // ─── Auto-save (10s debounce, silent) ───────────────────────────────
   useEffect(() => {
     if (!isEditing) return;
     const currentDataStr = JSON.stringify(structuredData);
@@ -257,7 +257,7 @@ export function AnamneseBlock({
     autoSaveTimer.current = setTimeout(() => {
       lastSavedData.current = currentDataStr;
       setLastAutoSave(new Date());
-    }, 3000);
+    }, 10000);
 
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);

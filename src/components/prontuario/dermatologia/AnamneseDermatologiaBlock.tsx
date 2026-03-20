@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,20 +19,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  ClipboardList,
   Plus,
   History,
   Copy,
   User,
   Calendar,
-  FileText,
   Scan,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useClinicData } from "@/hooks/useClinicData";
 import { useResolvedAnamnesisTemplate } from "@/hooks/prontuario/useResolvedAnamnesisTemplate";
 import { useDynamicAnamnesisRecords, type DynamicAnamnesisRecord } from "@/hooks/prontuario/psicologia/useDynamicAnamnesisRecords";
 import { DynamicAnamnesisFormRenderer } from "@/components/prontuario/psicologia/DynamicAnamnesisFormRenderer";
@@ -58,7 +54,6 @@ export function AnamneseDermatologiaBlock({
   specialtyId,
   procedureId,
 }: AnamneseDermatologiaBlockProps) {
-  const { clinic } = useClinicData();
   const dynamicRecords = useDynamicAnamnesisRecords(patientId);
 
   // Template resolution
@@ -89,21 +84,17 @@ export function AnamneseDermatologiaBlock({
     }
   }, [resolvedTemplate, selectedTemplateId]);
 
-  // Active template
-  const activeTemplate = selectedTemplateId
-    ? allTemplates?.find(t => t.id === selectedTemplateId)
-    : resolvedTemplate;
+  // Active template (resolved has full structure, allTemplates has partial)
+  const activeStructure = resolvedTemplate?.structure || resolvedTemplate?.campos;
+  const activeTemplateName = resolvedTemplate?.name || "Anamnese Dermatológica Geral (Clínica)";
+  const activeVersionId = resolvedTemplate?.current_version_id;
 
-  const activeStructure = activeTemplate?.structure || activeTemplate?.campos;
-
-  // Current (latest) record for this specialty
-  const currentRecord = dynamicRecords.records.find(
-    r => r.template_id === activeTemplate?.id
-  ) || dynamicRecords.records[0] || null;
+  // Current (latest) record
+  const currentRecord = dynamicRecords.records[0] || null;
 
   // Autosave with debounce
   const triggerAutosave = useCallback(() => {
-    if (!isEditing || !activeTemplate) return;
+    if (!isEditing || !resolvedTemplate) return;
     
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     
@@ -119,9 +110,9 @@ export function AnamneseDermatologiaBlock({
           await dynamicRecords.updateRecord(editingRecordId, responses);
         } else {
           const newId = await dynamicRecords.saveRecord({
-            templateId: activeTemplate.id,
-            versionId: activeTemplate.current_version_id || activeTemplate.id,
-            structure: activeStructure as Json,
+            templateId: resolvedTemplate.id,
+            templateVersionId: activeVersionId || resolvedTemplate.id,
+            structureSnapshot: activeStructure,
             responses,
             specialtyId: specialtyId || null,
             procedureId: procedureId || null,
@@ -134,7 +125,7 @@ export function AnamneseDermatologiaBlock({
         setAutosaveStatus('error');
       }
     }, 3000);
-  }, [isEditing, responses, editingRecordId, activeTemplate, activeStructure, specialtyId, procedureId, appointmentId, dynamicRecords]);
+  }, [isEditing, responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]);
 
   const handleResponseChange = useCallback((fieldId: string, value: any) => {
     setResponses(prev => ({ ...prev, [fieldId]: value }));
@@ -178,28 +169,26 @@ export function AnamneseDermatologiaBlock({
   // Save
   const handleSave = useCallback(async () => {
     // Validate required
-    const requiredFields = ['queixa_principal', 'descricao_exame_fisico', 'tipo_atendimento'];
-    const missing = requiredFields.filter(f => !responses[f]);
-    if (missing.length > 0) {
-      toast.error("Preencha os campos obrigatórios: " + missing.map(f => {
-        if (f === 'queixa_principal') return 'Queixa Principal';
-        if (f === 'descricao_exame_fisico') return 'Descrição do Exame Físico';
-        if (f === 'tipo_atendimento') return 'Tipo de Atendimento';
-        return f;
-      }).join(', '));
+    const requiredMissing: string[] = [];
+    if (!responses.queixa_principal) requiredMissing.push('Queixa Principal');
+    if (!responses.descricao_exame_fisico) requiredMissing.push('Descrição do Exame Físico');
+    if (!responses.tipo_atendimento) requiredMissing.push('Tipo de Atendimento');
+    
+    if (requiredMissing.length > 0) {
+      toast.error("Preencha os campos obrigatórios: " + requiredMissing.join(', '));
       return;
     }
 
-    if (!activeTemplate) return;
+    if (!resolvedTemplate) return;
 
     try {
       if (editingRecordId) {
         await dynamicRecords.updateRecord(editingRecordId, responses);
       } else {
         await dynamicRecords.saveRecord({
-          templateId: activeTemplate.id,
-          versionId: activeTemplate.current_version_id || activeTemplate.id,
-          structure: activeStructure as Json,
+          templateId: resolvedTemplate.id,
+          templateVersionId: activeVersionId || resolvedTemplate.id,
+          structureSnapshot: activeStructure,
           responses,
           specialtyId: specialtyId || null,
           procedureId: procedureId || null,
@@ -211,10 +200,10 @@ export function AnamneseDermatologiaBlock({
       setAutosaveStatus('idle');
       await dynamicRecords.fetchRecords();
       toast.success("Anamnese dermatológica salva com sucesso!");
-    } catch (err) {
+    } catch {
       toast.error("Erro ao salvar anamnese.");
     }
-  }, [responses, editingRecordId, activeTemplate, activeStructure, specialtyId, procedureId, appointmentId, dynamicRecords]);
+  }, [responses, editingRecordId, resolvedTemplate, activeStructure, activeVersionId, specialtyId, procedureId, appointmentId, dynamicRecords]);
 
   // Cancel
   const handleCancel = useCallback(() => {
@@ -229,10 +218,8 @@ export function AnamneseDermatologiaBlock({
   if (dynamicRecords.loading || templateLoading) {
     return (
       <Card>
-        <CardHeader>
+        <CardContent className="p-6 space-y-4">
           <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent className="space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -242,7 +229,7 @@ export function AnamneseDermatologiaBlock({
   }
 
   // No template found
-  if (!activeTemplate || !activeStructure) {
+  if (!resolvedTemplate || !activeStructure) {
     return (
       <Card className="border-dashed">
         <CardContent className="p-8 text-center">
@@ -256,19 +243,19 @@ export function AnamneseDermatologiaBlock({
     );
   }
 
-  // Edit mode - use DynamicAnamnesisFormRenderer
+  // Edit mode
   if (isEditing) {
     return (
       <div className="space-y-3">
         {/* Autosave indicator */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Anamnese Dermatológica Geral (Clínica)</h2>
+            <h2 className="text-lg font-semibold">{activeTemplateName}</h2>
             {autosaveStatus === 'saving' && (
               <Badge variant="outline" className="text-xs animate-pulse">Salvando...</Badge>
             )}
             {autosaveStatus === 'saved' && (
-              <Badge variant="outline" className="text-xs text-green-600">Salvo</Badge>
+              <Badge variant="outline" className="text-xs text-primary">Salvo</Badge>
             )}
             {autosaveStatus === 'error' && (
               <Badge variant="destructive" className="text-xs">Erro ao salvar</Badge>
@@ -278,7 +265,7 @@ export function AnamneseDermatologiaBlock({
 
         <DynamicAnamnesisFormRenderer
           structure={activeStructure as Json}
-          templateName={activeTemplate.name || "Anamnese Dermatológica Geral (Clínica)"}
+          templateName={activeTemplateName}
           responses={responses}
           isEditing={true}
           saving={dynamicRecords.saving}
@@ -323,19 +310,10 @@ export function AnamneseDermatologiaBlock({
           </div>
         </div>
 
-        {/* Template selector */}
-        {allTemplates && allTemplates.length > 1 && (
-          <AnamneseModelSelector
-            templates={allTemplates}
-            selectedId={selectedTemplateId}
-            onSelect={setSelectedTemplateId}
-          />
-        )}
-
         {/* Record view */}
         <DynamicAnamnesisFormRenderer
           structure={(currentRecord.structure_snapshot || activeStructure) as Json}
-          templateName={currentRecord.template_name || "Anamnese Dermatológica Geral (Clínica)"}
+          templateName={currentRecord.template_name || activeTemplateName}
           responses={currentRecord.responses as Record<string, any>}
           isEditing={false}
           canEdit={canEdit}
@@ -420,34 +398,22 @@ export function AnamneseDermatologiaBlock({
     );
   }
 
-  // Empty state
+  // Empty state - use AnamneseModelSelector
   return (
-    <div className="space-y-4">
-      {/* Template selector */}
-      {allTemplates && allTemplates.length > 1 && (
-        <AnamneseModelSelector
-          templates={allTemplates}
-          selectedId={selectedTemplateId}
-          onSelect={setSelectedTemplateId}
-        />
-      )}
-
-      <Card className="border-dashed">
-        <CardContent className="p-8 text-center">
-          <Scan className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <h3 className="font-semibold mb-2">Nenhuma anamnese dermatológica registrada</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Registre a anamnese dermatológica do paciente para iniciar o acompanhamento clínico.
-          </p>
-          {canEdit && (
-            <Button onClick={handleStartNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Anamnese Dermatológica
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <AnamneseModelSelector
+      icon={<Scan className="h-12 w-12 text-muted-foreground opacity-50" />}
+      emptyTitle="Nenhuma anamnese dermatológica registrada"
+      emptyDescription="Registre a anamnese dermatológica do paciente para iniciar o acompanhamento clínico."
+      registerLabel="Nova Anamnese Dermatológica"
+      resolvedTemplate={resolvedTemplate}
+      allTemplates={allTemplates || []}
+      isLoading={templateLoading}
+      selectedTemplateId={selectedTemplateId}
+      onTemplateChange={setSelectedTemplateId}
+      canEdit={canEdit}
+      onRegister={handleStartNew}
+      specialtyLabel="Dermatologia"
+    />
   );
 }
 

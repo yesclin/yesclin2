@@ -276,8 +276,8 @@ export function CondutaBlock({
 
       {/* New Conduta Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-primary" />
               Nova Conduta
@@ -287,6 +287,8 @@ export function CondutaBlock({
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
           {/* Current professional info */}
           {currentProfessionalName && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
@@ -297,9 +299,6 @@ export function CondutaBlock({
               <span>{format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
             </div>
           )}
-
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6">
               {/* Vincular a evolução */}
               {availableEvolucoes.length > 0 && (
                 <div className="space-y-2">
@@ -416,11 +415,9 @@ export function CondutaBlock({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
-          <Separator />
-
-          <DialogFooter className="gap-2">
+          <DialogFooter className="shrink-0 border-t px-6 py-4 gap-2 bg-background">
             <Button variant="outline" onClick={handleCloseForm} disabled={saving}>
               <X className="h-4 w-4 mr-1" />
               Cancelar

@@ -289,8 +289,8 @@ export function EvolucoesBlock({
 
       {/* New Evolution Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-3xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
               Nova Evolução Clínica
@@ -298,20 +298,19 @@ export function EvolucoesBlock({
             <DialogDescription>
               Registre os dados do atendimento. Após assinada, a evolução não poderá ser alterada.
             </DialogDescription>
+            {/* Current professional info */}
+            {currentProfessionalName && (
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg mt-3">
+                <User className="h-4 w-4" />
+                <span>Profissional: <strong>{currentProfessionalName}</strong></span>
+                <span className="mx-1">•</span>
+                <Clock className="h-4 w-4" />
+                <span>{format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+              </div>
+            )}
           </DialogHeader>
 
-          {/* Current professional info */}
-          {currentProfessionalName && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-              <User className="h-4 w-4" />
-              <span>Profissional: <strong>{currentProfessionalName}</strong></span>
-              <span className="mx-2">•</span>
-              <Clock className="h-4 w-4" />
-              <span>{format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-            </div>
-          )}
-
-          <ScrollArea className="flex-1 min-h-0 pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
             <div className="space-y-6">
               {/* Tipo de Atendimento */}
               <div className="space-y-2">
@@ -383,11 +382,9 @@ export function EvolucoesBlock({
                 />
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
-          <Separator />
-
-          <DialogFooter className="gap-2">
+          <DialogFooter className="shrink-0 border-t px-6 py-4 gap-2 bg-background">
             <Button variant="outline" onClick={handleCloseForm} disabled={saving}>
               <X className="h-4 w-4 mr-1" />
               Cancelar

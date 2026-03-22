@@ -309,7 +309,7 @@ export function ExameFisicoBlock({
       {/* New Exam Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex min-h-0 flex-col overflow-hidden">
-          <DialogHeader>
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
               Novo Exame Físico
@@ -321,7 +321,7 @@ export function ExameFisicoBlock({
 
           {/* Current professional info */}
           {currentProfessionalName && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            <div className="shrink-0 flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               <User className="h-4 w-4" />
               <span>Profissional: <strong>{currentProfessionalName}</strong></span>
               <span className="mx-2">•</span>
@@ -330,7 +330,7 @@ export function ExameFisicoBlock({
             </div>
           )}
 
-          <ScrollArea className="flex-1 min-h-0 pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-4">
             <div className="space-y-6">
               {/* Vincular a evolução */}
               {availableEvolucoes.length > 0 && (
@@ -493,11 +493,11 @@ export function ExameFisicoBlock({
                 />
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
           <Separator />
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="shrink-0 gap-2">
             <Button variant="outline" onClick={handleCloseForm} disabled={saving}>
               <X className="h-4 w-4 mr-1" />
               Cancelar

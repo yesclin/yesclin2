@@ -65,22 +65,23 @@ interface DynamicAnamnesisFormRendererProps {
 function parseSections(structure: Json): TemplateSection[] {
   if (!Array.isArray(structure)) return [];
   return (structure as any[])
-    .map((s) => ({
-      id: s.id || "",
-      title: s.title || "Seção",
-      order: s.order ?? 0,
-      fields: Array.isArray(s.fields)
-        ? s.fields.map((f: any) => ({
-            id: f.id || "",
-            type: f.type || "text",
-            label: f.label || "",
-            order: f.order ?? 0,
-            required: f.required ?? false,
-            options: f.options,
-            placeholder: f.placeholder,
-          }))
-        : [],
-    }))
+    .map((s) => {
+      const rawFields = Array.isArray(s.fields) ? s.fields : Array.isArray(s.campos) ? s.campos : [];
+      return {
+        id: s.id || "",
+        title: s.title || s.titulo || "Seção",
+        order: s.order ?? 0,
+        fields: rawFields.map((f: any) => ({
+          id: f.id || f.nome || "",
+          type: f.type || f.tipo || "text",
+          label: f.label || f.nome || "",
+          order: f.order ?? 0,
+          required: f.required ?? f.obrigatorio ?? false,
+          options: f.options || f.opcoes,
+          placeholder: f.placeholder,
+        })),
+      };
+    })
     .sort((a, b) => a.order - b.order);
 }
 

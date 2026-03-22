@@ -125,7 +125,29 @@ export function useAnamnesisTemplatesV2(options?: {
         // Build structure: prefer versioned structure, fallback to legacy campos
         let structure: TemplateSection[] = [];
         if (version?.structure) {
-          structure = version.structure as unknown as TemplateSection[];
+          // Normalize: some templates store sections with titulo/campos instead of title/fields
+          const raw = version.structure as any[];
+          if (Array.isArray(raw)) {
+            structure = raw.map((s: any, idx: number) => ({
+              id: s.id || `section_${idx}`,
+              type: 'section' as const,
+              title: s.title || s.titulo || 'Seção',
+              fields: Array.isArray(s.fields)
+                ? s.fields
+                : Array.isArray(s.campos)
+                  ? (s.campos as any[]).map((c: any) => ({
+                      id: c.id || c.nome || '',
+                      type: c.type || c.tipo || 'text',
+                      label: c.label || c.nome || '',
+                      required: c.required ?? c.obrigatorio ?? false,
+                      placeholder: c.placeholder || '',
+                      options: c.options || c.opcoes || undefined,
+                    }))
+                  : [],
+            }));
+          } else {
+            structure = [];
+          }
         } else if (Array.isArray(tmpl.campos) && tmpl.campos.length > 0) {
           // Convert legacy flat campos (with section property) into grouped sections
           const sectionMap = new Map<string, TemplateField[]>();

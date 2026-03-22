@@ -1546,6 +1546,17 @@ export default function Prontuario() {
             />
           );
         }
+        if (activeSpecialtyKey === 'dermatologia') {
+          return (
+            <PlanoCondutaDermatoBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
+            />
+          );
+        }
         // Default: Clínica Geral - Plano / Conduta
         return (
           <CondutaBlock

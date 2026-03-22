@@ -179,6 +179,7 @@ import {
   LinhaDoTempoPediatriaBlock,
 } from "@/components/prontuario/pediatria";
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
+import { AnamnesePediatriaWrapper } from "@/components/prontuario/pediatria/AnamnesePediatriaWrapper";
 import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
 import { DiagnosticoDermatoWrapper } from "@/components/prontuario/dermatologia/DiagnosticoDermatoWrapper";
 import { DiagnosticoOdontologicoWrapper } from "@/components/prontuario/odontology/DiagnosticoOdontologicoWrapper";

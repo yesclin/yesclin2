@@ -308,7 +308,7 @@ export function ExameFisicoBlock({
 
       {/* New Exam Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex min-h-0 flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
@@ -330,7 +330,7 @@ export function ExameFisicoBlock({
             </div>
           )}
 
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
             <div className="space-y-6">
               {/* Vincular a evolução */}
               {availableEvolucoes.length > 0 && (

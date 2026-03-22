@@ -179,6 +179,7 @@ import {
   LinhaDoTempoPediatriaBlock,
 } from "@/components/prontuario/pediatria";
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
+import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
 import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
@@ -1542,6 +1543,17 @@ export default function Prontuario() {
               clinicId={clinicIdForFisio || null}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
+            />
+          );
+        }
+        if (activeSpecialtyKey === 'dermatologia') {
+          return (
+            <PlanoCondutaDermatoBlock
+              patientId={patientId}
+              clinicId={clinicIdForFisio || null}
+              professionalId={currentProfessionalId || null}
+              canEdit={canEditCurrentTab}
+              specialtyId={activeSpecialtyId}
             />
           );
         }

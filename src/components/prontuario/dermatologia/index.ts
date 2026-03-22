@@ -85,3 +85,6 @@ export {
 export { LinhaDoTempoDermatoBlock } from './LinhaDoTempoDermatoBlock';
 export type { TimelineItem, TimelineRecordType } from './LinhaDoTempoDermatoBlock';
 export { TIMELINE_RECORD_TYPES } from './LinhaDoTempoDermatoBlock';
+
+export { PlanoCondutaDermatoBlock } from './PlanoCondutaDermatoBlock';
+export type { PlanoCondutaDermatoData } from './PlanoCondutaDermatoBlock';

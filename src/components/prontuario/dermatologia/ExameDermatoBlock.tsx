@@ -374,7 +374,7 @@ export function ExameDermatoBlock({
           )}
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[700px] pr-4">
+          <ScrollArea className="max-h-[60vh] pr-4">
             <div className="space-y-6">
               {/* Lesões */}
               <div className="space-y-4">

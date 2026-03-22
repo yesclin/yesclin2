@@ -311,7 +311,7 @@ export function EvolucoesBlock({
             </div>
           )}
 
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
             <div className="space-y-6">
               {/* Tipo de Atendimento */}
               <div className="space-y-2">

@@ -179,6 +179,7 @@ import {
   LinhaDoTempoPediatriaBlock,
 } from "@/components/prontuario/pediatria";
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
+import { AnamnesePediatriaWrapper } from "@/components/prontuario/pediatria/AnamnesePediatriaWrapper";
 import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
 import { DiagnosticoDermatoWrapper } from "@/components/prontuario/dermatologia/DiagnosticoDermatoWrapper";
 import { DiagnosticoOdontologicoWrapper } from "@/components/prontuario/odontology/DiagnosticoOdontologicoWrapper";
@@ -1313,12 +1314,17 @@ export default function Prontuario() {
 
       // ===== PEDIATRIA - SPECIFIC BLOCKS =====
       case 'anamnese_pediatrica':
-        // Pediatria - Anamnese Pediátrica
+        // Pediatria - Anamnese Pediátrica (dynamic templates)
         if (!patientId) return null;
         return (
-          <AnamnesePediatriaBlock
+          <AnamnesePediatriaWrapper
             patientId={patientId}
-            isEditable={canEditCurrentTab}
+            clinicId={clinicIdForFisio || null}
+            appointmentId={activeAppointment?.id}
+            professionalId={currentProfessionalId || null}
+            canEdit={canEditCurrentTab}
+            specialtyId={activeSpecialtyId}
+            procedureId={activeAppointment?.procedure_id || null}
           />
         );
 

@@ -65,6 +65,7 @@ export interface PlanoCondutaDermatoData {
   created_by?: string;
   created_by_name?: string;
   updated_at?: string;
+  source?: 'clinical_evolutions' | 'patient_condutas';
 }
 
 interface PlanoCondutaDermatoBlockProps {
@@ -103,21 +104,34 @@ export function PlanoCondutaDermatoBlock({
   const [observacoes, setObservacoes] = useState('');
 
   const fetchPlanos = useCallback(async () => {
-    if (!patientId || !clinicId) return;
+    if (!patientId || !clinicId) {
+      setPlanos([]);
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('clinical_evolutions')
-        .select('*')
-        .eq('patient_id', patientId)
-        .eq('clinic_id', clinicId)
-        .eq('evolution_type', 'conduct_dermato')
-        .order('created_at', { ascending: false });
+      const [evolutionRes, legacyRes] = await Promise.all([
+        supabase
+          .from('clinical_evolutions')
+          .select('*')
+          .eq('patient_id', patientId)
+          .eq('clinic_id', clinicId)
+          .eq('evolution_type', 'conduct_dermato')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('patient_condutas')
+          .select('*')
+          .eq('patient_id', patientId)
+          .eq('clinic_id', clinicId)
+          .order('data_hora', { ascending: false }),
+      ]);
 
-      if (error) throw error;
+      if (evolutionRes.error) throw evolutionRes.error;
+      if (legacyRes.error) throw legacyRes.error;
 
-      const mapped: PlanoCondutaDermatoData[] = (data || []).map((row: any) => {
-        const content = row.content as Record<string, any> || {};
+      const mappedEvolutions: PlanoCondutaDermatoData[] = (evolutionRes.data || []).map((row: any) => {
+        const content = (row.content as Record<string, any>) || {};
         return {
           id: row.id,
           patient_id: row.patient_id,
@@ -137,10 +151,37 @@ export function PlanoCondutaDermatoBlock({
           created_by: row.professional_id,
           created_by_name: content.professional_name || '',
           updated_at: row.updated_at,
+          source: 'clinical_evolutions',
         };
       });
 
-      setPlanos(mapped);
+      const mappedLegacy: PlanoCondutaDermatoData[] = (legacyRes.data || []).map((row: any) => ({
+        id: row.id,
+        patient_id: row.patient_id,
+        hipotese_diagnostica: '',
+        hipoteses_diferenciais: '',
+        plano_terapeutico: '',
+        conduta_clinica: row.retorno_observacoes || '',
+        medicamentos_prescritos: row.prescricoes || '',
+        exames_solicitados: row.solicitacao_exames || '',
+        orientacoes_paciente: row.orientacoes || '',
+        necessidade_retorno: !!row.retorno_agendado,
+        prazo_retorno: row.retorno_agendado || '',
+        encaminhamento: row.encaminhamentos || '',
+        observacoes: row.retorno_observacoes || '',
+        status: 'draft',
+        created_at: row.data_hora || row.created_at,
+        created_by: row.profissional_id,
+        created_by_name: '',
+        updated_at: row.created_at,
+        source: 'patient_condutas',
+      }));
+
+      const merged = [...mappedEvolutions, ...mappedLegacy].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+
+      setPlanos(merged);
     } catch (err) {
       console.error('Error fetching planos dermatologia:', err);
     } finally {
@@ -261,6 +302,13 @@ export function PlanoCondutaDermatoBlock({
 
   const hasContent = (value?: string) => value && value.trim().length > 0;
 
+  const formatPlanoDate = (value?: string) => {
+    if (!value) return 'Data não informada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Data não informada';
+    return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  };
+
   const renderViewField = (label: string, value?: string, icon?: React.ReactNode) => {
     if (!hasContent(value)) return null;
     return (
@@ -275,12 +323,6 @@ export function PlanoCondutaDermatoBlock({
   };
 
   const renderPlanoCard = (plano: PlanoCondutaDermatoData) => {
-    const anyContent = hasContent(plano.hipotese_diagnostica) ||
-      hasContent(plano.plano_terapeutico) ||
-      hasContent(plano.conduta_clinica) ||
-      hasContent(plano.medicamentos_prescritos) ||
-      hasContent(plano.exames_solicitados);
-
     return (
       <Card key={plano.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => setSelectedPlano(plano)}>
         <CardContent className="p-4">
@@ -297,7 +339,7 @@ export function PlanoCondutaDermatoBlock({
               <Badge variant={plano.status === 'signed' ? 'default' : 'secondary'} className="text-xs">
                 {plano.status === 'signed' ? 'Assinado' : 'Rascunho'}
               </Badge>
-              {canEdit && plano.status !== 'signed' && (
+              {canEdit && plano.status !== 'signed' && plano.source !== 'patient_condutas' && (
                 <Button size="sm" variant="ghost" className="h-7" onClick={(e) => { e.stopPropagation(); handleEdit(plano); }}>
                   <Edit3 className="h-3 w-3" />
                 </Button>
@@ -306,7 +348,7 @@ export function PlanoCondutaDermatoBlock({
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {format(parseISO(plano.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            {formatPlanoDate(plano.created_at)}
           </div>
           {hasContent(plano.plano_terapeutico) && (
             <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{plano.plano_terapeutico}</p>
@@ -425,7 +467,7 @@ export function PlanoCondutaDermatoBlock({
             <Target className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
             <h3 className="font-semibold mb-2">Nenhum plano/conduta registrado</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Nenhum plano ou conduta dermatológica registrado para este prontuário até o momento.
+              Nenhum plano ou conduta registrado até o momento.
             </p>
             {canEdit && (
               <Button onClick={handleStartNew} variant="outline">
@@ -450,7 +492,7 @@ export function PlanoCondutaDermatoBlock({
               Plano / Conduta Dermatológica
             </DialogTitle>
             <DialogDescription>
-              {selectedPlano && format(parseISO(selectedPlano.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              {selectedPlano && formatPlanoDate(selectedPlano.created_at)}
             </DialogDescription>
           </DialogHeader>
           {selectedPlano && (

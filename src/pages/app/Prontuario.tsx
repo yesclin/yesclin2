@@ -1469,6 +1469,18 @@ export default function Prontuario() {
             />
           );
         }
+        // Dermatologia - Diagnóstico Dermatológico
+        if (activeSpecialtyKey === 'dermatologia') {
+          return (
+            <DiagnosticoDermatoWrapper
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+              professionalId={currentProfessionalId}
+              professionalName={currentProfessionalName}
+            />
+          );
+        }
         // Clínica Geral - Hipóteses Diagnósticas (CID-10) - handled at bottom
         break;
 

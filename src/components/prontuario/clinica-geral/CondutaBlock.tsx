@@ -287,6 +287,8 @@ export function CondutaBlock({
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
           {/* Current professional info */}
           {currentProfessionalName && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
@@ -297,9 +299,6 @@ export function CondutaBlock({
               <span>{format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
             </div>
           )}
-
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6">
               {/* Vincular a evolução */}
               {availableEvolucoes.length > 0 && (
                 <div className="space-y-2">

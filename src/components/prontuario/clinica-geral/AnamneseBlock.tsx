@@ -163,7 +163,7 @@ function v2TemplateToUnified(t: AnamnesisTemplateV2): UnifiedTemplate {
     secoes: t.structure
       .map(section => {
         // Filter out identification fields from any section
-        const filteredFields = section.fields.filter(f => !IDENTIFICATION_FIELD_IDS.has(f.id));
+        const filteredFields = (section.fields || []).filter(f => !IDENTIFICATION_FIELD_IDS.has(f.id));
         return {
           id: section.id,
           titulo: section.title,

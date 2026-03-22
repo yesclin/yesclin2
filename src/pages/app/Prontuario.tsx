@@ -1169,7 +1169,7 @@ export default function Prontuario() {
           return (
             <AnamneseDermatologiaBlock
               patientId={patientId}
-              clinicId={clinicIdForFisio || null}
+              clinicId={activeAppointment?.clinic_id || clinicIdForFisio || null}
               appointmentId={activeAppointment?.id}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
@@ -1550,7 +1550,7 @@ export default function Prontuario() {
           return (
             <PlanoCondutaDermatoBlock
               patientId={patientId}
-              clinicId={clinicIdForFisio || null}
+              clinicId={activeAppointment?.clinic_id || clinicIdForFisio || null}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
               specialtyId={activeSpecialtyId}

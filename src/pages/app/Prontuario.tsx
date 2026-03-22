@@ -180,6 +180,7 @@ import {
 } from "@/components/prontuario/pediatria";
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
 import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
+import { DiagnosticoDermatoWrapper } from "@/components/prontuario/dermatologia/DiagnosticoDermatoWrapper";
 import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 

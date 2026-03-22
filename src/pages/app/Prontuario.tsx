@@ -1483,6 +1483,18 @@ export default function Prontuario() {
             />
           );
         }
+        // Odontologia - Diagnóstico Odontológico
+        if (activeSpecialtyKey === 'odontologia') {
+          return (
+            <DiagnosticoOdontologicoWrapper
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+              professionalId={currentProfessionalId}
+              professionalName={currentProfessionalName}
+            />
+          );
+        }
         // Clínica Geral - Hipóteses Diagnósticas (CID-10) - handled at bottom
         break;
 

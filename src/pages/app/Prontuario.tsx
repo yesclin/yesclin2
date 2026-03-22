@@ -180,6 +180,7 @@ import {
 } from "@/components/prontuario/pediatria";
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
 import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
+import { DiagnosticoDermatoWrapper } from "@/components/prontuario/dermatologia/DiagnosticoDermatoWrapper";
 import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
@@ -1466,6 +1467,18 @@ export default function Prontuario() {
               clinicId={clinicIdForFisio || null}
               professionalId={currentProfessionalId || null}
               canEdit={canEditCurrentTab}
+            />
+          );
+        }
+        // Dermatologia - Diagnóstico Dermatológico
+        if (activeSpecialtyKey === 'dermatologia') {
+          return (
+            <DiagnosticoDermatoWrapper
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+              professionalId={currentProfessionalId}
+              professionalName={currentProfessionalName}
             />
           );
         }

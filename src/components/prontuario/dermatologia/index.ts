@@ -38,6 +38,7 @@ export {
 
 export { DiagnosticoDermatoBlock } from './DiagnosticoDermatoBlock';
 export type { DiagnosticoDermatoData } from './DiagnosticoDermatoBlock';
+export { DiagnosticoDermatoWrapper } from './DiagnosticoDermatoWrapper';
 
 export { PrescricoesDermatoBlock } from './PrescricoesDermatoBlock';
 export type { 

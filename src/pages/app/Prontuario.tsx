@@ -181,6 +181,7 @@ import {
 import { AnamneseDermatologiaBlock } from "@/components/prontuario/dermatologia/AnamneseDermatologiaBlock";
 import { PlanoCondutaDermatoBlock } from "@/components/prontuario/dermatologia/PlanoCondutaDermatoBlock";
 import { DiagnosticoDermatoWrapper } from "@/components/prontuario/dermatologia/DiagnosticoDermatoWrapper";
+import { DiagnosticoOdontologicoWrapper } from "@/components/prontuario/odontology/DiagnosticoOdontologicoWrapper";
 import {
   useEvolucoesNutricaoData, 
   useAvaliacaoNutricionalData, 
@@ -1474,6 +1475,18 @@ export default function Prontuario() {
         if (activeSpecialtyKey === 'dermatologia') {
           return (
             <DiagnosticoDermatoWrapper
+              patientId={patientId}
+              appointmentId={activeAppointment?.id}
+              canEdit={canEditCurrentTab}
+              professionalId={currentProfessionalId}
+              professionalName={currentProfessionalName}
+            />
+          );
+        }
+        // Odontologia - Diagnóstico Odontológico
+        if (activeSpecialtyKey === 'odontologia') {
+          return (
+            <DiagnosticoOdontologicoWrapper
               patientId={patientId}
               appointmentId={activeAppointment?.id}
               canEdit={canEditCurrentTab}

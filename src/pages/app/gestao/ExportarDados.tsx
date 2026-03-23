@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Database, Users, Calendar, FileText, Package, DollarSign, Shield, Loader2, CheckCircle2, Copy, Code2 } from "lucide-react";
+import { Download, Database, Users, Calendar, FileText, Package, DollarSign, Shield, Loader2, CheckCircle2, Copy, Code2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";

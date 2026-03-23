@@ -179,21 +179,15 @@ export default function ExportarDados() {
   };
 
   const copyAllSchemas = () => {
-    const allSql = Object.entries(schemas)
-      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
-      .join("\n\n\n");
-    copyToClipboard(allSql, "Todas as tabelas");
+    copyToClipboard(orderedScript, "Script completo (ordem topológica)");
   };
 
   const downloadAllSchemas = () => {
-    const allSql = Object.entries(schemas)
-      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
-      .join("\n\n\n");
-    const blob = new Blob([allSql], { type: "text/sql;charset=utf-8;" });
+    const blob = new Blob([orderedScript], { type: "text/sql;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `yesclin-schema-${format(new Date(), "yyyy-MM-dd-HHmm")}.sql`;
+    link.download = `yesclin-schema-topological-${format(new Date(), "yyyy-MM-dd-HHmm")}.sql`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

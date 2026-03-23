@@ -199,6 +199,9 @@ export default function ExportarDados() {
 
   const categories = [...new Set(EXPORT_TABLES.map((t) => t.category))];
   const sortedSchemaKeys = Object.keys(schemas).sort();
+  const filteredSchemaKeys = schemaSearch
+    ? sortedSchemaKeys.filter((k) => k.toLowerCase().includes(schemaSearch.toLowerCase()))
+    : sortedSchemaKeys;
 
   return (
     <div className="space-y-6">

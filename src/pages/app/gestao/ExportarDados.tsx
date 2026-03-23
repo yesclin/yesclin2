@@ -90,6 +90,9 @@ export default function ExportarDados() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState<Set<string>>(new Set());
   const [exported, setExported] = useState<Set<string>>(new Set());
+  const [schemas, setSchemas] = useState<Record<string, string>>({});
+  const [loadingSchemas, setLoadingSchemas] = useState(false);
+  const [schemasLoaded, setSchemasLoaded] = useState(false);
 
   const toggleSelect = (key: string) => {
     setSelected((prev) => {
@@ -111,7 +114,6 @@ export default function ExportarDados() {
   const exportSingle = async (table: ExportTable) => {
     setExporting((prev) => new Set(prev).add(table.key));
     try {
-      // Use type assertion for dynamic table access
       const { data, error } = await (supabase.from(table.tableName as any) as any).select("*").limit(10000);
       if (error) throw error;
       if (!data || data.length === 0) {
@@ -147,105 +149,236 @@ export default function ExportarDados() {
     toast.success("Exportação concluída!");
   };
 
+  const loadSchemas = async () => {
+    setLoadingSchemas(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-table-schemas");
+      if (error) throw error;
+      if (data?.schemas) {
+        setSchemas(data.schemas);
+        setSchemasLoaded(true);
+        toast.success("Schemas carregados com sucesso!");
+      }
+    } catch (err: any) {
+      console.error("Error loading schemas:", err);
+      toast.error(`Erro ao carregar schemas: ${err.message || "erro desconhecido"}`);
+    } finally {
+      setLoadingSchemas(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label?: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(label ? `SQL de "${label}" copiado!` : "SQL copiado para a área de transferência!");
+  };
+
+  const copyAllSchemas = () => {
+    const allSql = Object.entries(schemas)
+      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
+      .join("\n\n\n");
+    copyToClipboard(allSql, "Todas as tabelas");
+  };
+
+  const downloadAllSchemas = () => {
+    const allSql = Object.entries(schemas)
+      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
+      .join("\n\n\n");
+    const blob = new Blob([allSql], { type: "text/sql;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `yesclin-schema-${format(new Date(), "yyyy-MM-dd-HHmm")}.sql`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Arquivo SQL baixado com sucesso!");
+  };
+
   const categories = [...new Set(EXPORT_TABLES.map((t) => t.category))];
+  const sortedSchemaKeys = Object.keys(schemas).sort();
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Exportar Dados</h1>
-          <p className="text-muted-foreground mt-1">
-            Exporte os dados do sistema em formato CSV para backup ou análise externa.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={selectAll} size="sm">
-            {selected.size === EXPORT_TABLES.length ? "Desmarcar Todos" : "Selecionar Todos"}
-          </Button>
-          <Button
-            onClick={exportSelected}
-            disabled={selected.size === 0 || exporting.size > 0}
-            size="sm"
-          >
-            {exporting.size > 0 ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            Exportar Selecionados ({selected.size})
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Exportar Dados</h1>
+        <p className="text-muted-foreground mt-1">
+          Exporte dados em CSV ou obtenha o SQL das tabelas para migração.
+        </p>
       </div>
 
-      {/* Tables by Category */}
-      {categories.map((category) => {
-        const tables = EXPORT_TABLES.filter((t) => t.category === category);
-        return (
-          <Card key={category}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{category}</CardTitle>
-              <CardDescription>{tables.length} tabelas disponíveis</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tables.map((table) => {
-                  const isExporting = exporting.has(table.key);
-                  const isExported = exported.has(table.key);
-                  const isSelected = selected.has(table.key);
+      <Tabs defaultValue="csv" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="csv" className="gap-2">
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </TabsTrigger>
+          <TabsTrigger value="sql" className="gap-2">
+            <Code2 className="h-4 w-4" />
+            SQL das Tabelas
+          </TabsTrigger>
+        </TabsList>
 
-                  return (
-                    <div
-                      key={table.key}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        isSelected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                      }`}
-                      onClick={() => toggleSelect(table.key)}
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleSelect(table.key)}
-                      />
-                      <table.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm truncate">{table.label}</span>
-                          {isExported && <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />}
+        {/* CSV Export Tab */}
+        <TabsContent value="csv" className="space-y-6">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={selectAll} size="sm">
+              {selected.size === EXPORT_TABLES.length ? "Desmarcar Todos" : "Selecionar Todos"}
+            </Button>
+            <Button
+              onClick={exportSelected}
+              disabled={selected.size === 0 || exporting.size > 0}
+              size="sm"
+            >
+              {exporting.size > 0 ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Exportar Selecionados ({selected.size})
+            </Button>
+          </div>
+
+          {categories.map((category) => {
+            const tables = EXPORT_TABLES.filter((t) => t.category === category);
+            return (
+              <Card key={category}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{category}</CardTitle>
+                  <CardDescription>{tables.length} tabelas disponíveis</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {tables.map((table) => {
+                      const isExporting = exporting.has(table.key);
+                      const isExported = exported.has(table.key);
+                      const isSelected = selected.has(table.key);
+
+                      return (
+                        <div
+                          key={table.key}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            isSelected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                          }`}
+                          onClick={() => toggleSelect(table.key)}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(table.key)}
+                          />
+                          <table.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm truncate">{table.label}</span>
+                              {isExported && <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">{table.description}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isExporting}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              exportSingle(table);
+                            }}
+                          >
+                            {isExporting ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{table.description}</p>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          <Card className="border-accent bg-accent/10">
+            <CardContent className="pt-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>Nota:</strong> A exportação inclui até 10.000 registros por tabela. Os arquivos CSV são codificados em UTF-8 com separador ponto e vírgula (;) para compatibilidade com Excel.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* SQL Schema Tab */}
+        <TabsContent value="sql" className="space-y-4">
+          {!schemasLoaded ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+                <Code2 className="h-12 w-12 text-muted-foreground" />
+                <div className="text-center">
+                  <h3 className="font-semibold text-lg">SQL das Tabelas do Sistema</h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Gere o SQL (CREATE TABLE) de todas as tabelas para copiar e migrar para outro banco de dados.
+                  </p>
+                </div>
+                <Button onClick={loadSchemas} disabled={loadingSchemas}>
+                  {loadingSchemas ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Database className="h-4 w-4 mr-2" />
+                  )}
+                  {loadingSchemas ? "Carregando..." : "Gerar SQL das Tabelas"}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={copyAllSchemas} variant="outline" size="sm">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar Todo o SQL
+                </Button>
+                <Button onClick={downloadAllSchemas} size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Arquivo .sql
+                </Button>
+                <Button onClick={loadSchemas} variant="ghost" size="sm" disabled={loadingSchemas}>
+                  {loadingSchemas ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recarregar"}
+                </Button>
+                <Badge variant="secondary" className="self-center">
+                  {sortedSchemaKeys.length} tabelas
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                {sortedSchemaKeys.map((tableName) => (
+                  <Card key={tableName}>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle className="text-sm font-mono">{tableName}</CardTitle>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
-                        disabled={isExporting}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          exportSingle(table);
-                        }}
+                        onClick={() => copyToClipboard(schemas[tableName], tableName)}
                       >
-                        {isExporting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copiar
                       </Button>
-                    </div>
-                  );
-                })}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ScrollArea className="max-h-[300px] w-full rounded-md border bg-muted/50">
+                        <pre className="p-3 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
+                          {schemas[tableName]}
+                        </pre>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-
-      {/* Info */}
-      <Card className="border-accent bg-accent/10">
-        <CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            <strong>Nota:</strong> A exportação inclui até 10.000 registros por tabela. Os arquivos CSV são codificados em UTF-8 com separador ponto e vírgula (;) para compatibilidade com Excel. Dados sensíveis como senhas e tokens não são exportados.
-          </p>
-        </CardContent>
-      </Card>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

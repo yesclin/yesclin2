@@ -318,10 +318,10 @@ export default function ExportarDados() {
               <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
                 <Code2 className="h-12 w-12 text-muted-foreground" />
                 <div className="text-center">
-                  <h3 className="font-semibold text-lg">SQL das Tabelas do Sistema</h3>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Gere o SQL (CREATE TABLE) de todas as tabelas para copiar e migrar para outro banco de dados.
-                  </p>
+                   <h3 className="font-semibold text-lg">SQL Completo — Ordem Topológica</h3>
+                   <p className="text-muted-foreground text-sm mt-1">
+                     Gere o script SQL completo (enums, tabelas, FKs, índices, functions, triggers) em ordem de dependências, pronto para execução.
+                   </p>
                 </div>
                 <Button onClick={loadSchemas} disabled={loadingSchemas}>
                   {loadingSchemas ? (

@@ -10,6 +10,7 @@ import {
   Package,
   BarChart3,
   ShieldAlert,
+  DatabaseBackup,
   Building,
   UserCog,
   ListChecks,

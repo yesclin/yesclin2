@@ -333,11 +333,11 @@ export default function ExportarDados() {
           ) : (
             <>
               <div className="flex flex-wrap gap-2">
-                <Button onClick={copyAllSchemas} variant="outline" size="sm">
+                <Button onClick={copyAllSchemas} size="sm">
                   <Copy className="h-4 w-4 mr-2" />
                   Copiar Todo o SQL
                 </Button>
-                <Button onClick={downloadAllSchemas} size="sm">
+                <Button onClick={downloadAllSchemas} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Baixar Arquivo .sql
                 </Button>
@@ -349,32 +349,32 @@ export default function ExportarDados() {
                 </Badge>
               </div>
 
-              <div className="space-y-3">
-                {sortedSchemaKeys.map((tableName) => (
-                  <Card key={tableName}>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle className="text-sm font-mono">{tableName}</CardTitle>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(schemas[tableName], tableName)}
-                      >
-                        <Copy className="h-3.5 w-3.5 mr-1" />
-                        Copiar
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <ScrollArea className="max-h-[300px] w-full rounded-md border bg-muted/50">
-                        <pre className="p-3 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
-                          {schemas[tableName]}
-                        </pre>
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">SQL completo — todas as tabelas</CardTitle>
+                  <CardDescription>Copie o conteúdo abaixo e cole no seu banco de destino para recriar todas as tabelas.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute top-2 right-2 z-10"
+                      onClick={copyAllSchemas}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      Copiar
+                    </Button>
+                    <ScrollArea className="h-[500px] w-full rounded-md border bg-muted/50">
+                      <pre className="p-4 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
+                        {sortedSchemaKeys
+                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
+                          .join("\n\n\n")}
+                      </pre>
+                    </ScrollArea>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
         </TabsContent>

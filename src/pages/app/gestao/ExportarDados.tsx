@@ -160,8 +160,10 @@ export default function ExportarDados() {
       if (error) throw error;
       if (data?.schemas) {
         setSchemas(data.schemas);
+        setOrderedScript(data.orderedScript || "");
+        setTableCount(data.tableCount || Object.keys(data.schemas).length);
         setSchemasLoaded(true);
-        toast.success("Schemas carregados com sucesso!");
+        toast.success(`${data.tableCount || Object.keys(data.schemas).length} tabelas carregadas em ordem topológica!`);
       }
     } catch (err: any) {
       console.error("Error loading schemas:", err);

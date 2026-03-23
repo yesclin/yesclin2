@@ -38,6 +38,7 @@ import Financas from "./pages/app/gestao/Financas";
 import Estoque from "./pages/app/gestao/Estoque";
 import Relatorios from "./pages/app/gestao/Relatorios";
 import Auditoria from "./pages/app/gestao/Auditoria";
+import ExportarDados from "./pages/app/gestao/ExportarDados";
 
 // Configurações
 import ConfigProcedimentos from "./pages/app/config/Procedimentos";

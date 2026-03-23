@@ -92,6 +92,8 @@ export default function ExportarDados() {
   const [exporting, setExporting] = useState<Set<string>>(new Set());
   const [exported, setExported] = useState<Set<string>>(new Set());
   const [schemas, setSchemas] = useState<Record<string, string>>({});
+  const [orderedScript, setOrderedScript] = useState<string>("");
+  const [tableCount, setTableCount] = useState(0);
   const [loadingSchemas, setLoadingSchemas] = useState(false);
   const [schemasLoaded, setSchemasLoaded] = useState(false);
   const [schemaSearch, setSchemaSearch] = useState("");
@@ -158,8 +160,10 @@ export default function ExportarDados() {
       if (error) throw error;
       if (data?.schemas) {
         setSchemas(data.schemas);
+        setOrderedScript(data.orderedScript || "");
+        setTableCount(data.tableCount || Object.keys(data.schemas).length);
         setSchemasLoaded(true);
-        toast.success("Schemas carregados com sucesso!");
+        toast.success(`${data.tableCount || Object.keys(data.schemas).length} tabelas carregadas em ordem topológica!`);
       }
     } catch (err: any) {
       console.error("Error loading schemas:", err);
@@ -175,21 +179,15 @@ export default function ExportarDados() {
   };
 
   const copyAllSchemas = () => {
-    const allSql = Object.entries(schemas)
-      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
-      .join("\n\n\n");
-    copyToClipboard(allSql, "Todas as tabelas");
+    copyToClipboard(orderedScript, "Script completo (ordem topológica)");
   };
 
   const downloadAllSchemas = () => {
-    const allSql = Object.entries(schemas)
-      .map(([table, sql]) => `-- =====================\n-- Table: ${table}\n-- =====================\n${sql}`)
-      .join("\n\n\n");
-    const blob = new Blob([allSql], { type: "text/sql;charset=utf-8;" });
+    const blob = new Blob([orderedScript], { type: "text/sql;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `yesclin-schema-${format(new Date(), "yyyy-MM-dd-HHmm")}.sql`;
+    link.download = `yesclin-schema-topological-${format(new Date(), "yyyy-MM-dd-HHmm")}.sql`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -320,10 +318,10 @@ export default function ExportarDados() {
               <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
                 <Code2 className="h-12 w-12 text-muted-foreground" />
                 <div className="text-center">
-                  <h3 className="font-semibold text-lg">SQL das Tabelas do Sistema</h3>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Gere o SQL (CREATE TABLE) de todas as tabelas para copiar e migrar para outro banco de dados.
-                  </p>
+                   <h3 className="font-semibold text-lg">SQL Completo — Ordem Topológica</h3>
+                   <p className="text-muted-foreground text-sm mt-1">
+                     Gere o script SQL completo (enums, tabelas, FKs, índices, functions, triggers) em ordem de dependências, pronto para execução.
+                   </p>
                 </div>
                 <Button onClick={loadSchemas} disabled={loadingSchemas}>
                   {loadingSchemas ? (
@@ -350,7 +348,7 @@ export default function ExportarDados() {
                   {loadingSchemas ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recarregar"}
                 </Button>
                 <Badge variant="secondary" className="self-center">
-                  {sortedSchemaKeys.length} tabelas
+                  {tableCount} tabelas
                 </Badge>
               </div>
 
@@ -373,9 +371,9 @@ export default function ExportarDados() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">
-                    {schemaSearch ? `Tabelas filtradas (${filteredSchemaKeys.length})` : "SQL completo — todas as tabelas"}
+                    {schemaSearch ? `Tabelas filtradas (${filteredSchemaKeys.length})` : "Script SQL completo — ordem topológica"}
                   </CardTitle>
-                  <CardDescription>Copie o conteúdo abaixo e cole no seu banco de destino para recriar as tabelas.</CardDescription>
+                  <CardDescription>Enums → Tabelas → Foreign Keys → Índices → Functions → Triggers. Pronto para execução.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="relative">
@@ -384,20 +382,26 @@ export default function ExportarDados() {
                       variant="secondary"
                       className="absolute top-2 right-2 z-10"
                       onClick={() => {
-                        const sql = filteredSchemaKeys
-                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
-                          .join("\n\n\n");
-                        copyToClipboard(sql, schemaSearch ? `Tabelas filtradas` : "Todas as tabelas");
+                        if (schemaSearch && filteredSchemaKeys.length > 0) {
+                          const sql = filteredSchemaKeys
+                            .map((table) => `-- Table: ${table}\n${schemas[table]}`)
+                            .join("\n\n");
+                          copyToClipboard(sql, "Tabelas filtradas");
+                        } else {
+                          copyToClipboard(orderedScript, "Script completo");
+                        }
                       }}
                     >
                       <Copy className="h-3.5 w-3.5 mr-1" />
                       Copiar
                     </Button>
-                    <ScrollArea className="h-[500px] w-full rounded-md border bg-muted/50">
+                    <ScrollArea className="h-[600px] w-full rounded-md border bg-muted/50">
                       <pre className="p-4 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
-                        {filteredSchemaKeys
-                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
-                          .join("\n\n\n")}
+                        {schemaSearch && filteredSchemaKeys.length > 0
+                          ? filteredSchemaKeys
+                              .map((table) => `-- Table: ${table}\n${schemas[table]}`)
+                              .join("\n\n")
+                          : orderedScript}
                       </pre>
                     </ScrollArea>
                   </div>

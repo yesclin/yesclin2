@@ -371,9 +371,9 @@ export default function ExportarDados() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">
-                    {schemaSearch ? `Tabelas filtradas (${filteredSchemaKeys.length})` : "SQL completo — todas as tabelas"}
+                    {schemaSearch ? `Tabelas filtradas (${filteredSchemaKeys.length})` : "Script SQL completo — ordem topológica"}
                   </CardTitle>
-                  <CardDescription>Copie o conteúdo abaixo e cole no seu banco de destino para recriar as tabelas.</CardDescription>
+                  <CardDescription>Enums → Tabelas → Foreign Keys → Índices → Functions → Triggers. Pronto para execução.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="relative">
@@ -382,20 +382,26 @@ export default function ExportarDados() {
                       variant="secondary"
                       className="absolute top-2 right-2 z-10"
                       onClick={() => {
-                        const sql = filteredSchemaKeys
-                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
-                          .join("\n\n\n");
-                        copyToClipboard(sql, schemaSearch ? `Tabelas filtradas` : "Todas as tabelas");
+                        if (schemaSearch && filteredSchemaKeys.length > 0) {
+                          const sql = filteredSchemaKeys
+                            .map((table) => `-- Table: ${table}\n${schemas[table]}`)
+                            .join("\n\n");
+                          copyToClipboard(sql, "Tabelas filtradas");
+                        } else {
+                          copyToClipboard(orderedScript, "Script completo");
+                        }
                       }}
                     >
                       <Copy className="h-3.5 w-3.5 mr-1" />
                       Copiar
                     </Button>
-                    <ScrollArea className="h-[500px] w-full rounded-md border bg-muted/50">
+                    <ScrollArea className="h-[600px] w-full rounded-md border bg-muted/50">
                       <pre className="p-4 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
-                        {filteredSchemaKeys
-                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
-                          .join("\n\n\n")}
+                        {schemaSearch && filteredSchemaKeys.length > 0
+                          ? filteredSchemaKeys
+                              .map((table) => `-- Table: ${table}\n${schemas[table]}`)
+                              .join("\n\n")
+                          : orderedScript}
                       </pre>
                     </ScrollArea>
                   </div>

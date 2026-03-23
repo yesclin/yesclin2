@@ -237,9 +237,9 @@ export default function ExportarDados() {
       })}
 
       {/* Info */}
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-accent bg-accent/10">
         <CardContent className="pt-4">
-          <p className="text-sm text-amber-800">
+          <p className="text-sm text-muted-foreground">
             <strong>Nota:</strong> A exportação inclui até 10.000 registros por tabela. Os arquivos CSV são codificados em UTF-8 com separador ponto e vírgula (;) para compatibilidade com Excel. Dados sensíveis como senhas e tokens não são exportados.
           </p>
         </CardContent>

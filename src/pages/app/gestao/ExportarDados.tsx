@@ -208,7 +208,7 @@ export default function ExportarDados() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm truncate">{table.label}</span>
-                          {isExported && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                          {isExported && <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{table.description}</p>
                       </div>

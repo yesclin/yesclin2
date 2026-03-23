@@ -92,6 +92,8 @@ export default function ExportarDados() {
   const [exporting, setExporting] = useState<Set<string>>(new Set());
   const [exported, setExported] = useState<Set<string>>(new Set());
   const [schemas, setSchemas] = useState<Record<string, string>>({});
+  const [orderedScript, setOrderedScript] = useState<string>("");
+  const [tableCount, setTableCount] = useState(0);
   const [loadingSchemas, setLoadingSchemas] = useState(false);
   const [schemasLoaded, setSchemasLoaded] = useState(false);
   const [schemaSearch, setSchemaSearch] = useState("");

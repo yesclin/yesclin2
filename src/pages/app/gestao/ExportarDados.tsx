@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Database, Users, Calendar, FileText, Package, DollarSign, Shield, Loader2, CheckCircle2, Copy, Code2 } from "lucide-react";
+import { Download, Database, Users, Calendar, FileText, Package, DollarSign, Shield, Loader2, CheckCircle2, Copy, Code2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,6 +94,7 @@ export default function ExportarDados() {
   const [schemas, setSchemas] = useState<Record<string, string>>({});
   const [loadingSchemas, setLoadingSchemas] = useState(false);
   const [schemasLoaded, setSchemasLoaded] = useState(false);
+  const [schemaSearch, setSchemaSearch] = useState("");
 
   const toggleSelect = (key: string) => {
     setSelected((prev) => {
@@ -197,6 +199,9 @@ export default function ExportarDados() {
 
   const categories = [...new Set(EXPORT_TABLES.map((t) => t.category))];
   const sortedSchemaKeys = Object.keys(schemas).sort();
+  const filteredSchemaKeys = schemaSearch
+    ? sortedSchemaKeys.filter((k) => k.toLowerCase().includes(schemaSearch.toLowerCase()))
+    : sortedSchemaKeys;
 
   return (
     <div className="space-y-6">
@@ -332,7 +337,7 @@ export default function ExportarDados() {
             </Card>
           ) : (
             <>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
                 <Button onClick={copyAllSchemas} size="sm">
                   <Copy className="h-4 w-4 mr-2" />
                   Copiar Todo o SQL
@@ -349,10 +354,28 @@ export default function ExportarDados() {
                 </Badge>
               </div>
 
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar tabela... ex: clinics, patients, appointments"
+                  value={schemaSearch}
+                  onChange={(e) => setSchemaSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {schemaSearch && (
+                <p className="text-sm text-muted-foreground">
+                  {filteredSchemaKeys.length} tabela(s) encontrada(s) para "{schemaSearch}"
+                </p>
+              )}
+
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">SQL completo — todas as tabelas</CardTitle>
-                  <CardDescription>Copie o conteúdo abaixo e cole no seu banco de destino para recriar todas as tabelas.</CardDescription>
+                  <CardTitle className="text-sm">
+                    {schemaSearch ? `Tabelas filtradas (${filteredSchemaKeys.length})` : "SQL completo — todas as tabelas"}
+                  </CardTitle>
+                  <CardDescription>Copie o conteúdo abaixo e cole no seu banco de destino para recriar as tabelas.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="relative">
@@ -360,14 +383,19 @@ export default function ExportarDados() {
                       size="sm"
                       variant="secondary"
                       className="absolute top-2 right-2 z-10"
-                      onClick={copyAllSchemas}
+                      onClick={() => {
+                        const sql = filteredSchemaKeys
+                          .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
+                          .join("\n\n\n");
+                        copyToClipboard(sql, schemaSearch ? `Tabelas filtradas` : "Todas as tabelas");
+                      }}
                     >
                       <Copy className="h-3.5 w-3.5 mr-1" />
                       Copiar
                     </Button>
                     <ScrollArea className="h-[500px] w-full rounded-md border bg-muted/50">
                       <pre className="p-4 text-xs font-mono text-foreground whitespace-pre overflow-x-auto">
-                        {sortedSchemaKeys
+                        {filteredSchemaKeys
                           .map((table) => `-- =====================\n-- Table: ${table}\n-- =====================\n${schemas[table]}`)
                           .join("\n\n\n")}
                       </pre>

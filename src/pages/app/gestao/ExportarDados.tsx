@@ -348,7 +348,7 @@ export default function ExportarDados() {
                   {loadingSchemas ? <Loader2 className="h-4 w-4 animate-spin" /> : "Recarregar"}
                 </Button>
                 <Badge variant="secondary" className="self-center">
-                  {sortedSchemaKeys.length} tabelas
+                  {tableCount} tabelas
                 </Badge>
               </div>
 

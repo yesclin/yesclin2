@@ -94,6 +94,7 @@ export default function ExportarDados() {
   const [schemas, setSchemas] = useState<Record<string, string>>({});
   const [loadingSchemas, setLoadingSchemas] = useState(false);
   const [schemasLoaded, setSchemasLoaded] = useState(false);
+  const [schemaSearch, setSchemaSearch] = useState("");
 
   const toggleSelect = (key: string) => {
     setSelected((prev) => {

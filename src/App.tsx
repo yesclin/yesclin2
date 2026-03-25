@@ -38,7 +38,7 @@ import Financas from "./pages/app/gestao/Financas";
 import Estoque from "./pages/app/gestao/Estoque";
 import Relatorios from "./pages/app/gestao/Relatorios";
 import Auditoria from "./pages/app/gestao/Auditoria";
-import ExportarDados from "./pages/app/gestao/ExportarDados";
+
 
 // Configurações
 import ConfigProcedimentos from "./pages/app/config/Procedimentos";
@@ -99,7 +99,7 @@ const App = () => (
             <Route path="gestao/estoque" element={<ProtectedRoute module="estoque"><Estoque /></ProtectedRoute>} />
             <Route path="gestao/relatorios" element={<ProtectedRoute module="relatorios"><Relatorios /></ProtectedRoute>} />
             <Route path="gestao/auditoria" element={<ProtectedRoute module="configuracoes"><Auditoria /></ProtectedRoute>} />
-            <Route path="gestao/exportar-dados" element={<ProtectedRoute module="configuracoes"><ExportarDados /></ProtectedRoute>} />
+            
             
             {/* Configurações */}
             <Route path="config/procedimentos" element={<ProtectedRoute module="configuracoes"><ConfigProcedimentos /></ProtectedRoute>} />

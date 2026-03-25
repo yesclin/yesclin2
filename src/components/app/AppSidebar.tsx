@@ -10,7 +10,7 @@ import {
   Package,
   BarChart3,
   ShieldAlert,
-  DatabaseBackup,
+  
   Building,
   UserCog,
   ListChecks,
@@ -72,7 +72,7 @@ const ownerAdminGestaoMenu: MenuItem[] = [
   { title: "Convênios", url: "/app/gestao/convenios", icon: Building2 },
   { title: "Relatórios", url: "/app/gestao/relatorios", icon: BarChart3 },
   { title: "Auditoria", url: "/app/gestao/auditoria", icon: ShieldAlert },
-  { title: "Exportar Dados", url: "/app/gestao/exportar-dados", icon: DatabaseBackup },
+  
 ];
 
 const ownerAdminConfigMenu: MenuItem[] = [

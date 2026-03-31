@@ -241,6 +241,21 @@ function TimelineItemDetails({ item }: { item: TimelineItem }) {
         </div>
       );
 
+    case 'avaliacao_dor_pilates':
+      return (
+        <div className="space-y-2">
+          {(content.local_da_dor as string[])?.length > 0 && (
+            <p><span className="text-muted-foreground">Local:</span> {(content.local_da_dor as string[]).join(', ')}</p>
+          )}
+          {content.intensidade_dor && (
+            <p><span className="text-muted-foreground">Intensidade:</span> {content.intensidade_dor as string}</p>
+          )}
+          {content.impacto_funcional_da_dor && (
+            <p><span className="text-muted-foreground">Impacto:</span> {content.impacto_funcional_da_dor as string}</p>
+          )}
+        </div>
+      );
+
     case 'alerta_funcional_pilates':
       return (
         <div className="space-y-2">

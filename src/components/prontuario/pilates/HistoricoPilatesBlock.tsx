@@ -51,6 +51,7 @@ const typeIcons: Record<TimelineType, React.ReactNode> = {
   anamnese_funcional_pilates: <ClipboardList className="h-4 w-4" />,
   avaliacao_funcional_pilates: <Activity className="h-4 w-4" />,
   avaliacao_postural_pilates: <User className="h-4 w-4" />,
+  avaliacao_dor_pilates: <ShieldAlert className="h-4 w-4" />,
   plano_exercicios_pilates: <Dumbbell className="h-4 w-4" />,
   sessao_pilates: <Calendar className="h-4 w-4" />,
   documento_pilates: <FileText className="h-4 w-4" />,

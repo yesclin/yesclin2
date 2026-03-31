@@ -158,6 +158,7 @@ import {
   AnamneseFuncionalPilatesBlock,
   AvaliacaoFuncionalPilatesBlock,
   AvaliacaoPosturalPilatesBlock,
+  AvaliacaoDorPilatesBlock,
   PlanoExerciciosPilatesBlock,
   SessoesPilatesBlock,
   ExamesDocumentosPilatesBlock,

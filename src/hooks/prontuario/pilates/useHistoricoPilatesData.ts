@@ -130,6 +130,18 @@ export function useHistoricoPilatesData({
             }
             break;
           
+          case 'avaliacao_dor_pilates':
+            title = 'Avaliação de Dor';
+            const locais = content?.local_da_dor as string[] | undefined;
+            if (locais && locais.length > 0) {
+              subtitle = `${locais.length} local(is) de dor`;
+            }
+            const intensidade = content?.intensidade_dor as string | undefined;
+            if (intensidade) {
+              description = `Intensidade: ${intensidade}`;
+            }
+            break;
+
           case 'alerta_funcional_pilates':
             title = (content?.titulo as string) || 'Alerta Funcional';
             const isActive = content?.is_active as boolean | undefined;

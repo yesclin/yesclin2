@@ -254,16 +254,17 @@ export const YESCLIN_SUPPORTED_SPECIALTIES: YesclinSpecialty[] = [
   {
     key: 'pilates',
     name: 'Pilates',
-    description: 'Avaliação funcional/postural e acompanhamento de sessões',
+    description: 'Avaliação funcional/postural, avaliação de dor e acompanhamento de sessões',
     enabledBlocks: [
       'resumo',              // 1. Visão Geral
       'anamnese',            // 2. Anamnese
       'avaliacao_funcional', // 3. Avaliação Funcional Pilates
-      'conduta',             // 4. Plano de Exercícios
-      'evolucao',            // 5. Sessões de Pilates
-      'exames',              // 6. Exames / Documentos
-      'alertas',             // 7. Alertas
-      'timeline',            // 8. Linha do Tempo
+      'avaliacao_dor',       // 4. Avaliação de Dor
+      'conduta',             // 5. Plano de Exercícios
+      'evolucao',            // 6. Sessões de Pilates
+      'exames',              // 7. Exames / Documentos
+      'alertas',             // 8. Alertas / Restrições
+      'timeline',            // 9. Linha do Tempo
     ],
     icon: 'Dumbbell',
   },

@@ -13,6 +13,7 @@ export const TIMELINE_TYPES = {
   anamnese_funcional_pilates: { label: 'Anamnese Funcional', icon: 'ClipboardList', color: 'bg-primary' },
   avaliacao_funcional_pilates: { label: 'Avaliação Funcional', icon: 'Activity', color: 'bg-blue-500' },
   avaliacao_postural_pilates: { label: 'Avaliação Postural', icon: 'User', color: 'bg-indigo-500' },
+  avaliacao_dor_pilates: { label: 'Avaliação de Dor', icon: 'Gauge', color: 'bg-orange-500' },
   plano_exercicios_pilates: { label: 'Plano de Exercícios', icon: 'Dumbbell', color: 'bg-green-500' },
   sessao_pilates: { label: 'Sessão', icon: 'Calendar', color: 'bg-orange-500' },
   documento_pilates: { label: 'Documento', icon: 'FileText', color: 'bg-gray-500' },
